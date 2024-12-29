@@ -80,8 +80,8 @@ FLOAT ::= DIGIT+ "." DIGIT+ (("E" | "e") ("+" | "-")? DIGIT+)? ;
 The rules for indentation are special. They cannot be formally defined in EBNF, but they are described here.
 
 ```
-INDENT ::= ":" (CR)? LF <greater indent than previous line> ;
-DEDENT ::= (CR)? LF <less indent than previous line, except if inside any grouping symbols> ;
+INDENT ::= ":" (CR)? LF <greater left spacing than previous line, except between grouping tokens> ;
+DEDENT ::= (CR)? LF <less or equal left spacing to previous indent, except between grouping tokens> ;
 ```
 
 # Syntax grammar
@@ -114,11 +114,8 @@ body ::= (INDENT statement* DEDENT) | (L_BRACE statement* R_BRACE) ;
 
 ```
 let_decl ::= "let" ("var")? IDENTIFIER (":" type)? ("=" expression)? ;
-```
 
-A type is simply an identifier, but may be more complex in the future.
-```
-type ::= IDENTIFIER ;
+type ::= ("&" | "var&" | "*" | "var*")? IDENTIFIER ;
 ```
 
 ### Function declaration

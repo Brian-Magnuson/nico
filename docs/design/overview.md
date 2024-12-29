@@ -155,13 +155,49 @@ All programs consist of statements. Statements fall into three categories:
 
 Whitespace is only significant in certain contexts. It is used to separate tokens and check for indentation levels.
 
-An `INDENT` token is inserted when there is a colon, a newline, and an increase in indentation. 
+Indentation is based on "left spacing", which is the number of spaces or tabs at the beginning of a line up to the next non-whitespace character. If a line contains only whitespace, left spacing is ignored for that line.
 
-A `DEDENT` token is inserted when there is a newline followed by a decrease in indentation.
+The lexer tracks left spacing and inserts `INDENT` and `DEDENT` before the next token to indicate changes in indentation. Tabs and spaces may be used within the same file, but the left spacing of a single line may not contain a mix of both tabs and spaces.
 
-`INDENT` and `DEDENT` tokens are not inserted when there is currently an open grouping symbol, such as parentheses or braces.
+It is recommended to always use spaces for indentation and to choose a consistent number of spaces for each level of indentation.
+
+An `INDENT` token is inserted when there is a colon, a newline, and an increase in left spacing from the previous line. All indent-based blocks (including those used by control structures) require the colon for the `INDENT` token.
+
+A `DEDENT` token is inserted when there is a newline followed by a decrease in spacing to a previous indentation level. If the end of the file is reached, `DEDENT` tokens are inserted to close all open blocks.
+
+Left spacing is not updated after a newline within a grouping token, such as parentheses or braces. As such, no `INDENT` or `DEDENT` tokens are inserted within these tokens.
 
 In all other instances, whitespace is ignored. There is no dedicated token for whitespace other than the `INDENT` and `DEDENT` tokens.
+
+Here is an example of statements with different left spacing:
+```
+    block:             // (4)
+      let x = 42       // (6)
+          let y = 64   // (10)
+        let z = x + y  // (8)
+    let u = 16         // (4)
+  let v = 128          // (2)
+```
+
+The `block` keyword is followed by a colon, a newline, and an increase in left spacing, so an `INDENT` is inserted. Since the block was opened on a line with a left spacing of 4, all lines with a left spacing greater than 4 are considered to be part of the block.
+
+Here, `x`, `y`, and `z` are all part of the same block, despite having different left spacing. With the `u` declaration, left spacing decreases to 4, where the previous `INDENT` was made. Thus, a `DEDENT` is inserted.
+
+These are not valid:
+```
+block:
+    if condition:
+    pass
+
+block:
+    if condition: pass
+```
+
+The first if statement has a colon and a newline, but the left spacing does not increase. The indent is not properly formed, resulting in a lexer error.
+
+The second if statement has a colon, but no newline. Thus, the lexer will insert a `COLON` token instead of an `INDENT` token, which will later result in a parser error.
+
+It is recommended to use consistent spacing to improve readability.
 
 As all statements have a unique start token, whitespace is not needed to separate them. This is perfectly valid:
 ```
