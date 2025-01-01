@@ -6,7 +6,7 @@
 #include "compiler/code_file.h"
 
 /**
- * @brief Enum class for a token type.
+ * @brief A token type.
  */
 enum class Tok {
     // Base tokens
@@ -103,7 +103,9 @@ enum class Tok {
 };
 
 /**
- * @brief Struct for the location of a token within a code file.
+ * @brief A location of a token within a code file.
+ *
+ * Includes a pointer to the code file containing the source code string.
  */
 struct Location {
     // The file where the token is located.
@@ -114,10 +116,24 @@ struct Location {
     size_t length;
 };
 
+/**
+ * @brief A token scanned from the source code.
+ */
 class Token {
 public:
+    // The type of this token.
     const Tok tok_type;
-    const std::string lexeme;
+    // The location of this token.
+    const Location location;
+
+    /**
+     * @brief Gets the lexeme of the token.
+     *
+     * The lexeme is retrieved from the source code using the location of the token.
+     *
+     * @return A string representing the lexeme of the token.
+     */
+    std::string get_lexeme() const;
 };
 
 #endif // NICO_TOKEN_H
