@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include "compiler/code_file.h"
+#include "../compiler/code_file.h"
 
 /**
  * @brief A token type.
