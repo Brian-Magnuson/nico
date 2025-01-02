@@ -32,7 +32,18 @@ class Lexer {
     bool is_at_end() const;
 
     /**
-     * @brief Adds a token to the list of tokens.
+     * @brief Creates a new token with the provided type.
+     *
+     * The lexer is unaffected; useful for creating tokens for error messages.
+     * The token's location is set based on the lexer's current position.
+     *
+     * @param tok_type The type of token to create.
+     * @return A shared pointer to the new token.
+     */
+    std::shared_ptr<Token> make_token(Tok tok_type) const;
+
+    /**
+     * @brief Creates a new token with the provided type and adds it to the list of tokens.
      *
      * The token's location is set based on the lexer's current position.
      *

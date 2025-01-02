@@ -1,12 +1,19 @@
 #include "lexer.h"
 
+#include "../logger/error_code.h"
+#include "../logger/logger.h"
+
 bool Lexer::is_at_end() const {
     return current >= file->src_code.length();
 }
 
-void Lexer::add_token(Tok tok_type) {
+std::shared_ptr<Token> Lexer::make_token(Tok tok_type) const {
     Location location(file, start, current - start, line);
-    tokens.push_back(std::make_shared<Token>(tok_type, location));
+    return std::make_shared<Token>(tok_type, location);
+}
+
+void Lexer::add_token(Tok tok_type) {
+    tokens.push_back(make_token(tok_type));
 }
 
 char Lexer::advance() {
@@ -38,7 +45,8 @@ void Lexer::scan_token() {
         add_token(Tok::RightSquare);
         break;
     default:
-        add_token(Tok::Unknown);
+        auto token = make_token(Tok::Unknown);
+        Logger::inst().log_error(Err::UnexpectedChar, token->location, "Unexpected character.");
         break;
     }
 }

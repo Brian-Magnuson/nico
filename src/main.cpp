@@ -5,6 +5,7 @@
 #include <string>
 
 #include "compiler/code_file.h"
+#include "lexer/lexer.h"
 
 int main(int argc, char** argv) {
     if (argc != 2) {
@@ -33,4 +34,9 @@ int main(int argc, char** argv) {
     code_file->src_code.resize(size);
     file.read(&code_file->src_code[0], size);
     file.close();
+
+    Lexer lexer;
+    lexer.scan(code_file);
+
+    return 0;
 }

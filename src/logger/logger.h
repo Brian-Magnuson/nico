@@ -48,6 +48,7 @@ class Logger {
      * @brief Prints the line of code at the provided location and underlines the span of text indicated by the location.
      *
      * This function is used to print pretty info messages that show the location of errors and notes.
+     * Usually, two lines are printed: the line of code where the error occurred and an underline indicating the span of text, both ending with a newline.
      *
      * @param location The location of the code to print.
      * @param underline_color The color to use for underlining the code. Defaults to Color::Red.
@@ -62,10 +63,22 @@ public:
      *
      * @return A reference to the Logger singleton instance.
      */
-    Logger& inst() {
+    static Logger& inst() {
         static Logger instance;
         return instance;
     }
+
+    /**
+     * @brief Logs an error message with a location.
+     *
+     * If printing is enabled, the error message will be printed to the output stream.
+     * The error code will be added to the stored list of errors.
+     *
+     * @param ec The error code to log.
+     * @param location The location of the error in the source code.
+     * @param message The message to log with the error.
+     */
+    void log_error(Err ec, const Location& location, const std::string& message);
 };
 
 #endif // NICO_LOGGER_H

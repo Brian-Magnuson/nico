@@ -17,6 +17,8 @@ enum class Err {
 
     // Lexer error
     Lexer = 2000,
+    // An unexpected character was found in the source code.
+    UnexpectedChar,
 
     // Parser error
     Parser = 3000,
