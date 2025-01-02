@@ -114,6 +114,15 @@ struct Location {
     size_t start;
     // The length of the token.
     size_t length;
+
+    /**
+     * @brief Constructs a new Location object.
+     * @param file A pointer to the code file.
+     * @param start The start index of the token.
+     * @param length The length of the token.
+     */
+    Location(std::shared_ptr<CodeFile> file, size_t start, size_t length)
+        : file(file), start(start), length(length) {}
 };
 
 /**
@@ -125,6 +134,14 @@ public:
     const Tok tok_type;
     // The location of this token.
     const Location location;
+
+    /**
+     * @brief Constructs a new Token object.
+     * @param tok_type The type of the token.
+     * @param location The location of the token.
+     */
+    Token(Tok tok_type, const Location& location)
+        : tok_type(tok_type), location(location) {}
 
     /**
      * @brief Gets the lexeme of the token.

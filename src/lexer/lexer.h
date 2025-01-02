@@ -29,6 +29,32 @@ class Lexer {
      */
     bool is_at_end() const;
 
+    /**
+     * @brief Adds a token to the list of tokens.
+     *
+     * The token's location is set based on the lexer's current position.
+     *
+     * @param tok_type The type of token to add.
+     */
+    void add_token(Tok tok_type);
+
+    /**
+     * @brief Advances the lexer by one character, returning the character that was scanned.
+     *
+     * E.g. if the current character is 'a', calling advance() will advance the lexer to the next character and return 'a'.
+     * If the lexer is at the end of the source code, '\0' will be returned and the lexer will not advance.
+     *
+     * @return The character that was scanned. '\0' if the lexer is at the end of the source code.
+     */
+    char advance();
+
+    /**
+     * @brief Scans a token from the source code and adds it to the list of tokens.
+     *
+     * The start position of the lexer should be updated before calling this function.
+     */
+    void scan_token();
+
 public:
     /**
      * @brief Resets the lexer.
