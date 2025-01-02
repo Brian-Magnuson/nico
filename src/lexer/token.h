@@ -114,6 +114,8 @@ struct Location {
     size_t start;
     // The length of the token.
     size_t length;
+    // The line number of the token.
+    size_t line;
 
     /**
      * @brief Constructs a new Location object.
@@ -121,8 +123,8 @@ struct Location {
      * @param start The start index of the token.
      * @param length The length of the token.
      */
-    Location(std::shared_ptr<CodeFile> file, size_t start, size_t length)
-        : file(file), start(start), length(length) {}
+    Location(std::shared_ptr<CodeFile> file, size_t start, size_t length, size_t line)
+        : file(file), start(start), length(length), line(line) {}
 };
 
 /**

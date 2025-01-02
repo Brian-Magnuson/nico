@@ -19,6 +19,8 @@ class Lexer {
     size_t start = 0;
     // The index of the character from the source currently being considered.
     size_t current = 0;
+    // The line number of the current token.
+    size_t line = 1;
 
     /**
      * @brief Checks if the lexer has reached the end of the source code.

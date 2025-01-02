@@ -5,7 +5,7 @@ bool Lexer::is_at_end() const {
 }
 
 void Lexer::add_token(Tok tok_type) {
-    Location location(file, start, current - start);
+    Location location(file, start, current - start, line);
     tokens.push_back(std::make_shared<Token>(tok_type, location));
 }
 
