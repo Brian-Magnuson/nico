@@ -23,6 +23,15 @@ char Lexer::advance() {
     return file->src_code[current - 1];
 }
 
+bool Lexer::match(char expected) {
+    if (is_at_end())
+        return false;
+    if (file->src_code[current] != expected)
+        return false;
+    current++;
+    return true;
+}
+
 void Lexer::scan_token() {
     char c = advance();
     switch (c) {
@@ -43,6 +52,71 @@ void Lexer::scan_token() {
         break;
     case ']':
         add_token(Tok::RSquare);
+        break;
+    case ',':
+        add_token(Tok::Comma);
+        break;
+    case ';':
+        add_token(Tok::Semicolon);
+        break;
+    case '+':
+        add_token(match('=') ? Tok::PlusEq : Tok::Plus);
+        break;
+    case '-':
+        if (match('='))
+            add_token(Tok::MinusEq);
+        else if (match('>'))
+            add_token(Tok::Arrow);
+        else
+            add_token(Tok::Minus);
+        break;
+    case '*':
+        if (match('='))
+            add_token(Tok::StarEq);
+        else if (match('/'))
+            add_token(Tok::StarSlash);
+        else
+            add_token(Tok::Star);
+        break;
+    case '/':
+        if (match('='))
+            add_token(Tok::SlashEq);
+        else if (match('/'))
+            add_token(Tok::SlashSlash);
+        else if (match('*'))
+            add_token(Tok::SlashStar);
+        else
+            add_token(Tok::Slash);
+        break;
+    case '%':
+        add_token(match('=') ? Tok::PercentEq : Tok::Percent);
+        break;
+    case '^':
+        add_token(match('=') ? Tok::CaretEq : Tok::Caret);
+        break;
+    case '&':
+        add_token(match('=') ? Tok::AmpEq : Tok::Amp);
+        break;
+    case '|':
+        add_token(match('=') ? Tok::BarEq : Tok::Bar);
+        break;
+    case '!':
+        add_token(match('=') ? Tok::BangEq : Tok::Bang);
+        break;
+    case '=':
+        if (match('='))
+            add_token(Tok::EqEq);
+        else
+            add_token(Tok::Eq);
+        break;
+    case '>':
+        add_token(match('=') ? Tok::GtEq : Tok::Gt);
+        break;
+    case '<':
+        add_token(match('=') ? Tok::LtEq : Tok::Lt);
+        break;
+    case '.':
+        add_token(Tok::Dot);
         break;
     default:
         auto token = make_token(Tok::Unknown);

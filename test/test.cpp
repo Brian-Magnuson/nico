@@ -82,6 +82,83 @@ TEST_CASE("Lexer single characters", "[lexer]") {
         }
     }
 
+    SECTION("Other single character tokens") {
+        auto file = make_test_code_file(",;");
+        auto tokens = lexer.scan(file);
+        std::vector<Tok> expected = {
+            Tok::Comma,
+            Tok::Semicolon,
+            Tok::Eof
+        };
+        REQUIRE(tokens.size() == expected.size());
+        for (size_t i = 0; i < tokens.size(); i++) {
+            CHECK(tokens[i]->tok_type == expected[i]);
+        }
+    }
+
+    lexer.reset();
+    Logger::inst().reset();
+}
+
+TEST_CASE("Lexer short tokens", "[lexer]") {
+    Lexer lexer;
+    Logger::inst().set_printing_enabled(false);
+
+    SECTION("Arithmetic operators") {
+        auto file = make_test_code_file("/+-*%");
+        auto tokens = lexer.scan(file);
+        std::vector<Tok> expected = {
+            Tok::Slash,
+            Tok::Plus,
+            Tok::Minus,
+            Tok::Star,
+            Tok::Percent,
+            Tok::Eof
+        };
+        REQUIRE(tokens.size() == expected.size());
+        for (size_t i = 0; i < tokens.size(); i++) {
+            CHECK(tokens[i]->tok_type == expected[i]);
+        }
+    }
+
+    SECTION("Assignment operators") {
+        auto file = make_test_code_file("+=-=*=/=%=&=|=^=");
+        auto tokens = lexer.scan(file);
+        std::vector<Tok> expected = {
+            Tok::PlusEq,
+            Tok::MinusEq,
+            Tok::StarEq,
+            Tok::SlashEq,
+            Tok::PercentEq,
+            Tok::AmpEq,
+            Tok::BarEq,
+            Tok::CaretEq,
+            Tok::Eof
+        };
+        REQUIRE(tokens.size() == expected.size());
+        for (size_t i = 0; i < tokens.size(); i++) {
+            CHECK(tokens[i]->tok_type == expected[i]);
+        }
+    }
+
+    SECTION("Comparison operators") {
+        auto file = make_test_code_file("==!=>=<=><");
+        auto tokens = lexer.scan(file);
+        std::vector<Tok> expected = {
+            Tok::EqEq,
+            Tok::BangEq,
+            Tok::GtEq,
+            Tok::LtEq,
+            Tok::Gt,
+            Tok::Lt,
+            Tok::Eof
+        };
+        REQUIRE(tokens.size() == expected.size());
+        for (size_t i = 0; i < tokens.size(); i++) {
+            CHECK(tokens[i]->tok_type == expected[i]);
+        }
+    }
+
     lexer.reset();
     Logger::inst().reset();
 }

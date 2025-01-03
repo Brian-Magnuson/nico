@@ -62,6 +62,17 @@ class Lexer {
     char advance();
 
     /**
+     * @brief Checks if the current character matches the expected character and advances the lexer if it does.
+     *
+     * If the character is not a match, the lexer will not advance.
+     * If the lexer is at the end of the source code, this function will return false.
+     *
+     * @param expected The character to match.
+     * @return True if the current character matches the expected character. False otherwise.
+     */
+    bool match(char expected);
+
+    /**
      * @brief Scans a token from the source code and adds it to the list of tokens.
      *
      * The start position of the lexer should be updated before calling this function.
