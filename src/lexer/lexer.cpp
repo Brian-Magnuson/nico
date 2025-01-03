@@ -27,22 +27,22 @@ void Lexer::scan_token() {
     char c = advance();
     switch (c) {
     case '(':
-        add_token(Tok::LeftParen);
+        add_token(Tok::LParen);
         break;
     case ')':
-        add_token(Tok::RightParen);
+        add_token(Tok::RParen);
         break;
     case '{':
-        add_token(Tok::LeftBrace);
+        add_token(Tok::LBrace);
         break;
     case '}':
-        add_token(Tok::RightBrace);
+        add_token(Tok::RBrace);
         break;
     case '[':
-        add_token(Tok::LeftSquare);
+        add_token(Tok::LSquare);
         break;
     case ']':
-        add_token(Tok::RightSquare);
+        add_token(Tok::RSquare);
         break;
     default:
         auto token = make_token(Tok::Unknown);

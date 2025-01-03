@@ -32,12 +32,12 @@ enum class Tok {
 
     // Symbols
 
-    LeftParen,
-    RightParen,
-    LeftBrace,
-    RightBrace,
-    LeftSquare,
-    RightSquare,
+    LParen,
+    RParen,
+    LBrace,
+    RBrace,
+    LSquare,
+    RSquare,
 
     Comma,
     Semicolon,

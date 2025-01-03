@@ -50,9 +50,37 @@ TEST_CASE("Lexer single characters", "[lexer]") {
     Lexer lexer;
     Logger::inst().set_printing_enabled(false);
 
-    auto file = make_test_code_file("(){}[]");
-    auto tokens = lexer.scan(file);
-    REQUIRE(tokens.size() == 7);
+    SECTION("Grouping characters 1") {
+        auto file = make_test_code_file("()");
+        auto tokens = lexer.scan(file);
+        std::vector<Tok> expected = {
+            Tok::LParen,
+            Tok::RParen,
+            Tok::Eof
+        };
+        REQUIRE(tokens.size() == expected.size());
+        for (size_t i = 0; i < tokens.size(); i++) {
+            CHECK(tokens[i]->tok_type == expected[i]);
+        }
+    }
+
+    SECTION("Grouping characters 2") {
+        auto file = make_test_code_file("()[]{}");
+        auto tokens = lexer.scan(file);
+        std::vector<Tok> expected = {
+            Tok::LParen,
+            Tok::RParen,
+            Tok::LSquare,
+            Tok::RSquare,
+            Tok::LBrace,
+            Tok::RBrace,
+            Tok::Eof
+        };
+        REQUIRE(tokens.size() == expected.size());
+        for (size_t i = 0; i < tokens.size(); i++) {
+            CHECK(tokens[i]->tok_type == expected[i]);
+        }
+    }
 
     lexer.reset();
     Logger::inst().reset();
