@@ -1,6 +1,5 @@
 #include "logger.h"
 
-std::string colorize(Color color) {
 // Include the appropriate headers based on the target OS.
 #if defined(_WIN32) || defined(_WIN64)
 // Windows.
@@ -18,6 +17,7 @@ std::string colorize(Color color) {
 #define FILENO(x) ((void)0, 0) // Dummy to avoid unused variable warning.
 #endif
 
+std::string colorize(Color color) {
     // Check if the standard output is a terminal.
     if (!ISATTY(FILENO(stdout))) {
         return "";
@@ -43,13 +43,10 @@ std::string colorize(Color color) {
     default:
         return "\033[0m";
     }
-
-#undef ISATTY
-#undef FILENO
 }
 
 void Logger::print_code_at_location(const Location& location, Color underline_color) {
-    std::string& src_code = location.file->src_code;
+    const std::string& src_code = location.file->src_code;
     size_t start = location.start;
     size_t length = location.length;
 
@@ -69,6 +66,10 @@ void Logger::print_code_at_location(const Location& location, Color underline_co
 
     std::string line = src_code.substr(line_start, line_end - line_start);
 
+    *out << location.file->path.string()
+         << ":" << location.line
+         << ":" << (start - line_start + 1) << "\n";
+
     *out << std::setw(5) << location.line << " | "
          << line << "\n";
 
@@ -77,13 +78,19 @@ void Logger::print_code_at_location(const Location& location, Color underline_co
     if (location.length > 1)
         *out << std::string(location.length - 1, '~');
 
-    *out << colorize(Color::Reset) << "\n";
+    *out << colorize(Color::Reset) << "\n\n";
 
     /*
     Example output:
         1 | let x = 5
             ^~~
     */
+}
+
+void Logger::reset() {
+    out = &std::cerr;
+    errors.clear();
+    printing_enabled = true;
 }
 
 void Logger::log_error(Err ec, const Location& location, const std::string& message) {

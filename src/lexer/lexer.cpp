@@ -68,4 +68,5 @@ std::vector<std::shared_ptr<Token>> Lexer::scan(const std::shared_ptr<CodeFile>&
     }
 
     add_token(Tok::Eof);
+    return tokens;
 }

@@ -3,6 +3,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <utility>
 
 #include "compiler/code_file.h"
 #include "lexer/lexer.h"
@@ -20,19 +21,23 @@ int main(int argc, char** argv) {
         return 66;
     }
 
-    std::shared_ptr<CodeFile> code_file = std::make_shared<CodeFile>();
-
     // Read the file's path.
     std::filesystem::path path = argv[1];
-    code_file->path = std::filesystem::absolute(path);
 
     // Read the entire file.
     file.seekg(0, std::ios::end);
     size_t size = file.tellg();
     file.seekg(0, std::ios::beg);
 
-    code_file->src_code.resize(size);
-    file.read(&code_file->src_code[0], size);
+    std::string src_code;
+    src_code.resize(size);
+    file.read(&src_code[0], size);
+
+    std::shared_ptr<CodeFile> code_file = std::make_shared<CodeFile>(
+        std::filesystem::absolute(path),
+        std::move(src_code)
+    );
+
     file.close();
 
     Lexer lexer;

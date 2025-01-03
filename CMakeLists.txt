@@ -26,16 +26,23 @@ endif()
 include(Catch)
 
 # Source files
+set(LEXER_SRC src/lexer/token.cpp src/lexer/lexer.cpp)
+set(LOGGER_SRC src/logger/logger.cpp)
+set(SOURCES
+    ${LEXER_SRC}
+    ${LOGGER_SRC}
+)
+
 set(MAIN_SRC src/main.cpp)
 
 # Test files
 set(TEST_SRC test/test.cpp)
 
 # Main executable
-add_executable(nico ${MAIN_SRC})
+add_executable(nico ${MAIN_SRC} ${SOURCES})
 
 # Test executable
-add_executable(tests ${TEST_SRC})
+add_executable(tests ${TEST_SRC} ${SOURCES})
 target_link_libraries(tests Catch2::Catch2WithMain ${llvm_libs})
 enable_testing()
 catch_discover_tests(tests)

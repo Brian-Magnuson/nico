@@ -32,6 +32,9 @@ enum class Color {
  */
 std::string colorize(Color color = Color::Reset);
 
+/**
+ * @brief Logger singleton for logging errors and messages.
+ */
 class Logger {
     // A pointer to the output stream to log errors to.
     std::ostream* out = &std::cerr;
@@ -67,6 +70,24 @@ public:
         static Logger instance;
         return instance;
     }
+
+    /**
+     * @brief Sets the logger to enable or disable printing.
+     *
+     * When printing is enabled, error messages will be printed to the output stream.
+     *
+     * @param enabled True to enable printing, false to disable printing.
+     */
+    void set_printing_enabled(bool enabled) {
+        printing_enabled = enabled;
+    }
+
+    /**
+     * @brief Resets the logger to its default state.
+     *
+     * The output stream is reset to std::cerr, the list of errors is cleared, and printing is enabled.
+     */
+    void reset();
 
     /**
      * @brief Logs an error message with a location.
