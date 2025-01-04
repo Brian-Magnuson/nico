@@ -1,5 +1,8 @@
 #include "lexer.h"
 
+#include <cstdlib>
+#include <iostream>
+
 #include "../logger/error_code.h"
 #include "../logger/logger.h"
 
@@ -30,6 +33,30 @@ bool Lexer::match(char expected) {
         return false;
     current++;
     return true;
+}
+
+bool Lexer::is_digit(char c, int base = 10) const {
+    switch (base) {
+    case 2:
+        return c == '0' || c == '1';
+    case 8:
+        return c >= '0' && c <= '7';
+    case 10:
+        return c >= '0' && c <= '9';
+    case 16:
+        return (c >= '0' && c <= '9') ||
+               (c >= 'a' && c <= 'f') ||
+               (c >= 'A' && c <= 'F');
+    default:
+        std::cerr << "Lexer::is_digit: Invalid base: " << base << std::endl;
+        std::abort();
+    }
+}
+
+bool Lexer::is_alpha(char c) const {
+    return (c >= 'a' && c <= 'z') ||
+           (c >= 'A' && c <= 'Z') ||
+           c == '_';
 }
 
 void Lexer::scan_token() {
