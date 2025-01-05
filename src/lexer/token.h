@@ -146,23 +146,15 @@ public:
     Tok tok_type;
     // The location of this token.
     const Location location;
+    // A string view of the lexeme of this token.
+    const std::string_view lexeme;
 
     /**
      * @brief Constructs a new Token object.
      * @param tok_type The type of the token.
      * @param location The location of the token.
      */
-    Token(Tok tok_type, const Location& location)
-        : tok_type(tok_type), location(location) {}
-
-    /**
-     * @brief Gets the lexeme of the token.
-     *
-     * The lexeme is retrieved from the source code using the location of the token.
-     *
-     * @return A string view of the lexeme.
-     */
-    std::string_view get_lexeme() const;
+    Token(Tok tok_type, const Location& location);
 };
 
 #endif // NICO_TOKEN_H

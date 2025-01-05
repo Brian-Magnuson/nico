@@ -1,5 +1,8 @@
 #include "token.h"
 
-std::string_view Token::get_lexeme() const {
-    return std::string_view(location.file->src_code).substr(location.start, location.length);
-}
+Token::Token(Tok tok_type, const Location& location)
+    : tok_type(tok_type),
+      location(location),
+      lexeme(
+          std::string_view(location.file->src_code).substr(location.start, location.length)
+      ) {}

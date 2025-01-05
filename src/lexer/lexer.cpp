@@ -42,7 +42,7 @@ bool Lexer::match(char expected) {
     return true;
 }
 
-bool Lexer::is_digit(char c, int base = 10) const {
+bool Lexer::is_digit(char c, int base) const {
     switch (base) {
     case 2:
         return c == '0' || c == '1';
@@ -75,7 +75,7 @@ void Lexer::identifier() {
         advance();
     }
     auto token = make_token(Tok::Ident);
-    std::string_view text = token->get_lexeme();
+    std::string_view text = token->lexeme;
 
     if (text == "true" || text == "false") {
         token->tok_type = Tok::Bool;
