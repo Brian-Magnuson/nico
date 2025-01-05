@@ -2,6 +2,7 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <string>
 
 #include "../logger/error_code.h"
 #include "../logger/logger.h"
@@ -17,6 +18,12 @@ std::shared_ptr<Token> Lexer::make_token(Tok tok_type) const {
 
 void Lexer::add_token(Tok tok_type) {
     tokens.push_back(make_token(tok_type));
+}
+
+char Lexer::peek() const {
+    if (is_at_end())
+        return '\0';
+    return file->src_code[current];
 }
 
 char Lexer::advance() {
@@ -57,6 +64,26 @@ bool Lexer::is_alpha(char c) const {
     return (c >= 'a' && c <= 'z') ||
            (c >= 'A' && c <= 'Z') ||
            c == '_';
+}
+
+bool Lexer::is_alpha_numeric(char c) const {
+    return is_alpha(c) || is_digit(c);
+}
+
+void Lexer::identifier() {
+    while (is_alpha_numeric(peek())) {
+        advance();
+    }
+    auto token = make_token(Tok::Ident);
+    std::string_view text = token->get_lexeme();
+
+    if (text == "true" || text == "false") {
+        token->tok_type = Tok::Bool;
+    } else if (text == "NaN" || text == "inf") {
+        token->tok_type = Tok::Float;
+    }
+
+    tokens.push_back(token);
 }
 
 void Lexer::scan_token() {
@@ -146,9 +173,12 @@ void Lexer::scan_token() {
         add_token(Tok::Dot);
         break;
     default:
-        auto token = make_token(Tok::Unknown);
-        Logger::inst().log_error(Err::UnexpectedChar, token->location, "Unexpected character.");
-        break;
+        if (is_alpha(c)) {
+            identifier();
+        } else {
+            auto token = make_token(Tok::Unknown);
+            Logger::inst().log_error(Err::UnexpectedChar, token->location, "Unexpected character.");
+        }
     }
 }
 

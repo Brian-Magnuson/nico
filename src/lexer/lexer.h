@@ -52,6 +52,15 @@ class Lexer {
     void add_token(Tok tok_type);
 
     /**
+     * @brief Peeks at the current character without advancing the lexer.
+     *
+     * If the lexer is at the end of the source code, '\0' will be returned instead.
+     *
+     * @return The current character. '\0' if the lexer is at the end of the source code.
+     */
+    char peek() const;
+
+    /**
      * @brief Advances the lexer by one character, returning the character that was scanned.
      *
      * E.g. if the current character is 'a', calling advance() will advance the lexer to the next character and return 'a'.
@@ -93,6 +102,19 @@ class Lexer {
      * @return True if the character is alphabetic or an underscore. False otherwise.
      */
     bool is_alpha(char c) const;
+
+    /**
+     * @brief Checks if the given character is an alphanumeric character or an underscore.
+     *
+     * Characters include all in the class `[A-Za-z0-9_]`.
+     * Equivalent to `is_alpha(c) || is_digit(c)`.
+     *
+     * @param c The character to check.
+     * @return True if the character is alphanumeric or an underscore. False otherwise.
+     */
+    bool is_alpha_numeric(char c) const;
+
+    void identifier();
 
     /**
      * @brief Scans a token from the source code and adds it to the list of tokens.

@@ -2,6 +2,7 @@
 #define NICO_TOKEN_H
 
 #include <string>
+#include <string_view>
 
 #include "../compiler/code_file.h"
 
@@ -72,6 +73,15 @@ enum class Tok {
     Arrow,
     Colon,
 
+    Ident,
+
+    // Literals
+
+    Int,
+    Float,
+    Bool,
+    String,
+
     // Keywords
 
     KwAnd,
@@ -133,7 +143,7 @@ struct Location {
 class Token {
 public:
     // The type of this token.
-    const Tok tok_type;
+    Tok tok_type;
     // The location of this token.
     const Location location;
 
@@ -150,9 +160,9 @@ public:
      *
      * The lexeme is retrieved from the source code using the location of the token.
      *
-     * @return A string representing the lexeme of the token.
+     * @return A string view of the lexeme.
      */
-    std::string get_lexeme() const;
+    std::string_view get_lexeme() const;
 };
 
 #endif // NICO_TOKEN_H
