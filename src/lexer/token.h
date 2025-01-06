@@ -73,7 +73,7 @@ enum class Tok {
     Arrow,
     Colon,
 
-    Ident,
+    Identifier,
 
     // Literals
 

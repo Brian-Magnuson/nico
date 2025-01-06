@@ -48,7 +48,6 @@ TEST_CASE("Sanity check", "[sanity]") {
 
 TEST_CASE("Lexer single characters", "[lexer]") {
     Lexer lexer;
-    Logger::inst().set_printing_enabled(false);
 
     SECTION("Grouping characters 1") {
         auto file = make_test_code_file("()");
@@ -102,7 +101,6 @@ TEST_CASE("Lexer single characters", "[lexer]") {
 
 TEST_CASE("Lexer short tokens", "[lexer]") {
     Lexer lexer;
-    Logger::inst().set_printing_enabled(false);
 
     SECTION("Arithmetic operators") {
         auto file = make_test_code_file("/+-*%");
@@ -151,6 +149,185 @@ TEST_CASE("Lexer short tokens", "[lexer]") {
             Tok::LtEq,
             Tok::Gt,
             Tok::Lt,
+            Tok::Eof
+        };
+        REQUIRE(tokens.size() == expected.size());
+        for (size_t i = 0; i < tokens.size(); i++) {
+            CHECK(tokens[i]->tok_type == expected[i]);
+        }
+    }
+
+    lexer.reset();
+    Logger::inst().reset();
+}
+
+TEST_CASE("Lexer simple indents", "[lexer]") {
+    Lexer lexer;
+
+    SECTION("Indents 1") {
+        auto file = make_test_code_file(
+            R"(
+a:
+  b
+)"
+        );
+        auto tokens = lexer.scan(file);
+        std::vector<Tok> expected = {
+            Tok::Identifier,
+            Tok::Indent,
+            Tok::Identifier,
+            Tok::Dedent,
+            Tok::Eof
+        };
+        REQUIRE(tokens.size() == expected.size());
+        for (size_t i = 0; i < tokens.size(); i++) {
+            CHECK(tokens[i]->tok_type == expected[i]);
+        }
+    }
+
+    SECTION("Indents 2") {
+        auto file = make_test_code_file(
+            R"(
+a:
+    b
+  c
+)"
+        );
+        auto tokens = lexer.scan(file);
+        std::vector<Tok> expected = {
+            Tok::Identifier,
+            Tok::Indent,
+            Tok::Identifier,
+            Tok::Identifier,
+            Tok::Dedent,
+            Tok::Eof
+        };
+        REQUIRE(tokens.size() == expected.size());
+        for (size_t i = 0; i < tokens.size(); i++) {
+            CHECK(tokens[i]->tok_type == expected[i]);
+        }
+    }
+
+    SECTION("Indents 3") {
+        auto file = make_test_code_file(
+            R"(
+a:
+  b
+c
+)"
+        );
+        auto tokens = lexer.scan(file);
+        std::vector<Tok> expected = {
+            Tok::Identifier,
+            Tok::Indent,
+            Tok::Identifier,
+            Tok::Dedent,
+            Tok::Identifier,
+            Tok::Eof
+        };
+        REQUIRE(tokens.size() == expected.size());
+        for (size_t i = 0; i < tokens.size(); i++) {
+            CHECK(tokens[i]->tok_type == expected[i]);
+        }
+    }
+
+    SECTION("Indents 4") {
+        auto file = make_test_code_file(
+            R"(
+a:
+    b:
+        c
+    d
+e
+)"
+        );
+        auto tokens = lexer.scan(file);
+        std::vector<Tok> expected = {
+            Tok::Identifier,
+            Tok::Indent,
+            Tok::Identifier,
+            Tok::Indent,
+            Tok::Identifier,
+            Tok::Dedent,
+            Tok::Identifier,
+            Tok::Dedent,
+            Tok::Identifier,
+            Tok::Eof
+        };
+        REQUIRE(tokens.size() == expected.size());
+        for (size_t i = 0; i < tokens.size(); i++) {
+            CHECK(tokens[i]->tok_type == expected[i]);
+        }
+    }
+
+    SECTION("Indents 5") {
+        auto file = make_test_code_file(
+            R"(
+a:
+  b
+c
+  d
+)"
+        );
+        auto tokens = lexer.scan(file);
+        std::vector<Tok> expected = {
+            Tok::Identifier,
+            Tok::Indent,
+            Tok::Identifier,
+            Tok::Dedent,
+            Tok::Identifier,
+            Tok::Identifier,
+            Tok::Eof
+        };
+        REQUIRE(tokens.size() == expected.size());
+        for (size_t i = 0; i < tokens.size(); i++) {
+            CHECK(tokens[i]->tok_type == expected[i]);
+        }
+    }
+
+    SECTION("Indents 6") {
+        auto file = make_test_code_file(
+            R"(
+a:
+  b
+
+  d
+)"
+        );
+        auto tokens = lexer.scan(file);
+        std::vector<Tok> expected = {
+            Tok::Identifier,
+            Tok::Indent,
+            Tok::Identifier,
+            Tok::Identifier,
+            Tok::Dedent,
+            Tok::Eof
+        };
+        REQUIRE(tokens.size() == expected.size());
+        for (size_t i = 0; i < tokens.size(); i++) {
+            CHECK(tokens[i]->tok_type == expected[i]);
+        }
+    }
+
+    SECTION("Indents 7") {
+        auto file = make_test_code_file(
+            R"(
+a:
+    b:
+        c
+d
+)"
+        );
+        auto tokens = lexer.scan(file);
+        std::vector<Tok> expected = {
+            Tok::Identifier,
+            Tok::Indent,
+            Tok::Identifier,
+            Tok::Indent,
+            Tok::Identifier,
+            Tok::Dedent,
+            Tok::Dedent,
+            Tok::Identifier,
             Tok::Eof
         };
         REQUIRE(tokens.size() == expected.size());

@@ -40,10 +40,6 @@ bool Lexer::match(char expected) {
     return true;
 }
 
-bool Lexer::is_whitespace(char c) const {
-    return c == ' ' || c == '\t' || c == '\r' || c == '\n';
-}
-
 bool Lexer::is_digit(char c, int base) const {
     switch (base) {
     case 2:
@@ -72,11 +68,86 @@ bool Lexer::is_alpha_numeric(char c) const {
     return is_alpha(c) || is_digit(c);
 }
 
+void Lexer::consume_whitespace() {
+    // Go back to the previous character.
+    current--;
+
+    // Consume all whitespace.
+    unsigned current_spaces = 0;
+    unsigned current_tabs = 0;
+    while (true) {
+        char c = peek();
+        if (c == ' ') {
+            current_spaces++;
+        } else if (c == '\t') {
+            current_tabs++;
+        } else if (c == '\r') {
+            // Ignore.
+        } else if (c == '\n') {
+            line++;
+            current_spaces = 0;
+            current_tabs = 0;
+        } else {
+            break;
+        }
+        advance();
+    }
+
+    // If within grouping tokens...
+    if (!grouping_token_stack.empty()) {
+        // Return early.
+        return;
+    }
+
+    // If user tried to mix spacing...
+    if (current_spaces > 0 && current_tabs > 0) {
+        auto token = make_token(Tok::Unknown);
+        Logger::inst().log_error(Err::MixedLeftSpacing, token->location, "Line contains both tabs and spaces.");
+        return;
+    } else if (
+        (current_spaces && left_spacing_type == '\t') || (current_tabs && left_spacing_type == ' ')
+    ) {
+        auto token = make_token(Tok::Unknown);
+        Logger::inst().log_error(Err::MixedLeftSpacing, token->location, "Left spacing is inconsistent with previous line.");
+        return;
+    }
+
+    // Set spacing_amount to whichever isn't 0.
+    unsigned spacing_amount = current_spaces | current_tabs;
+
+    // Update left_spacing_type.
+    if (spacing_amount == 0) {
+        left_spacing_type = '\0';
+    } else {
+        left_spacing_type = current_spaces ? ' ' : '\t';
+    }
+
+    // Handle indents.
+    if (!tokens.empty() && tokens.back()->tok_type == Tok::Colon) {
+        // Left spacing must be greater than previous indent.
+        if (spacing_amount <= (left_spacing_stack.empty() ? 0 : left_spacing_stack.back())) {
+            Logger::inst().log_error(Err::MalformedIndent, tokens.back()->location, "Attempted to form indent with insufficient left-spacing.");
+            return;
+        }
+        // Change the colon token to an indent token.
+        tokens.back()->tok_type = Tok::Indent;
+        left_spacing_stack.push_back(current_left_spacing);
+    }
+
+    // Handle dedents.
+    while (!left_spacing_stack.empty() && spacing_amount <= left_spacing_stack.back()) {
+        left_spacing_stack.pop_back();
+        add_token(Tok::Dedent);
+    }
+
+    current_left_spacing = spacing_amount;
+}
+
 void Lexer::identifier() {
     while (is_alpha_numeric(peek())) {
         advance();
     }
-    auto token = make_token(Tok::Ident);
+    auto token = make_token(Tok::Identifier);
     std::string_view text = token->lexeme;
 
     if (text == "true" || text == "false") {
@@ -91,6 +162,15 @@ void Lexer::identifier() {
 void Lexer::scan_token() {
     char c = advance();
     switch (c) {
+    case ' ':
+    case '\t':
+    case '\r':
+    case '\n':
+        consume_whitespace();
+        break;
+    case ':':
+        add_token(Tok::Colon);
+        break;
     case '(':
         add_token(Tok::LParen);
         grouping_token_stack.push_back(')');
@@ -113,12 +193,13 @@ void Lexer::scan_token() {
             );
         } else {
             grouping_token_stack.pop_back();
+            tokens.push_back(t);
         }
         break;
     }
     case '}': {
         auto t = make_token(Tok::RBrace);
-        if (grouping_token_stack.empty() || grouping_token_stack.back() != '{') {
+        if (grouping_token_stack.empty() || grouping_token_stack.back() != c) {
             Logger::inst().log_error(
                 Err::InvalidGrouping,
                 t->location,
@@ -126,12 +207,13 @@ void Lexer::scan_token() {
             );
         } else {
             grouping_token_stack.pop_back();
+            tokens.push_back(t);
         }
         break;
     }
     case ']': {
         auto t = make_token(Tok::RSquare);
-        if (grouping_token_stack.empty() || grouping_token_stack.back() != '[') {
+        if (grouping_token_stack.empty() || grouping_token_stack.back() != c) {
             Logger::inst().log_error(
                 Err::InvalidGrouping,
                 t->location,
@@ -139,6 +221,7 @@ void Lexer::scan_token() {
             );
         } else {
             grouping_token_stack.pop_back();
+            tokens.push_back(t);
         }
         break;
     }

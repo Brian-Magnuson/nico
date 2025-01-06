@@ -24,11 +24,9 @@ class Lexer {
 
     std::vector<char> grouping_token_stack = {};
 
-    std::vector<unsigned> left_spacing_stack = {0};
+    std::vector<unsigned> left_spacing_stack = {};
 
     unsigned current_left_spacing = 0;
-
-    bool on_left_spacing = true;
 
     char left_spacing_type = '\0';
 
@@ -101,16 +99,6 @@ class Lexer {
     bool match(char expected);
 
     /**
-     * @brief Checks if the given character is a whitespace character.
-     *
-     * Whitespace characters include ' ', '\t', '\r', and '\n'.
-     *
-     * @param c The character to check.
-     * @return True if the character is a whitespace character. False otherwise.
-     */
-    bool is_whitespace(char c) const;
-
-    /**
      * @brief Checks if the given character is a digit within the bounds of the provided base.
      *
      * If base 16 is used, uppercase (A-F) and lowercase (a-f) letters are both accepted.
@@ -142,6 +130,19 @@ class Lexer {
      * @return True if the character is alphanumeric or an underscore. False otherwise.
      */
     bool is_alpha_numeric(char c) const;
+
+    /**
+     * @brief Consumes whitespace characters, handling indentation.
+     *
+     * The lexer should have advanced at least one character before calling this function.
+     * All whitespace characters will be consumed until a non-whitespace character is found.
+     * If the lexer is within grouping tokens, the function will return here.
+     *
+     * If the lexer encounters mixed spacing, an error will be logged.
+     * If the last token was a colon, the lexer will attempt to change it to an indent token.
+     * If the last token wasn't a colon, the lexer will check if dedent tokens are needed and insert them.
+     */
+    void consume_whitespace();
 
     /**
      * @brief Scans an identifier from the source code and adds it to the list of tokens.
