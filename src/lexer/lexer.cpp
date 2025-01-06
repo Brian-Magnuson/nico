@@ -20,10 +20,8 @@ void Lexer::add_token(Tok tok_type) {
     tokens.push_back(make_token(tok_type));
 }
 
-char Lexer::peek() const {
-    if (is_at_end())
-        return '\0';
-    return file->src_code[current];
+char Lexer::peek(int lookahead) const {
+    return current + lookahead < file->src_code.length() ? file->src_code[current + lookahead] : '\0';
 }
 
 char Lexer::advance() {
@@ -40,6 +38,10 @@ bool Lexer::match(char expected) {
         return false;
     current++;
     return true;
+}
+
+bool Lexer::is_whitespace(char c) const {
+    return c == ' ' || c == '\t' || c == '\r' || c == '\n';
 }
 
 bool Lexer::is_digit(char c, int base) const {
@@ -91,22 +93,55 @@ void Lexer::scan_token() {
     switch (c) {
     case '(':
         add_token(Tok::LParen);
-        break;
-    case ')':
-        add_token(Tok::RParen);
+        grouping_token_stack.push_back(')');
         break;
     case '{':
         add_token(Tok::LBrace);
-        break;
-    case '}':
-        add_token(Tok::RBrace);
+        grouping_token_stack.push_back('}');
         break;
     case '[':
         add_token(Tok::LSquare);
+        grouping_token_stack.push_back(']');
         break;
-    case ']':
-        add_token(Tok::RSquare);
+    case ')': {
+        auto t = make_token(Tok::RParen);
+        if (grouping_token_stack.empty() || grouping_token_stack.back() != c) {
+            Logger::inst().log_error(
+                Err::InvalidGrouping,
+                t->location,
+                "Expected '" + std::string(1, grouping_token_stack.back()) + "' before ')'."
+            );
+        } else {
+            grouping_token_stack.pop_back();
+        }
         break;
+    }
+    case '}': {
+        auto t = make_token(Tok::RBrace);
+        if (grouping_token_stack.empty() || grouping_token_stack.back() != '{') {
+            Logger::inst().log_error(
+                Err::InvalidGrouping,
+                t->location,
+                "Expected '" + std::string(1, grouping_token_stack.back()) + "' before '}'."
+            );
+        } else {
+            grouping_token_stack.pop_back();
+        }
+        break;
+    }
+    case ']': {
+        auto t = make_token(Tok::RSquare);
+        if (grouping_token_stack.empty() || grouping_token_stack.back() != '[') {
+            Logger::inst().log_error(
+                Err::InvalidGrouping,
+                t->location,
+                "Expected '" + std::string(1, grouping_token_stack.back()) + "' before ']'."
+            );
+        } else {
+            grouping_token_stack.pop_back();
+        }
+        break;
+    }
     case ',':
         add_token(Tok::Comma);
         break;

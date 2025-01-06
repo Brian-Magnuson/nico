@@ -22,6 +22,16 @@ class Lexer {
     // The line number of the current token.
     size_t line = 1;
 
+    std::vector<char> grouping_token_stack = {};
+
+    std::vector<unsigned> left_spacing_stack = {0};
+
+    unsigned current_left_spacing = 0;
+
+    bool on_left_spacing = true;
+
+    char left_spacing_type = '\0';
+
     /**
      * @brief Checks if the lexer has reached the end of the source code.
      *
@@ -58,7 +68,16 @@ class Lexer {
      *
      * @return The current character. '\0' if the lexer is at the end of the source code.
      */
-    char peek() const;
+
+    /**
+     * @brief Peeks at the next character, plus lookahead, without advancing the lexer.
+     *
+     * If the lexer is at the end of the source code, '\0' will be returned instead.
+     *
+     * @param lookahead The number of characters to look ahead. Defaults to 0.
+     * @return The character at the current position plus lookahead. '\0' if the current index plus lookahead is at or past the end of the source code.
+     */
+    char peek(int lookahead = 0) const;
 
     /**
      * @brief Advances the lexer by one character, returning the character that was scanned.
@@ -80,6 +99,16 @@ class Lexer {
      * @return True if the current character matches the expected character. False otherwise.
      */
     bool match(char expected);
+
+    /**
+     * @brief Checks if the given character is a whitespace character.
+     *
+     * Whitespace characters include ' ', '\t', '\r', and '\n'.
+     *
+     * @param c The character to check.
+     * @return True if the character is a whitespace character. False otherwise.
+     */
+    bool is_whitespace(char c) const;
 
     /**
      * @brief Checks if the given character is a digit within the bounds of the provided base.
@@ -114,6 +143,13 @@ class Lexer {
      */
     bool is_alpha_numeric(char c) const;
 
+    /**
+     * @brief Scans an identifier from the source code and adds it to the list of tokens.
+     *
+     * If the token's lexeme is "true" or "false", the token type will be set to `Tok::Bool`.
+     * If the token's lexeme is "inf" or "NaN", the token type will be set to `Tok::Float`.
+     * If the token's lexeme is a keyword, the token type will be set to the corresponding keyword.
+     */
     void identifier();
 
     /**
