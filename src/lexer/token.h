@@ -87,6 +87,7 @@ enum class Tok {
     KwAnd,
     KwOr,
     KwNot,
+    KwBlock,
     KwIf,
     KwElse,
     KwElif,

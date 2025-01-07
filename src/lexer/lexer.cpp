@@ -7,6 +7,22 @@
 #include "../logger/error_code.h"
 #include "../logger/logger.h"
 
+std::unordered_map<std::string, Tok> Lexer::keywords = {
+    // Literals
+
+    {"inf", Tok::Float},
+    {"NaN", Tok::Float},
+    {"true", Tok::Bool},
+    {"false", Tok::Bool},
+
+    // Keywords
+
+    {"block", Tok::KwBlock},
+
+    {"let", Tok::KwLet},
+    {"var", Tok::KwVar},
+};
+
 bool Lexer::is_at_end() const {
     return current >= file->src_code.length();
 }
@@ -152,10 +168,9 @@ void Lexer::identifier() {
     auto token = make_token(Tok::Identifier);
     std::string_view text = token->lexeme;
 
-    if (text == "true" || text == "false") {
-        token->tok_type = Tok::Bool;
-    } else if (text == "NaN" || text == "inf") {
-        token->tok_type = Tok::Float;
+    auto it = keywords.find(std::string(text));
+    if (it != keywords.end()) {
+        token->tok_type = it->second;
     }
 
     tokens.push_back(token);

@@ -2,6 +2,7 @@
 #define NICO_LEXER_H
 
 #include <memory>
+#include <unordered_map>
 #include <vector>
 
 #include "../compiler/code_file.h"
@@ -11,6 +12,9 @@
  * @brief A lexer for scanning source code into a list of tokens.
  */
 class Lexer {
+    // A map of keywords to their respective token types.
+    static std::unordered_map<std::string, Tok> keywords;
+
     // The file being scanned.
     std::shared_ptr<CodeFile> file;
     // The tokens scanned from the file.

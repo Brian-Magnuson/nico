@@ -75,7 +75,7 @@ TEST_CASE("Lexer single characters", "[lexer]") {
             Tok::RParen,
             Tok::Eof
         };
-        REQUIRE(extract_token_types(tokens) == expected);
+        CHECK(extract_token_types(tokens) == expected);
     }
 
     SECTION("Grouping characters 2") {
@@ -90,7 +90,7 @@ TEST_CASE("Lexer single characters", "[lexer]") {
             Tok::RBrace,
             Tok::Eof
         };
-        REQUIRE(extract_token_types(tokens) == expected);
+        CHECK(extract_token_types(tokens) == expected);
     }
 
     SECTION("Other single character tokens") {
@@ -101,7 +101,7 @@ TEST_CASE("Lexer single characters", "[lexer]") {
             Tok::Semicolon,
             Tok::Eof
         };
-        REQUIRE(extract_token_types(tokens) == expected);
+        CHECK(extract_token_types(tokens) == expected);
     }
 
     lexer.reset();
@@ -122,7 +122,7 @@ TEST_CASE("Lexer short tokens", "[lexer]") {
             Tok::Percent,
             Tok::Eof
         };
-        REQUIRE(extract_token_types(tokens) == expected);
+        CHECK(extract_token_types(tokens) == expected);
     }
 
     SECTION("Assignment operators") {
@@ -139,7 +139,7 @@ TEST_CASE("Lexer short tokens", "[lexer]") {
             Tok::CaretEq,
             Tok::Eof
         };
-        REQUIRE(extract_token_types(tokens) == expected);
+        CHECK(extract_token_types(tokens) == expected);
     }
 
     SECTION("Comparison operators") {
@@ -154,7 +154,7 @@ TEST_CASE("Lexer short tokens", "[lexer]") {
             Tok::Lt,
             Tok::Eof
         };
-        REQUIRE(extract_token_types(tokens) == expected);
+        CHECK(extract_token_types(tokens) == expected);
     }
 
     lexer.reset();
@@ -179,7 +179,7 @@ a:
             Tok::Dedent,
             Tok::Eof
         };
-        REQUIRE(extract_token_types(tokens) == expected);
+        CHECK(extract_token_types(tokens) == expected);
     }
 
     SECTION("Indents 2") {
@@ -199,7 +199,7 @@ a:
             Tok::Dedent,
             Tok::Eof
         };
-        REQUIRE(extract_token_types(tokens) == expected);
+        CHECK(extract_token_types(tokens) == expected);
     }
 
     SECTION("Indents 3") {
@@ -219,7 +219,7 @@ c
             Tok::Identifier,
             Tok::Eof
         };
-        REQUIRE(extract_token_types(tokens) == expected);
+        CHECK(extract_token_types(tokens) == expected);
     }
 
     SECTION("Indents 4") {
@@ -245,7 +245,7 @@ e
             Tok::Identifier,
             Tok::Eof
         };
-        REQUIRE(extract_token_types(tokens) == expected);
+        CHECK(extract_token_types(tokens) == expected);
     }
 
     SECTION("Indents 5") {
@@ -267,7 +267,7 @@ c
             Tok::Identifier,
             Tok::Eof
         };
-        REQUIRE(extract_token_types(tokens) == expected);
+        CHECK(extract_token_types(tokens) == expected);
     }
 
     SECTION("Indents 6") {
@@ -288,7 +288,7 @@ a:
             Tok::Dedent,
             Tok::Eof
         };
-        REQUIRE(extract_token_types(tokens) == expected);
+        CHECK(extract_token_types(tokens) == expected);
     }
 
     SECTION("Indents 7") {
@@ -312,7 +312,7 @@ d
             Tok::Identifier,
             Tok::Eof
         };
-        REQUIRE(extract_token_types(tokens) == expected);
+        CHECK(extract_token_types(tokens) == expected);
     }
 
     SECTION("Indents 8") {
@@ -336,7 +336,7 @@ d
             Tok::Identifier,
             Tok::Eof
         };
-        REQUIRE(extract_token_types(tokens) == expected);
+        CHECK(extract_token_types(tokens) == expected);
     }
 
     SECTION("Indents 8") {
@@ -348,7 +348,7 @@ d
             Tok::Identifier,
             Tok::Eof
         };
-        REQUIRE(extract_token_types(tokens) == expected);
+        CHECK(extract_token_types(tokens) == expected);
     }
 
     lexer.reset();
@@ -380,7 +380,7 @@ a:
             Tok::Dedent,
             Tok::Eof
         };
-        REQUIRE(extract_token_types(tokens) == expected);
+        CHECK(extract_token_types(tokens) == expected);
     }
 
     SECTION("Indents and groupings 2") {
@@ -406,7 +406,26 @@ d
             Tok::Identifier,
             Tok::Eof
         };
-        REQUIRE(extract_token_types(tokens) == expected);
+        CHECK(extract_token_types(tokens) == expected);
+    }
+
+    lexer.reset();
+    Logger::inst().reset();
+}
+
+TEST_CASE("Basic keywords", "[lexer]") {
+    Lexer lexer;
+
+    SECTION("Basic keywords 1") {
+        auto file = make_test_code_file("let var x");
+        auto tokens = lexer.scan(file);
+        std::vector<Tok> expected = {
+            Tok::KwLet,
+            Tok::KwVar,
+            Tok::Identifier,
+            Tok::Eof
+        };
+        CHECK(extract_token_types(tokens) == expected);
     }
 
     lexer.reset();
