@@ -75,6 +75,7 @@ void Lexer::consume_whitespace() {
     // Consume all whitespace.
     unsigned current_spaces = 0;
     unsigned current_tabs = 0;
+    bool newline = false;
     while (true) {
         char c = peek();
         if (c == ' ') {
@@ -87,14 +88,15 @@ void Lexer::consume_whitespace() {
             line++;
             current_spaces = 0;
             current_tabs = 0;
+            newline = true;
         } else {
             break;
         }
         advance();
     }
 
-    // If within grouping tokens...
-    if (!grouping_token_stack.empty()) {
+    // If within grouping tokens or not on a newline...
+    if (!grouping_token_stack.empty() || !newline) {
         // Return early.
         return;
     }

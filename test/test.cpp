@@ -339,6 +339,76 @@ d
         REQUIRE(extract_token_types(tokens) == expected);
     }
 
+    SECTION("Indents 8") {
+        auto file = make_test_code_file("a:   b");
+        auto tokens = lexer.scan(file);
+        std::vector<Tok> expected = {
+            Tok::Identifier,
+            Tok::Colon,
+            Tok::Identifier,
+            Tok::Eof
+        };
+        REQUIRE(extract_token_types(tokens) == expected);
+    }
+
+    lexer.reset();
+    Logger::inst().reset();
+}
+
+TEST_CASE("Lexer indents and groupings", "[lexer]") {
+    Lexer lexer;
+
+    SECTION("Indents and groupings 1") {
+        auto file = make_test_code_file(
+            R"(
+a: 
+    [
+        b:
+            c
+]
+)"
+        );
+        auto tokens = lexer.scan(file);
+        std::vector<Tok> expected = {
+            Tok::Identifier,
+            Tok::Indent,
+            Tok::LSquare,
+            Tok::Identifier,
+            Tok::Colon,
+            Tok::Identifier,
+            Tok::RSquare,
+            Tok::Dedent,
+            Tok::Eof
+        };
+        REQUIRE(extract_token_types(tokens) == expected);
+    }
+
+    SECTION("Indents and groupings 2") {
+        auto file = make_test_code_file(
+            R"(
+a: 
+    [
+        b
+]
+    c
+d
+)"
+        );
+        auto tokens = lexer.scan(file);
+        std::vector<Tok> expected = {
+            Tok::Identifier,
+            Tok::Indent,
+            Tok::LSquare,
+            Tok::Identifier,
+            Tok::RSquare,
+            Tok::Identifier,
+            Tok::Dedent,
+            Tok::Identifier,
+            Tok::Eof
+        };
+        REQUIRE(extract_token_types(tokens) == expected);
+    }
+
     lexer.reset();
     Logger::inst().reset();
 }
