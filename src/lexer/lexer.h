@@ -108,12 +108,17 @@ class Lexer {
      *
      * If base 16 is used, uppercase (A-F) and lowercase (a-f) letters are both accepted.
      *
+     * If enabled, underscores may be accepted as digits.
+     * Underscores may be used to separate digits for readability.
+     * However, there are certain cases where a "real" digit is expected, such as the first digit of a number part.
+     *
      * @param c The character to check.
      * @param base The base of the number. Defaults to 10. Should be 2, 8, 10, or 16.
+     * @param allow_underscore Whether or not to accept underscores as digits. Defaults to false.
      * @return True if the character is a digit within the bounds of the base. False otherwise.
      * @warning If an invalid base is provided, the program will abort.
      */
-    bool is_digit(char c, int base = 10) const;
+    bool is_digit(char c, int base = 10, bool allow_underscore = false) const;
 
     /**
      * @brief Checks if the given character is an alphabetic character or an underscore.
@@ -157,6 +162,17 @@ class Lexer {
      * If the token's lexeme is a keyword, the token type will be set to the corresponding keyword.
      */
     void identifier();
+
+    /**
+     * @brief Scans a number from the source code and adds it to the list of tokens.
+     *
+     * This function does not parse the number; it only checks if the number is in a valid format to be parsed.
+     *
+     * Hex, octal, and binary integers must start with their respective prefixes: `0x`, `0o`, and `0b`.
+     * Numbers that begin with a base prefix may not have any dots or exponent parts.
+     * Any number that ends with an `f` (except for base 16) will be added as a float.
+     */
+    void number();
 
     /**
      * @brief Scans a token from the source code and adds it to the list of tokens.

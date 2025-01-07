@@ -1,5 +1,6 @@
 #include "lexer.h"
 
+#include <cstdint>
 #include <cstdlib>
 #include <iostream>
 #include <string>
@@ -44,7 +45,11 @@ char Lexer::advance() {
     if (is_at_end())
         return '\0';
     current++;
-    return file->src_code[current - 1];
+    char c = file->src_code[current - 1];
+    if (c == '\n') {
+        line++;
+    }
+    return c;
 }
 
 bool Lexer::match(char expected) {
@@ -56,7 +61,10 @@ bool Lexer::match(char expected) {
     return true;
 }
 
-bool Lexer::is_digit(char c, int base) const {
+bool Lexer::is_digit(char c, int base, bool allow_underscore) const {
+    if (allow_underscore && c == '_') {
+        return true;
+    }
     switch (base) {
     case 2:
         return c == '0' || c == '1';
@@ -101,7 +109,6 @@ void Lexer::consume_whitespace() {
         } else if (c == '\r') {
             // Ignore.
         } else if (c == '\n') {
-            line++;
             current_spaces = 0;
             current_tabs = 0;
             newline = true;
@@ -176,6 +183,67 @@ void Lexer::identifier() {
     tokens.push_back(token);
 }
 
+void Lexer::number() {
+    uint8_t base = 10;
+    bool has_dot = false;
+    bool has_exp = false;
+
+    if (peek(-1) == '0') {
+        if (peek() == 'b' && is_digit(peek(1), 2)) {
+            base = 2;
+            advance();
+        } else if (peek() == 'o' && is_digit(peek(1), 8)) {
+            base = 8;
+            advance();
+        } else if (peek() == 'x' && is_digit(peek(1), 16)) {
+            base = 16;
+            advance();
+        }
+    }
+
+    while (is_digit(peek(), base, true)) {
+        advance();
+
+        if (peek() == '.') {
+            advance();
+            // A dot can only appear once, before any exponent, only in base 10, and only if the next character is a digit.
+            if (has_dot || has_exp || base != 10 || !is_digit(peek(1))) {
+                Logger::inst().log_error(Err::UnexpectedDotInNumber, make_token(Tok::Unknown)->location, "Unexpected '.' in number.");
+                return;
+            }
+            has_dot = true;
+        }
+
+        if (base != 16 && (peek() == 'e' || peek() == 'E')) {
+            advance();
+            // If the next character is a '+' or '-', advance.
+            if (peek() == '+' || peek() == '-') {
+                advance();
+            }
+            // An exponent can only appear once, only in base 10, and only if the next character is a digit.
+            if (has_exp || base != 10 || !is_digit(peek())) {
+                Logger::inst().log_error(Err::UnexpectedExpInNumber, make_token(Tok::Unknown)->location, "Unexpected exponent in number.");
+                return;
+            }
+            has_exp = true;
+        }
+    }
+
+    // If the number ends in an f, it is a float.
+    if (peek() == 'f') {
+        // Any base is allowed to end in an `f`, even when the number is already considered a float.
+        // The exception is base 16 since `f` is a valid hex digit and is considered part of the number.
+        advance();
+        has_dot = true; // Saving an extra byte.
+    }
+
+    if (has_dot || has_exp) {
+        add_token(Tok::Float);
+    } else {
+        add_token(Tok::Int);
+    }
+}
+
 void Lexer::scan_token() {
     char c = advance();
     switch (c) {
@@ -204,7 +272,7 @@ void Lexer::scan_token() {
         auto t = make_token(Tok::RParen);
         if (grouping_token_stack.empty() || grouping_token_stack.back() != c) {
             Logger::inst().log_error(
-                Err::InvalidGrouping,
+                Err::UnclosedGrouping,
                 t->location,
                 "Expected '" + std::string(1, grouping_token_stack.back()) + "' before ')'."
             );
@@ -218,7 +286,7 @@ void Lexer::scan_token() {
         auto t = make_token(Tok::RBrace);
         if (grouping_token_stack.empty() || grouping_token_stack.back() != c) {
             Logger::inst().log_error(
-                Err::InvalidGrouping,
+                Err::UnclosedGrouping,
                 t->location,
                 "Expected '" + std::string(1, grouping_token_stack.back()) + "' before '}'."
             );
@@ -232,7 +300,7 @@ void Lexer::scan_token() {
         auto t = make_token(Tok::RSquare);
         if (grouping_token_stack.empty() || grouping_token_stack.back() != c) {
             Logger::inst().log_error(
-                Err::InvalidGrouping,
+                Err::UnclosedGrouping,
                 t->location,
                 "Expected '" + std::string(1, grouping_token_stack.back()) + "' before ']'."
             );
@@ -310,6 +378,8 @@ void Lexer::scan_token() {
     default:
         if (is_alpha(c)) {
             identifier();
+        } else if (is_digit(c)) {
+            number();
         } else {
             auto token = make_token(Tok::Unknown);
             Logger::inst().log_error(Err::UnexpectedChar, token->location, "Unexpected character.");

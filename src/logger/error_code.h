@@ -20,11 +20,15 @@ enum class Err {
     // An unexpected character was found in the source code.
     UnexpectedChar,
     // A closing grouping token was found without a matching opening token.
-    InvalidGrouping,
+    UnclosedGrouping,
     // A line was found with left spacing consisting of both tabs and spaces.
     MixedLeftSpacing,
     // An indent was detected with an improper number of spaces.
     MalformedIndent,
+    // An unexpected dot was found in a numeric literal.
+    UnexpectedDotInNumber,
+    // An unexpected exponent was found in a numeric literal.
+    UnexpectedExpInNumber,
 
     // Parser error
     Parser = 3000,
