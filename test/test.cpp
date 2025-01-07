@@ -1,5 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 
+#include <algorithm>
 #include <filesystem>
 #include <memory>
 #include <string>
@@ -24,6 +25,22 @@ std::shared_ptr<CodeFile> make_test_code_file(const char* src_code) {
         std::string(src_code)
     );
     return file;
+}
+
+/**
+ * @brief Creates a vector of token types from a vector of tokens.
+ *
+ * The original vector is not modified.
+ *
+ * @param tokens The vector of tokens to extract token types from.
+ * @return A vector of token types.
+ */
+std::vector<Tok> extract_token_types(const std::vector<std::shared_ptr<Token>>& tokens) {
+    std::vector<Tok> token_types;
+    std::transform(tokens.begin(), tokens.end(), std::back_inserter(token_types), [](const auto& token) {
+        return token->tok_type;
+    });
+    return token_types;
 }
 
 /**
@@ -57,10 +74,7 @@ TEST_CASE("Lexer single characters", "[lexer]") {
             Tok::RParen,
             Tok::Eof
         };
-        REQUIRE(tokens.size() == expected.size());
-        for (size_t i = 0; i < tokens.size(); i++) {
-            CHECK(tokens[i]->tok_type == expected[i]);
-        }
+        REQUIRE(extract_token_types(tokens) == expected);
     }
 
     SECTION("Grouping characters 2") {
@@ -75,10 +89,7 @@ TEST_CASE("Lexer single characters", "[lexer]") {
             Tok::RBrace,
             Tok::Eof
         };
-        REQUIRE(tokens.size() == expected.size());
-        for (size_t i = 0; i < tokens.size(); i++) {
-            CHECK(tokens[i]->tok_type == expected[i]);
-        }
+        REQUIRE(extract_token_types(tokens) == expected);
     }
 
     SECTION("Other single character tokens") {
@@ -89,10 +100,7 @@ TEST_CASE("Lexer single characters", "[lexer]") {
             Tok::Semicolon,
             Tok::Eof
         };
-        REQUIRE(tokens.size() == expected.size());
-        for (size_t i = 0; i < tokens.size(); i++) {
-            CHECK(tokens[i]->tok_type == expected[i]);
-        }
+        REQUIRE(extract_token_types(tokens) == expected);
     }
 
     lexer.reset();
@@ -113,10 +121,7 @@ TEST_CASE("Lexer short tokens", "[lexer]") {
             Tok::Percent,
             Tok::Eof
         };
-        REQUIRE(tokens.size() == expected.size());
-        for (size_t i = 0; i < tokens.size(); i++) {
-            CHECK(tokens[i]->tok_type == expected[i]);
-        }
+        REQUIRE(extract_token_types(tokens) == expected);
     }
 
     SECTION("Assignment operators") {
@@ -133,10 +138,7 @@ TEST_CASE("Lexer short tokens", "[lexer]") {
             Tok::CaretEq,
             Tok::Eof
         };
-        REQUIRE(tokens.size() == expected.size());
-        for (size_t i = 0; i < tokens.size(); i++) {
-            CHECK(tokens[i]->tok_type == expected[i]);
-        }
+        REQUIRE(extract_token_types(tokens) == expected);
     }
 
     SECTION("Comparison operators") {
@@ -151,10 +153,7 @@ TEST_CASE("Lexer short tokens", "[lexer]") {
             Tok::Lt,
             Tok::Eof
         };
-        REQUIRE(tokens.size() == expected.size());
-        for (size_t i = 0; i < tokens.size(); i++) {
-            CHECK(tokens[i]->tok_type == expected[i]);
-        }
+        REQUIRE(extract_token_types(tokens) == expected);
     }
 
     lexer.reset();
@@ -179,10 +178,7 @@ a:
             Tok::Dedent,
             Tok::Eof
         };
-        REQUIRE(tokens.size() == expected.size());
-        for (size_t i = 0; i < tokens.size(); i++) {
-            CHECK(tokens[i]->tok_type == expected[i]);
-        }
+        REQUIRE(extract_token_types(tokens) == expected);
     }
 
     SECTION("Indents 2") {
@@ -202,10 +198,7 @@ a:
             Tok::Dedent,
             Tok::Eof
         };
-        REQUIRE(tokens.size() == expected.size());
-        for (size_t i = 0; i < tokens.size(); i++) {
-            CHECK(tokens[i]->tok_type == expected[i]);
-        }
+        REQUIRE(extract_token_types(tokens) == expected);
     }
 
     SECTION("Indents 3") {
@@ -225,10 +218,7 @@ c
             Tok::Identifier,
             Tok::Eof
         };
-        REQUIRE(tokens.size() == expected.size());
-        for (size_t i = 0; i < tokens.size(); i++) {
-            CHECK(tokens[i]->tok_type == expected[i]);
-        }
+        REQUIRE(extract_token_types(tokens) == expected);
     }
 
     SECTION("Indents 4") {
@@ -254,10 +244,7 @@ e
             Tok::Identifier,
             Tok::Eof
         };
-        REQUIRE(tokens.size() == expected.size());
-        for (size_t i = 0; i < tokens.size(); i++) {
-            CHECK(tokens[i]->tok_type == expected[i]);
-        }
+        REQUIRE(extract_token_types(tokens) == expected);
     }
 
     SECTION("Indents 5") {
@@ -279,10 +266,7 @@ c
             Tok::Identifier,
             Tok::Eof
         };
-        REQUIRE(tokens.size() == expected.size());
-        for (size_t i = 0; i < tokens.size(); i++) {
-            CHECK(tokens[i]->tok_type == expected[i]);
-        }
+        REQUIRE(extract_token_types(tokens) == expected);
     }
 
     SECTION("Indents 6") {
@@ -303,10 +287,7 @@ a:
             Tok::Dedent,
             Tok::Eof
         };
-        REQUIRE(tokens.size() == expected.size());
-        for (size_t i = 0; i < tokens.size(); i++) {
-            CHECK(tokens[i]->tok_type == expected[i]);
-        }
+        REQUIRE(extract_token_types(tokens) == expected);
     }
 
     SECTION("Indents 7") {
@@ -330,10 +311,7 @@ d
             Tok::Identifier,
             Tok::Eof
         };
-        REQUIRE(tokens.size() == expected.size());
-        for (size_t i = 0; i < tokens.size(); i++) {
-            CHECK(tokens[i]->tok_type == expected[i]);
-        }
+        REQUIRE(extract_token_types(tokens) == expected);
     }
 
     lexer.reset();

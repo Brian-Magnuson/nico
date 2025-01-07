@@ -21,13 +21,13 @@ class Lexer {
     size_t current = 0;
     // The line number of the current token.
     size_t line = 1;
-
+    // A stack for tracking open grouping tokens.
     std::vector<char> grouping_token_stack = {};
-
+    // A stack for tracking left-spacing indentation levels.
     std::vector<unsigned> left_spacing_stack = {};
-
+    // The current left spacing.
     unsigned current_left_spacing = 0;
-
+    // The type of left spacing.
     char left_spacing_type = '\0';
 
     /**
