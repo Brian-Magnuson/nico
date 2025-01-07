@@ -2,6 +2,7 @@
 #define NICO_LEXER_H
 
 #include <memory>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -13,7 +14,7 @@
  */
 class Lexer {
     // A map of keywords to their respective token types.
-    static std::unordered_map<std::string, Tok> keywords;
+    static std::unordered_map<std::string_view, Tok> keywords;
 
     // The file being scanned.
     std::shared_ptr<CodeFile> file;

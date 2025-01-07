@@ -7,7 +7,7 @@
 #include "../logger/error_code.h"
 #include "../logger/logger.h"
 
-std::unordered_map<std::string, Tok> Lexer::keywords = {
+std::unordered_map<std::string_view, Tok> Lexer::keywords = {
     // Literals
 
     {"inf", Tok::Float},
@@ -168,7 +168,7 @@ void Lexer::identifier() {
     auto token = make_token(Tok::Identifier);
     std::string_view text = token->lexeme;
 
-    auto it = keywords.find(std::string(text));
+    auto it = keywords.find(text);
     if (it != keywords.end()) {
         token->tok_type = it->second;
     }
