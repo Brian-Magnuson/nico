@@ -29,22 +29,6 @@ std::shared_ptr<CodeFile> make_test_code_file(const char* src_code) {
 }
 
 /**
- * @brief Creates a vector of token types from a vector of tokens.
- *
- * The original vector is not modified.
- *
- * @param tokens The vector of tokens to extract token types from.
- * @return A vector of token types.
- */
-std::vector<Tok> extract_token_types(const std::vector<std::shared_ptr<Token>>& tokens) {
-    std::vector<Tok> token_types;
-    std::transform(tokens.begin(), tokens.end(), std::back_inserter(token_types), [](const auto& token) {
-        return token->tok_type;
-    });
-    return token_types;
-}
-
-/**
  * @brief Creates a test code file with the provided source code.
  *
  * The test code file path is set to CWD with the name "test.nico".
@@ -58,6 +42,22 @@ std::shared_ptr<CodeFile> make_test_code_file(std::string&& src_code) {
         std::move(src_code)
     );
     return file;
+}
+
+/**
+ * @brief Creates a vector of token types from a vector of tokens.
+ *
+ * The original vector is not modified.
+ *
+ * @param tokens The vector of tokens to extract token types from.
+ * @return A vector of token types.
+ */
+std::vector<Tok> extract_token_types(const std::vector<std::shared_ptr<Token>>& tokens) {
+    std::vector<Tok> token_types;
+    std::transform(tokens.begin(), tokens.end(), std::back_inserter(token_types), [](const auto& token) {
+        return token->tok_type;
+    });
+    return token_types;
 }
 
 TEST_CASE("Sanity check", "[sanity]") {
@@ -297,6 +297,30 @@ a:
 a:
     b:
         c
+d
+)"
+        );
+        auto tokens = lexer.scan(file);
+        std::vector<Tok> expected = {
+            Tok::Identifier,
+            Tok::Indent,
+            Tok::Identifier,
+            Tok::Indent,
+            Tok::Identifier,
+            Tok::Dedent,
+            Tok::Dedent,
+            Tok::Identifier,
+            Tok::Eof
+        };
+        REQUIRE(extract_token_types(tokens) == expected);
+    }
+
+    SECTION("Indents 8") {
+        auto file = make_test_code_file(
+            R"(
+    a:
+        b:
+            c
 d
 )"
         );
