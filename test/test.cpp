@@ -431,3 +431,58 @@ TEST_CASE("Basic keywords", "[lexer]") {
     lexer.reset();
     Logger::inst().reset();
 }
+
+TEST_CASE("Numbers", "[lexer]") {
+    Lexer lexer;
+
+    SECTION("Numbers 1") {
+        auto file = make_test_code_file("123 123f");
+        auto tokens = lexer.scan(file);
+        std::vector<Tok> expected = {
+            Tok::Int,
+            Tok::Float,
+            Tok::Eof
+        };
+        CHECK(extract_token_types(tokens) == expected);
+    }
+
+    SECTION("Numbers 2") {
+        auto file = make_test_code_file("0x1A 0o17 0b101");
+        auto tokens = lexer.scan(file);
+        std::vector<Tok> expected = {
+            Tok::Int,
+            Tok::Int,
+            Tok::Int,
+            Tok::Eof
+        };
+        CHECK(extract_token_types(tokens) == expected);
+    }
+
+    SECTION("Numbers 3") {
+        auto file = make_test_code_file("1.23 1.23f");
+        auto tokens = lexer.scan(file);
+        std::vector<Tok> expected = {
+            Tok::Float,
+            Tok::Float,
+            Tok::Eof
+        };
+        CHECK(extract_token_types(tokens) == expected);
+    }
+
+    SECTION("Numbers 4") {
+        auto file = make_test_code_file("1.23e10 1.23e-10 1.23E10 1.23E-10 123E+10");
+        auto tokens = lexer.scan(file);
+        std::vector<Tok> expected = {
+            Tok::Float,
+            Tok::Float,
+            Tok::Float,
+            Tok::Float,
+            Tok::Float,
+            Tok::Eof
+        };
+        CHECK(extract_token_types(tokens) == expected);
+    }
+
+    lexer.reset();
+    Logger::inst().reset();
+}

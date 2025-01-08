@@ -104,6 +104,17 @@ class Lexer {
     bool match(char expected);
 
     /**
+     * @brief Checks if the given character is a whitespace character.
+     *
+     * Only spaces, horizontal tabs, carriage returns, and newlines are considered whitespace.
+     * Null characters are not considered whitespace.
+     *
+     * @param c The character to check.
+     * @return True if the character is a whitespace character. False otherwise.
+     */
+    bool is_whitespace(char c) const;
+
+    /**
      * @brief Checks if the given character is a digit within the bounds of the provided base.
      *
      * If base 16 is used, uppercase (A-F) and lowercase (a-f) letters are both accepted.

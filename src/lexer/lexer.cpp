@@ -61,6 +61,10 @@ bool Lexer::match(char expected) {
     return true;
 }
 
+bool Lexer::is_whitespace(char c) const {
+    return c == ' ' || c == '\t' || c == '\r' || c == '\n';
+}
+
 bool Lexer::is_digit(char c, int base, bool allow_underscore) const {
     if (allow_underscore && c == '_') {
         return true;
@@ -184,11 +188,13 @@ void Lexer::identifier() {
 }
 
 void Lexer::number() {
+    current--;
     uint8_t base = 10;
     bool has_dot = false;
     bool has_exp = false;
 
-    if (peek(-1) == '0') {
+    if (peek() == '0') {
+        advance();
         if (peek() == 'b' && is_digit(peek(1), 2)) {
             base = 2;
             advance();
@@ -241,6 +247,11 @@ void Lexer::number() {
         add_token(Tok::Float);
     } else {
         add_token(Tok::Int);
+    }
+
+    // Numbers cannot be followed by alphanumeric characters.
+    if (is_alpha_numeric(peek())) {
+        Logger::inst().log_error(Err::InvalidCharAfterNumber, make_token(Tok::Unknown)->location, "Number cannot be followed by an alphanumeric character.");
     }
 }
 

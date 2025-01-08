@@ -29,6 +29,8 @@ enum class Err {
     UnexpectedDotInNumber,
     // An unexpected exponent was found in a numeric literal.
     UnexpectedExpInNumber,
+    // A number token is followed by an alphanumeric character.
+    InvalidCharAfterNumber,
 
     // Parser error
     Parser = 3000,
