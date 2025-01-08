@@ -100,6 +100,14 @@ public:
      * @param message The message to log with the error.
      */
     void log_error(Err ec, const Location& location, const std::string& message);
+
+    /**
+     * @brief Gets the errors that have been logged.
+     * @return A read-only reference to the list of errors that have been logged.
+     */
+    const std::vector<Err>& get_errors() const {
+        return errors;
+    }
 };
 
 #endif // NICO_LOGGER_H

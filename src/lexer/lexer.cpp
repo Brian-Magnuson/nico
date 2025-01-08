@@ -46,9 +46,6 @@ char Lexer::advance() {
         return '\0';
     current++;
     char c = file->src_code[current - 1];
-    if (c == '\n') {
-        line++;
-    }
     return c;
 }
 
@@ -100,10 +97,11 @@ void Lexer::consume_whitespace() {
     // Go back to the previous character.
     current--;
 
-    // Consume all whitespace.
     unsigned current_spaces = 0;
     unsigned current_tabs = 0;
-    bool newline = false;
+    bool newline = current == 0;
+
+    // Consume all whitespace.
     while (true) {
         char c = peek();
         if (c == ' ') {
@@ -116,6 +114,8 @@ void Lexer::consume_whitespace() {
             current_spaces = 0;
             current_tabs = 0;
             newline = true;
+            line++;
+            start = current + 1;
         } else {
             break;
         }
@@ -133,11 +133,21 @@ void Lexer::consume_whitespace() {
         auto token = make_token(Tok::Unknown);
         Logger::inst().log_error(Err::MixedLeftSpacing, token->location, "Line contains both tabs and spaces.");
         return;
-    } else if (
-        (current_spaces && left_spacing_type == '\t') || (current_tabs && left_spacing_type == ' ')
-    ) {
+    } else if (current_spaces && left_spacing_type == '\t') {
         auto token = make_token(Tok::Unknown);
-        Logger::inst().log_error(Err::MixedLeftSpacing, token->location, "Left spacing is inconsistent with previous line.");
+        Logger::inst().log_error(
+            Err::InconsistentLeftSpacing,
+            token->location,
+            "Left spacing uses spaces when previous lines used tabs."
+        );
+        return;
+    } else if (current_tabs && left_spacing_type == ' ') {
+        auto token = make_token(Tok::Unknown);
+        Logger::inst().log_error(
+            Err::InconsistentLeftSpacing,
+            token->location,
+            "Left spacing uses tabs when previous lines used spaces."
+        );
         return;
     }
 
@@ -154,8 +164,12 @@ void Lexer::consume_whitespace() {
     // Handle indents.
     if (!tokens.empty() && tokens.back()->tok_type == Tok::Colon) {
         // Left spacing must be greater than previous indent.
-        if (spacing_amount <= (left_spacing_stack.empty() ? 0 : left_spacing_stack.back())) {
-            Logger::inst().log_error(Err::MalformedIndent, tokens.back()->location, "Attempted to form indent with insufficient left-spacing.");
+        if (spacing_amount <= current_left_spacing) {
+            Logger::inst().log_error(
+                Err::MalformedIndent,
+                make_token(Tok::Unknown)->location,
+                "Expected indent with left-spacing of at least " + std::to_string(current_left_spacing + 1) + "."
+            );
             return;
         }
         // Change the colon token to an indent token.
@@ -414,6 +428,16 @@ std::vector<std::shared_ptr<Token>> Lexer::scan(const std::shared_ptr<CodeFile>&
         scan_token();
     }
 
-    add_token(Tok::Eof);
+    auto eof_token = make_token(Tok::Eof);
+
+    if (!grouping_token_stack.empty()) {
+        Logger::inst().log_error(
+            Err::UnclosedGrouping,
+            eof_token->location,
+            "Expected '" + std::string(1, grouping_token_stack.back()) + "' before end of file."
+        );
+    }
+    tokens.push_back(eof_token);
+
     return tokens;
 }

@@ -64,6 +64,8 @@ TEST_CASE("Sanity check", "[sanity]") {
     REQUIRE(1 == 1);
 }
 
+// MARK: Lexer tests
+
 TEST_CASE("Lexer single characters", "[lexer]") {
     Lexer lexer;
 
@@ -413,7 +415,7 @@ d
     Logger::inst().reset();
 }
 
-TEST_CASE("Basic keywords", "[lexer]") {
+TEST_CASE("Lexer basic keywords", "[lexer]") {
     Lexer lexer;
 
     SECTION("Basic keywords 1") {
@@ -432,7 +434,7 @@ TEST_CASE("Basic keywords", "[lexer]") {
     Logger::inst().reset();
 }
 
-TEST_CASE("Numbers", "[lexer]") {
+TEST_CASE("Lexer numbers", "[lexer]") {
     Lexer lexer;
 
     SECTION("Numbers 1") {
@@ -481,6 +483,78 @@ TEST_CASE("Numbers", "[lexer]") {
             Tok::Eof
         };
         CHECK(extract_token_types(tokens) == expected);
+    }
+
+    lexer.reset();
+    Logger::inst().reset();
+}
+
+// MARK: Error tests
+
+TEST_CASE("Lexer character errors", "[lexer]") {
+    Lexer lexer;
+    Logger::inst().set_printing_enabled(false);
+
+    SECTION("Invalid characters") {
+        auto file = make_test_code_file("\v");
+        auto tokens = lexer.scan(file);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::UnexpectedChar);
+    }
+
+    SECTION("Unclosed grouping 1") {
+        auto file = make_test_code_file("(");
+        auto tokens = lexer.scan(file);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::UnclosedGrouping);
+    }
+
+    SECTION("Unclosed grouping 2") {
+        auto file = make_test_code_file("{)");
+        auto tokens = lexer.scan(file);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::UnclosedGrouping);
+    }
+
+    lexer.reset();
+    Logger::inst().reset();
+}
+
+TEST_CASE("Lexer spacing errors", "[lexer]") {
+    Lexer lexer;
+    Logger::inst().set_printing_enabled(false);
+
+    SECTION("Mixed spacing") {
+        auto file = make_test_code_file("\t  abc");
+        auto tokens = lexer.scan(file);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::MixedLeftSpacing);
+    }
+
+    SECTION("Inconsistent left spacing") {
+        auto file = make_test_code_file("\tabc\n  abc");
+        auto tokens = lexer.scan(file);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::InconsistentLeftSpacing);
+    }
+
+    SECTION("Malformed indent") {
+        auto file = make_test_code_file(" a:\n b");
+        auto tokens = lexer.scan(file);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::MalformedIndent);
     }
 
     lexer.reset();

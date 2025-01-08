@@ -23,6 +23,8 @@ enum class Err {
     UnclosedGrouping,
     // A line was found with left spacing consisting of both tabs and spaces.
     MixedLeftSpacing,
+    // A line was found with left spacing that is inconsistent with previous lines.
+    InconsistentLeftSpacing,
     // An indent was detected with an improper number of spaces.
     MalformedIndent,
     // An unexpected dot was found in a numeric literal.
