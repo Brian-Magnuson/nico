@@ -549,7 +549,7 @@ TEST_CASE("Lexer spacing errors", "[lexer]") {
     }
 
     SECTION("Malformed indent") {
-        auto file = make_test_code_file(" a:\n b");
+        auto file = make_test_code_file("  a:\n  b");
         auto tokens = lexer.scan(file);
         auto& errors = Logger::inst().get_errors();
 

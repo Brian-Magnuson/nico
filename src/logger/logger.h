@@ -102,6 +102,27 @@ public:
     void log_error(Err ec, const Location& location, const std::string& message);
 
     /**
+     * @brief Logs a note message with a location.
+     *
+     * If printing is enabled, the note message will be printed to the output stream.
+     * Otherwise, this function does nothing.
+     *
+     * @param location The location of the note in the source code.
+     * @param message The message to log with the note.
+     */
+    void log_note(const Location& location, const std::string& message);
+
+    /**
+     * @brief Logs a note message without a location.
+     *
+     * If printing is enabled, the note message will be printed to the output stream.
+     * Otherwise, this function does nothing.
+     *
+     * @param message The message to log with the note.
+     */
+    void log_note(const std::string& message);
+
+    /**
      * @brief Gets the errors that have been logged.
      * @return A read-only reference to the list of errors that have been logged.
      */

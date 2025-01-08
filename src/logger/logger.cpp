@@ -78,7 +78,7 @@ void Logger::print_code_at_location(const Location& location, Color underline_co
     if (location.length > 1)
         *out << std::string(location.length - 1, '~');
 
-    *out << colorize(Color::Reset) << "\n\n";
+    *out << colorize(Color::Reset) << "\n";
 
     /*
     Example output:
@@ -98,5 +98,18 @@ void Logger::log_error(Err ec, const Location& location, const std::string& mess
     if (printing_enabled) {
         *out << colorize(Color::Red) << "Error " << errors.size() << ": " << colorize(Color::Reset) << (int)ec << " " << message << "\n";
         print_code_at_location(location);
+    }
+}
+
+void Logger::log_note(const Location& location, const std::string& message) {
+    if (printing_enabled) {
+        *out << colorize(Color::Cyan) << "⤷ Note: " << colorize(Color::Reset) << message << "\n  ";
+        print_code_at_location(location, Color::Cyan);
+    }
+}
+
+void Logger::log_note(const std::string& message) {
+    if (printing_enabled) {
+        *out << colorize(Color::Cyan) << "⤷ Note: " << colorize(Color::Reset) << message << "\n";
     }
 }

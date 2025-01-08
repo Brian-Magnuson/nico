@@ -167,10 +167,14 @@ void Lexer::consume_whitespace() {
         if (spacing_amount <= current_left_spacing) {
             Logger::inst().log_error(
                 Err::MalformedIndent,
-                make_token(Tok::Unknown)->location,
-                "Expected indent with left-spacing of at least " + std::to_string(current_left_spacing + 1) + "."
+                tokens.back()->location,
+                "Expected indent with left-spacing greater than " + std::to_string(current_left_spacing) + "."
+
             );
-            return;
+            Logger::inst().log_note(
+                make_token(Tok::Unknown)->location,
+                "Next line only has left-spacing of " + std::to_string(spacing_amount) + "."
+            );
         }
         // Change the colon token to an indent token.
         tokens.back()->tok_type = Tok::Indent;
