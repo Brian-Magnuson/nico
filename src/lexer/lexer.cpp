@@ -231,8 +231,11 @@ void Lexer::numeric_literal() {
         if (peek() == '.') {
             advance();
             // A dot can only appear once, before any exponent, only in base 10, and only if the next character is a digit.
-            if (has_dot || has_exp || base != 10 || !is_digit(peek(1))) {
+            if (has_dot || has_exp || base != 10 || !is_digit(peek())) {
+                auto prev_start = start;
+                start = current - 1;
                 Logger::inst().log_error(Err::UnexpectedDotInNumber, make_token(Tok::Unknown)->location, "Unexpected '.' in number.");
+                start = prev_start;
                 return;
             }
             has_dot = true;
@@ -246,7 +249,10 @@ void Lexer::numeric_literal() {
             }
             // An exponent can only appear once, only in base 10, and only if the next character is a digit.
             if (has_exp || base != 10 || !is_digit(peek())) {
+                auto prev_start = start;
+                start = current - 1;
                 Logger::inst().log_error(Err::UnexpectedExpInNumber, make_token(Tok::Unknown)->location, "Unexpected exponent in number.");
+                start = prev_start;
                 return;
             }
             has_exp = true;
@@ -269,7 +275,11 @@ void Lexer::numeric_literal() {
 
     // Numbers cannot be followed by alphanumeric characters.
     if (is_alpha_numeric(peek())) {
+        auto prev_start = start;
+        start = current;
         Logger::inst().log_error(Err::InvalidCharAfterNumber, make_token(Tok::Unknown)->location, "Number cannot be followed by an alphanumeric character.");
+        Logger::inst().log_note("Consider adding a space here.");
+        start = prev_start;
     }
 }
 

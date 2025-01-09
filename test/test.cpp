@@ -489,6 +489,44 @@ TEST_CASE("Lexer numbers", "[lexer]") {
     Logger::inst().reset();
 }
 
+TEST_CASE("Lexer str literals", "[lexer]") {
+    Lexer lexer;
+
+    SECTION("String literals 1") {
+        auto file = make_test_code_file(R"("abc")");
+        auto tokens = lexer.scan(file);
+        std::vector<Tok> expected = {
+            Tok::Str,
+            Tok::Eof
+        };
+        CHECK(extract_token_types(tokens) == expected);
+    }
+
+    SECTION("String literals 2") {
+        auto file = make_test_code_file(R"("abc" "def")");
+        auto tokens = lexer.scan(file);
+        std::vector<Tok> expected = {
+            Tok::Str,
+            Tok::Str,
+            Tok::Eof
+        };
+        CHECK(extract_token_types(tokens) == expected);
+    }
+
+    SECTION("String literal esc sequences") {
+        auto file = make_test_code_file(R"("\n\t\r\\\"")");
+        auto tokens = lexer.scan(file);
+        std::vector<Tok> expected = {
+            Tok::Str,
+            Tok::Eof
+        };
+        CHECK(extract_token_types(tokens) == expected);
+    }
+
+    lexer.reset();
+    Logger::inst().reset();
+}
+
 // MARK: Error tests
 
 TEST_CASE("Lexer character errors", "[lexer]") {
@@ -555,6 +593,85 @@ TEST_CASE("Lexer spacing errors", "[lexer]") {
 
         REQUIRE(errors.size() >= 1);
         CHECK(errors.at(0) == Err::MalformedIndent);
+    }
+
+    lexer.reset();
+    Logger::inst().reset();
+}
+
+TEST_CASE("Lexer number scanning errors", "[lexer]") {
+    Lexer lexer;
+    Logger::inst().set_printing_enabled(false);
+
+    SECTION("Unexpected dot in number") {
+        auto file = make_test_code_file("1.2.3");
+        auto tokens = lexer.scan(file);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::UnexpectedDotInNumber);
+    }
+
+    SECTION("Unexpected exponent in number") {
+        auto file = make_test_code_file("1.2e");
+        auto tokens = lexer.scan(file);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::UnexpectedExpInNumber);
+    }
+
+    SECTION("Invalid character after number") {
+        auto file = make_test_code_file("123abc");
+        auto tokens = lexer.scan(file);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::InvalidCharAfterNumber);
+    }
+
+    SECTION("Dot in hex number") {
+        auto file = make_test_code_file("0x1.2");
+        auto tokens = lexer.scan(file);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::UnexpectedDotInNumber);
+    }
+
+    SECTION("Dot in exp part") {
+        auto file = make_test_code_file("1.2e1.2");
+        auto tokens = lexer.scan(file);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::UnexpectedDotInNumber);
+    }
+
+    lexer.reset();
+    Logger::inst().reset();
+}
+
+TEST_CASE("Lexer str scanning errors", "[lexer]") {
+    Lexer lexer;
+    Logger::inst().set_printing_enabled(false);
+
+    SECTION("Unterminated string") {
+        auto file = make_test_code_file(R"("abc)");
+        auto tokens = lexer.scan(file);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::UnterminatedStr);
+    }
+
+    SECTION("Invalid escape sequence") {
+        auto file = make_test_code_file(R"("\a")");
+        auto tokens = lexer.scan(file);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::InvalidEscSeq);
     }
 
     lexer.reset();
