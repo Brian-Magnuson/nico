@@ -205,7 +205,7 @@ void Lexer::identifier() {
     tokens.push_back(token);
 }
 
-void Lexer::number() {
+void Lexer::numeric_literal() {
     current--;
     uint8_t base = 10;
     bool has_dot = false;
@@ -271,6 +271,53 @@ void Lexer::number() {
     if (is_alpha_numeric(peek())) {
         Logger::inst().log_error(Err::InvalidCharAfterNumber, make_token(Tok::Unknown)->location, "Number cannot be followed by an alphanumeric character.");
     }
+}
+
+void Lexer::str_literal() {
+    while (peek() != '"' && !is_at_end()) {
+        // A normal str literal cannot span multiple lines
+        if (peek() == '\n') {
+            Logger::inst().log_error(Err::UnterminatedStr, make_token(Tok::Unknown)->location, "Unterminated string.");
+            add_token(Tok::Str);
+            return;
+        }
+
+        // Handle escape sequences.
+        if (peek() == '\\') {
+            advance();
+            switch (peek()) {
+            case 'n':
+            case 'r':
+            case 't':
+            case 'b':
+            case 'f':
+            case '0':
+            case '\\':
+            case '"':
+            case '\'':
+            case '%':
+            case '{':
+                advance();
+                break;
+            default: {
+                auto prev_start = start;
+                start = current - 1;
+                Logger::inst().log_error(Err::InvalidEscSeq, make_token(Tok::Unknown)->location, "Invalid escape sequence.");
+                start = prev_start;
+            }
+            }
+        }
+        advance();
+    }
+
+    if (is_at_end()) {
+        Logger::inst().log_error(Err::UnterminatedStr, make_token(Tok::Unknown)->location, "Unterminated string.");
+        return;
+    }
+
+    advance(); // Consume the closing quote.
+
+    add_token(Tok::Str);
 }
 
 void Lexer::scan_token() {
@@ -404,11 +451,14 @@ void Lexer::scan_token() {
     case '.':
         add_token(Tok::Dot);
         break;
+    case '"':
+        str_literal();
+        break;
     default:
         if (is_alpha(c)) {
             identifier();
         } else if (is_digit(c)) {
-            number();
+            numeric_literal();
         } else {
             auto token = make_token(Tok::Unknown);
             Logger::inst().log_error(Err::UnexpectedChar, token->location, "Unexpected character.");

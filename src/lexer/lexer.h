@@ -183,7 +183,18 @@ class Lexer {
      * Numbers that begin with a base prefix may not have any dots or exponent parts.
      * Any number that ends with an `f` (except for base 16) will be added as a float.
      */
-    void number();
+    void numeric_literal();
+
+    /**
+     * @brief Scans an str literal from the source code and adds it to the list of tokens.
+     *
+     * Should be called after the first double quote is scanned.
+     *
+     * Single-line strings may span multiple lines.
+     *
+     * If a backslash is found, it must be followed by a character for a valid escape sequence.
+     */
+    void str_literal();
 
     /**
      * @brief Scans a token from the source code and adds it to the list of tokens.

@@ -33,6 +33,10 @@ enum class Err {
     UnexpectedExpInNumber,
     // A number token is followed by an alphanumeric character.
     InvalidCharAfterNumber,
+    // A string literal was not closed at the end of the line or file.
+    UnterminatedStr,
+    // An escape sequence was found that is not valid.
+    InvalidEscSeq,
 
     // Parser error
     Parser = 3000,

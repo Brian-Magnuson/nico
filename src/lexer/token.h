@@ -80,7 +80,7 @@ enum class Tok {
     Int,
     Float,
     Bool,
-    String,
+    Str,
 
     // Keywords
 
