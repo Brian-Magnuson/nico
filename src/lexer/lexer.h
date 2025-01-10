@@ -197,6 +197,15 @@ class Lexer {
     void str_literal();
 
     /**
+     * @brief Scans a multi-line comment from the source code.
+     *
+     * The lexer should be just after the opening comment token.
+     *
+     * Nested comments are supported.
+     */
+    void multi_line_comment();
+
+    /**
      * @brief Scans a token from the source code and adds it to the list of tokens.
      *
      * The start position of the lexer should be updated before calling this function.

@@ -330,6 +330,40 @@ void Lexer::str_literal() {
     add_token(Tok::Str);
 }
 
+void Lexer::multi_line_comment() {
+    unsigned open_count = 1;
+    auto opening_token = make_token(Tok::SlashStar);
+    while (open_count) {
+        if (is_at_end()) {
+            Logger::inst().log_error(Err::UnclosedComment, opening_token->location, "Unclosed multi-line comment.");
+
+            auto prev_start = start;
+            start = current;
+            std::string msg = "Consider adding `";
+            for (unsigned i = 0; i < open_count; i++)
+                msg += "*/";
+            msg += "` here.";
+            Logger::inst().log_note(make_token(Tok::Unknown)->location, msg);
+            start = prev_start;
+            return;
+        }
+
+        if (peek() == '/' && peek(1) == '*') {
+            open_count++;
+            advance();
+        } else if (peek() == '*' && peek(1) == '/') {
+            open_count--;
+            advance();
+        }
+
+        if (peek() == '\n') {
+            line++;
+        }
+
+        advance();
+    }
+}
+
 void Lexer::scan_token() {
     char c = advance();
     switch (c) {
@@ -417,7 +451,7 @@ void Lexer::scan_token() {
         if (match('='))
             add_token(Tok::StarEq);
         else if (match('/'))
-            add_token(Tok::StarSlash);
+            Logger::inst().log_error(Err::ClosingUnopenedComment, make_token(Tok::Unknown)->location, "Found '*/' without '/*'.");
         else
             add_token(Tok::Star);
         break;
@@ -425,9 +459,12 @@ void Lexer::scan_token() {
         if (match('='))
             add_token(Tok::SlashEq);
         else if (match('/'))
-            add_token(Tok::SlashSlash);
+            // Single-line comment.
+            while (peek() != '\n' && !is_at_end())
+                advance();
         else if (match('*'))
-            add_token(Tok::SlashStar);
+            // Multi-line comment.
+            multi_line_comment();
         else
             add_token(Tok::Slash);
         break;

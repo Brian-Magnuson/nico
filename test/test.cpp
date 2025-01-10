@@ -527,6 +527,36 @@ TEST_CASE("Lexer str literals", "[lexer]") {
     Logger::inst().reset();
 }
 
+TEST_CASE("Lexer comments", "[lexer]") {
+    Lexer lexer;
+
+    SECTION("Single-line comments") {
+        auto file = make_test_code_file(
+            R"(
+a
+// b
+c
+)"
+        );
+
+        auto tokens = lexer.scan(file);
+        std::vector<Tok> expected = {
+            Tok::Identifier,
+            Tok::Identifier,
+            Tok::Eof
+        };
+        CHECK(extract_token_types(tokens) == expected);
+        REQUIRE(tokens.size() == 3);
+        CHECK(tokens.at(0)->lexeme == "a");
+        CHECK(tokens.at(0)->location.line == 2);
+        CHECK(tokens.at(1)->lexeme == "c");
+        CHECK(tokens.at(1)->location.line == 4);
+    }
+
+    lexer.reset();
+    Logger::inst().reset();
+}
+
 // MARK: Error tests
 
 TEST_CASE("Lexer character errors", "[lexer]") {
@@ -672,6 +702,51 @@ TEST_CASE("Lexer str scanning errors", "[lexer]") {
 
         REQUIRE(errors.size() >= 1);
         CHECK(errors.at(0) == Err::InvalidEscSeq);
+    }
+
+    lexer.reset();
+    Logger::inst().reset();
+}
+
+TEST_CASE("Lexer comment scanning errors", "[lexer]") {
+    Lexer lexer;
+    Logger::inst().set_printing_enabled(false);
+
+    SECTION("Unclosed comment 1") {
+        auto file = make_test_code_file("/*");
+        auto tokens = lexer.scan(file);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::UnclosedComment);
+    }
+
+    SECTION("Unclosed comment 2") {
+        auto file = make_test_code_file("/*/*");
+        auto tokens = lexer.scan(file);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::UnclosedComment);
+    }
+
+    SECTION("Unclosed comment 3") {
+        Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file("/*/*/*\ncomment */");
+        auto tokens = lexer.scan(file);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::UnclosedComment);
+    }
+
+    SECTION("Closing unopened comment") {
+        auto file = make_test_code_file("*/");
+        auto tokens = lexer.scan(file);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::ClosingUnopenedComment);
     }
 
     lexer.reset();
