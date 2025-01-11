@@ -553,6 +553,30 @@ c
         CHECK(tokens.at(1)->location.line == 4);
     }
 
+    SECTION("Multi-line comments") {
+        auto file = make_test_code_file(
+            R"(
+a
+/* b
+c
+d */
+e
+)"
+        );
+        auto tokens = lexer.scan(file);
+        std::vector<Tok> expected = {
+            Tok::Identifier,
+            Tok::Identifier,
+            Tok::Eof
+        };
+        CHECK(extract_token_types(tokens) == expected);
+        REQUIRE(tokens.size() == 3);
+        CHECK(tokens.at(0)->lexeme == "a");
+        CHECK(tokens.at(0)->location.line == 2);
+        CHECK(tokens.at(1)->lexeme == "e");
+        CHECK(tokens.at(1)->location.line == 6);
+    }
+
     lexer.reset();
     Logger::inst().reset();
 }
@@ -731,7 +755,6 @@ TEST_CASE("Lexer comment scanning errors", "[lexer]") {
     }
 
     SECTION("Unclosed comment 3") {
-        Logger::inst().set_printing_enabled(true);
         auto file = make_test_code_file("/*/*/*\ncomment */");
         auto tokens = lexer.scan(file);
         auto& errors = Logger::inst().get_errors();
