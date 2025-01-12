@@ -27,9 +27,11 @@ include(Catch)
 
 # Source files
 set(LEXER_SRC src/lexer/token.cpp src/lexer/lexer.cpp)
+set(PARSER_SRC src/parser/parser.cpp)
 set(LOGGER_SRC src/logger/logger.cpp)
 set(SOURCES
     ${LEXER_SRC}
+    ${PARSER_SRC}
     ${LOGGER_SRC}
 )
 
