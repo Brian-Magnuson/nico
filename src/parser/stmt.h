@@ -14,6 +14,7 @@
 class Stmt {
 public:
     class Expression;
+    class Eof;
 
     virtual ~Stmt() {}
 
@@ -23,6 +24,7 @@ public:
     class Visitor {
     public:
         virtual std::any visit(Expression* stmt) = 0;
+        virtual std::any visit(Eof* stmt) = 0;
     };
 
     /**
@@ -79,6 +81,18 @@ public:
 
     Expression(std::shared_ptr<Expr> expression) : expression(expression) {}
 
+    std::any accept(Visitor* visitor) override {
+        return visitor->visit(this);
+    }
+};
+
+/**
+ * @brief An EOF statement.
+ *
+ * The EOF statement represents the end of the file.
+ */
+class Stmt::Eof : public Stmt {
+public:
     std::any accept(Visitor* visitor) override {
         return visitor->visit(this);
     }

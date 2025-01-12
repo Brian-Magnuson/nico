@@ -520,7 +520,7 @@ void Lexer::reset() {
     current = 0;
 }
 
-std::vector<std::shared_ptr<Token>> Lexer::scan(const std::shared_ptr<CodeFile>& file) {
+std::vector<std::shared_ptr<Token>>& Lexer::scan(const std::shared_ptr<CodeFile>& file) {
     reset();
     this->file = file;
 

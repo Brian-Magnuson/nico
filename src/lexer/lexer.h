@@ -229,7 +229,7 @@ public:
      * @param file The file to scan.
      * @return A vector of tokens scanned from the file.
      */
-    std::vector<std::shared_ptr<Token>> scan(const std::shared_ptr<CodeFile>& file);
+    std::vector<std::shared_ptr<Token>>& scan(const std::shared_ptr<CodeFile>& file);
 };
 
 #endif // NICO_LEXER_H
