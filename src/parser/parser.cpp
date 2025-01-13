@@ -35,9 +35,28 @@ void Parser::synchronize() {
     }
 }
 
-std::optional<std::shared_ptr<Stmt>> Parser::statement() {
+// MARK: Expressions
+
+std::optional<std::shared_ptr<Expr>> Parser::expression() {
     return std::nullopt;
 }
+
+// MARK: Statements
+
+std::optional<std::shared_ptr<Stmt>> Parser::expression_statement() {
+    auto expr = expression();
+    if (!expr) {
+        return std::nullopt;
+    }
+
+    return std::make_shared<Stmt::Expression>(*expr);
+}
+
+std::optional<std::shared_ptr<Stmt>> Parser::statement() {
+    return expression_statement();
+}
+
+// MARK: Interface
 
 void Parser::reset() {
     tokens.clear();

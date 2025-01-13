@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <optional>
+#include <type_traits>
 #include <vector>
 
 #include "../lexer/token.h"
@@ -42,9 +43,45 @@ class Parser {
     const std::shared_ptr<Token>& advance();
 
     /**
+     * @brief Checks if the current token is any of the given types and advances the parser if it is.
+     * @tparam ...Args Must be of type Tok.
+     * @param ...args The token types to check.
+     * @return True if the current token is any of the given types. False otherwise.
+     */
+    template <typename... Args>
+    bool match(const Args&... args) {
+        static_assert(sizeof...(args) > 0, "Parser::match: requires at least one argument");
+        static_assert((std::is_same_v<Args, Tok> && ...), "Parser::match: requires all arguments to be of type Tok");
+
+        if (((peek()->tok_type == args) || ...)) {
+            advance();
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * @brief Consumes tokens until a safe token is reached. Used to recover from errors.
      */
     void synchronize();
+
+    /**
+     * @brief Parses an expression.
+     *
+     * An expression is a construct that evaluates to a value.
+     *
+     * @return A shared pointer to the parsed expression, or nullopt if the expression could not be parsed.
+     */
+    std::optional<std::shared_ptr<Expr>> expression();
+
+    /**
+     * @brief Parses an expression statement.
+     *
+     * An expression statement is a statement that consists of an expression.
+     *
+     * @return A shared pointer to the parsed statement, or nullopt if the statement could not be parsed.
+     */
+    std::optional<std::shared_ptr<Stmt>> expression_statement();
 
     /**
      * @brief Parses a statement.
