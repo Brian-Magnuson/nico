@@ -44,6 +44,8 @@ enum class Err {
 
     // Parser error
     Parser = 3000,
+    // An expression was expected but not found.
+    NotAnExpression,
 
     // Global type check error.
     GlobalType = 4000,

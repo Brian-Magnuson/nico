@@ -1,5 +1,7 @@
 #include "parser.h"
 
+#include "../logger/logger.h"
+
 bool Parser::is_at_end() const {
     return current >= tokens.size();
 }
@@ -37,8 +39,56 @@ void Parser::synchronize() {
 
 // MARK: Expressions
 
-std::optional<std::shared_ptr<Expr>> Parser::expression() {
+std::optional<std::shared_ptr<Expr>> Parser::primary() {
+    if (match(Tok::Int, Tok::Float, Tok::Bool, Tok::Str)) {
+        return std::make_shared<Expr::Literal>(advance());
+    }
+    if (match(Tok::Identifier)) {
+        return std::make_shared<Expr::Identifier>(advance());
+    }
+
+    Logger::inst().log_error(Err::NotAnExpression, peek()->location, "Expected expression.");
     return std::nullopt;
+}
+
+std::optional<std::shared_ptr<Expr>> Parser::postfix() {
+    return primary();
+}
+
+std::optional<std::shared_ptr<Expr>> Parser::unary() {
+    return postfix();
+}
+
+std::optional<std::shared_ptr<Expr>> Parser::factor() {
+    return unary();
+}
+
+std::optional<std::shared_ptr<Expr>> Parser::term() {
+    return factor();
+}
+
+std::optional<std::shared_ptr<Expr>> Parser::comparison() {
+    return term();
+}
+
+std::optional<std::shared_ptr<Expr>> Parser::equality() {
+    return comparison();
+}
+
+std::optional<std::shared_ptr<Expr>> Parser::logical_and() {
+    return equality();
+}
+
+std::optional<std::shared_ptr<Expr>> Parser::logical_or() {
+    return logical_and();
+}
+
+std::optional<std::shared_ptr<Expr>> Parser::assignment() {
+    return logical_or();
+}
+
+std::optional<std::shared_ptr<Expr>> Parser::expression() {
+    return assignment();
 }
 
 // MARK: Statements
@@ -52,7 +102,14 @@ std::optional<std::shared_ptr<Stmt>> Parser::expression_statement() {
     return std::make_shared<Stmt::Expression>(*expr);
 }
 
+std::shared_ptr<Stmt> Parser::eof_statement() {
+    return std::make_shared<Stmt::Eof>();
+}
+
 std::optional<std::shared_ptr<Stmt>> Parser::statement() {
+    if (match(Tok::Eof)) {
+        return eof_statement();
+    }
     return expression_statement();
 }
 

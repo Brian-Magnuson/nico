@@ -65,6 +65,28 @@ class Parser {
      */
     void synchronize();
 
+    // MARK: Expressions
+
+    std::optional<std::shared_ptr<Expr>> primary();
+
+    std::optional<std::shared_ptr<Expr>> postfix();
+
+    std::optional<std::shared_ptr<Expr>> unary();
+
+    std::optional<std::shared_ptr<Expr>> factor();
+
+    std::optional<std::shared_ptr<Expr>> term();
+
+    std::optional<std::shared_ptr<Expr>> comparison();
+
+    std::optional<std::shared_ptr<Expr>> equality();
+
+    std::optional<std::shared_ptr<Expr>> logical_and();
+
+    std::optional<std::shared_ptr<Expr>> logical_or();
+
+    std::optional<std::shared_ptr<Expr>> assignment();
+
     /**
      * @brief Parses an expression.
      *
@@ -74,6 +96,8 @@ class Parser {
      */
     std::optional<std::shared_ptr<Expr>> expression();
 
+    // MARK: Statements
+
     /**
      * @brief Parses an expression statement.
      *
@@ -82,6 +106,15 @@ class Parser {
      * @return A shared pointer to the parsed statement, or nullopt if the statement could not be parsed.
      */
     std::optional<std::shared_ptr<Stmt>> expression_statement();
+
+    /**
+     * @brief Parses an EOF statement.
+     *
+     * An EOF statement represents the end of the file.
+     *
+     * @return A shared pointer to the parsed statement.
+     */
+    std::shared_ptr<Stmt> eof_statement();
 
     /**
      * @brief Parses a statement.
