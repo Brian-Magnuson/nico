@@ -1,5 +1,8 @@
 #include "parser.h"
 
+#include <cstdlib>
+#include <iostream>
+
 #include "../logger/logger.h"
 
 bool Parser::is_at_end() const {
@@ -13,11 +16,18 @@ const std::shared_ptr<Token>& Parser::peek() const {
     return tokens.at(current);
 }
 
+const std::shared_ptr<Token>& Parser::previous() const {
+    if (current == 0) {
+        std::cerr << "Parser::previous: No previous token." << std::endl;
+        std::abort();
+    }
+    return tokens.at(current - 1);
+}
+
 const std::shared_ptr<Token>& Parser::advance() {
     if (!is_at_end()) {
         current++;
     }
-
     return tokens.at(current - 1);
 }
 
@@ -51,10 +61,10 @@ void Parser::synchronize() {
 
 std::optional<std::shared_ptr<Expr>> Parser::primary() {
     if (match({Tok::Int, Tok::Float, Tok::Bool, Tok::Str})) {
-        return std::make_shared<Expr::Literal>(advance());
+        return std::make_shared<Expr::Literal>(previous());
     }
     if (match({Tok::Identifier})) {
-        return std::make_shared<Expr::Identifier>(advance());
+        return std::make_shared<Expr::Identifier>(previous());
     }
 
     Logger::inst().log_error(Err::NotAnExpression, peek()->location, "Expected expression.");

@@ -34,6 +34,13 @@ class Parser {
     const std::shared_ptr<Token>& peek() const;
 
     /**
+     * @brief Peeks at the previous token.
+     * @return A pointer to the previous token.
+     * @warning If there is no previous token, the program will abort.
+     */
+    const std::shared_ptr<Token>& previous() const;
+
+    /**
      * @brief Advances the parser to the next token, returning the token that was consumed.
      *
      * E.g. if the current token is a `let` token, calling advance() will advance the parser to the next token and return the `let` token.
