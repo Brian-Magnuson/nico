@@ -25,9 +25,9 @@ endif()
 
 include(Catch)
 
-# Source files
+# Core files
 set(LEXER_SRC src/lexer/token.cpp src/lexer/lexer.cpp)
-set(PARSER_SRC src/parser/parser.cpp src/parser/ast_printer.cpp)
+set(PARSER_SRC src/parser/parser.cpp)
 set(LOGGER_SRC src/logger/logger.cpp)
 set(CORE_SRC
     ${LEXER_SRC}
@@ -35,16 +35,20 @@ set(CORE_SRC
     ${LOGGER_SRC}
 )
 
+# Main file
 set(MAIN_SRC src/main.cpp)
 
+# Debug files
+set(DEBUG_SRC src/debug/ast_printer.cpp src/debug/test_utils.cpp)
+
 # Test files
-set(TEST_SRC test/test_utils.cpp test/lexer_tests.cpp test/parser_tests.cpp)
+set(TEST_SRC test/lexer_tests.cpp test/parser_tests.cpp)
 
 # Main executable
 add_executable(nico ${MAIN_SRC} ${CORE_SRC})
 
 # Test executable
-add_executable(tests ${TEST_SRC} ${CORE_SRC})
+add_executable(tests ${TEST_SRC} ${CORE_SRC} ${DEBUG_SRC})
 target_link_libraries(tests Catch2::Catch2WithMain ${llvm_libs})
 enable_testing()
 catch_discover_tests(tests)

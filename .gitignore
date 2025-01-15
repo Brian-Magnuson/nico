@@ -34,7 +34,6 @@
 # Folders
 bin/
 build/
-debug/
 test/temp/
 
 # CMake files

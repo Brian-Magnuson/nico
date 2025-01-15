@@ -4,10 +4,10 @@
 #include <vector>
 
 #include "../src/compiler/code_file.h"
+#include "../src/debug/test_utils.h"
 #include "../src/lexer/lexer.h"
 #include "../src/lexer/token.h"
 #include "../src/logger/logger.h"
-#include "test_utils.h"
 
 TEST_CASE("Sanity check", "[sanity]") {
     REQUIRE(1 == 1);

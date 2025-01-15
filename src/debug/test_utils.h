@@ -5,8 +5,8 @@
 #include <string>
 #include <vector>
 
-#include "../src/compiler/code_file.h"
-#include "../src/lexer/token.h"
+#include "../compiler/code_file.h"
+#include "../lexer/token.h"
 
 /**
  * @brief Creates a test code file with the provided source code.
