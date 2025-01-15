@@ -21,6 +21,16 @@ const std::shared_ptr<Token>& Parser::advance() {
     return tokens.at(current - 1);
 }
 
+bool Parser::match(const std::vector<Tok>& types) {
+    for (const auto& type : types) {
+        if (peek()->tok_type == type) {
+            advance();
+            return true;
+        }
+    }
+    return false;
+}
+
 void Parser::synchronize() {
     advance();
 
@@ -40,10 +50,10 @@ void Parser::synchronize() {
 // MARK: Expressions
 
 std::optional<std::shared_ptr<Expr>> Parser::primary() {
-    if (match(Tok::Int, Tok::Float, Tok::Bool, Tok::Str)) {
+    if (match({Tok::Int, Tok::Float, Tok::Bool, Tok::Str})) {
         return std::make_shared<Expr::Literal>(advance());
     }
-    if (match(Tok::Identifier)) {
+    if (match({Tok::Identifier})) {
         return std::make_shared<Expr::Identifier>(advance());
     }
 
@@ -107,7 +117,7 @@ std::shared_ptr<Stmt> Parser::eof_statement() {
 }
 
 std::optional<std::shared_ptr<Stmt>> Parser::statement() {
-    if (match(Tok::Eof)) {
+    if (match({Tok::Eof})) {
         return eof_statement();
     }
     return expression_statement();

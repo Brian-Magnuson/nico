@@ -43,22 +43,11 @@ class Parser {
     const std::shared_ptr<Token>& advance();
 
     /**
-     * @brief Checks if the current token is any of the given types and advances the parser if it is.
-     * @tparam ...Args Must be of type Tok.
-     * @param ...args The token types to check.
-     * @return True if the current token is any of the given types. False otherwise.
+     * @brief Checks if the current token's type matches any of the provided types, and advances the parser if it does.
+     * @param types The types to match.
+     * @return True if the current token's type matches any of the provided types. False otherwise.
      */
-    template <typename... Args>
-    bool match(const Args&... args) {
-        static_assert(sizeof...(args) > 0, "Parser::match: requires at least one argument");
-        static_assert((std::is_same_v<Args, Tok> && ...), "Parser::match: requires all arguments to be of type Tok");
-
-        if (((peek()->tok_type == args) || ...)) {
-            advance();
-            return true;
-        }
-        return false;
-    }
+    bool match(const std::vector<Tok>& types);
 
     /**
      * @brief Consumes tokens until a safe token is reached. Used to recover from errors.
