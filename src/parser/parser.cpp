@@ -76,6 +76,13 @@ std::optional<std::shared_ptr<Expr>> Parser::postfix() {
 }
 
 std::optional<std::shared_ptr<Expr>> Parser::unary() {
+    if (match({Tok::Minus})) {
+        auto token = previous();
+        auto right = unary();
+        if (!right)
+            return std::nullopt;
+        return std::make_shared<Expr::Unary>(token, *right);
+    }
     return postfix();
 }
 

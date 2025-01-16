@@ -43,6 +43,7 @@ public:
  */
 class Expr {
 public:
+    class Unary;
     class Identifier;
     class Literal;
 
@@ -53,6 +54,7 @@ public:
      */
     class Visitor {
     public:
+        virtual std::any visit(Unary* expr, bool as_lvalue) = 0;
         virtual std::any visit(Identifier* expr, bool as_lvalue) = 0;
         virtual std::any visit(Literal* expr, bool as_lvalue) = 0;
     };
@@ -99,6 +101,20 @@ public:
 };
 
 // MARK: Expressions
+
+class Expr::Unary : public Expr {
+public:
+    // The operator token
+    std::shared_ptr<Token> op;
+    // The operand expression
+    std::shared_ptr<Expr> right;
+
+    Unary(std::shared_ptr<Token> op, std::shared_ptr<Expr> right) : op(op), right(right) {}
+
+    std::any accept(Visitor* visitor, bool as_lvalue) override {
+        return visitor->visit(this, as_lvalue);
+    }
+};
 
 /**
  * @brief An identifier expression.

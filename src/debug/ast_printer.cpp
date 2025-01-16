@@ -8,6 +8,10 @@ std::any AstPrinter::visit(Stmt::Eof* /*stmt*/) {
     return std::string("(stmt:eof)");
 }
 
+std::any AstPrinter::visit(Expr::Unary* expr, bool as_lvalue) {
+    return std::string("(unary " + std::string(expr->op->lexeme) + " " + std::any_cast<std::string>(expr->right->accept(this, false)) + ")");
+}
+
 std::any AstPrinter::visit(Expr::Identifier* expr, bool as_lvalue) {
     return std::string("(ident " + std::string(expr->token->lexeme) + ")");
 }
