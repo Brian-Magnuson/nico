@@ -104,6 +104,11 @@ public:
 
 // MARK: Expressions
 
+/**
+ * @brief A binary expression.
+ *
+ * Binary expressions are expressions with two operands and an operator.
+ */
 class Expr::Binary : public Expr {
 public:
     // The left operand expression
@@ -120,6 +125,11 @@ public:
     }
 };
 
+/**
+ * @brief A unary expression.
+ *
+ * Unary expressions are expressions with a single operand and prefix operator.
+ */
 class Expr::Unary : public Expr {
 public:
     // The operator token
