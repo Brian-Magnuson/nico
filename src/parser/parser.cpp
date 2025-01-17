@@ -87,11 +87,31 @@ std::optional<std::shared_ptr<Expr>> Parser::unary() {
 }
 
 std::optional<std::shared_ptr<Expr>> Parser::factor() {
-    return unary();
+    auto left = unary();
+    if (!left)
+        return std::nullopt;
+    while (match({Tok::Star, Tok::Slash, Tok::Percent})) {
+        auto op = previous();
+        auto right = unary();
+        if (!right)
+            return std::nullopt;
+        left = std::make_shared<Expr::Binary>(*left, op, *right);
+    }
+    return left;
 }
 
 std::optional<std::shared_ptr<Expr>> Parser::term() {
-    return factor();
+    auto left = factor();
+    if (!left)
+        return std::nullopt;
+    while (match({Tok::Plus, Tok::Minus})) {
+        auto op = previous();
+        auto right = factor();
+        if (!right)
+            return std::nullopt;
+        left = std::make_shared<Expr::Binary>(*left, op, *right);
+    }
+    return left;
 }
 
 std::optional<std::shared_ptr<Expr>> Parser::comparison() {

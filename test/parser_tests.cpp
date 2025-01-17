@@ -61,6 +61,51 @@ TEST_CASE("Parser expressions", "[parser]") {
         CHECK(printer.stmts_to_strings(ast) == expected);
     }
 
+    SECTION("Binary 1") {
+        auto file = make_test_code_file("1 + 2");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(expr (binary + (lit 1) (lit 2)))",
+            "(stmt:eof)"
+        };
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
+    SECTION("Binary 2") {
+        auto file = make_test_code_file("1 + 2 * 3");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(expr (binary + (lit 1) (binary * (lit 2) (lit 3))))",
+            "(stmt:eof)"
+        };
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
+    SECTION("Binary 3") {
+        auto file = make_test_code_file("1 * 2 1 + 2");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(expr (binary * (lit 1) (lit 2)))",
+            "(expr (binary + (lit 1) (lit 2)))",
+            "(stmt:eof)"
+        };
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
+    SECTION("Binary 4") {
+        auto file = make_test_code_file("1 * -2 + -3");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(expr (binary + (binary * (lit 1) (unary - (lit 2))) (unary - (lit 3))))",
+            "(stmt:eof)"
+        };
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
     lexer.reset();
     parser.reset();
     Logger::inst().reset();
