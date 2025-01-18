@@ -8,6 +8,12 @@ std::any AstPrinter::visit(Stmt::Eof* /*stmt*/) {
     return std::string("(stmt:eof)");
 }
 
+std::any AstPrinter::visit(Expr::Assign* expr, bool as_lvalue) {
+    auto left = std::any_cast<std::string>(expr->left->accept(this, true));
+    auto right = std::any_cast<std::string>(expr->right->accept(this, false));
+    return std::string("(assign " + left + " " + right + ")");
+}
+
 std::any AstPrinter::visit(Expr::Binary* expr, bool as_lvalue) {
     auto left = std::any_cast<std::string>(expr->left->accept(this, false));
     auto right = std::any_cast<std::string>(expr->right->accept(this, false));

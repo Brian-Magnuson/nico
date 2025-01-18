@@ -131,7 +131,17 @@ std::optional<std::shared_ptr<Expr>> Parser::logical_or() {
 }
 
 std::optional<std::shared_ptr<Expr>> Parser::assignment() {
-    return logical_or();
+    auto left = logical_or();
+    if (!left)
+        return std::nullopt;
+    if (match({Tok::Eq})) {
+        auto op = previous();
+        auto right = assignment();
+        if (!right)
+            return std::nullopt;
+        return std::make_shared<Expr::Assign>(*left, op, *right);
+    }
+    return left;
 }
 
 std::optional<std::shared_ptr<Expr>> Parser::expression() {

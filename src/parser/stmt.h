@@ -43,6 +43,7 @@ public:
  */
 class Expr {
 public:
+    class Assign;
     class Binary;
     class Unary;
     class Identifier;
@@ -55,6 +56,7 @@ public:
      */
     class Visitor {
     public:
+        virtual std::any visit(Assign* expr, bool as_lvalue) = 0;
         virtual std::any visit(Binary* expr, bool as_lvalue) = 0;
         virtual std::any visit(Unary* expr, bool as_lvalue) = 0;
         virtual std::any visit(Identifier* expr, bool as_lvalue) = 0;
@@ -105,9 +107,32 @@ public:
 // MARK: Expressions
 
 /**
+ * @brief An assignment expression.
+ *
+ * Assignment expressions assign an rvalue to an lvalue.
+ * Although structurally similar to binary expressions, a separate class is used for organization.
+ */
+class Expr::Assign : public Expr {
+public:
+    // The left operand expression
+    std::shared_ptr<Expr> left;
+    // The operator token
+    std::shared_ptr<Token> op;
+    // The right operand expression
+    std::shared_ptr<Expr> right;
+
+    Assign(std::shared_ptr<Expr> left, std::shared_ptr<Token> op, std::shared_ptr<Expr> right) : left(left), op(op), right(right) {}
+
+    std::any accept(Visitor* visitor, bool as_lvalue) override {
+        return visitor->visit(this, as_lvalue);
+    }
+};
+
+/**
  * @brief A binary expression.
  *
  * Binary expressions are expressions with two operands and an operator.
+ * Does not include assignment expressions; use `Expr::Assign` instead.
  */
 class Expr::Binary : public Expr {
 public:

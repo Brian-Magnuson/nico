@@ -106,6 +106,27 @@ TEST_CASE("Parser expressions", "[parser]") {
         CHECK(printer.stmts_to_strings(ast) == expected);
     }
 
+    SECTION("Assignment 1") {
+        auto file = make_test_code_file("a = 1");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(expr (assign (ident a) (lit 1)))",
+            "(stmt:eof)"
+        };
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
+    SECTION("Assignment 2") {
+        auto file = make_test_code_file("a = b = c");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(expr (assign (ident a) (assign (ident b) (ident c))))",
+            "(stmt:eof)"
+        };
+    }
+
     lexer.reset();
     parser.reset();
     Logger::inst().reset();
