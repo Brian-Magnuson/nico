@@ -163,8 +163,34 @@ std::shared_ptr<Stmt> Parser::eof_statement() {
     return std::make_shared<Stmt::Eof>();
 }
 
+std::optional<std::shared_ptr<Stmt>> Parser::let_statement() {
+    // Check for `var`
+    bool has_var = match({Tok::KwVar});
+
+    // Get identifier
+    if (!match({Tok::Identifier})) {
+        Logger::inst().log_error(Err::NotAnIdentifier, peek()->location, "Expected identifier.");
+        return std::nullopt;
+    }
+    auto identifier = previous();
+
+    // Get expression
+    std::optional<std::shared_ptr<Expr>> expr = std::nullopt;
+    if (match({Tok::Eq})) {
+        expr = expression();
+        if (!expr) {
+            // At this point, an error has already been logged.
+            return std::nullopt;
+        }
+    }
+
+    return std::make_shared<Stmt::Let>(identifier, expr, has_var);
+}
+
 std::optional<std::shared_ptr<Stmt>> Parser::statement() {
-    if (match({Tok::Eof})) {
+    if (match({Tok::KwLet})) {
+        return let_statement();
+    } else if (match({Tok::Eof})) {
         return eof_statement();
     }
     return expression_statement();

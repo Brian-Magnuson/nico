@@ -4,6 +4,19 @@ std::any AstPrinter::visit(Stmt::Expression* stmt) {
     return std::string("(expr " + std::any_cast<std::string>(stmt->expression->accept(this, false)) + ")");
 }
 
+std::any AstPrinter::visit(Stmt::Let* stmt) {
+    std::string str = "(stmt:let ";
+    if (stmt->has_var) {
+        str += "var ";
+    }
+    str += std::string(stmt->identifier->lexeme);
+    if (stmt->expression.has_value()) {
+        str += " " + std::any_cast<std::string>(stmt->expression.value()->accept(this, false));
+    }
+    str += ")";
+    return str;
+}
+
 std::any AstPrinter::visit(Stmt::Eof* /*stmt*/) {
     return std::string("(stmt:eof)");
 }

@@ -63,14 +63,42 @@ class Parser {
 
     // MARK: Expressions
 
+    /**
+     * @brief Parses a primary expression.
+     *
+     * Primary expressions include literals, identifiers, and grouping expressions.
+     *
+     * @return
+     */
     std::optional<std::shared_ptr<Expr>> primary();
 
     std::optional<std::shared_ptr<Expr>> postfix();
 
+    /**
+     * @brief Parses a unary expression.
+     *
+     * Includes `-a`
+     *
+     * @return A shared pointer to the parsed expression, or nullopt if the expression could not be parsed.
+     */
     std::optional<std::shared_ptr<Expr>> unary();
 
+    /**
+     * @brief Parses a factor expression.
+     *
+     * Includes `a * b`, `a / b`, `a % b`
+     *
+     * @return A shared pointer to the parsed expression, or nullopt if the expression could not be parsed.
+     */
     std::optional<std::shared_ptr<Expr>> factor();
 
+    /**
+     * @brief Parses a term expression.
+     *
+     * Includes `a + b`, `a - b`
+     *
+     * @return A shared pointer to the parsed expression, or nullopt if the expression could not be parsed.
+     */
     std::optional<std::shared_ptr<Expr>> term();
 
     std::optional<std::shared_ptr<Expr>> comparison();
@@ -81,6 +109,14 @@ class Parser {
 
     std::optional<std::shared_ptr<Expr>> logical_or();
 
+    /**
+     * @brief Parses an assignment expression.
+     *
+     * Assignment expressions assign an rvalue to an lvalue.
+     * Unlike other binary expressions, assignment expressions are right-associative and have their own class.
+     *
+     * @return A shared pointer to the parsed expression, or nullopt if the expression could not be parsed.
+     */
     std::optional<std::shared_ptr<Expr>> assignment();
 
     /**
@@ -111,6 +147,15 @@ class Parser {
      * @return A shared pointer to the parsed statement.
      */
     std::shared_ptr<Stmt> eof_statement();
+
+    /**
+     * @brief Parses a let statement.
+     *
+     * A let statement introduces a new variable into the current scope.
+     *
+     * @return A shared pointer to the parsed statement, or nullopt if the statement could not be parsed.
+     */
+    std::optional<std::shared_ptr<Stmt>> let_statement();
 
     /**
      * @brief Parses a statement.

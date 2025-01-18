@@ -3,6 +3,7 @@
 
 #include <any>
 #include <memory>
+#include <optional>
 
 #include "../lexer/token.h"
 
@@ -14,6 +15,7 @@
 class Stmt {
 public:
     class Expression;
+    class Let;
     class Eof;
 
     virtual ~Stmt() {}
@@ -24,6 +26,7 @@ public:
     class Visitor {
     public:
         virtual std::any visit(Expression* stmt) = 0;
+        virtual std::any visit(Let* stmt) = 0;
         virtual std::any visit(Eof* stmt) = 0;
     };
 
@@ -86,6 +89,22 @@ public:
     std::shared_ptr<Expr> expression;
 
     Expression(std::shared_ptr<Expr> expression) : expression(expression) {}
+
+    std::any accept(Visitor* visitor) override {
+        return visitor->visit(this);
+    }
+};
+
+class Stmt::Let : public Stmt {
+public:
+    // The identifier token
+    std::shared_ptr<Token> identifier;
+    // The expression in the statement; nullopt if absent
+    std::optional<std::shared_ptr<Expr>> expression;
+    // Whether the variable is declared as mutable
+    bool has_var;
+
+    Let(std::shared_ptr<Token> identifier, std::optional<std::shared_ptr<Expr>> expression, bool has_var) : identifier(identifier), expression(expression), has_var(has_var) {}
 
     std::any accept(Visitor* visitor) override {
         return visitor->visit(this);

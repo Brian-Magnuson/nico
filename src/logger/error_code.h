@@ -46,6 +46,8 @@ enum class Err {
     Parser = 3000,
     // An expression was expected but not found.
     NotAnExpression,
+    // A statement was found where an identifier was expected but not found.
+    NotAnIdentifier,
 
     // Global type check error.
     GlobalType = 4000,

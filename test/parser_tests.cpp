@@ -131,3 +131,35 @@ TEST_CASE("Parser expressions", "[parser]") {
     parser.reset();
     Logger::inst().reset();
 }
+
+TEST_CASE("Parser let statements", "[parser]") {
+    Lexer lexer;
+    Parser parser;
+    AstPrinter printer;
+
+    SECTION("Let statements 1") {
+        auto file = make_test_code_file("let a = 1");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(stmt:let a (lit 1))",
+            "(stmt:eof)"
+        };
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
+    SECTION("Let statements 2") {
+        auto file = make_test_code_file("let var a = 1");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(stmt:let var a (lit 1))",
+            "(stmt:eof)"
+        };
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
+    lexer.reset();
+    parser.reset();
+    Logger::inst().reset();
+}
