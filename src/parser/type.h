@@ -25,6 +25,26 @@ public:
 
     Type() = default;
     virtual ~Type() = default;
+
+    /**
+     * @brief Converts this type to a string.
+     *
+     * In theory, the string representation should be unique for the type.
+     *
+     * @return A string representation of the type.
+     */
+    virtual std::string to_string() const = 0;
+
+    /**
+     * @brief Check if two types are equivalent.
+     *
+     * Note: The types must match exactly.
+     * This operator does not consider if one type can be implicitly converted to another.
+     *
+     * @param other The other type to compare.
+     * @return True if the types are equivalent. False otherwise.
+     */
+    virtual bool operator==(const Type& other) const = 0;
 };
 
 /**
@@ -37,11 +57,22 @@ public:
 class Type::Int : public Type {
 public:
     // Whether the integer is signed or unsigned.
-    bool is_signed;
+    const bool is_signed;
     // The width of the integer in bits. Can be any number, but should be 8, 16, 32, or 64.
-    uint8_t width;
+    const uint8_t width;
 
     Int(bool is_signed, uint8_t width) : is_signed(is_signed), width(width) {}
+
+    std::string to_string() const override {
+        return (is_signed ? "i" : "u") + std::to_string(width);
+    }
+
+    bool operator==(const Type& other) const override {
+        if (const auto* other_int = dynamic_cast<const Int*>(&other)) {
+            return is_signed == other_int->is_signed && width == other_int->width;
+        }
+        return false;
+    }
 };
 
 /**
@@ -52,13 +83,24 @@ public:
 class Type::Float : public Type {
 public:
     // The width of the float in bits. Can be 32 or 64.
-    uint8_t width;
+    const uint8_t width;
 
     Float(uint8_t width) : width(width) {
         if (width != 32 && width != 64) {
             std::cerr << "Type::Float: Invalid width " << width << ". Must be 32 or 64." << std::endl;
             std::abort();
         }
+    }
+
+    std::string to_string() const override {
+        return "f" + std::to_string(width);
+    }
+
+    bool operator==(const Type& other) const override {
+        if (const auto* other_float = dynamic_cast<const Float*>(&other)) {
+            return width == other_float->width;
+        }
+        return false;
     }
 };
 
@@ -72,9 +114,20 @@ public:
 class Type::Pointer : public Type {
 public:
     // The type that the pointer points to.
-    std::shared_ptr<Type> base;
+    const std::shared_ptr<Type> base;
 
     Pointer(std::shared_ptr<Type> base) : base(base) {}
+
+    std::string to_string() const override {
+        return base->to_string() + "*";
+    }
+
+    bool operator==(const Type& other) const override {
+        if (const auto* other_pointer = dynamic_cast<const Pointer*>(&other)) {
+            return *base == *other_pointer->base;
+        }
+        return false;
+    }
 };
 
 /**
@@ -85,15 +138,26 @@ public:
 class Type::Array : public Type {
 public:
     // The type of the elements in the array.
-    std::shared_ptr<Type> base;
+    const std::shared_ptr<Type> base;
     // The number of elements in the array.
-    size_t size;
+    const size_t size;
     // Whether the array has a known size.
-    bool is_sized;
+    const bool is_sized;
 
     Array(std::shared_ptr<Type> base) : base(base), size(0), is_sized(false) {}
 
     Array(std::shared_ptr<Type> base, size_t size) : base(base), size(size), is_sized(true) {}
+
+    std::string to_string() const override {
+        return "[" + base->to_string() + "; " + std::to_string(size) + "]";
+    }
+
+    bool operator==(const Type& other) const override {
+        if (const auto* other_array = dynamic_cast<const Array*>(&other)) {
+            return *base == *other_array->base && size == other_array->size;
+        }
+        return false;
+    }
 };
 
 /**
@@ -102,14 +166,25 @@ public:
  * Named struct types are types that have a name.
  * They are usually not useful on their own, but are used to reference a struct defined elsewhere.
  *
- * Note: Since this language prefers nominal typing, use `NamedStruct` when possible.
+ * This language prefers nominal typing. Therefore, two structs with the same name are considered the same type.
  */
 class Type::NamedStruct : public Type {
 public:
     // The name of the struct type.
-    std::string name;
+    const std::string name;
 
     NamedStruct(const std::string& name) : name(name) {}
+
+    std::string to_string() const override {
+        return name;
+    }
+
+    bool operator==(const Type& other) const override {
+        if (const auto* other_named_struct = dynamic_cast<const NamedStruct*>(&other)) {
+            return name == other_named_struct->name;
+        }
+        return false;
+    }
 };
 
 /**
@@ -124,6 +199,26 @@ public:
     Dictionary<std::string, std::shared_ptr<Type>> fields;
 
     Struct() = default;
+
+    std::string to_string() const override {
+        std::string result = "{";
+        for (auto& [key, value] : fields) {
+            result += key + ": " + value->to_string() + ", ";
+        }
+        if (fields.size() > 0) {
+            result.pop_back();
+            result.pop_back();
+        }
+        result += "}";
+        return result;
+    }
+
+    bool operator==(const Type& other) const override {
+        if (const auto* other_struct = dynamic_cast<const Struct*>(&other)) {
+            return fields == other_struct->fields;
+        }
+        return false;
+    }
 };
 
 #endif // NICO_TYPE_H
