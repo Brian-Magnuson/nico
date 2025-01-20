@@ -18,6 +18,7 @@ public:
     class Int;
     class Float;
     class Pointer;
+    class Reference;
     class Array;
 
     class NamedStruct;
@@ -113,18 +114,48 @@ public:
  */
 class Type::Pointer : public Type {
 public:
+    // Whether the pointer is mutable.
+    bool is_mutable;
     // The type that the pointer points to.
     const std::shared_ptr<Type> base;
 
     Pointer(std::shared_ptr<Type> base) : base(base) {}
 
     std::string to_string() const override {
-        return base->to_string() + "*";
+        return std::string(is_mutable ? "var" : "") + "*" + base->to_string();
     }
 
     bool operator==(const Type& other) const override {
         if (const auto* other_pointer = dynamic_cast<const Pointer*>(&other)) {
             return *base == *other_pointer->base;
+        }
+        return false;
+    }
+};
+
+/**
+ * @brief A reference type.
+ *
+ * References are pointers with special semantics.
+ * Note: Since LLVM 15, pointers do not store type information.
+ * Keep this in mind before converting to the LLVM type.
+ */
+class Type::Reference : public Type {
+public:
+    // Whether the reference is mutable.
+    bool is_mutable;
+    // The type that the reference points to.
+    const std::shared_ptr<Type> base;
+
+    Reference(std::shared_ptr<Type> base) : base(base) {}
+
+    std::string to_string() const override {
+        return std::string(is_mutable ? "var" : "") + "&" + base->to_string();
+    }
+
+    bool operator==(const Type& other) const override {
+        if (const auto* other_reference = dynamic_cast<const Reference*>(&other)) {
+            return *base == *other_reference->base;
         }
         return false;
     }
