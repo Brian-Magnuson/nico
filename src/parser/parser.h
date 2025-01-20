@@ -4,10 +4,12 @@
 #include <memory>
 #include <optional>
 #include <type_traits>
+#include <unordered_map>
 #include <vector>
 
 #include "../lexer/token.h"
 #include "stmt.h"
+#include "type.h"
 
 /**
  * @brief A parser to parse a vector of tokens into an abstract syntax tree.
@@ -17,6 +19,8 @@ class Parser {
     std::vector<std::shared_ptr<Token>> tokens;
     // The current token index.
     unsigned current = 0;
+    // A table of basic types.
+    static std::unordered_map<std::string, std::shared_ptr<Type>> type_table;
 
     /**
      * @brief Checks if the parser has reached the end of the tokens list.
@@ -60,6 +64,12 @@ class Parser {
      * @brief Consumes tokens until a safe token is reached. Used to recover from errors.
      */
     void synchronize();
+
+    /**
+     * @brief Parses a type annotation.
+     * @return A shared pointer to the parsed type, or nullopt if the type could not be parsed.
+     */
+    std::optional<std::shared_ptr<Type>> type_annotation();
 
     // MARK: Expressions
 

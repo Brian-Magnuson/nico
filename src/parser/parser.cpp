@@ -5,6 +5,12 @@
 
 #include "../logger/logger.h"
 
+std::unordered_map<std::string, std::shared_ptr<Type>> Parser::type_table = {
+    {"i32", std::make_shared<Type::Int>(true, 32)},
+    {"f64", std::make_shared<Type::Float>(64)},
+    {"bool", std::make_shared<Type::Bool>()}
+};
+
 bool Parser::is_at_end() const {
     return current >= tokens.size();
 }
@@ -55,6 +61,22 @@ void Parser::synchronize() {
 
         advance();
     }
+}
+
+std::optional<std::shared_ptr<Type>> Parser::type_annotation() {
+    if (match({Tok::Identifier})) {
+        auto lexeme = std::string(previous()->lexeme);
+        // If the type is a basic type, return it.
+        auto type = type_table.find(lexeme);
+        if (type != type_table.end()) {
+            return type->second;
+        }
+        // If not a basic type, we assume it is a named struct type.
+        return std::make_shared<Type::NamedStruct>(lexeme);
+        // If it turns out this type is not defined, we will catch it later.
+    }
+    Logger::inst().log_error(Err::NotAType, peek()->location, "Expected type.");
+    return std::nullopt;
 }
 
 // MARK: Expressions
@@ -174,6 +196,16 @@ std::optional<std::shared_ptr<Stmt>> Parser::let_statement() {
     }
     auto identifier = previous();
 
+    // Check for type annotation
+    std::optional<std::shared_ptr<Type>> annotation = std::nullopt;
+    if (match({Tok::Colon})) {
+        annotation = type_annotation();
+        if (!annotation) {
+            // At this point, an error has already been logged.
+            return std::nullopt;
+        }
+    }
+
     // Get expression
     std::optional<std::shared_ptr<Expr>> expr = std::nullopt;
     if (match({Tok::Eq})) {
@@ -184,7 +216,13 @@ std::optional<std::shared_ptr<Stmt>> Parser::let_statement() {
         }
     }
 
-    return std::make_shared<Stmt::Let>(identifier, expr, has_var);
+    // If expr and annotation are both nullopt, we have an error.
+    if (!expr && !annotation) {
+        Logger::inst().log_error(Err::LetWithoutTypeOrValue, peek()->location, "Let statement must have a type annotation or value.");
+        return std::nullopt;
+    }
+
+    return std::make_shared<Stmt::Let>(identifier, expr, has_var, annotation);
 }
 
 std::optional<std::shared_ptr<Stmt>> Parser::statement() {

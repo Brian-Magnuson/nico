@@ -6,6 +6,7 @@
 #include <optional>
 
 #include "../lexer/token.h"
+#include "type.h"
 
 // MARK: Base classes
 
@@ -85,7 +86,7 @@ public:
  */
 class Stmt::Expression : public Stmt {
 public:
-    // The expression in the statement
+    // The expression in the statement.
     std::shared_ptr<Expr> expression;
 
     Expression(std::shared_ptr<Expr> expression) : expression(expression) {}
@@ -95,16 +96,31 @@ public:
     }
 };
 
+/**
+ * @brief A let statement.
+ *
+ * Let statements introduce a new variable into the current scope.
+ */
 class Stmt::Let : public Stmt {
 public:
-    // The identifier token
+    // The identifier token.
     std::shared_ptr<Token> identifier;
-    // The expression in the statement; nullopt if absent
+    // The expression in the statement; nullopt if absent.
     std::optional<std::shared_ptr<Expr>> expression;
-    // Whether the variable is declared as mutable
+    // Whether the variable is declared as mutable.
     bool has_var;
+    // The type annotation; should be type-checked, even if not nullopt.
+    std::optional<std::shared_ptr<Type>> annotation;
 
-    Let(std::shared_ptr<Token> identifier, std::optional<std::shared_ptr<Expr>> expression, bool has_var) : identifier(identifier), expression(expression), has_var(has_var) {}
+    // Let(std::shared_ptr<Token> identifier, std::optional<std::shared_ptr<Expr>> expression, bool has_var) : identifier(identifier), expression(expression), has_var(has_var) {}
+    Let(
+        std::shared_ptr<Token> identifier, std::optional<std::shared_ptr<Expr>> expression,
+        bool has_var,
+        std::optional<std::shared_ptr<Type>> annotation
+    ) : identifier(identifier),
+        expression(expression),
+        has_var(has_var),
+        annotation(annotation) {}
 
     std::any accept(Visitor* visitor) override {
         return visitor->visit(this);
@@ -133,11 +149,11 @@ public:
  */
 class Expr::Assign : public Expr {
 public:
-    // The left operand expression
+    // The left operand expression.
     std::shared_ptr<Expr> left;
-    // The operator token
+    // The operator token.
     std::shared_ptr<Token> op;
-    // The right operand expression
+    // The right operand expression.
     std::shared_ptr<Expr> right;
 
     Assign(std::shared_ptr<Expr> left, std::shared_ptr<Token> op, std::shared_ptr<Expr> right) : left(left), op(op), right(right) {}
@@ -155,11 +171,11 @@ public:
  */
 class Expr::Binary : public Expr {
 public:
-    // The left operand expression
+    // The left operand expression.
     std::shared_ptr<Expr> left;
-    // The operator token
+    // The operator token.
     std::shared_ptr<Token> op;
-    // The right operand expression
+    // The right operand expression.
     std::shared_ptr<Expr> right;
 
     Binary(std::shared_ptr<Expr> left, std::shared_ptr<Token> op, std::shared_ptr<Expr> right) : left(left), op(op), right(right) {}
@@ -176,9 +192,9 @@ public:
  */
 class Expr::Unary : public Expr {
 public:
-    // The operator token
+    // The operator token.
     std::shared_ptr<Token> op;
-    // The operand expression
+    // The operand expression.
     std::shared_ptr<Expr> right;
 
     Unary(std::shared_ptr<Token> op, std::shared_ptr<Expr> right) : op(op), right(right) {}
@@ -193,7 +209,7 @@ public:
  */
 class Expr::Identifier : public Expr {
 public:
-    // The token representing the identifier
+    // The token representing the identifier.
     std::shared_ptr<Token> token;
 
     Identifier(std::shared_ptr<Token> token) : token(token) {}
@@ -210,7 +226,7 @@ public:
  */
 class Expr::Literal : public Expr {
 public:
-    // The token representing the literal value
+    // The token representing the literal value.
     std::shared_ptr<Token> token;
 
     Literal(std::shared_ptr<Token> token) : token(token) {}

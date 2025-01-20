@@ -48,6 +48,10 @@ enum class Err {
     NotAnExpression,
     // A statement was found where an identifier was expected but not found.
     NotAnIdentifier,
+    // A type was expected but not found.
+    NotAType,
+    // A let statement was found without a type or value.
+    LetWithoutTypeOrValue,
 
     // Global type check error.
     GlobalType = 4000,

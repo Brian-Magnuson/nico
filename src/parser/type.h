@@ -16,9 +16,12 @@
 class Type {
 public:
     class Int;
+    class Bool;
     class Float;
+
     class Pointer;
     class Reference;
+
     class Array;
 
     class NamedStruct;
@@ -73,6 +76,24 @@ public:
             return is_signed == other_int->is_signed && width == other_int->width;
         }
         return false;
+    }
+};
+
+/**
+ * @brief A boolean type.
+ *
+ * Boolean types have no additional state as there is no need;
+ * All boolean types are the same.
+ * In LLVM, booleans may be represented as an integer 1 bit wide (`i1`).
+ */
+class Type::Bool : public Type {
+public:
+    std::string to_string() const override {
+        return "bool";
+    }
+
+    bool operator==(const Type& other) const override {
+        return dynamic_cast<const Bool*>(&other) != nullptr;
     }
 };
 
