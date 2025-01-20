@@ -4,6 +4,7 @@
 #include <any>
 #include <memory>
 #include <optional>
+#include <vector>
 
 #include "../lexer/token.h"
 #include "type.h"
@@ -19,6 +20,8 @@ public:
     class Let;
     class Eof;
 
+    class Print;
+
     virtual ~Stmt() {}
 
     /**
@@ -29,6 +32,7 @@ public:
         virtual std::any visit(Expression* stmt) = 0;
         virtual std::any visit(Let* stmt) = 0;
         virtual std::any visit(Eof* stmt) = 0;
+        virtual std::any visit(Print* stmt) = 0;
     };
 
     /**
@@ -66,6 +70,8 @@ public:
         virtual std::any visit(Identifier* expr, bool as_lvalue) = 0;
         virtual std::any visit(Literal* expr, bool as_lvalue) = 0;
     };
+
+    std::shared_ptr<Type> type;
 
     /**
      * @brief Accept a visitor.
@@ -134,6 +140,23 @@ public:
  */
 class Stmt::Eof : public Stmt {
 public:
+    std::any accept(Visitor* visitor) override {
+        return visitor->visit(this);
+    }
+};
+
+/**
+ * @brief A print statement.
+ *
+ * Since a proper print function is not yet implemented, this is a temporary statement for development and will be removed in the future.
+ */
+class Stmt::Print : public Stmt {
+public:
+    // The expressions to print.
+    std::vector<std::shared_ptr<Expr>> expressions;
+
+    Print(std::vector<std::shared_ptr<Expr>> expressions) : expressions(expressions) {}
+
     std::any accept(Visitor* visitor) override {
         return visitor->visit(this);
     }

@@ -22,6 +22,8 @@ std::unordered_map<std::string_view, Tok> Lexer::keywords = {
 
     {"let", Tok::KwLet},
     {"var", Tok::KwVar},
+
+    {"print", Tok::KwPrint},
 };
 
 bool Lexer::is_at_end() const {

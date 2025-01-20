@@ -21,6 +21,15 @@ std::any AstPrinter::visit(Stmt::Eof* /*stmt*/) {
     return std::string("(stmt:eof)");
 }
 
+std::any AstPrinter::visit(Stmt::Print* stmt) {
+    std::string str = "(stmt:print ";
+    for (const auto& expr : stmt->expressions) {
+        str += std::any_cast<std::string>(expr->accept(this, false)) + " ";
+    }
+    str += ")";
+    return str;
+}
+
 std::any AstPrinter::visit(Expr::Assign* expr, bool as_lvalue) {
     auto left = std::any_cast<std::string>(expr->left->accept(this, true));
     auto right = std::any_cast<std::string>(expr->right->accept(this, false));
