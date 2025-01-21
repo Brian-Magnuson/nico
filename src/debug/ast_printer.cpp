@@ -10,6 +10,9 @@ std::any AstPrinter::visit(Stmt::Let* stmt) {
         str += "var ";
     }
     str += std::string(stmt->identifier->lexeme);
+    if (stmt->annotation.has_value()) {
+        str += " " + stmt->annotation.value()->to_string();
+    }
     if (stmt->expression.has_value()) {
         str += " " + std::any_cast<std::string>(stmt->expression.value()->accept(this, false));
     }
