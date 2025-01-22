@@ -172,19 +172,6 @@ std::optional<std::shared_ptr<Expr>> Parser::expression() {
 
 // MARK: Statements
 
-std::optional<std::shared_ptr<Stmt>> Parser::expression_statement() {
-    auto expr = expression();
-    if (!expr) {
-        return std::nullopt;
-    }
-
-    return std::make_shared<Stmt::Expression>(*expr);
-}
-
-std::shared_ptr<Stmt> Parser::eof_statement() {
-    return std::make_shared<Stmt::Eof>();
-}
-
 std::optional<std::shared_ptr<Stmt>> Parser::let_statement() {
     // Check for `var`
     bool has_var = match({Tok::KwVar});
@@ -225,11 +212,41 @@ std::optional<std::shared_ptr<Stmt>> Parser::let_statement() {
     return std::make_shared<Stmt::Let>(identifier, expr, has_var, annotation);
 }
 
+std::shared_ptr<Stmt> Parser::eof_statement() {
+    return std::make_shared<Stmt::Eof>();
+}
+
+std::optional<std::shared_ptr<Stmt>> Parser::print_statement() {
+    std::vector<std::shared_ptr<Expr>> expressions;
+    auto expr = expression();
+    if (!expr)
+        return std::nullopt;
+    expressions.push_back(*expr);
+
+    while (match({Tok::Comma})) {
+        expr = expression();
+        if (!expr)
+            return std::nullopt;
+        expressions.push_back(*expr);
+    }
+
+    return std::make_shared<Stmt::Print>(expressions);
+}
+
+std::optional<std::shared_ptr<Stmt>> Parser::expression_statement() {
+    auto expr = expression();
+    if (!expr)
+        return std::nullopt;
+    return std::make_shared<Stmt::Expression>(*expr);
+}
+
 std::optional<std::shared_ptr<Stmt>> Parser::statement() {
     if (match({Tok::KwLet})) {
         return let_statement();
     } else if (match({Tok::Eof})) {
         return eof_statement();
+    } else if (match({Tok::KwPrint})) {
+        return print_statement();
     }
     return expression_statement();
 }

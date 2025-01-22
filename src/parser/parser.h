@@ -141,13 +141,13 @@ class Parser {
     // MARK: Statements
 
     /**
-     * @brief Parses an expression statement.
+     * @brief Parses a let statement.
      *
-     * An expression statement is a statement that consists of an expression.
+     * A let statement introduces a new variable into the current scope.
      *
      * @return A shared pointer to the parsed statement, or nullopt if the statement could not be parsed.
      */
-    std::optional<std::shared_ptr<Stmt>> expression_statement();
+    std::optional<std::shared_ptr<Stmt>> let_statement();
 
     /**
      * @brief Parses an EOF statement.
@@ -159,13 +159,23 @@ class Parser {
     std::shared_ptr<Stmt> eof_statement();
 
     /**
-     * @brief Parses a let statement.
+     * @brief Parses a print statement.
      *
-     * A let statement introduces a new variable into the current scope.
+     * Print statements print a series of expressions to the console.
+     * Print statements are temporary and will be removed in the future.
      *
      * @return A shared pointer to the parsed statement, or nullopt if the statement could not be parsed.
      */
-    std::optional<std::shared_ptr<Stmt>> let_statement();
+    std::optional<std::shared_ptr<Stmt>> print_statement();
+
+    /**
+     * @brief Parses an expression statement.
+     *
+     * An expression statement is a statement that consists of an expression.
+     *
+     * @return A shared pointer to the parsed statement, or nullopt if the statement could not be parsed.
+     */
+    std::optional<std::shared_ptr<Stmt>> expression_statement();
 
     /**
      * @brief Parses a statement.

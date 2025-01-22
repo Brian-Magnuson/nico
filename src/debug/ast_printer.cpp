@@ -25,9 +25,9 @@ std::any AstPrinter::visit(Stmt::Eof* /*stmt*/) {
 }
 
 std::any AstPrinter::visit(Stmt::Print* stmt) {
-    std::string str = "(stmt:print ";
+    std::string str = "(stmt:print";
     for (const auto& expr : stmt->expressions) {
-        str += std::any_cast<std::string>(expr->accept(this, false)) + " ";
+        str += " " + std::any_cast<std::string>(expr->accept(this, false));
     }
     str += ")";
     return str;
