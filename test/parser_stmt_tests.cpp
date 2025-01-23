@@ -94,6 +94,18 @@ TEST_CASE("Parser let statements", "[parser]") {
         REQUIRE(*let_stmt->annotation.value() == Type::NamedStruct("Vector2D"));
     }
 
+    SECTION("Let statements 6") {
+        auto file = make_test_code_file("let a: i32 let b = 2");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(stmt:let a i32)",
+            "(stmt:let b (lit 2))",
+            "(stmt:eof)"
+        };
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
     lexer.reset();
     parser.reset();
     Logger::inst().reset();
@@ -135,6 +147,62 @@ TEST_CASE("Parser print statements", "[parser]") {
             "(stmt:eof)"
         };
         CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
+    lexer.reset();
+    parser.reset();
+    Logger::inst().reset();
+}
+
+// MARK: Error tests
+
+TEST_CASE("Parser let stmt errors", "[parser]") {
+    Lexer lexer;
+    Parser parser;
+    Logger::inst().set_printing_enabled(false);
+
+    SECTION("Let missing identifier 1") {
+        // Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file("let");
+        auto tokens = lexer.scan(file);
+        parser.parse(std::move(tokens));
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::NotAnIdentifier);
+    }
+
+    SECTION("Let missing identifier 2") {
+        // Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file("let var");
+        auto tokens = lexer.scan(file);
+        parser.parse(std::move(tokens));
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::NotAnIdentifier);
+    }
+
+    SECTION("Let improper type") {
+        // Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file("let a: 1 = 1");
+        auto tokens = lexer.scan(file);
+        parser.parse(std::move(tokens));
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::NotAType);
+    }
+
+    SECTION("Let without type or value") {
+        // Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file("let a");
+        auto tokens = lexer.scan(file);
+        parser.parse(std::move(tokens));
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::LetWithoutTypeOrValue);
     }
 
     lexer.reset();

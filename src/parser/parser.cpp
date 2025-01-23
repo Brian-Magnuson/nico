@@ -75,7 +75,7 @@ std::optional<std::shared_ptr<Type>> Parser::type_annotation() {
         return std::make_shared<Type::NamedStruct>(lexeme);
         // If it turns out this type is not defined, we will catch it later.
     }
-    Logger::inst().log_error(Err::NotAType, peek()->location, "Expected type.");
+    Logger::inst().log_error(Err::NotAType, peek()->location, "Not a valid type.");
     return std::nullopt;
 }
 
@@ -178,7 +178,7 @@ std::optional<std::shared_ptr<Stmt>> Parser::let_statement() {
 
     // Get identifier
     if (!match({Tok::Identifier})) {
-        Logger::inst().log_error(Err::NotAnIdentifier, peek()->location, "Expected identifier.");
+        Logger::inst().log_error(Err::NotAnIdentifier, peek()->location, "Expected identifier in let statement.");
         return std::nullopt;
     }
     auto identifier = previous();
