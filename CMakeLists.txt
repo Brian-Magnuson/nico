@@ -42,7 +42,7 @@ set(MAIN_SRC src/main.cpp)
 set(DEBUG_SRC src/debug/ast_printer.cpp src/debug/test_utils.cpp)
 
 # Test files
-set(TEST_SRC test/lexer_tests.cpp test/parser_tests.cpp)
+set(TEST_SRC test/lexer_tests.cpp test/parser_expr_tests.cpp test/parser_stmt_tests.cpp)
 
 # Main executable
 add_executable(nico ${MAIN_SRC} ${CORE_SRC})
