@@ -28,7 +28,7 @@ include(Catch)
 # Core files
 set(LEXER_SRC src/lexer/token.cpp src/lexer/lexer.cpp)
 set(PARSER_SRC src/parser/parser.cpp)
-set(CHECKER_SRC src/checker/local_checker.cpp)
+set(CHECKER_SRC src/checker/local_checker.cpp src/checker/symbol_table.cpp)
 set(LOGGER_SRC src/logger/logger.cpp)
 set(CORE_SRC
     ${LEXER_SRC}

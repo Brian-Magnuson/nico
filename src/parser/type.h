@@ -25,7 +25,7 @@ public:
     class Array;
 
     class NamedStruct;
-    class Struct;
+    class Definition;
 
     Type() = default;
     virtual ~Type() = default;
@@ -240,17 +240,16 @@ public:
 };
 
 /**
- * @brief A struct type.
+ * @brief A struct definition.
  *
- * Unlike `Type::NamedStruct`, this type contains the fields of the struct.
- * Since this language prefers nominal typing, use `NamedStruct` when possible.
+ * Symbols with this type are used to define structs rather than identify values.
  */
-class Type::Struct : public Type {
+class Type::Definition : public Type {
 public:
     // The fields of the struct.
     Dictionary<std::string, std::shared_ptr<Type>> fields;
 
-    Struct() = default;
+    Definition() = default;
 
     std::string to_string() const override {
         std::string result = "{";
@@ -266,7 +265,7 @@ public:
     }
 
     bool operator==(const Type& other) const override {
-        if (const auto* other_struct = dynamic_cast<const Struct*>(&other)) {
+        if (const auto* other_struct = dynamic_cast<const Definition*>(&other)) {
             return fields == other_struct->fields;
         }
         return false;
