@@ -49,6 +49,19 @@ public:
      * @return True if the types are equivalent. False otherwise.
      */
     virtual bool operator==(const Type& other) const = 0;
+
+    /**
+     * @brief Check if two types are not equivalent.
+     *
+     * Types must match exactly to be considered equivalent.
+     * Effectively the negation of the `==` operator.
+     *
+     * @param other The other type to compare.
+     * @return True if the types are not equivalent. False otherwise.
+     */
+    virtual bool operator!=(const Type& other) const {
+        return !(*this == other);
+    }
 };
 
 /**

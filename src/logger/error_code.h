@@ -58,6 +58,14 @@ enum class Err {
 
     // Local type check error.
     LocalType = 5000,
+    // A non-lvalue was found where an lvalue was expected.
+    NotAnLValue,
+    // A type mismatch was found in a variable declaration.
+    LetTypeMismatch,
+    // A type mismatch was found in an assignment expression.
+    AssignmentTypeMismatch,
+    // An identifier was not found in the symbol table.
+    UndeclaredIdentifier,
 
     // Code generation error.
     CodeGen = 6000,
