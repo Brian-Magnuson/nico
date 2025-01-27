@@ -79,7 +79,7 @@ std::any LocalChecker::visit(Expr::Assign* expr, bool as_lvalue) {
         );
     }
 
-    return std::any();
+    return l_type;
 }
 
 std::any LocalChecker::visit(Expr::Binary* expr, bool as_lvalue) {
@@ -101,7 +101,22 @@ std::any LocalChecker::visit(Expr::Identifier* expr, bool /*as_lvalue*/) {
 }
 
 std::any LocalChecker::visit(Expr::Literal* expr, bool as_lvalue) {
-    return std::any();
+    std::shared_ptr<Type> type = nullptr;
+    switch (expr->token->tok_type) {
+    case Tok::Int:
+        type = std::make_shared<Type::Int>(32);
+        break;
+    case Tok::Float:
+        type = std::make_shared<Type::Float>(64);
+        break;
+    case Tok::Bool:
+        type = std::make_shared<Type::Bool>();
+        break;
+    default:
+        Logger::inst().log_error(Err::Unimplemented, expr->token->location, "Literal type not implemented.");
+        return std::any();
+    }
+    return type;
 }
 
 void LocalChecker::check(std::vector<std::shared_ptr<Stmt>> ast) {
