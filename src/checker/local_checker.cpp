@@ -83,10 +83,47 @@ std::any LocalChecker::visit(Expr::Assign* expr, bool as_lvalue) {
 }
 
 std::any LocalChecker::visit(Expr::Binary* expr, bool as_lvalue) {
-    return std::any();
+    auto l_type = std::any_cast<std::shared_ptr<Type>>(expr->left->accept(this, false));
+    auto r_type = std::any_cast<std::shared_ptr<Type>>(expr->right->accept(this, false));
+
+    switch (expr->op->tok_type) {
+    case Tok::Plus:
+    case Tok::Minus:
+    case Tok::Star:
+    case Tok::Slash:
+        // Both operands must be of the same type.
+        if (*l_type != *r_type) {
+            Logger::inst().log_error(
+                Err::TypeMismatch,
+                expr->op->location,
+                std::string("Type `") + r_type->to_string() + "` is not compatible with type `" + l_type->to_string() + "`."
+            );
+        }
+        // Types must inherit from `Type::INumeric`.
+        if (!dynamic_cast<Type::INumeric*>(l_type.get())) {
+            Logger::inst().log_error(Err::AssignmentTypeMismatch, expr->op->location, "Operands must be of a numeric type.");
+        }
+        return l_type;
+    default:
+        Logger::inst().log_error(Err::Unimplemented, expr->op->location, "Binary operator not implemented.");
+        return std::any();
+    }
 }
 
 std::any LocalChecker::visit(Expr::Unary* expr, bool as_lvalue) {
+    auto type = std::any_cast<std::shared_ptr<Type>>(expr->right->accept(this, false));
+
+    switch (expr->op->tok_type) {
+    case Tok::Minus:
+        // Types must inherit from `Type::INumeric`.
+        if (!dynamic_cast<Type::INumeric*>(type.get())) {
+            Logger::inst().log_error(Err::AssignmentTypeMismatch, expr->op->location, "Operand must be of a numeric type.");
+        }
+        return type;
+    default:
+        Logger::inst().log_error(Err::Unimplemented, expr->op->location, "Unary operator not implemented.");
+    }
+
     return std::any();
 }
 

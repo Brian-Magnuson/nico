@@ -15,9 +15,12 @@
  */
 class Type {
 public:
+    class INumeric;
+
     class Int;
-    class Bool;
     class Float;
+
+    class Bool;
 
     class Pointer;
     class Reference;
@@ -65,13 +68,21 @@ public:
 };
 
 /**
+ * @brief A base class for all numeric types.
+ *
+ * Includes `Type::Int` and `Type::Float`.
+ */
+class Type::INumeric : public Type {
+};
+
+/**
  * @brief An integer type.
  *
  * Can be signed or unsigned, and can have any width.
  * To save space, the width is stored as a uint8_t.
  * Additionally, it is recommended only widths of 8, 16, 32, or 64 are used.
  */
-class Type::Int : public Type {
+class Type::Int : public Type::INumeric {
 public:
     // Whether the integer is signed or unsigned.
     const bool is_signed;
@@ -93,29 +104,11 @@ public:
 };
 
 /**
- * @brief A boolean type.
- *
- * Boolean types have no additional state as there is no need;
- * All boolean types are the same.
- * In LLVM, booleans may be represented as an integer 1 bit wide (`i1`).
- */
-class Type::Bool : public Type {
-public:
-    std::string to_string() const override {
-        return "bool";
-    }
-
-    bool operator==(const Type& other) const override {
-        return dynamic_cast<const Bool*>(&other) != nullptr;
-    }
-};
-
-/**
  * @brief A floating-point type.
  *
  * Can be 32 or 64 bits wide.
  */
-class Type::Float : public Type {
+class Type::Float : public Type::INumeric {
 public:
     // The width of the float in bits. Can be 32 or 64.
     const uint8_t width;
@@ -136,6 +129,24 @@ public:
             return width == other_float->width;
         }
         return false;
+    }
+};
+
+/**
+ * @brief A boolean type.
+ *
+ * Boolean types have no additional state as there is no need;
+ * All boolean types are the same.
+ * In LLVM, booleans may be represented as an integer 1 bit wide (`i1`).
+ */
+class Type::Bool : public Type {
+public:
+    std::string to_string() const override {
+        return "bool";
+    }
+
+    bool operator==(const Type& other) const override {
+        return dynamic_cast<const Bool*>(&other) != nullptr;
     }
 };
 
