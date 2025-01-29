@@ -47,6 +47,8 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
         std::string(stmt->identifier->lexeme),
         stmt->annotation.value()
     );
+
+    return std::any();
 }
 
 std::any LocalChecker::visit(Stmt::Eof* stmt) {
@@ -141,7 +143,7 @@ std::any LocalChecker::visit(Expr::Literal* expr, bool as_lvalue) {
     std::shared_ptr<Type> type = nullptr;
     switch (expr->token->tok_type) {
     case Tok::Int:
-        type = std::make_shared<Type::Int>(32);
+        type = std::make_shared<Type::Int>(true, 32);
         break;
     case Tok::Float:
         type = std::make_shared<Type::Float>(64);

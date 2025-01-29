@@ -39,6 +39,8 @@ public:
      * @param ast The list of statements to type check.
      */
     void check(std::vector<std::shared_ptr<Stmt>> ast);
+
+    // TODO: Consider adding `reset` function.
 };
 
 #endif // NICO_LOCAL_CHECKER_H

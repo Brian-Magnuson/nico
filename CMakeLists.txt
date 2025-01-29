@@ -26,10 +26,21 @@ endif()
 include(Catch)
 
 # Core files
-set(LEXER_SRC src/lexer/token.cpp src/lexer/lexer.cpp)
-set(PARSER_SRC src/parser/parser.cpp)
-set(CHECKER_SRC src/checker/local_checker.cpp src/checker/symbol_table.cpp)
-set(LOGGER_SRC src/logger/logger.cpp)
+set(LEXER_SRC
+    src/lexer/token.cpp
+    src/lexer/lexer.cpp
+)
+set(PARSER_SRC
+    src/parser/parser.cpp
+)
+set(CHECKER_SRC
+    src/checker/global_checker.cpp
+    src/checker/local_checker.cpp
+    src/checker/symbol_table.cpp
+)
+set(LOGGER_SRC
+    src/logger/logger.cpp
+)
 set(CORE_SRC
     ${LEXER_SRC}
     ${PARSER_SRC}
@@ -41,10 +52,18 @@ set(CORE_SRC
 set(MAIN_SRC src/main.cpp)
 
 # Debug files
-set(DEBUG_SRC src/debug/ast_printer.cpp src/debug/test_utils.cpp)
+set(DEBUG_SRC
+    src/debug/ast_printer.cpp
+    src/debug/test_utils.cpp
+)
 
 # Test files
-set(TEST_SRC test/lexer_tests.cpp test/parser_expr_tests.cpp test/parser_stmt_tests.cpp)
+set(TEST_SRC
+    test/lexer_tests.cpp
+    test/parser_expr_tests.cpp
+    test/parser_stmt_tests.cpp
+    test/checker_local_tests.cpp
+)
 
 # Main executable
 add_executable(nico ${MAIN_SRC} ${CORE_SRC})
