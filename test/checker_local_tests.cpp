@@ -44,6 +44,19 @@ TEST_CASE("Local variable declarations", "[checker]") {
         CHECK(errors.at(0) == Err::LetTypeMismatch);
     }
 
+    SECTION("Undeclared identifier") {
+        // Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file("let a = b");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::UndeclaredIdentifier);
+    }
+
     lexer.reset();
     parser.reset();
     Logger::inst().reset();
