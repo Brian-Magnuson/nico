@@ -30,7 +30,7 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
         if (*expr_type != *annotation_type) {
             Logger::inst().log_error(
                 Err::LetTypeMismatch,
-                stmt->identifier->location,
+                *stmt->expression.value()->location,
                 std::string("Type `") + expr_type->to_string() + "` is not compatible with type `" + annotation_type->to_string() + "`."
             );
             return std::any();

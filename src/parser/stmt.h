@@ -71,7 +71,10 @@ public:
         virtual std::any visit(Literal* expr, bool as_lvalue) = 0;
     };
 
+    // The type of the expression.
     std::shared_ptr<Type> type;
+    // The location of the expression.
+    const Location* location;
 
     /**
      * @brief Accept a visitor.
@@ -179,7 +182,10 @@ public:
     // The right operand expression.
     std::shared_ptr<Expr> right;
 
-    Assign(std::shared_ptr<Expr> left, std::shared_ptr<Token> op, std::shared_ptr<Expr> right) : left(left), op(op), right(right) {}
+    Assign(std::shared_ptr<Expr> left, std::shared_ptr<Token> op, std::shared_ptr<Expr> right)
+        : left(left), op(op), right(right) {
+        location = &op->location;
+    }
 
     std::any accept(Visitor* visitor, bool as_lvalue) override {
         return visitor->visit(this, as_lvalue);
@@ -201,7 +207,10 @@ public:
     // The right operand expression.
     std::shared_ptr<Expr> right;
 
-    Binary(std::shared_ptr<Expr> left, std::shared_ptr<Token> op, std::shared_ptr<Expr> right) : left(left), op(op), right(right) {}
+    Binary(std::shared_ptr<Expr> left, std::shared_ptr<Token> op, std::shared_ptr<Expr> right)
+        : left(left), op(op), right(right) {
+        location = &op->location;
+    }
 
     std::any accept(Visitor* visitor, bool as_lvalue) override {
         return visitor->visit(this, as_lvalue);
@@ -220,7 +229,10 @@ public:
     // The operand expression.
     std::shared_ptr<Expr> right;
 
-    Unary(std::shared_ptr<Token> op, std::shared_ptr<Expr> right) : op(op), right(right) {}
+    Unary(std::shared_ptr<Token> op, std::shared_ptr<Expr> right)
+        : op(op), right(right) {
+        location = &op->location;
+    }
 
     std::any accept(Visitor* visitor, bool as_lvalue) override {
         return visitor->visit(this, as_lvalue);
@@ -235,7 +247,10 @@ public:
     // The token representing the identifier.
     std::shared_ptr<Token> token;
 
-    Identifier(std::shared_ptr<Token> token) : token(token) {}
+    Identifier(std::shared_ptr<Token> token)
+        : token(token) {
+        location = &token->location;
+    }
 
     std::any accept(Visitor* visitor, bool as_lvalue) override {
         return visitor->visit(this, as_lvalue);
@@ -252,7 +267,10 @@ public:
     // The token representing the literal value.
     std::shared_ptr<Token> token;
 
-    Literal(std::shared_ptr<Token> token) : token(token) {}
+    Literal(std::shared_ptr<Token> token)
+        : token(token) {
+        location = &token->location;
+    }
 
     std::any accept(Visitor* visitor, bool as_lvalue) override {
         return visitor->visit(this, as_lvalue);
