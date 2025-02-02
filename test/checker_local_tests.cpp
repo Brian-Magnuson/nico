@@ -31,9 +31,35 @@ TEST_CASE("Local variable declarations", "[checker]") {
         CHECK(Logger::inst().get_errors().empty());
     }
 
-    SECTION("Let type mismatch") {
+    SECTION("Let type mismatch 1") {
         // Logger::inst().set_printing_enabled(true);
         auto file = make_test_code_file("let a: i32 = true");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::LetTypeMismatch);
+    }
+
+    SECTION("Let type mismatch 2") {
+        // Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file("let a: i32 = 1.0");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::LetTypeMismatch);
+    }
+
+    SECTION("Let type mismatch 3") {
+        // Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file("let a = true let b: i32 = a");
         auto tokens = lexer.scan(file);
         auto ast = parser.parse(std::move(tokens));
         global_checker.check(ast);
