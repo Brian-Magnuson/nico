@@ -103,7 +103,7 @@ std::any LocalChecker::visit(Expr::Binary* expr, bool as_lvalue) {
         }
         // Types must inherit from `Type::INumeric`.
         if (!dynamic_cast<Type::INumeric*>(l_type.get())) {
-            Logger::inst().log_error(Err::AssignmentTypeMismatch, expr->op->location, "Operands must be of a numeric type.");
+            Logger::inst().log_error(Err::NoOperatorOverload, expr->op->location, "Operands must be of a numeric type.");
         }
         return l_type;
     default:
@@ -119,7 +119,7 @@ std::any LocalChecker::visit(Expr::Unary* expr, bool as_lvalue) {
     case Tok::Minus:
         // Types must inherit from `Type::INumeric`.
         if (!dynamic_cast<Type::INumeric*>(type.get())) {
-            Logger::inst().log_error(Err::AssignmentTypeMismatch, expr->op->location, "Operand must be of a numeric type.");
+            Logger::inst().log_error(Err::NoOperatorOverload, expr->op->location, "Operand must be of a numeric type.");
         }
         return type;
     default:

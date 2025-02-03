@@ -68,6 +68,8 @@ enum class Err {
     AssignmentTypeMismatch,
     // An identifier was not found in the symbol table.
     UndeclaredIdentifier,
+    // An operator was found that cannot be used with the given types.
+    NoOperatorOverload,
 
     // Code generation error.
     CodeGen = 6000,

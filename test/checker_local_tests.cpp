@@ -87,3 +87,34 @@ TEST_CASE("Local variable declarations", "[checker]") {
     parser.reset();
     Logger::inst().reset();
 }
+
+TEST_CASE("Local unary expressions", "[checker]") {
+    Lexer lexer;
+    Parser parser;
+    GlobalChecker global_checker;
+    LocalChecker local_checker;
+    Logger::inst().set_printing_enabled(false);
+
+    SECTION("Valid unary expressions") {
+        auto file = make_test_code_file("let a = -1");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+
+        CHECK(Logger::inst().get_errors().empty());
+    }
+
+    SECTION("Unary type mismatch 1") {
+        Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file("let a = -true");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::NoOperatorOverload);
+    }
+}
