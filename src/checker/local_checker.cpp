@@ -96,7 +96,7 @@ std::any LocalChecker::visit(Expr::Binary* expr, bool as_lvalue) {
         // Both operands must be of the same type.
         if (*l_type != *r_type) {
             Logger::inst().log_error(
-                Err::TypeMismatch,
+                Err::NoOperatorOverload,
                 expr->op->location,
                 std::string("Type `") + r_type->to_string() + "` is not compatible with type `" + l_type->to_string() + "`."
             );

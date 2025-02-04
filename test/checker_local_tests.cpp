@@ -106,7 +106,7 @@ TEST_CASE("Local unary expressions", "[checker]") {
     }
 
     SECTION("Unary type mismatch 1") {
-        Logger::inst().set_printing_enabled(true);
+        // Logger::inst().set_printing_enabled(true);
         auto file = make_test_code_file("let a = -true");
         auto tokens = lexer.scan(file);
         auto ast = parser.parse(std::move(tokens));
@@ -117,4 +117,81 @@ TEST_CASE("Local unary expressions", "[checker]") {
         REQUIRE(errors.size() >= 1);
         CHECK(errors.at(0) == Err::NoOperatorOverload);
     }
+
+    lexer.reset();
+    parser.reset();
+    Logger::inst().reset();
+}
+
+TEST_CASE("Local binary expressions", "[checker]") {
+    Lexer lexer;
+    Parser parser;
+    GlobalChecker global_checker;
+    LocalChecker local_checker;
+    Logger::inst().set_printing_enabled(false);
+
+    SECTION("Valid binary expressions 1") {
+        // Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file("let a = 1 + 2");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+
+        CHECK(Logger::inst().get_errors().empty());
+    }
+
+    SECTION("Valid binary expressions 2") {
+        // Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file("let a = 1.0 + 2.0");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+
+        CHECK(Logger::inst().get_errors().empty());
+    }
+
+    SECTION("Binary type mismatch 1") {
+        // Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file("let a = 1 + true");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::NoOperatorOverload);
+    }
+
+    SECTION("Binary type mismatch 2") {
+        // Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file("let a = true + 1");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::NoOperatorOverload);
+    }
+
+    SECTION("Binary type mismatch 3") {
+        // Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file("let a = true + false");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::NoOperatorOverload);
+    }
+
+    lexer.reset();
+    parser.reset();
+    Logger::inst().reset();
 }
