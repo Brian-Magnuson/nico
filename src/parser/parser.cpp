@@ -98,7 +98,7 @@ std::optional<std::shared_ptr<Expr>> Parser::postfix() {
 }
 
 std::optional<std::shared_ptr<Expr>> Parser::unary() {
-    if (match({Tok::Minus})) {
+    if (match({Tok::Minus, Tok::KwNot})) {
         auto token = previous();
         auto right = unary();
         if (!right)
@@ -145,11 +145,27 @@ std::optional<std::shared_ptr<Expr>> Parser::equality() {
 }
 
 std::optional<std::shared_ptr<Expr>> Parser::logical_and() {
-    return equality();
+    auto left = equality();
+    while (match({Tok::KwAnd})) {
+        auto op = previous();
+        auto right = equality();
+        if (!right)
+            return std::nullopt;
+        left = std::make_shared<Expr::Binary>(*left, op, *right);
+    }
+    return left;
 }
 
 std::optional<std::shared_ptr<Expr>> Parser::logical_or() {
-    return logical_and();
+    auto left = logical_and();
+    while (match({Tok::KwOr})) {
+        auto op = previous();
+        auto right = logical_and();
+        if (!right)
+            return std::nullopt;
+        left = std::make_shared<Expr::Binary>(*left, op, *right);
+    }
+    return left;
 }
 
 std::optional<std::shared_ptr<Expr>> Parser::assignment() {

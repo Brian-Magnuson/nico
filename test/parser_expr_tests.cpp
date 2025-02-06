@@ -108,6 +108,39 @@ TEST_CASE("Parser expressions", "[parser]") {
         CHECK(printer.stmts_to_strings(ast) == expected);
     }
 
+    SECTION("Binary 5") {
+        auto file = make_test_code_file("true and false");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(expr (binary and (lit true) (lit false)))",
+            "(stmt:eof)"
+        };
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
+    SECTION("Binary 6") {
+        auto file = make_test_code_file("true or false and false");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(expr (binary or (lit true) (binary and (lit false) (lit false))))",
+            "(stmt:eof)"
+        };
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
+    SECTION("Binary 7") {
+        auto file = make_test_code_file("true or not true");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(expr (binary or (lit true) (unary not (lit true))))",
+            "(stmt:eof)"
+        };
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
     SECTION("Assignment 1") {
         auto file = make_test_code_file("a = 1");
         auto tokens = lexer.scan(file);
