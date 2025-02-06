@@ -379,6 +379,21 @@ TEST_CASE("Lexer basic keywords", "[lexer]") {
         CHECK(extract_token_types(tokens) == expected);
     }
 
+    SECTION("Basic keywords 2") {
+        auto file = make_test_code_file("not true and true or true");
+        auto tokens = lexer.scan(file);
+        std::vector<Tok> expected = {
+            Tok::KwNot,
+            Tok::Bool,
+            Tok::KwAnd,
+            Tok::Bool,
+            Tok::KwOr,
+            Tok::Bool,
+            Tok::Eof
+        };
+        CHECK(extract_token_types(tokens) == expected);
+    }
+
     lexer.reset();
     Logger::inst().reset();
 }
