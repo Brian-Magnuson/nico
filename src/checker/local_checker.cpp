@@ -45,7 +45,8 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
     // Insert the variable into the symbol table.
     symbol_table->insert(
         std::string(stmt->identifier->lexeme),
-        stmt->annotation.value()
+        stmt->annotation.value(),
+        stmt->has_var
     );
 
     return std::any();
@@ -131,12 +132,12 @@ std::any LocalChecker::visit(Expr::Unary* expr, bool as_lvalue) {
 
 std::any LocalChecker::visit(Expr::Identifier* expr, bool /*as_lvalue*/) {
     // Ignore `as_value` since identifiers may be lvalues or rvalues.
-    auto var_type = symbol_table->get(std::string(expr->token->lexeme));
-    if (!var_type.has_value()) {
+    auto var_entry = symbol_table->get(std::string(expr->token->lexeme));
+    if (!var_entry.has_value()) {
         Logger::inst().log_error(Err::UndeclaredIdentifier, expr->token->location, "Identifier `" + std::string(expr->token->lexeme) + "` was not declared.");
         return std::any();
     }
-    return *var_type;
+    return var_entry->type;
 }
 
 std::any LocalChecker::visit(Expr::Literal* expr, bool as_lvalue) {

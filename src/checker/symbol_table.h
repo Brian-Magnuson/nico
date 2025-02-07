@@ -15,8 +15,22 @@
  * @brief A symbol table used to store identifiers and their types.
  */
 class SymbolTable {
+public:
+    /**
+     * @brief A struct representing an entry in the symbol table.
+     *
+     * Contains the type of the identifier and whether it is declared with `var` or not.
+     */
+    struct Entry {
+        // Whether the identifier is declared with `var` or not.
+        bool is_var;
+        // The type of the identifier.
+        const std::shared_ptr<Type> type;
+    };
+
+private:
     // The table of identifiers and their types.
-    std::unordered_map<std::string, std::vector<std::shared_ptr<Type>>> table;
+    std::unordered_map<std::string, std::vector<Entry>> table;
     // The previous symbol table.
     std::unique_ptr<SymbolTable> previous;
 
@@ -28,18 +42,19 @@ public:
      *
      * @param identifier The identifier to insert.
      * @param type The type of the identifier.
+     * @param is_var Whether the identifier is declared with `var` or not.
      */
-    void insert(const std::string& identifier, const std::shared_ptr<Type>& type);
+    void insert(const std::string& identifier, const std::shared_ptr<Type>& type, bool is_var);
 
     /**
-     * @brief Retrieves the type of an identifier from the symbol table.
+     * @brief Retrieves the entry of an identifier from the symbol table.
      *
-     * If the identifier was inserted multiple times, the last type inserted will be returned.
+     * If the identifier was inserted multiple times, the last entry inserted will be returned.
      *
      * @param identifier The identifier to retrieve.
-     * @return The last type inserted for the identifier, or std::nullopt if the identifier was not found.
+     * @return The last entry inserted for the identifier, or std::nullopt if the identifier was not found.
      */
-    std::optional<std::shared_ptr<Type>> get(const std::string& identifier) const;
+    std::optional<Entry> get(const std::string& identifier) const;
 
     /**
      * @brief Increases the scope of the symbol table.
