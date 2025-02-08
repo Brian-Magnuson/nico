@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "../lexer/token.h"
 #include "../parser/type.h"
 
 /**
@@ -24,6 +25,8 @@ public:
     struct Entry {
         // Whether the identifier is declared with `var` or not.
         bool is_var;
+        // The token representing the identifier.
+        const std::shared_ptr<Token> token;
         // The type of the identifier.
         const std::shared_ptr<Type> type;
     };
@@ -41,10 +44,16 @@ public:
      * If the identifier already exists in the table, the type will be appended to the list of types.
      *
      * @param identifier The identifier to insert.
-     * @param type The type of the identifier.
      * @param is_var Whether the identifier is declared with `var` or not.
+     * @param token The token representing the identifier.
+     * @param type The type of the identifier.
      */
-    void insert(const std::string& identifier, const std::shared_ptr<Type>& type, bool is_var);
+    void insert(
+        const std::string& identifier,
+        bool is_var,
+        const std::shared_ptr<Token>& token,
+        const std::shared_ptr<Type>& type
+    );
 
     /**
      * @brief Retrieves the entry of an identifier from the symbol table.

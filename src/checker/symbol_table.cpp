@@ -1,7 +1,12 @@
 #include "symbol_table.h"
 
-void SymbolTable::insert(const std::string& identifier, const std::shared_ptr<Type>& type, bool is_var) {
-    table[identifier].push_back({is_var, type});
+void SymbolTable::insert(
+    const std::string& identifier,
+    bool is_var,
+    const std::shared_ptr<Token>& token,
+    const std::shared_ptr<Type>& type
+) {
+    table[identifier].push_back({is_var, token, type});
 }
 
 std::optional<SymbolTable::Entry> SymbolTable::get(const std::string& identifier) const {

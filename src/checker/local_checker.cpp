@@ -45,8 +45,9 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
     // Insert the variable into the symbol table.
     symbol_table->insert(
         std::string(stmt->identifier->lexeme),
-        stmt->annotation.value(),
-        stmt->has_var
+        stmt->has_var,
+        stmt->identifier,
+        stmt->annotation.value()
     );
 
     return std::any();
@@ -138,6 +139,7 @@ std::any LocalChecker::visit(Expr::Identifier* expr, bool as_lvalue) {
     }
     if (!var_entry->is_var && as_lvalue) {
         Logger::inst().log_error(Err::AssignToImmutable, expr->token->location, "Cannot assign to immutable identifier `" + std::string(expr->token->lexeme) + "`.");
+        Logger::inst().log_note(var_entry->token->location, "Identifier declared here.");
     }
     return var_entry->type;
 }

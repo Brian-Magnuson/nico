@@ -84,7 +84,7 @@ TEST_CASE("Local variable declarations", "[checker]") {
     }
 
     SECTION("Immutable variables") {
-        Logger::inst().set_printing_enabled(true);
+        // Logger::inst().set_printing_enabled(true);
         auto file = make_test_code_file("let a = 1 let b = 2 a = b");
         auto tokens = lexer.scan(file);
         auto ast = parser.parse(std::move(tokens));
