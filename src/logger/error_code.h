@@ -68,6 +68,8 @@ enum class Err {
     AssignmentTypeMismatch,
     // An identifier was not found in the symbol table.
     UndeclaredIdentifier,
+    // An identifier was visited as an lvalue, but was not declared with `var`.
+    AssignToImmutable,
     // An operator was found that cannot be used with the given types.
     NoOperatorOverload,
 

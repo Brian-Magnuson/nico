@@ -130,12 +130,14 @@ std::any LocalChecker::visit(Expr::Unary* expr, bool as_lvalue) {
     return std::any();
 }
 
-std::any LocalChecker::visit(Expr::Identifier* expr, bool /*as_lvalue*/) {
-    // Ignore `as_value` since identifiers may be lvalues or rvalues.
+std::any LocalChecker::visit(Expr::Identifier* expr, bool as_lvalue) {
     auto var_entry = symbol_table->get(std::string(expr->token->lexeme));
     if (!var_entry.has_value()) {
         Logger::inst().log_error(Err::UndeclaredIdentifier, expr->token->location, "Identifier `" + std::string(expr->token->lexeme) + "` was not declared.");
         return std::any();
+    }
+    if (!var_entry->is_var && as_lvalue) {
+        Logger::inst().log_error(Err::AssignToImmutable, expr->token->location, "Cannot assign to immutable identifier `" + std::string(expr->token->lexeme) + "`.");
     }
     return var_entry->type;
 }
