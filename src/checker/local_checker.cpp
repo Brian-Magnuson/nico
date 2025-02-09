@@ -71,8 +71,15 @@ std::any LocalChecker::visit(Expr::Assign* expr, bool as_lvalue) {
         Logger::inst().log_error(Err::NotAnLValue, expr->op->location, "Assignment expression cannot be an lvalue.");
     }
 
-    auto l_type = std::any_cast<std::shared_ptr<Type>>(expr->left->accept(this, true));
-    auto r_type = std::any_cast<std::shared_ptr<Type>>(expr->right->accept(this, false));
+    auto l_any = expr->left->accept(this, true);
+    if (!l_any.has_value())
+        return std::any();
+    auto l_type = std::any_cast<std::shared_ptr<Type>>(l_any);
+
+    auto r_any = expr->right->accept(this, false);
+    if (!r_any.has_value())
+        return std::any();
+    auto r_type = std::any_cast<std::shared_ptr<Type>>(r_any);
 
     // The types of the left and right sides must match.
     if (*l_type != *r_type) {
@@ -81,14 +88,22 @@ std::any LocalChecker::visit(Expr::Assign* expr, bool as_lvalue) {
             expr->op->location,
             std::string("Type `") + r_type->to_string() + "` is not compatible with type `" + l_type->to_string() + "`."
         );
+        return std::any();
     }
 
     return l_type;
 }
 
 std::any LocalChecker::visit(Expr::Binary* expr, bool as_lvalue) {
-    auto l_type = std::any_cast<std::shared_ptr<Type>>(expr->left->accept(this, false));
-    auto r_type = std::any_cast<std::shared_ptr<Type>>(expr->right->accept(this, false));
+    auto l_any = expr->left->accept(this, true);
+    if (!l_any.has_value())
+        return std::any();
+    auto l_type = std::any_cast<std::shared_ptr<Type>>(l_any);
+
+    auto r_any = expr->right->accept(this, false);
+    if (!r_any.has_value())
+        return std::any();
+    auto r_type = std::any_cast<std::shared_ptr<Type>>(r_any);
 
     switch (expr->op->tok_type) {
     case Tok::Plus:
@@ -102,10 +117,12 @@ std::any LocalChecker::visit(Expr::Binary* expr, bool as_lvalue) {
                 expr->op->location,
                 std::string("Type `") + r_type->to_string() + "` is not compatible with type `" + l_type->to_string() + "`."
             );
+            return std::any();
         }
         // Types must inherit from `Type::INumeric`.
         if (!dynamic_cast<Type::INumeric*>(l_type.get())) {
             Logger::inst().log_error(Err::NoOperatorOverload, expr->op->location, "Operands must be of a numeric type.");
+            return std::any();
         }
         return l_type;
     default:
@@ -115,20 +132,23 @@ std::any LocalChecker::visit(Expr::Binary* expr, bool as_lvalue) {
 }
 
 std::any LocalChecker::visit(Expr::Unary* expr, bool as_lvalue) {
-    auto type = std::any_cast<std::shared_ptr<Type>>(expr->right->accept(this, false));
+    auto r_any = expr->right->accept(this, false);
+    if (!r_any.has_value())
+        return std::any();
+    auto type = std::any_cast<std::shared_ptr<Type>>(r_any);
 
     switch (expr->op->tok_type) {
     case Tok::Minus:
         // Types must inherit from `Type::INumeric`.
         if (!dynamic_cast<Type::INumeric*>(type.get())) {
             Logger::inst().log_error(Err::NoOperatorOverload, expr->op->location, "Operand must be of a numeric type.");
+            return std::any();
         }
         return type;
     default:
         Logger::inst().log_error(Err::Unimplemented, expr->op->location, "Unary operator not implemented.");
+        return std::any();
     }
-
-    return std::any();
 }
 
 std::any LocalChecker::visit(Expr::Identifier* expr, bool as_lvalue) {
@@ -140,6 +160,7 @@ std::any LocalChecker::visit(Expr::Identifier* expr, bool as_lvalue) {
     if (!var_entry->is_var && as_lvalue) {
         Logger::inst().log_error(Err::AssignToImmutable, expr->token->location, "Cannot assign to immutable identifier `" + std::string(expr->token->lexeme) + "`.");
         Logger::inst().log_note(var_entry->token->location, "Identifier declared here.");
+        return std::any();
     }
     return var_entry->type;
 }
