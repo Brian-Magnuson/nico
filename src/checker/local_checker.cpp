@@ -189,3 +189,7 @@ void LocalChecker::check(std::vector<std::shared_ptr<Stmt>> ast) {
         stmt->accept(this);
     }
 }
+
+void LocalChecker::reset() {
+    symbol_table = std::make_unique<SymbolTable>();
+}

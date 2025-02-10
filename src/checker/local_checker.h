@@ -40,7 +40,12 @@ public:
      */
     void check(std::vector<std::shared_ptr<Stmt>> ast);
 
-    // TODO: Consider adding `reset` function.
+    /**
+     * @brief Resets the local type checker.
+     *
+     * This function will reset the symbol table.
+     */
+    void reset();
 };
 
 #endif // NICO_LOCAL_CHECKER_H

@@ -98,6 +98,7 @@ TEST_CASE("Local variable declarations", "[checker]") {
 
     lexer.reset();
     parser.reset();
+    local_checker.reset();
     Logger::inst().reset();
 }
 
@@ -133,6 +134,7 @@ TEST_CASE("Local unary expressions", "[checker]") {
 
     lexer.reset();
     parser.reset();
+    local_checker.reset();
     Logger::inst().reset();
 }
 
@@ -206,5 +208,6 @@ TEST_CASE("Local binary expressions", "[checker]") {
 
     lexer.reset();
     parser.reset();
+    local_checker.reset();
     Logger::inst().reset();
 }
