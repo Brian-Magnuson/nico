@@ -38,6 +38,9 @@ set(CHECKER_SRC
     src/checker/local_checker.cpp
     src/checker/symbol_table.cpp
 )
+set(CODEGEN_SRC
+    src/codegen/code_generator.cpp
+)
 set(LOGGER_SRC
     src/logger/logger.cpp
 )
