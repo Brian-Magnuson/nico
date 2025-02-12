@@ -8,6 +8,17 @@ include(CTest)
 set(CMAKE_CXX_STANDARD 17)
 add_compile_options(-Wall)
 
+# LLVM
+find_package(LLVM 18.1.0 REQUIRED CONFIG)
+message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
+message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
+include_directories(${LLVM_INCLUDE_DIRS})
+separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
+add_definitions(${LLVM_DEFINITIONS_LIST})
+set(LLVM_ENABLE_ZSTD OFF)
+llvm_map_components_to_libnames(llvm_libs core orcjit native interpreter)
+message(STATUS "LLVM libraries: ${llvm_libs}")
+
 # Catch2
 find_package(Catch2 3.4.0 QUIET)
 
@@ -70,6 +81,7 @@ set(TEST_SRC
 
 # Main executable
 add_executable(nico ${MAIN_SRC} ${CORE_SRC})
+target_link_libraries(nico ${llvm_libs})
 
 # Test executable
 add_executable(tests ${TEST_SRC} ${CORE_SRC} ${DEBUG_SRC})
