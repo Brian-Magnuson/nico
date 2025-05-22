@@ -8,6 +8,9 @@ include(CTest)
 set(CMAKE_CXX_STANDARD 17)
 add_compile_options(-Wall)
 
+# zstd
+find_package(zstd REQUIRED)
+
 # LLVM
 find_package(LLVM 18.1.0 REQUIRED CONFIG)
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
