@@ -148,8 +148,11 @@ unsafe:
 
 All programs consist of statements. Statements fall into three categories:
 - Declarations: These introduce new names and definitions into the program.
+  - Examples: variables, functions, structs
 - Expressions: These yield values.
-- Non-declaring statements: Statements that can only be used within certain contexts and do not yield values.
+  - Examples: arithmetic expressions, function calls, blocks, control flow expressions
+- Non-declaring statements: Statements that neither yield values nor introduce new names.
+  - Examples: pass, return, break, continue, yield
 
 ## Whitespace
 
@@ -182,6 +185,12 @@ Here is an example of statements with different left spacing:
 The `block` keyword is followed by a colon, a newline, and an increase in left spacing, so an `INDENT` is inserted. Since the block was opened on a line with a left spacing of 4, all lines with a left spacing greater than 4 are considered to be part of the block.
 
 Here, `x`, `y`, and `z` are all part of the same block, despite having different left spacing. With the `u` declaration, left spacing decreases to 4, where the previous `INDENT` was made. Thus, a `DEDENT` is inserted.
+
+Since left spacing requires the line to contain a non-whitespace character, it follows that every block opened by an `INDENT` must contain at least one statement. If an empty block is desired, `pass` may be used:
+```
+block:
+    pass
+```
 
 These are not valid:
 ```
@@ -232,6 +241,82 @@ A variable must always be initialized when declared. If no value is provided, a 
 Variables are immutable by default. To declare a mutable variable, use the `var` keyword:
 ```
 let var x = 42
+```
+
+### Functions
+
+Functions are used to encapsulate code and allow it to be reused. The `func` keyword declares a function:
+```
+func my_function(): // Indented form
+    statement1
+
+func my_function() { // Braced form
+    statement1
+}
+```
+
+Functions may accept arguments by listing parameters in parentheses. Types are always required when listing parameters:
+```
+func my_function(a: i32, b: i32):
+    statement1
+```
+
+Function parameters are immutable by default. To declare a mutable parameter, use the `var` keyword:
+```
+func my_function(var a: i32, b: var&i32, var c: var&i32):
+    statement1
+```
+
+Function parameters may provide a default value. This is done by using the `=` operator:
+```
+func my_function(a: i32, b: i32 = 3.14):
+    statement1
+
+func my_function(a: i32, b: i32 = 3.14, c: i32):
+    statement1
+```
+
+Callers may omit arguments for parameters with default values.
+The parameter type is still required, even if a default value is provided, and the default value must match the type.
+
+Default values may even be used in the middle of a parameter list. This is considered perfectly acceptable, though it may make the function more difficult to call.
+
+Reference-type parameters are only allowed default values if the default value is a reference to a value with a static lifetime. Strings have a static lifetime, so they are allowed to be used as default values:
+```
+func my_function(a: i32, b: &str = "Hello, world!"):
+    statement1
+```
+
+Functions may also return values. The return type is specified after the parameter list:
+```
+func my_function(a: i32, b: i32) -> i32:
+    yield a + b
+```
+
+Similar to blocks, the `yield` statement may be used to set the return value of the function. The function will return the value from the last yield statement executed within the function.
+
+You can also use a return statement to exit the function early:
+```
+func my_function(a: i32, b: i32) -> i32:
+    if a == 0:
+        return 0
+    yield a + b
+```
+
+With return types, there are several rules to follow:
+1. Functions that do not specify a return type have an implicit return type of `()`.
+2. Functions that return `()` have an implicit `yield ()`, meaning no additional `yield` or `return` statements are required.
+3. For all functions, the block must yield the expected return type, and all return statements must return the expected type.
+
+```
+func f1():
+    pass // Okay
+
+func f2():
+    yield 42 // Bad
+
+func f3() -> i32:
+    pass // Bad
 ```
 
 ## Expressions
@@ -322,6 +407,12 @@ Function call expressions are used to call functions. These use parentheses:
 my_function()
 my_func_with_args(1, 2, 3)
 ```
+
+There are two ways to pass arguments to a function:
+- **Positional arguments**: These are passed in the order they are defined in the function. For example, `my_function(1, 2, 3)` will pass `1` to the first parameter, `2` to the second parameter, and `3` to the third parameter. Positional must always come first.
+- **Named arguments**: These are passed by name and may be in any order. For example, `my_function(c=3, a=1, b=2)` will pass `1` to the `a` parameter, `2` to the `b` parameter, and `3` to the `c` parameter.
+
+When a function is called, every parameter must be matched with an argument, or the call is invalid. You can use a mix of positional, named, and default arguments, as long as the positional arguments come first and every parameter is matched with an argument.
 
 ### Block expressions
 
@@ -433,6 +524,19 @@ Unsafe blocks may still be written within safe blocks. Memory errors may occur, 
 
 ## Non-declaring statements
 
+### Pass statements
+
+A pass statement is a non-declaring statement that does nothing. It may be used whenever a statement is required, but no action is needed.
+```
+pass
+```
+
+Due to the rules of left spacing, blocks opened by an `INDENT` token must contain at least one statement, else the indent is considered malformed. If an empty block is desired, a pass statement may be used:
+```
+block:
+    pass
+```
+
 ### Return statements
 
 A return statement is used to exit a function and yield a value to the caller:
@@ -441,6 +545,11 @@ return value
 ```
 
 Return statements can only be used within functions.
+
+Return statements must always provide a value to be returned, even if the expected type is `()`. This is to prevent ambiguity in case any statements come after the return statement.
+```
+return ()
+```
 
 ### Break and continue statements
 
@@ -468,4 +577,14 @@ Yield statements can only be used within blocks. Yield statements only yield val
 let x = block:
     yield block:
         yield 42
+```
+
+Similar to return statements, yield statements must always provide a value to be yielded, even if the expected type is `()`. This is to prevent ambiguity in case any statements come after the yield statement.
+```
+yield ()
+```
+
+Ironically, `yield` statements themselves do not yield values (they are a non-declaring statement); they only affect the yield values of the surrounding blocks. This is not valid:
+```
+let x = yield 42
 ```
