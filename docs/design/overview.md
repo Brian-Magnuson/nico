@@ -11,6 +11,9 @@ The following is an overview of the Nico programming language design. This docum
 
 ### Numeric types
 
+> [!WARNING]
+> This part is subject to change.
+
 Currently, only two numeric types are supported: `i32` and `f64`. The `i32` type is a 32-bit signed integer, and the `f64` type is a 64-bit IEEE-754 floating-point number. They may be written as literals in the following ways:
 ```
 42
@@ -317,6 +320,68 @@ func f2():
 
 func f3() -> i32:
     pass // Bad
+```
+
+### Complex types
+
+> [!WARNING]
+> This section is subject to change.
+
+Complex types are user-defined types that are composed of other types. There are two kinds of complex types:
+- **Structs**: Basic complex types that use copy semantics (but can be moved if needed). All fields must also be struct-types or primitive types.
+- **Classes**: Complex types that are not copyable (but can be referenced or moved).
+
+Struct-types are meant for complex types where copying is relatively quick and cheap.
+
+The syntax for declaring structs and classes is similar:
+```
+struct MyStruct: // Indented form
+    let x: i32
+    let y: i32
+    func my_method():
+        statement1
+
+struct MyStruct { // Braced form
+    let x: i32
+    let y: i32
+    func my_method():
+        statement1
+}
+
+class MyClass: // Class
+    let x: i32
+    let y: i32
+    func my_method():
+        statement1
+```
+
+Complex type definitions may only consist of declarations. Expressions and non-declaring statements are not allowed.
+
+> [!WARNING]
+> This part is subject to change.
+
+Currently, inner complex types are not allowed. This may change in the future.
+
+Variable members in complex types are called *fields*. Function members are called *methods*. These are still declared with the `let` and `func` keywords respectively.
+
+Members of complex types are either instance members or shared members.
+- **Instance members** are associated with a specific instance of the complex type.
+  - **Instance fields** outside the type definition require an instance of the type. Inside the type defintion, they must be accessed using `self`.
+- **Shared members** (called "static members" in languages like C++ and Java) are associated with the complex type itself and are shared across all instances.
+  - **Shared fields** outside the type definition are accessed using the name of the type. Inside the type definition, they are accessed without `self`.
+
+Complex type members are considered instance members unless  kexplicitly marked as shared. Shared members are declared using the `shared` keyword:
+```
+struct MyStruct:
+    let var x: i32           // An instance field
+    shared let var y: i32    // A shared field
+
+    func f1():           // An instance method
+        self.x = 42
+        y = 64
+
+    shared func f2():    // A shared method
+        y = 128
 ```
 
 ## Expressions
