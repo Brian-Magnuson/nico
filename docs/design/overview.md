@@ -328,7 +328,7 @@ func f3() -> i32:
 > This section is subject to change.
 
 Complex types are user-defined types that are composed of other types. There are two kinds of complex types:
-- **Structs**: Basic complex types that use copy semantics (but can be moved if needed). All fields must also be struct-types or primitive types.
+- **Structs**: Basic complex types that use copy semantics (but can be moved if needed). All properties must also be struct-types or primitive types.
 - **Classes**: Complex types that are not copyable (but can be referenced or moved).
 
 Struct-types are meant for complex types where copying is relatively quick and cheap.
@@ -337,21 +337,27 @@ The syntax for declaring structs and classes is similar:
 ```
 struct MyStruct: // Indented form
     let x: i32
-    let y: i32
-    func my_method():
+    prop y: i32
+    func my_func():
+        statement1
+    method my_method():
         statement1
 
 struct MyStruct { // Braced form
     let x: i32
-    let y: i32
-    func my_method():
+    prop y: i32
+    func my_func():
+        statement1
+    method my_method():
         statement1
 }
 
 class MyClass: // Class
     let x: i32
-    let y: i32
-    func my_method():
+    prop y: i32
+    func my_func():
+        statement1
+    method my_method():
         statement1
 ```
 
@@ -362,26 +368,43 @@ Complex type definitions may only consist of declarations. Expressions and non-d
 
 Currently, inner complex types are not allowed. This may change in the future.
 
-Variable members in complex types are called *fields*. Function members are called *methods*. These are still declared with the `let` and `func` keywords respectively.
-
-Members of complex types are either instance members or shared members.
-- **Instance members** are associated with a specific instance of the complex type.
-  - **Instance fields** outside the type definition require an instance of the type. Inside the type defintion, they must be accessed using `self`.
-- **Shared members** (called "static members" in languages like C++ and Java) are associated with the complex type itself and are shared across all instances.
-  - **Shared fields** outside the type definition are accessed using the name of the type. Inside the type definition, they are accessed without `self`.
-
-Complex type members are considered instance members unless  kexplicitly marked as shared. Shared members are declared using the `shared` keyword:
+In complex types, member variables declared with `let` and member functions declared with `func` are said to be *shared*. This is similar to static members in C++ and Java. Outside the complex type, they are accessed using the class/struct name:
 ```
 struct MyStruct:
-    let var x: i32           // An instance field
-    shared let var y: i32    // A shared field
+    let x: i32
+    func my_func():
+        statement1
 
-    func f1():           // An instance method
-        self.x = 42
-        y = 64
+func global_func():
+    let x = MyStruct.x // Accessing shared member
+    MyStruct.my_func() // Calling shared member
+```
 
-    shared func f2():    // A shared method
-        y = 128
+We reuse the `let` and `func` keywords, because they are stored in a similar manner as other scoped variables and functions.
+
+Complex types may have properties (also known as instance member variables), which are declared with `prop`. Unlike shared variables, they are stored for each instance of the complex type. Properties are accessed using the instance name:
+```
+struct MyStruct:
+    prop x: i32
+
+func global_func():
+    let s = MyStruct()
+    let x = s.x // Accessing property
+```
+
+Complex types may also have methods (also known as instance member functions), which are declared with `method`. Methods are similar to functions, but they are called on an instance of the complex type. They also have access to the instance's properties and other methods through the `self` keyword:
+```
+struct MyStruct:
+    prop x: i32
+    method my_method():
+        let y = self.x // Accessing property
+        self.my_other_method() // Calling method
+    method my_other_method():
+        pass
+
+func global_func():
+    let s = new MyStruct { x = 0 }
+    s.my_method() // Calling method
 ```
 
 ## Expressions
