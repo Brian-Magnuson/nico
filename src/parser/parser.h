@@ -115,8 +115,22 @@ class Parser {
 
     std::optional<std::shared_ptr<Expr>> equality();
 
+    /**
+     * @brief Parses a logical and expression.
+     *
+     * Logical and expressions include `a && b`.
+     *
+     * @return A shared pointer to the parsed expression, or nullopt if the expression could not be parsed.
+     */
     std::optional<std::shared_ptr<Expr>> logical_and();
 
+    /**
+     * @brief Parses a logical or expression.
+     *
+     * Logical or expressions include `a || b`.
+     *
+     * @return A shared pointer to the parsed expression, or nullopt if the expression could not be parsed.
+     */
     std::optional<std::shared_ptr<Expr>> logical_or();
 
     /**
