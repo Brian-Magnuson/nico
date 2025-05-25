@@ -73,6 +73,42 @@ A tuple may also have no elements. It is written as an empty pair of parentheses
 
 A tuple with no elements is called the unit type. It is used to represent the absence of a value.
 
+### Object type
+
+An object type is a custom data type representing a mapping of identifiers to values. They are similar to complex types, but with several differences:
+- They are not defined using a class or struct; they are usually used when needed.
+- They are not identified by a name (except when using a type alias).
+- They are use move semantics, regardless of the internal types, and are not directly copyable.
+- They can only contain properties; no shared variables or functions are allowed.
+
+Additionally, you cannot add more properties to an object after it is created.
+
+Object types offer a flexible way to define custom data types without the overhead of defining a full class or struct.
+
+An object type is written as `{ prop1: T1, prop2: T2, ... }`, where `prop1`, `prop2`, etc., are the names of the properties and `T1`, `T2`, etc., are the types of the properties. For example, an object with two properties, `x` and `y`, would be written as `{ x: i32, y: f64 }`.
+
+Object type properties are immutable unless explicitly marked as mutable. To declare a mutable property, use the `var` keyword:
+```
+{ var x: i32, y: f64 }
+```
+
+Object type properties may also have default values. This is done by using the `=` operator:
+```
+{ x: i32 = 42, y: f64 = 3.14 }
+```
+
+Type annotations for each property are still required, even if a default value is provided. The default value must match the type.
+The default value must also be a reference to a value with a static lifetime.
+
+Objects may be written as literals using curly braces:
+```
+{ x: 42, y: 3.14 }
+```
+
+Values are assigned to their corresponding properties. By the end of the object literal, all properties must be assigned a value.
+
+Objects always use braces; there is no indented form, and they are not considered blocks. Blocks always have some keyword signifying the opening of a block, such as `if`, `while`, or `block`.
+
 ## Reference and pointer types
 
 ### Reference type
@@ -336,7 +372,7 @@ Struct-types are meant for complex types where copying is relatively quick and c
 The syntax for declaring structs and classes is similar:
 ```
 struct MyStruct: // Indented form
-    let x: i32
+    let x: i32 = 0
     prop y: i32
     func my_func():
         statement1
@@ -344,7 +380,7 @@ struct MyStruct: // Indented form
         statement1
 
 struct MyStruct { // Braced form
-    let x: i32
+    let x: i32 = 0
     prop y: i32
     func my_func():
         statement1
@@ -353,7 +389,7 @@ struct MyStruct { // Braced form
 }
 
 class MyClass: // Class
-    let x: i32
+    let x: i32 = 0
     prop y: i32
     func my_func():
         statement1
@@ -371,7 +407,7 @@ Currently, inner complex types are not allowed. This may change in the future.
 In complex types, member variables declared with `let` and member functions declared with `func` are said to be *shared*. This is similar to static members in C++ and Java. Outside the complex type, they are accessed using the class/struct name:
 ```
 struct MyStruct:
-    let x: i32
+    let x: i32 = 0
     func my_func():
         statement1
 
@@ -382,6 +418,8 @@ func global_func():
 
 We reuse the `let` and `func` keywords, because they are stored in a similar manner as other scoped variables and functions.
 
+Shared variables, like local variables, must always be initialized to some value when declared. If no value is provided, a type annotation is required. The variable will be initialized to the default value for the specified type.
+
 Complex types may have properties (also known as instance member variables), which are declared with `prop`. Unlike shared variables, they are stored for each instance of the complex type. Properties are accessed using the instance name:
 ```
 struct MyStruct:
@@ -391,6 +429,15 @@ func global_func():
     let s = MyStruct()
     let x = s.x // Accessing property
 ```
+
+Properties may have default values. This is done by using the `=` operator:
+```
+struct MyStruct:
+    prop x: i32 = 0
+    prop y: i32 = 3.14
+```
+
+Type annotations for each property are still required, even if a default value is provided. The default value must match the type. If the type is a reference, any default value must be a reference to a value with a static lifetime.
 
 Complex types may also have methods (also known as instance member functions), which are declared with `method`. Methods are similar to functions, but they are called on an instance of the complex type. They also have access to the instance's properties and other methods through the `self` keyword:
 ```
@@ -405,6 +452,25 @@ struct MyStruct:
 func global_func():
     let s = new MyStruct { x = 0 }
     s.my_method() // Calling method
+```
+
+To construct an instance of a complex type, use the `new` keyword followed by the type name and an object literal:
+```
+let s = new MyStruct { x: 0 }
+```
+
+The braced part is not a true object literal, but the mapping syntax is the same.
+
+By the end of the object literal, all properties must be assigned a value.
+
+There is no special way to define a constructor, but you can define shared functions that act as constructors:
+```
+struct MyStruct:
+    prop x: i32
+    prop y: i32
+
+    func init(x: i32, y: i32) -> MyStruct:
+        return new MyStruct { x: x, y: y }
 ```
 
 ## Expressions
@@ -498,7 +564,7 @@ my_func_with_args(1, 2, 3)
 
 There are two ways to pass arguments to a function:
 - **Positional arguments**: These are passed in the order they are defined in the function. For example, `my_function(1, 2, 3)` will pass `1` to the first parameter, `2` to the second parameter, and `3` to the third parameter. Positional must always come first.
-- **Named arguments**: These are passed by name and may be in any order. For example, `my_function(c=3, a=1, b=2)` will pass `1` to the `a` parameter, `2` to the `b` parameter, and `3` to the `c` parameter.
+- **Named arguments**: These are passed by name and may be in any order. For example, `my_function(c: 3, b: 2, a: 1)` will pass `1` to the `a` parameter, `2` to the `b` parameter, and `3` to the `c` parameter.
 
 When a function is called, every parameter must be matched with an argument, or the call is invalid. You can use a mix of positional, named, and default arguments, as long as the positional arguments come first and every parameter is matched with an argument.
 
