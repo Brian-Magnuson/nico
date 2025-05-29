@@ -20,7 +20,9 @@
  */
 template <typename K, typename V, typename Hash = std::hash<K>>
 class Dictionary {
+    // A map of keys to their indices in the keys vector.
     std::unordered_map<K, size_t, Hash> map;
+    // A list of key-value pairs in order of insertion.
     std::vector<std::pair<K, V>> keys;
 
 public:
@@ -151,6 +153,15 @@ public:
      */
     size_t size() const {
         return map.size();
+    }
+
+    /**
+     * @brief Check if the dictionary is empty.
+     *
+     * @return True if the dictionary is empty. False otherwise.
+     */
+    bool empty() const {
+        return map.empty();
     }
 
     /**
