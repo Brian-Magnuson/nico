@@ -294,7 +294,7 @@ func my_function() { // Braced form
 }
 ```
 
-Functions may accept arguments by listing parameters in parentheses. Types are always required when listing parameters:
+Functions may accept arguments by listing parameters in parentheses. Types are always required when listing parameters (except for the instance parameter in methods):
 ```
 func my_function(a: i32, b: i32):
     statement1
@@ -376,7 +376,7 @@ struct MyStruct: // Indented form
     prop y: i32
     func my_func():
         statement1
-    method my_method():
+    method my_method(self):
         statement1
 
 struct MyStruct { // Braced form
@@ -384,7 +384,7 @@ struct MyStruct { // Braced form
     prop y: i32
     func my_func():
         statement1
-    method my_method():
+    method my_method(self):
         statement1
 }
 
@@ -393,7 +393,7 @@ class MyClass: // Class
     prop y: i32
     func my_func():
         statement1
-    method my_method():
+    method my_method(self):
         statement1
 ```
 
@@ -439,19 +439,47 @@ struct MyStruct:
 
 Type annotations for each property are still required, even if a default value is provided. The default value must match the type. If the type is a reference, any default value must be a reference to a value with a static lifetime.
 
-Complex types may also have methods (also known as instance member functions), which are declared with `method`. Methods are similar to functions, but they are called on an instance of the complex type. They also have access to the instance's properties and other methods through the `self` keyword:
+Complex types may also have methods (also known as instance member functions), which are declared with `method`. Methods are similar to functions, but they are called on an instance of the complex type. They also have access to the instance's properties and other methods through the instance parameter (named `self` in this example):
 ```
 struct MyStruct:
     prop x: i32
-    method my_method():
+    method my_method(self):
         let y = self.x // Accessing property
         self.my_other_method() // Calling method
-    method my_other_method():
+    method my_other_method(self):
         pass
 
 func global_func():
     let s = new MyStruct { x = 0 }
     s.my_method() // Calling method
+```
+
+Method definitions require at least one parameter at the beginning of the parameter list, which will receive the instance of the complex type. Unlike other parameters, this parameter does not require a type annotation. If one is not provided, it is assumed to be `&T`, where `T` is the type of the complex type.
+
+Arguments to the instance parameter cannot be passed in parentheses; the dot notation must be used instead:
+```
+MyStruct.my_method(s) // Bad; my_method is not a shared function
+s.my_method() // OK
+```
+
+Because the instance parameter is treated like a parameter inside the function, it follows the same mutability rules as other parameters. If the instance parameter is mutable, the method may modify the instance's properties:
+```
+method my_method_1(self: &MyStruct) // Immutable reference, immutable object
+method my_method_2(self) // Same as above, but without type annotation
+
+method my_method_3(var self: &MyStruct) // Mutable reference, immutable object
+method my_method_4(var self) // Same as above, but without type annotation
+
+method my_method_5(self: var&MyStruct) // Immutable reference, mutable object
+
+method my_method_6(var self: var&MyStruct) // Mutable reference, mutable object
+```
+
+The instance parameter type may be changed to its non-pointer form. In such cases, the full object is passed to the method. Whether copy or move semantics are used depends on the kind of complex type. The dot notation is still used to call the method:
+```
+method my_method(self: MyStruct) // Immutable object
+
+s.my_method() // OK
 ```
 
 To construct an instance of a complex type, use the `new` keyword followed by the type name and an object literal:

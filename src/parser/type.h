@@ -15,20 +15,29 @@
  */
 class Type {
 public:
+    // Numeric types
     class INumeric;
-
     class Int;
     class Float;
 
+    // Boolean type
     class Bool;
 
+    // Pointer types
     class Pointer;
     class Reference;
 
+    // Aggregate types
     class Array;
+    class Tuple;
+    class Object;
 
-    class NamedStruct;
-    class Definition;
+    // Special types
+    class Named;
+    class Function;
+
+    // Non-declarable types
+    class StructDef;
 
     Type() = default;
     virtual ~Type() = default;
@@ -66,6 +75,35 @@ public:
         return !(*this == other);
     }
 };
+
+/**
+ * @brief A multi-purpose field class.
+ *
+ * Used to represent properties or shared variables in complex types,
+ * properties in objects, and parameters in functions.
+ */
+class Field {
+public:
+    // Whether the field is declared with `var` or not.
+    const bool is_var;
+    // The name of the field.
+    const std::string name;
+    // The type of the field.
+    const std::shared_ptr<Type> type;
+
+    Field(bool is_var, const std::string& name, std::shared_ptr<Type> type)
+        : is_var(is_var), name(name), type(type) {}
+
+    std::string to_string() const {
+        return (is_var ? "var " : "") + name + ": " + type->to_string();
+    }
+
+    bool operator==(const Field& other) const {
+        return is_var == other.is_var && name == other.name && *type == *other.type;
+    }
+};
+
+// MARK: Numeric types
 
 /**
  * @brief A base class for all numeric types.
@@ -132,6 +170,8 @@ public:
     }
 };
 
+// MARK: Boolean type
+
 /**
  * @brief A boolean type.
  *
@@ -149,6 +189,8 @@ public:
         return dynamic_cast<const Bool*>(&other) != nullptr;
     }
 };
+
+// MARK: Pointer types
 
 /**
  * @brief A pointer type.
@@ -206,6 +248,8 @@ public:
     }
 };
 
+// MARK: Aggregate types
+
 /**
  * @brief An array type.
  *
@@ -237,50 +281,56 @@ public:
 };
 
 /**
- * @brief A named struct type.
+ * @brief A tuple type.
  *
- * Named struct types are types that have a name.
- * They are usually not useful on their own, but are used to reference a struct defined elsewhere.
- *
- * This language prefers nominal typing. Therefore, two structs with the same name are considered the same type.
+ * Used to represent a fixed-size collection of types.
  */
-class Type::NamedStruct : public Type {
+class Type::Tuple : public Type {
 public:
-    // The name of the struct type.
-    const std::string name;
+    // The types of the elements in the tuple.
+    const std::vector<std::shared_ptr<Type>> elements;
 
-    NamedStruct(const std::string& name) : name(name) {}
+    Tuple(std::vector<std::shared_ptr<Type>> elements) : elements(std::move(elements)) {}
 
     std::string to_string() const override {
-        return name;
+        std::string result = "(";
+        for (const auto& element : elements) {
+            result += element->to_string() + ", ";
+        }
+        if (!elements.empty()) {
+            result.pop_back();
+            result.pop_back();
+        }
+        result += ")";
+        return result;
     }
 
     bool operator==(const Type& other) const override {
-        if (const auto* other_named_struct = dynamic_cast<const NamedStruct*>(&other)) {
-            return name == other_named_struct->name;
+        if (const auto* other_tuple = dynamic_cast<const Tuple*>(&other)) {
+            return elements == other_tuple->elements;
         }
         return false;
     }
 };
 
 /**
- * @brief A struct definition.
+ * @brief An object type.
  *
- * Symbols with this type are used to define structs rather than identify values.
+ * Used to represent objects with properties.
  */
-class Type::Definition : public Type {
+class Type::Object : public Type {
 public:
-    // The fields of the struct.
-    Dictionary<std::string, std::shared_ptr<Type>> fields;
+    // The fields of the object.
+    Dictionary<std::string, Field> properties;
 
-    Definition() = default;
+    Object() = default;
 
     std::string to_string() const override {
         std::string result = "{";
-        for (auto& [key, value] : fields) {
-            result += key + ": " + value->to_string() + ", ";
+        for (const auto& [key, value] : properties) {
+            result += value.to_string() + ", ";
         }
-        if (fields.size() > 0) {
+        if (properties.size() > 0) {
             result.pop_back();
             result.pop_back();
         }
@@ -289,10 +339,112 @@ public:
     }
 
     bool operator==(const Type& other) const override {
-        if (const auto* other_struct = dynamic_cast<const Definition*>(&other)) {
-            return fields == other_struct->fields;
+        if (const auto* other_object = dynamic_cast<const Object*>(&other)) {
+            return properties == other_object->properties;
         }
         return false;
+    }
+};
+
+// MARK: Special types
+
+/**
+ * @brief A named type.
+ *
+ * Used to represent types that have a name, such as complex types and aliased types.
+ */
+class Type::Named : public Type {
+public:
+    // The name of the type.
+    const std::string name;
+
+    Named(const std::string& name) : name(name) {}
+
+    std::string to_string() const override {
+        return name;
+    }
+
+    bool operator==(const Type& other) const override {
+        if (const auto* other_named = dynamic_cast<const Named*>(&other)) {
+            return name == other_named->name;
+        }
+        return false;
+    }
+};
+
+/**
+ * @brief A function type.
+ *
+ * Used to represent functions with parameters and return types.
+ */
+class Type::Function : public Type {
+public:
+    // The parameters of the function.
+    std::vector<Field> parameters;
+    // The return type of the function.
+    const std::shared_ptr<Type> return_type;
+
+    Function(std::vector<Field> parameters, std::shared_ptr<Type> return_type)
+        : parameters(std::move(parameters)), return_type(std::move(return_type)) {}
+
+    std::string to_string() const override {
+        std::string result = "func(";
+        for (const auto& param : parameters) {
+            result += param.to_string() + ", ";
+        }
+        if (!parameters.empty()) {
+            result.pop_back();
+            result.pop_back();
+        }
+        result += ") -> " + return_type->to_string();
+        return result;
+    }
+
+    bool operator==(const Type& other) const override {
+        if (const auto* other_function = dynamic_cast<const Function*>(&other)) {
+            return parameters == other_function->parameters && *return_type == *other_function->return_type;
+        }
+        return false;
+    }
+};
+
+// MARK: Non-declarable types
+
+class Type::StructDef : public Type {
+public:
+    bool is_class = false;
+
+    Dictionary<std::string, Field> properties;
+
+    Dictionary<std::string, std::shared_ptr<Type::Function>> methods;
+
+    StructDef() = default;
+    StructDef(bool is_class) : is_class(is_class) {}
+
+    std::string to_string() const override {
+        std::string result = (is_class ? "class " : "struct ") + std::string("{");
+        for (const auto& [key, value] : properties) {
+            result += value.to_string() + ", ";
+        }
+        if (properties.size() > 0) {
+            result.pop_back();
+            result.pop_back();
+        }
+        result += "}";
+
+        if (!methods.empty()) {
+            result += " impl {";
+            for (const auto& [key, value] : methods) {
+                result += key + ": " + value->to_string() + ", ";
+            }
+            if (methods.size() > 0) {
+                result.pop_back();
+                result.pop_back();
+            }
+            result += "}";
+        }
+
+        return result;
     }
 };
 

@@ -91,7 +91,7 @@ TEST_CASE("Parser let statements", "[parser]") {
         auto let_stmt = std::dynamic_pointer_cast<Stmt::Let>(ast[0]);
         REQUIRE(let_stmt != nullptr);
         REQUIRE(let_stmt->annotation.has_value());
-        REQUIRE(*let_stmt->annotation.value() == Type::NamedStruct("Vector2D"));
+        REQUIRE(*let_stmt->annotation.value() == Type::Named("Vector2D"));
     }
 
     SECTION("Let statements 6") {
