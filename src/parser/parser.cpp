@@ -146,6 +146,8 @@ std::optional<std::shared_ptr<Expr>> Parser::equality() {
 
 std::optional<std::shared_ptr<Expr>> Parser::logical_and() {
     auto left = equality();
+    if (!left)
+        return std::nullopt;
     while (match({Tok::KwAnd})) {
         auto op = previous();
         auto right = equality();
@@ -158,6 +160,8 @@ std::optional<std::shared_ptr<Expr>> Parser::logical_and() {
 
 std::optional<std::shared_ptr<Expr>> Parser::logical_or() {
     auto left = logical_and();
+    if (!left)
+        return std::nullopt;
     while (match({Tok::KwOr})) {
         auto op = previous();
         auto right = logical_and();
