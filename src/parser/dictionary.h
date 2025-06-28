@@ -30,6 +30,12 @@ public:
 
     Dictionary(const Dictionary& other) = default;
 
+    Dictionary(std::vector<std::pair<K, V>> initial_keys) {
+        for (const auto& pair : initial_keys) {
+            insert(pair.first, pair.second);
+        }
+    }
+
     /**
      * @brief Insert a key-value pair into the dictionary.
      *
