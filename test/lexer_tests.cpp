@@ -108,6 +108,19 @@ TEST_CASE("Lexer short tokens", "[lexer]") {
         CHECK(extract_token_types(tokens) == expected);
     }
 
+    SECTION("Colon operators") {
+        auto file = make_test_code_file(": :: :::");
+        auto tokens = lexer.scan(file);
+        std::vector<Tok> expected = {
+            Tok::Colon,
+            Tok::ColonColon,
+            Tok::ColonColon,
+            Tok::Colon,
+            Tok::Eof
+        };
+        CHECK(extract_token_types(tokens) == expected);
+    }
+
     lexer.reset();
     Logger::inst().reset();
 }

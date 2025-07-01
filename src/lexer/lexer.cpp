@@ -379,9 +379,6 @@ void Lexer::scan_token() {
     case '\n':
         consume_whitespace();
         break;
-    case ':':
-        add_token(Tok::Colon);
-        break;
     case '(':
         add_token(Tok::LParen);
         grouping_token_stack.push_back(')');
@@ -441,6 +438,9 @@ void Lexer::scan_token() {
         break;
     case ';':
         add_token(Tok::Semicolon);
+        break;
+    case ':':
+        add_token(match(':') ? Tok::ColonColon : Tok::Colon);
         break;
     case '+':
         add_token(match('=') ? Tok::PlusEq : Tok::Plus);
