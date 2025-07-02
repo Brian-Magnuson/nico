@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "../logger/logger.h"
+#include "ident.h"
 
 std::unordered_map<std::string, std::shared_ptr<Type>> Parser::type_table = {
     {"i32", std::make_shared<Type::Int>(true, 32)},
@@ -63,21 +64,22 @@ void Parser::synchronize() {
     }
 }
 
-std::optional<std::shared_ptr<Type>> Parser::type_annotation() {
-    if (match({Tok::Identifier})) {
-        auto lexeme = std::string(previous()->lexeme);
-        // If the type is a basic type, return it.
-        auto type = type_table.find(lexeme);
-        if (type != type_table.end()) {
-            return type->second;
-        }
-        // If not a basic type, we assume it is a named struct type.
-        return std::make_shared<Type::Named>(lexeme);
-        // If it turns out this type is not defined, we will catch it later.
-    }
-    Logger::inst().log_error(Err::NotAType, peek()->location, "Not a valid type.");
-    return std::nullopt;
-}
+// TODO: Remove this function
+// std::optional<std::shared_ptr<Type>> Parser::type_annotation() {
+//     if (match({Tok::Identifier})) {
+//         auto lexeme = std::string(previous()->lexeme);
+//         // If the type is a basic type, return it.
+//         auto type = type_table.find(lexeme);
+//         if (type != type_table.end()) {
+//             return type->second;
+//         }
+//         // If not a basic type, we assume it is a named struct type.
+//         return std::make_shared<Type::Named>(lexeme);
+//         // If it turns out this type is not defined, we will catch it later.
+//     }
+//     Logger::inst().log_error(Err::NotAType, peek()->location, "Not a valid type.");
+//     return std::nullopt;
+// }
 
 // MARK: Expressions
 
@@ -204,10 +206,10 @@ std::optional<std::shared_ptr<Stmt>> Parser::let_statement() {
     auto identifier = previous();
 
     // Check for type annotation
-    std::optional<std::shared_ptr<Type>> annotation = std::nullopt;
+    std::optional<std::shared_ptr<Annotation>> anno = std::nullopt;
     if (match({Tok::Colon})) {
-        annotation = type_annotation();
-        if (!annotation) {
+        anno = annotation();
+        if (!anno) {
             // At this point, an error has already been logged.
             return std::nullopt;
         }
@@ -224,12 +226,12 @@ std::optional<std::shared_ptr<Stmt>> Parser::let_statement() {
     }
 
     // If expr and annotation are both nullopt, we have an error.
-    if (!expr && !annotation) {
+    if (!expr && !anno) {
         Logger::inst().log_error(Err::LetWithoutTypeOrValue, peek()->location, "Let statement must have a type annotation or value.");
         return std::nullopt;
     }
 
-    return std::make_shared<Stmt::Let>(identifier, expr, has_var, annotation);
+    return std::make_shared<Stmt::Let>(identifier, expr, has_var, anno);
 }
 
 std::shared_ptr<Stmt> Parser::eof_statement() {
@@ -269,6 +271,15 @@ std::optional<std::shared_ptr<Stmt>> Parser::statement() {
         return print_statement();
     }
     return expression_statement();
+}
+
+std::optional<std::shared_ptr<Annotation>> Parser::annotation() {
+    if (match({Tok::Identifier})) {
+        auto token = previous();
+        return std::make_shared<Annotation::Named>(Ident(token));
+    }
+    Logger::inst().log_error(Err::NotAType, peek()->location, "Not a valid type.");
+    return std::nullopt;
 }
 
 // MARK: Interface

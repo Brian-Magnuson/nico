@@ -7,7 +7,7 @@
 #include "ident.h"
 
 class Annotation {
-
+public:
     class Named;
 
     class Pointer;
@@ -22,7 +22,7 @@ class Annotation {
     virtual std::string to_string() const = 0;
 };
 
-class Annotation::Named {
+class Annotation::Named : public Annotation {
 public:
     Ident ident;
 
@@ -33,7 +33,7 @@ public:
     }
 };
 
-class Annotation::Pointer {
+class Annotation::Pointer : public Annotation {
 public:
     std::shared_ptr<Annotation> base;
     bool is_mutable;
@@ -46,7 +46,7 @@ public:
     }
 };
 
-class Annotation::Reference {
+class Annotation::Reference : public Annotation {
 public:
     std::shared_ptr<Annotation> base;
     bool is_mutable;
@@ -59,7 +59,7 @@ public:
     }
 };
 
-class Annotation::Array {
+class Annotation::Array : public Annotation {
 public:
     std::shared_ptr<Annotation> base;
     size_t size;
@@ -72,7 +72,7 @@ public:
     }
 };
 
-class Annotation::Object {
+class Annotation::Object : public Annotation {
 public:
     Dictionary<std::string, std::shared_ptr<Annotation>> properties;
 
@@ -94,7 +94,7 @@ public:
     }
 };
 
-class Annotation::Tuple {
+class Annotation::Tuple : public Annotation {
 public:
     std::vector<std::shared_ptr<Annotation>> elements;
 

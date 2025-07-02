@@ -56,7 +56,7 @@ TEST_CASE("Parser let statements", "[parser]") {
         auto let_stmt = std::dynamic_pointer_cast<Stmt::Let>(ast[0]);
         REQUIRE(let_stmt != nullptr);
         REQUIRE(let_stmt->annotation.has_value());
-        REQUIRE(*let_stmt->annotation.value() == Type::Int(true, 32));
+        REQUIRE(let_stmt->annotation.value()->to_string() == "i32");
     }
 
     SECTION("Let statements 4") {
@@ -74,7 +74,7 @@ TEST_CASE("Parser let statements", "[parser]") {
         auto let_stmt = std::dynamic_pointer_cast<Stmt::Let>(ast[1]);
         REQUIRE(let_stmt != nullptr);
         REQUIRE(let_stmt->annotation.has_value());
-        REQUIRE(*let_stmt->annotation.value() == Type::Float(64));
+        REQUIRE(let_stmt->annotation.value()->to_string() == "f64");
     }
 
     SECTION("Let statements 5") {
@@ -91,7 +91,7 @@ TEST_CASE("Parser let statements", "[parser]") {
         auto let_stmt = std::dynamic_pointer_cast<Stmt::Let>(ast[0]);
         REQUIRE(let_stmt != nullptr);
         REQUIRE(let_stmt->annotation.has_value());
-        REQUIRE(*let_stmt->annotation.value() == Type::Named("Vector2D"));
+        REQUIRE(let_stmt->annotation.value()->to_string() == "Vector2D");
     }
 
     SECTION("Let statements 6") {

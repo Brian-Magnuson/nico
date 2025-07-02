@@ -12,43 +12,43 @@ std::any LocalChecker::visit(Stmt::Expression* stmt) {
 std::any LocalChecker::visit(Stmt::Let* stmt) {
     std::shared_ptr<Type> expr_type = nullptr;
 
-    // Visit the initializer (if present).
-    if (stmt->expression.has_value()) {
-        auto type = stmt->expression.value()->accept(this, false);
-        if (type.has_value()) {
-            expr_type = std::any_cast<std::shared_ptr<Type>>(type);
-        } else {
-            // Error should already be logged.
-            return std::any();
-        }
-    }
-    // If the initializer is not present, the annotation will be.
+    // // Visit the initializer (if present).
+    // if (stmt->expression.has_value()) {
+    //     auto type = stmt->expression.value()->accept(this, false);
+    //     if (type.has_value()) {
+    //         expr_type = std::any_cast<std::shared_ptr<Type>>(type);
+    //     } else {
+    //         // Error should already be logged.
+    //         return std::any();
+    //     }
+    // }
+    // // If the initializer is not present, the annotation will be.
 
-    // If the type annotation is present, check that it matches the initializer.
-    if (expr_type != nullptr && stmt->annotation.has_value()) {
-        auto annotation_type = stmt->annotation.value();
-        if (*expr_type != *annotation_type) {
-            Logger::inst().log_error(
-                Err::LetTypeMismatch,
-                *stmt->expression.value()->location,
-                std::string("Type `") + expr_type->to_string() + "` is not compatible with type `" + annotation_type->to_string() + "`."
-            );
-            return std::any();
-        }
-    }
+    // // If the type annotation is present, check that it matches the initializer.
+    // if (expr_type != nullptr && stmt->_annotation.has_value()) {
+    //     auto annotation_type = stmt->_annotation.value();
+    //     if (*expr_type != *annotation_type) {
+    //         Logger::inst().log_error(
+    //             Err::LetTypeMismatch,
+    //             *stmt->expression.value()->location,
+    //             std::string("Type `") + expr_type->to_string() + "` is not compatible with type `" + annotation_type->to_string() + "`."
+    //         );
+    //         return std::any();
+    //     }
+    // }
 
-    // If the annotation is not present at this point, we add it in manually.
-    if (!stmt->annotation) {
-        stmt->annotation = expr_type;
-    }
+    // // If the annotation is not present at this point, we add it in manually.
+    // if (!stmt->_annotation) {
+    //     stmt->_annotation = expr_type;
+    // }
 
-    // Insert the variable into the symbol table.
-    symbol_table->insert(
-        std::string(stmt->identifier->lexeme),
-        stmt->has_var,
-        stmt->identifier,
-        stmt->annotation.value()
-    );
+    // // Insert the variable into the symbol table.
+    // symbol_table->insert(
+    //     std::string(stmt->identifier->lexeme),
+    //     stmt->has_var,
+    //     stmt->identifier,
+    //     stmt->_annotation.value()
+    // );
 
     return std::any();
 }

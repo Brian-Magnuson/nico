@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "../lexer/token.h"
+#include "annotation.h"
 #include "type.h"
 
 // MARK: Base classes
@@ -119,13 +120,14 @@ public:
     // Whether the variable is declared as mutable.
     bool has_var;
     // The type annotation; should be type-checked, even if not nullopt.
-    std::optional<std::shared_ptr<Type>> annotation;
+    std::optional<std::shared_ptr<Annotation>> annotation;
 
     // Let(std::shared_ptr<Token> identifier, std::optional<std::shared_ptr<Expr>> expression, bool has_var) : identifier(identifier), expression(expression), has_var(has_var) {}
     Let(
-        std::shared_ptr<Token> identifier, std::optional<std::shared_ptr<Expr>> expression,
+        std::shared_ptr<Token> identifier,
+        std::optional<std::shared_ptr<Expr>> expression,
         bool has_var,
-        std::optional<std::shared_ptr<Type>> annotation
+        std::optional<std::shared_ptr<Annotation>> annotation
     ) : identifier(identifier),
         expression(expression),
         has_var(has_var),
