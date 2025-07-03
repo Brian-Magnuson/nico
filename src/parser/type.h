@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -201,7 +202,7 @@ public:
  */
 class Type::Pointer : public Type {
 public:
-    // Whether the pointer is mutable.
+    // Whether object pointed to by this pointer is mutable.
     bool is_mutable;
     // The type that the pointer points to.
     const std::shared_ptr<Type> base;
@@ -229,7 +230,7 @@ public:
  */
 class Type::Reference : public Type {
 public:
-    // Whether the reference is mutable.
+    // Whether object pointed to by this reference is mutable.
     bool is_mutable;
     // The type that the reference points to.
     const std::shared_ptr<Type> base;
@@ -260,16 +261,14 @@ public:
     // The type of the elements in the array.
     const std::shared_ptr<Type> base;
     // The number of elements in the array.
-    const size_t size;
-    // Whether the array has a known size.
-    const bool is_sized;
+    const std::optional<size_t> size;
 
-    Array(std::shared_ptr<Type> base) : base(base), size(0), is_sized(false) {}
+    Array(std::shared_ptr<Type> base) : base(base), size(std::nullopt) {}
 
-    Array(std::shared_ptr<Type> base, size_t size) : base(base), size(size), is_sized(true) {}
+    Array(std::shared_ptr<Type> base, size_t size) : base(base), size(size) {}
 
     std::string to_string() const override {
-        return "[" + base->to_string() + "; " + std::to_string(size) + "]";
+        return "[" + base->to_string() + "; " + (size ? std::to_string(*size) : "unknown") + "]";
     }
 
     bool operator==(const Type& other) const override {
