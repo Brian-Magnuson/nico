@@ -64,23 +64,6 @@ void Parser::synchronize() {
     }
 }
 
-// TODO: Remove this function
-// std::optional<std::shared_ptr<Type>> Parser::type_annotation() {
-//     if (match({Tok::Identifier})) {
-//         auto lexeme = std::string(previous()->lexeme);
-//         // If the type is a basic type, return it.
-//         auto type = type_table.find(lexeme);
-//         if (type != type_table.end()) {
-//             return type->second;
-//         }
-//         // If not a basic type, we assume it is a named struct type.
-//         return std::make_shared<Type::Named>(lexeme);
-//         // If it turns out this type is not defined, we will catch it later.
-//     }
-//     Logger::inst().log_error(Err::NotAType, peek()->location, "Not a valid type.");
-//     return std::nullopt;
-// }
-
 // MARK: Expressions
 
 std::optional<std::shared_ptr<Expr>> Parser::primary() {
@@ -272,6 +255,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::statement() {
     }
     return expression_statement();
 }
+
+// MARK: Annotations
 
 std::optional<std::shared_ptr<Annotation>> Parser::annotation() {
     if (match({Tok::Identifier})) {

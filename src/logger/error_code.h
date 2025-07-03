@@ -55,6 +55,14 @@ enum class Err {
 
     // Global type check error.
     GlobalType = 4000,
+    // An attempt was made to declare a namespace in a local scope.
+    NamespaceInLocalScope,
+    // An attempt was made to declare a namespace in a struct definition.
+    NamespaceInStructDef,
+    // An attempt was made to declare a struct in a local scope.
+    StructInLocalScope,
+    // An attempt was made to declare a struct that already exists in the same scope.
+    StructAlreadyDeclared,
 
     // Local type check error.
     LocalType = 5000,

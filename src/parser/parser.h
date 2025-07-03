@@ -65,13 +65,6 @@ class Parser {
      */
     void synchronize();
 
-    // TODO: Remove this function
-    // /**
-    //  * @brief Parses a type annotation.
-    //  * @return A shared pointer to the parsed type, or nullopt if the type could not be parsed.
-    //  */
-    // std::optional<std::shared_ptr<Type>> type_annotation();
-
     // MARK: Expressions
 
     /**
