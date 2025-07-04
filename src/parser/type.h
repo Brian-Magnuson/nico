@@ -37,8 +37,9 @@ public:
     class Named;
     class Function;
 
+    // TODO: Remove this declaration.
     // Non-declarable types
-    class StructDef;
+    // class StructDef;
 
     Type() = default;
     virtual ~Type() = default;
@@ -82,6 +83,8 @@ public:
  *
  * Used to represent properties or shared variables in complex types,
  * properties in objects, and parameters in functions.
+ *
+ * Fields use type objects, and thus, must have their types properly resolved before constructed.
  */
 class Field {
 public:
@@ -92,10 +95,17 @@ public:
     // The type of the field.
     const std::shared_ptr<Type> type;
 
+    virtual ~Field() = default;
+
     Field(bool is_var, const std::string& name, std::shared_ptr<Type> type)
         : is_var(is_var), name(name), type(type) {}
 
-    std::string to_string() const {
+    /**
+     * @brief Returns a string representation of the field.
+     *
+     * @return std::string A string representation of the field.
+     */
+    virtual std::string to_string() const {
         return (is_var ? "var " : "") + name + ": " + type->to_string();
     }
 
@@ -407,44 +417,45 @@ public:
     }
 };
 
+// TODO: Remove this definition.
 // MARK: Non-declarable types
 
-class Type::StructDef : public Type {
-public:
-    bool is_class = false;
+// class Type::StructDef : public Type {
+// public:
+//     bool is_class = false;
 
-    Dictionary<std::string, Field> properties;
+//     Dictionary<std::string, Field> properties;
 
-    Dictionary<std::string, std::shared_ptr<Type::Function>> methods;
+//     Dictionary<std::string, std::shared_ptr<Type::Function>> methods;
 
-    StructDef() = default;
-    StructDef(bool is_class) : is_class(is_class) {}
+//     StructDef() = default;
+//     StructDef(bool is_class) : is_class(is_class) {}
 
-    std::string to_string() const override {
-        std::string result = (is_class ? "class " : "struct ") + std::string("{");
-        for (const auto& [key, value] : properties) {
-            result += value.to_string() + ", ";
-        }
-        if (properties.size() > 0) {
-            result.pop_back();
-            result.pop_back();
-        }
-        result += "}";
+//     std::string to_string() const override {
+//         std::string result = (is_class ? "class " : "struct ") + std::string("{");
+//         for (const auto& [key, value] : properties) {
+//             result += value.to_string() + ", ";
+//         }
+//         if (properties.size() > 0) {
+//             result.pop_back();
+//             result.pop_back();
+//         }
+//         result += "}";
 
-        if (!methods.empty()) {
-            result += " impl {";
-            for (const auto& [key, value] : methods) {
-                result += key + ": " + value->to_string() + ", ";
-            }
-            if (methods.size() > 0) {
-                result.pop_back();
-                result.pop_back();
-            }
-            result += "}";
-        }
+//         if (!methods.empty()) {
+//             result += " impl {";
+//             for (const auto& [key, value] : methods) {
+//                 result += key + ": " + value->to_string() + ", ";
+//             }
+//             if (methods.size() > 0) {
+//                 result.pop_back();
+//                 result.pop_back();
+//             }
+//             result += "}";
+//         }
 
-        return result;
-    }
-};
+//         return result;
+//     }
+// };
 
 #endif // NICO_TYPE_H
