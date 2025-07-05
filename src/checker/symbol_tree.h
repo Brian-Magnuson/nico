@@ -18,7 +18,7 @@
  * All nodes in the symbol tree have a unique name to identify them.
  * Most subclasses of Node inherit from Node::IScope, meaning they have other nodes as children.
  */
-class Node {
+class Node : public std::enable_shared_from_this<Node> {
 public:
     class IScope;
     class IGlobalScope;
@@ -53,7 +53,9 @@ public:
     std::unordered_set<std::string> declared_variables;
 
     IScope(std::weak_ptr<Node::IScope> parent_scope, const std::string& name)
-        : Node(std::move(parent_scope), name) {}
+        : Node(std::move(parent_scope), name) {
+        parent_scope.lock()->children[name] = shared_from_this();
+    }
 };
 
 /**
@@ -167,6 +169,9 @@ class SymbolTree {
     std::shared_ptr<Node::IScope> current_scope;
 
 public:
+    SymbolTree()
+        : root_scope(std::make_shared<Node::RootScope>()), current_scope(root_scope) {}
+
     /**
      * @brief Adds a namespace to the symbol tree, then enters the namespace scope.
      *
@@ -189,6 +194,9 @@ public:
 
     /**
      * @brief Adds a new local scope to the symbol tree, then enters the local scope.
+     *
+     * Currently, this function has no restrictions on where local scopes can be added.
+     *
      * @return std::expected<std::shared_ptr<Node::LocalScope>, Err> The local scope if added successfully.
      */
     std::expected<std::shared_ptr<Node::LocalScope>, Err> add_local_scope();
