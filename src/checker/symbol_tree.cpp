@@ -92,3 +92,14 @@ std::optional<std::shared_ptr<Node>> SymbolTree::search_ident(const Ident& ident
 
     return std::nullopt; // Not found
 }
+
+std::optional<std::shared_ptr<Node::FieldEntry>> SymbolTree::add_field_entry(const Field& field) {
+    if (current_scope->children.contains(field.name)) {
+        return std::nullopt; // Field already exists
+    }
+
+    auto new_field_entry = std::make_shared<Node::FieldEntry>(current_scope, field);
+    current_scope->children.insert(field.name, new_field_entry);
+    current_scope->declared_variables.insert(field.name);
+    return new_field_entry;
+}

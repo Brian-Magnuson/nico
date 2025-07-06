@@ -222,11 +222,25 @@ public:
      * Downward search: Search from the matched scope downward for the remaining parts of the Ident.
      * If downward search fails, resume upward search until the next match is found or the root scope is reached.
      *
+     * Note: If the desired node is a FieldEntry, this function does not reveal whether the field entry is currently declared. Consider adding a check in the type checker.
+     *
      * @param ident The identifier to search for.
      * @return std::optional<std::shared_ptr<Node>> The node if found, or
      * std::nullopt if not found.
      */
     std::optional<std::shared_ptr<Node>> search_ident(const Ident& ident) const;
+
+    /**
+     * @brief Adds a field entry to the symbol tree in the current scope.
+     *
+     * If the field name already exists in the current scope, this function does not add the field and returns std::nullopt.
+     *
+     * Because a field entry carries a type object, the field's type must be resolved before being added to the symbol tree.
+     *
+     * @param field The field to add.
+     * @return std::optional<std::shared_ptr<Node::FieldEntry>> The field entry if added successfully, or std::nullopt if the field name already exists in the current scope.
+     */
+    std::optional<std::shared_ptr<Node::FieldEntry>> add_field_entry(const Field& field);
 };
 
 #endif // NICO_SYMBOL_TREE_H
