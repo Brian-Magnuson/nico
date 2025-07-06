@@ -43,9 +43,6 @@ std::optional<std::shared_ptr<Node::IScope>> SymbolTree::exit_scope() {
     if (current_scope->parent.expired()) {
         return std::nullopt; // Cannot exit root scope
     }
-    if (PTR_INSTANCEOF(current_scope, Node::LocalScope)) {
-        current_scope->declared_variables.clear(); // Clear declared variables when exiting a local scope
-    }
 
     current_scope = current_scope->parent.lock();
     return current_scope;
@@ -100,6 +97,5 @@ std::optional<std::shared_ptr<Node::FieldEntry>> SymbolTree::add_field_entry(con
 
     auto new_field_entry = std::make_shared<Node::FieldEntry>(current_scope, field);
     current_scope->children.insert(field.name, new_field_entry);
-    current_scope->declared_variables.insert(field.name);
     return new_field_entry;
 }

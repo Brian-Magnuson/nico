@@ -1,11 +1,12 @@
 #ifndef NICO_SYMBOL_TREE_H
 #define NICO_SYMBOL_TREE_H
 
+#include <cstdlib>
 #include <expected>
+#include <iostream>
 #include <memory>
 #include <optional>
 #include <string>
-#include <unordered_set>
 
 #include "../logger/error_code.h"
 #include "../parser/annotation.h"
@@ -50,8 +51,6 @@ class Node::IScope : public Node {
 public:
     // A dictionary of child nodes, indexed by their name parts.
     Dictionary<std::string, std::shared_ptr<Node>> children;
-    // A set of variables that are declared in this scope.
-    std::unordered_set<std::string> declared_variables;
 
     IScope(std::weak_ptr<Node::IScope> parent_scope, const std::string& name)
         : Node(std::move(parent_scope), name) {
