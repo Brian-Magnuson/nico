@@ -43,6 +43,52 @@ std::optional<std::shared_ptr<Node::IScope>> SymbolTree::exit_scope() {
     if (current_scope->parent.expired()) {
         return std::nullopt; // Cannot exit root scope
     }
+    if (PTR_INSTANCEOF(current_scope, Node::LocalScope)) {
+        current_scope->declared_variables.clear(); // Clear declared variables when exiting a local scope
+    }
+
     current_scope = current_scope->parent.lock();
     return current_scope;
+}
+
+std::optional<std::shared_ptr<Node>> SymbolTree::search_ident(const Ident& ident) const {
+    auto& parts = ident.parts;
+
+    // Upward search: Search from the current scope upward until the first part of the Ident matches.
+    auto scope = current_scope;
+
+    while (scope) {
+        auto it = scope->children.at(std::string(parts[0].token->lexeme));
+        if (it) {
+            // Found a match for the first part, now do downward search for the remaining parts.
+            auto node = it.value();
+            bool found = true;
+
+            // Downward search: Search from the matched scope downward for the remaining parts of the Ident.
+            for (size_t i = 1; i < parts.size(); ++i) {
+                if (PTR_INSTANCEOF(node, Node::IScope)) {
+                    auto scope_node = std::dynamic_pointer_cast<Node::IScope>(node);
+                    auto child_it = scope_node->children.at(std::string(parts[i].token->lexeme));
+                    if (child_it) {
+                        node = child_it.value();
+                    } else {
+                        found = false;
+                        break;
+                    }
+                } else {
+                    found = false;
+                    break;
+                }
+            }
+
+            if (found) {
+                return node; // Successfully found the full Ident
+            }
+        }
+        // Move up to the parent scope for the next iteration
+        scope = scope->parent.lock();
+        // If the current scope is the root scope, the `scope->parent.lock()` will return an empty shared_ptr, causing the loop to terminate.
+    }
+
+    return std::nullopt; // Not found
 }

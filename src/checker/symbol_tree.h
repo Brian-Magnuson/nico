@@ -8,6 +8,7 @@
 #include <unordered_set>
 
 #include "../logger/error_code.h"
+#include "../parser/annotation.h"
 #include "../parser/ident.h"
 #include "dictionary.h"
 #include "type.h"
@@ -206,6 +207,8 @@ public:
      *
      * If the current scope is the root scope, this function does nothing and returns std::nullopt.
      *
+     * If the current scope is a local scope, its set of declared variables is cleared upon exit.
+     *
      * @return std::optional<std::shared_ptr<Node::IScope>> The parent scope if it exists, or std::nullopt if there is no parent scope (i.e., if the current scope is the root scope).
      */
     std::optional<std::shared_ptr<Node::IScope>> exit_scope();
@@ -213,11 +216,17 @@ public:
     /**
      * @brief Searches the symbol tree for a node with the matching identifier.
      *
+     * The search algorithm comes in two parts: upward search and downward search.
+     *
+     * Upward search: Search from the current scope upward until the first part of the Ident matches.
+     * Downward search: Search from the matched scope downward for the remaining parts of the Ident.
+     * If downward search fails, resume upward search until the next match is found or the root scope is reached.
+     *
      * @param ident The identifier to search for.
      * @return std::optional<std::shared_ptr<Node>> The node if found, or
      * std::nullopt if not found.
      */
-    std::optional<std::shared_ptr<Node>> search_ident(Ident ident) const;
+    std::optional<std::shared_ptr<Node>> search_ident(const Ident& ident) const;
 };
 
 #endif // NICO_SYMBOL_TREE_H
