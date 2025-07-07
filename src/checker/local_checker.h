@@ -5,6 +5,7 @@
 #include <memory>
 #include <vector>
 
+#include "../parser/annotation.h"
 #include "../parser/stmt.h"
 #include "symbol_table.h"
 
@@ -13,7 +14,7 @@
  *
  * The local type checker checks statements and expressions at the local level, i.e., within functions, blocks, and the main script.
  */
-class LocalChecker : public Stmt::Visitor, public Expr::Visitor {
+class LocalChecker : public Stmt::Visitor, public Expr::Visitor, public Annotation::Visitor {
     // The symbol table for this local type checker.
     std::unique_ptr<SymbolTable> symbol_table;
 
@@ -27,6 +28,13 @@ class LocalChecker : public Stmt::Visitor, public Expr::Visitor {
     std::any visit(Expr::Unary* expr, bool as_lvalue) override;
     std::any visit(Expr::Identifier* expr, bool as_lvalue) override;
     std::any visit(Expr::Literal* expr, bool as_lvalue) override;
+
+    std::any visit(Annotation::Named* annotation) override;
+    std::any visit(Annotation::Pointer* annotation) override;
+    std::any visit(Annotation::Reference* annotation) override;
+    std::any visit(Annotation::Array* annotation) override;
+    std::any visit(Annotation::Object* annotation) override;
+    std::any visit(Annotation::Tuple* annotation) override;
 
 public:
     LocalChecker() : symbol_table(std::make_unique<SymbolTable>()) {}

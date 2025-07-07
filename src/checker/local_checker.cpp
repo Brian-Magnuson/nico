@@ -3,6 +3,8 @@
 #include "../logger/error_code.h"
 #include "../logger/logger.h"
 
+// MARK: Statements
+
 std::any LocalChecker::visit(Stmt::Expression* stmt) {
     // Visit the expression.
     stmt->expression->accept(this, false);
@@ -64,6 +66,8 @@ std::any LocalChecker::visit(Stmt::Print* stmt) {
     }
     return std::any();
 }
+
+// MARK: Expressions
 
 std::any LocalChecker::visit(Expr::Assign* expr, bool as_lvalue) {
     // An assignment expression should never be an lvalue.
@@ -182,6 +186,32 @@ std::any LocalChecker::visit(Expr::Literal* expr, bool as_lvalue) {
         return std::any();
     }
     return type;
+}
+
+// MARK: Annotations
+
+std::any LocalChecker::visit(Annotation::Named* annotation) {
+    return std::any();
+}
+
+std::any LocalChecker::visit(Annotation::Pointer* annotation) {
+    return std::any();
+}
+
+std::any LocalChecker::visit(Annotation::Reference* annotation) {
+    return std::any();
+}
+
+std::any LocalChecker::visit(Annotation::Array* annotation) {
+    return std::any();
+}
+
+std::any LocalChecker::visit(Annotation::Object* annotation) {
+    return std::any();
+}
+
+std::any LocalChecker::visit(Annotation::Tuple* annotation) {
+    return std::any();
 }
 
 void LocalChecker::check(std::vector<std::shared_ptr<Stmt>> ast) {
