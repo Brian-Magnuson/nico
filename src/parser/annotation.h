@@ -1,6 +1,7 @@
 #ifndef NICO_ANNOTATION_H
 #define NICO_ANNOTATION_H
 
+#include <any>
 #include <memory>
 #include <optional>
 #include <string>
@@ -32,6 +33,27 @@ public:
     virtual ~Annotation() = default;
 
     /**
+     * @brief A visitor class for annotations.
+     */
+    class Visitor {
+    public:
+        virtual std::any visit(Named* annotation) = 0;
+        virtual std::any visit(Pointer* annotation) = 0;
+        virtual std::any visit(Reference* annotation) = 0;
+        virtual std::any visit(Array* annotation) = 0;
+        virtual std::any visit(Object* annotation) = 0;
+        virtual std::any visit(Tuple* annotation) = 0;
+    };
+
+    /**
+     * @brief Accept a visitor.
+     *
+     * @param visitor The visitor to accept.
+     * @return The return value from the visitor.
+     */
+    virtual std::any accept(Visitor* visitor) = 0;
+
+    /**
      * @brief Convert the annotation to a string representation.
      *
      * This method is used for debugging and logging purposes.
@@ -39,7 +61,8 @@ public:
      *
      * @return A string representation of the annotation.
      */
-    virtual std::string to_string() const = 0;
+    virtual std::string
+    to_string() const = 0;
 };
 
 /**
