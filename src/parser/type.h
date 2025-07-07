@@ -91,14 +91,19 @@ public:
     // Whether the field is declared with `var` or not.
     const bool is_var;
     // The name of the field.
-    const std::string name;
+    const std::shared_ptr<Token> token;
     // The type of the field.
     const std::shared_ptr<Type> type;
 
     virtual ~Field() = default;
 
-    Field(bool is_var, const std::string& name, std::shared_ptr<Type> type)
-        : is_var(is_var), name(name), type(type) {}
+    Field(bool is_var, std::shared_ptr<Token> token, std::shared_ptr<Type> type)
+        : is_var(is_var), token(token), type(type) {
+        if (type == nullptr) {
+            std::cerr << "Field::Field: Type cannot be null." << std::endl;
+            std::abort();
+        }
+    }
 
     /**
      * @brief Returns a string representation of the field.
@@ -106,11 +111,11 @@ public:
      * @return std::string A string representation of the field.
      */
     virtual std::string to_string() const {
-        return (is_var ? "var " : "") + name + ": " + type->to_string();
+        return (is_var ? "var " : "") + std::string(token->lexeme) + ": " + type->to_string();
     }
 
     bool operator==(const Field& other) const {
-        return is_var == other.is_var && name == other.name && *type == *other.type;
+        return is_var == other.is_var && token->lexeme == other.token->lexeme && *type == *other.type;
     }
 };
 
@@ -217,7 +222,7 @@ public:
     // The type that the pointer points to.
     const std::shared_ptr<Type> base;
 
-    Pointer(std::shared_ptr<Type> base) : base(base) {}
+    Pointer(std::shared_ptr<Type> base, bool is_mutable) : is_mutable(is_mutable), base(base) {}
 
     std::string to_string() const override {
         return std::string(is_mutable ? "var" : "") + "*" + base->to_string();
@@ -245,7 +250,7 @@ public:
     // The type that the reference points to.
     const std::shared_ptr<Type> base;
 
-    Reference(std::shared_ptr<Type> base) : base(base) {}
+    Reference(std::shared_ptr<Type> base, bool is_mutable) : is_mutable(is_mutable), base(base) {}
 
     std::string to_string() const override {
         return std::string(is_mutable ? "var" : "") + "&" + base->to_string();

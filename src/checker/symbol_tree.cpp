@@ -3,40 +3,42 @@
 #define PTR_INSTANCEOF(ptr, type) \
     (std::dynamic_pointer_cast<type>(ptr) != nullptr)
 
-std::expected<std::shared_ptr<Node::Namespace>, Err> SymbolTree::add_namespace(const std::string& name) {
+int Node::LocalScope::next_scope_id = 0;
+
+std::pair<std::shared_ptr<Node::Namespace>, Err> SymbolTree::add_namespace(const std::string& name) {
     // Namespaces cannot be added in a local scope
     if (PTR_INSTANCEOF(current_scope, Node::LocalScope)) {
-        return std::unexpected(Err::NamespaceInLocalScope);
+        return std::make_pair(nullptr, Err::NamespaceInLocalScope);
     }
     // Namespaces cannot be added in a struct definition
     if (PTR_INSTANCEOF(current_scope, Node::StructDef)) {
-        return std::unexpected(Err::NamespaceInStructDef);
+        return std::make_pair(nullptr, Err::NamespaceInStructDef);
     }
 
     auto new_namespace = std::make_shared<Node::Namespace>(current_scope, name);
     current_scope = new_namespace;
-    return new_namespace;
+    return std::make_pair(new_namespace, Err::Null);
 }
 
-std::expected<std::shared_ptr<Node::StructDef>, Err> SymbolTree::add_struct_def(const std::string& name, bool is_class) {
+std::pair<std::shared_ptr<Node::StructDef>, Err> SymbolTree::add_struct_def(const std::string& name, bool is_class) {
     // Structs cannot be added in a local scope
     if (PTR_INSTANCEOF(current_scope, Node::LocalScope)) {
-        return std::unexpected(Err::StructInLocalScope);
+        return std::make_pair(nullptr, Err::StructInLocalScope);
     }
     // Check if the struct already exists in the current scope
     if (current_scope->children.at(name)) {
-        return std::unexpected(Err::StructAlreadyDeclared);
+        return std::make_pair(nullptr, Err::StructAlreadyDeclared);
     }
 
     auto new_struct = std::make_shared<Node::StructDef>(current_scope, name, is_class);
     current_scope = new_struct;
-    return new_struct;
+    return std::make_pair(new_struct, Err::Null);
 }
 
-std::expected<std::shared_ptr<Node::LocalScope>, Err> SymbolTree::add_local_scope() {
+std::pair<std::shared_ptr<Node::LocalScope>, Err> SymbolTree::add_local_scope() {
     auto new_local_scope = std::make_shared<Node::LocalScope>(current_scope);
     current_scope = new_local_scope;
-    return new_local_scope;
+    return std::make_pair(new_local_scope, Err::Null);
 }
 
 std::optional<std::shared_ptr<Node::IScope>> SymbolTree::exit_scope() {
@@ -91,11 +93,11 @@ std::optional<std::shared_ptr<Node>> SymbolTree::search_ident(const Ident& ident
 }
 
 std::optional<std::shared_ptr<Node::FieldEntry>> SymbolTree::add_field_entry(const Field& field) {
-    if (current_scope->children.contains(field.name)) {
+    if (current_scope->children.contains(std::string(field.token->lexeme))) {
         return std::nullopt; // Field already exists
     }
 
     auto new_field_entry = std::make_shared<Node::FieldEntry>(current_scope, field);
-    current_scope->children.insert(field.name, new_field_entry);
+    current_scope->children.insert(std::string(field.token->lexeme), new_field_entry);
     return new_field_entry;
 }

@@ -8,6 +8,7 @@
 #include "../parser/annotation.h"
 #include "../parser/stmt.h"
 #include "symbol_table.h"
+#include "symbol_tree.h"
 
 /**
  * @brief A local type checker.
@@ -16,7 +17,8 @@
  */
 class LocalChecker : public Stmt::Visitor, public Expr::Visitor, public Annotation::Visitor {
     // The symbol table for this local type checker.
-    std::unique_ptr<SymbolTable> symbol_table;
+    // std::unique_ptr<SymbolTable> symbol_table;
+    std::unique_ptr<SymbolTree> symbol_tree;
 
     std::any visit(Stmt::Expression* stmt) override;
     std::any visit(Stmt::Let* stmt) override;
@@ -37,7 +39,7 @@ class LocalChecker : public Stmt::Visitor, public Expr::Visitor, public Annotati
     std::any visit(Annotation::Tuple* annotation) override;
 
 public:
-    LocalChecker() : symbol_table(std::make_unique<SymbolTable>()) {}
+    LocalChecker() : symbol_tree(std::make_unique<SymbolTree>()) {}
 
     /**
      * @brief Type checks the given AST at the local level.

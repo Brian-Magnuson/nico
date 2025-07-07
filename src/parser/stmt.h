@@ -247,11 +247,16 @@ public:
 class Expr::Identifier : public Expr {
 public:
     // The token representing the identifier.
-    std::shared_ptr<Token> token;
+    Ident ident;
 
     Identifier(std::shared_ptr<Token> token)
-        : token(token) {
+        : ident(token) {
         location = &token->location;
+    }
+
+    Identifier(Ident ident)
+        : ident(ident) {
+        location = &ident.parts[0].token->location;
     }
 
     std::any accept(Visitor* visitor, bool as_lvalue) override {

@@ -52,6 +52,42 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
     //     stmt->_annotation.value()
     // );
 
+    // Visit the initializer (if present).
+    if (stmt->expression.has_value()) {
+        auto type = stmt->expression.value()->accept(this, false);
+        if (type.has_value()) {
+            expr_type = std::any_cast<std::shared_ptr<Type>>(type);
+        } else {
+            // Error should already be logged.
+            return std::any();
+        }
+    }
+    // If the initializer is not present, the annotation will be (this is checked in the parser).
+
+    // If the type annotation is present, check that it matches the initializer.
+    if (expr_type != nullptr && stmt->annotation.has_value()) {
+        auto anno_any = stmt->annotation.value()->accept(this);
+        if (!anno_any.has_value())
+            return std::any();
+        auto annotation_type = std::any_cast<std::shared_ptr<Type>>(anno_any);
+        if (*expr_type != *annotation_type) {
+            Logger::inst().log_error(
+                Err::LetTypeMismatch,
+                *stmt->expression.value()->location,
+                std::string("Type `") + expr_type->to_string() + "` is not compatible with type `" + annotation_type->to_string() + "`."
+            );
+            return std::any();
+        }
+    }
+
+    // Create the field entry.
+    Field field(stmt->has_var, stmt->identifier, expr_type);
+    auto new_node = symbol_tree->add_field_entry(field);
+    if (!new_node) {
+        Logger::inst().log_error(Err::Impossible, stmt->identifier->location, "Failed to add variable to symbol tree.");
+        return std::any();
+    }
+
     return std::any();
 }
 
@@ -156,17 +192,34 @@ std::any LocalChecker::visit(Expr::Unary* expr, bool as_lvalue) {
 }
 
 std::any LocalChecker::visit(Expr::Identifier* expr, bool as_lvalue) {
-    auto var_entry = symbol_table->get(std::string(expr->token->lexeme));
-    if (!var_entry.has_value()) {
-        Logger::inst().log_error(Err::UndeclaredIdentifier, expr->token->location, "Identifier `" + std::string(expr->token->lexeme) + "` was not declared.");
+    // auto var_entry = symbol_table->get(std::string(expr->token->lexeme));
+    // if (!var_entry.has_value()) {
+    //     Logger::inst().log_error(Err::UndeclaredIdentifier, expr->token->location, "Identifier `" + std::string(expr->token->lexeme) + "` was not declared.");
+    //     return std::any();
+    // }
+    // if (!var_entry->is_var && as_lvalue) {
+    //     Logger::inst().log_error(Err::AssignToImmutable, expr->token->location, "Cannot assign to immutable identifier `" + std::string(expr->token->lexeme) + "`.");
+    //     Logger::inst().log_note(var_entry->token->location, "Identifier declared here.");
+    //     return std::any();
+    // }
+
+    auto node = symbol_tree->search_ident(expr->ident);
+    if (!node) {
+        Logger::inst().log_error(Err::UndeclaredIdentifier, expr->ident.parts.back().token->location, "Identifier `" + expr->ident.to_string() + "` was not declared.");
         return std::any();
     }
-    if (!var_entry->is_var && as_lvalue) {
-        Logger::inst().log_error(Err::AssignToImmutable, expr->token->location, "Cannot assign to immutable identifier `" + std::string(expr->token->lexeme) + "`.");
-        Logger::inst().log_note(var_entry->token->location, "Identifier declared here.");
+    if (std::dynamic_pointer_cast<Node::FieldEntry>(*node) == nullptr) {
+        Logger::inst().log_error(Err::NotAVariable, expr->ident.parts.back().token->location, "Identifier `" + expr->ident.to_string() + "` is not a variable.");
         return std::any();
     }
-    return var_entry->type;
+    auto field_entry = std::dynamic_pointer_cast<Node::FieldEntry>(*node);
+    if (!field_entry->field.is_var && as_lvalue) {
+        Logger::inst().log_error(Err::AssignToImmutable, expr->ident.parts.back().token->location, "Cannot assign to immutable identifier `" + expr->ident.to_string() + "`.");
+        Logger::inst().log_note(field_entry->field.token->location, "Identifier declared here.");
+        return std::any();
+    }
+
+    return field_entry->field.type;
 }
 
 std::any LocalChecker::visit(Expr::Literal* expr, bool as_lvalue) {
@@ -191,15 +244,36 @@ std::any LocalChecker::visit(Expr::Literal* expr, bool as_lvalue) {
 // MARK: Annotations
 
 std::any LocalChecker::visit(Annotation::Named* annotation) {
-    return std::any();
+    std::shared_ptr<Type> type = nullptr;
+    // Temporary solution: only allow primitive types.
+    if (annotation->ident.to_string() == "i32") {
+        type = std::make_shared<Type::Int>(true, 32);
+    } else if (annotation->ident.to_string() == "f64") {
+        type = std::make_shared<Type::Float>(64);
+    } else if (annotation->ident.to_string() == "bool") {
+        type = std::make_shared<Type::Bool>();
+    }
+    return type;
 }
 
 std::any LocalChecker::visit(Annotation::Pointer* annotation) {
-    return std::any();
+    std::shared_ptr<Type> type = nullptr;
+    auto base_any = annotation->base->accept(this);
+    if (!base_any.has_value())
+        return std::any();
+    auto base_type = std::any_cast<std::shared_ptr<Type>>(base_any);
+    type = std::make_shared<Type::Pointer>(base_type, annotation->is_mutable);
+    return type;
 }
 
 std::any LocalChecker::visit(Annotation::Reference* annotation) {
-    return std::any();
+    std::shared_ptr<Type> type = nullptr;
+    auto base_any = annotation->base->accept(this);
+    if (!base_any.has_value())
+        return std::any();
+    auto base_type = std::any_cast<std::shared_ptr<Type>>(base_any);
+    type = std::make_shared<Type::Reference>(base_type, annotation->is_mutable);
+    return type;
 }
 
 std::any LocalChecker::visit(Annotation::Array* annotation) {
@@ -221,5 +295,5 @@ void LocalChecker::check(std::vector<std::shared_ptr<Stmt>> ast) {
 }
 
 void LocalChecker::reset() {
-    symbol_table = std::make_unique<SymbolTable>();
+    symbol_tree = std::make_unique<SymbolTree>();
 }

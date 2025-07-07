@@ -1,10 +1,13 @@
 #ifndef NICO_IDENT_H
 #define NICO_IDENT_H
 
-#include "../lexer/token.h"
+#include <cstdlib>
+#include <iostream>
 #include <memory>
 #include <string>
 #include <vector>
+
+#include "../lexer/token.h"
 
 class Ident {
 public:
@@ -19,7 +22,12 @@ public:
         : parts({{token, {}}}) {}
 
     Ident(std::vector<Part> elements)
-        : parts(elements) {}
+        : parts(elements) {
+        if (parts.empty()) {
+            std::cerr << "Ident::Ident: parts cannot be empty" << std::endl;
+            std::abort();
+        }
+    }
 
     std::string to_string() const {
         std::string result = "";

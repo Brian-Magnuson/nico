@@ -2,17 +2,17 @@
 #define NICO_SYMBOL_TREE_H
 
 #include <cstdlib>
-#include <expected>
 #include <iostream>
 #include <memory>
 #include <optional>
 #include <string>
+#include <utility>
 
 #include "../logger/error_code.h"
 #include "../parser/annotation.h"
+#include "../parser/dictionary.h"
 #include "../parser/ident.h"
-#include "dictionary.h"
-#include "type.h"
+#include "../parser/type.h"
 
 /**
  * @brief The base class for all nodes in the symbol tree.
@@ -39,7 +39,7 @@ public:
     virtual ~Node() = default;
 
     Node(std::weak_ptr<Node::IScope> parent_scope, const std::string& name)
-        : parent(std::move(parent_scope)), unique_name(name) {}
+        : parent(parent_scope), unique_name(name) {}
 };
 
 /**
@@ -53,8 +53,9 @@ public:
     Dictionary<std::string, std::shared_ptr<Node>> children;
 
     IScope(std::weak_ptr<Node::IScope> parent_scope, const std::string& name)
-        : Node(std::move(parent_scope), name) {
-        parent_scope.lock()->children[name] = shared_from_this();
+        : Node(parent_scope, name) {
+        if (!parent_scope.expired())
+            parent_scope.lock()->children[name] = shared_from_this();
     }
 };
 
@@ -69,7 +70,7 @@ public:
 class Node::IGlobalScope : public Node::IScope {
 public:
     IGlobalScope(std::weak_ptr<Node::IScope> parent_scope, const std::string& name)
-        : Node::IScope(std::move(parent_scope), name) {}
+        : Node::IScope(parent_scope, name) {}
 };
 
 /**
@@ -98,7 +99,7 @@ public:
 class Node::Namespace : public Node::IGlobalScope {
 public:
     Namespace(std::weak_ptr<Node::IScope> parent_scope, const std::string& name)
-        : Node::IGlobalScope(std::move(parent_scope), parent_scope.lock()->unique_name + "::" + name) {}
+        : Node::IGlobalScope(parent_scope, parent_scope.lock()->unique_name + "::" + name) {}
 };
 
 /**
@@ -121,7 +122,7 @@ public:
     Dictionary<std::string, Field> methods;
 
     StructDef(std::weak_ptr<Node::IScope> parent_scope, const std::string& name, bool is_class = false)
-        : Node::IGlobalScope(std::move(parent_scope), parent_scope.lock()->unique_name + "::" + name), is_class(is_class) {}
+        : Node::IGlobalScope(parent_scope, parent_scope.lock()->unique_name + "::" + name), is_class(is_class) {}
 };
 
 /**
@@ -138,10 +139,8 @@ public:
     static int next_scope_id;
 
     LocalScope(std::weak_ptr<Node::IScope> parent_scope)
-        : Node::IScope(std::move(parent_scope), std::to_string(next_scope_id++)) {}
+        : Node::IScope(parent_scope, std::to_string(next_scope_id++)) {}
 };
-
-int Node::LocalScope::next_scope_id = 0;
 
 /**
  * @brief A field entry in the symbol tree.
@@ -156,7 +155,7 @@ public:
     Field field;
 
     FieldEntry(std::weak_ptr<Node::IScope> parent_scope, const Field& field)
-        : Node(std::move(parent_scope), parent_scope.lock()->unique_name + "::" + field.name), field(field) {}
+        : Node(parent_scope, parent_scope.lock()->unique_name + "::" + std::string(field.token->lexeme)), field(field) {}
 };
 
 /**
@@ -175,31 +174,31 @@ public:
     /**
      * @brief Adds a namespace to the symbol tree, then enters the namespace scope.
      *
-     * If the current scope does not allow namespaces, this function does not add the namespace and returns an error.
+     * If the current scope does not allow namespaces, this function does not add the namespace and returns a pair with nullptr and an error.
      *
      * @param name The name of the namespace.
-     * @return std::expected<std::shared_ptr<Node::Namespace>, Err> The namespace if added successfully.
+     * @return std::pair<std::shared_ptr<Node::Namespace>, Err> The namespace if added successfully (first), or nullptr and an error (second).
      */
-    std::expected<std::shared_ptr<Node::Namespace>, Err> add_namespace(const std::string& name);
+    std::pair<std::shared_ptr<Node::Namespace>, Err> add_namespace(const std::string& name);
 
     /**
      * @brief Adds a struct definition to the symbol tree, then enters the struct definition scope.
      *
-     * If the struct definition already exists, or the current scope does not allow structs, this function does not add the struct and returns an error.
+     * If the struct definition already exists, or the current scope does not allow structs, this function does not add the struct and returns a pair with nullptr and an error.
      *
      * @param name The name of the struct.
-     * @return std::expected<std::shared_ptr<Node::StructDef>, Err> The struct definition if added successfully.
+     * @return std::pair<std::shared_ptr<Node::StructDef>, Err> The struct definition if added successfully (first), or nullptr and an error (second).
      */
-    std::expected<std::shared_ptr<Node::StructDef>, Err> add_struct_def(const std::string& name, bool is_class = false);
+    std::pair<std::shared_ptr<Node::StructDef>, Err> add_struct_def(const std::string& name, bool is_class = false);
 
     /**
      * @brief Adds a new local scope to the symbol tree, then enters the local scope.
      *
      * Currently, this function has no restrictions on where local scopes can be added.
      *
-     * @return std::expected<std::shared_ptr<Node::LocalScope>, Err> The local scope if added successfully.
+     * @return std::pair<std::shared_ptr<Node::LocalScope>, Err> The local scope if added successfully (first), or nullptr and an error (second).
      */
-    std::expected<std::shared_ptr<Node::LocalScope>, Err> add_local_scope();
+    std::pair<std::shared_ptr<Node::LocalScope>, Err> add_local_scope();
 
     /**
      * @brief Exits the current scope and returns to the parent scope.

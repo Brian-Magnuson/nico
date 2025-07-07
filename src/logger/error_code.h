@@ -7,7 +7,7 @@
  * Error codes are named based on what the compiler *observes*, not what is disallowed.
  */
 enum class Err {
-    // Null error; should never be issued under normal circumstances.
+    // Null error; may be issued if there is no error.
     Null = 0,
     // Default error; should never be issued under normal circumstances.
     Default,
@@ -76,6 +76,8 @@ enum class Err {
     AssignmentTypeMismatch,
     // An identifier was not found in the symbol table.
     UndeclaredIdentifier,
+    // An identifier was matched to a non-FieldEntry node where one was expected.
+    NotAVariable,
     // An identifier was visited as an lvalue, but was not declared with `var`.
     AssignToImmutable,
     // An operator was found that cannot be used with the given types.

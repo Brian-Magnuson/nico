@@ -77,7 +77,11 @@ public:
 
     Named(Ident ident) : ident(std::move(ident)) {}
 
-    std::string to_string() const {
+    std::any accept(Visitor* visitor) override {
+        return visitor->visit(this);
+    }
+
+    std::string to_string() const override {
         return ident.to_string();
     }
 };
@@ -97,7 +101,11 @@ public:
     Pointer(std::shared_ptr<Annotation> base, bool is_mutable = false)
         : base(std::move(base)), is_mutable(is_mutable) {}
 
-    std::string to_string() const {
+    std::any accept(Visitor* visitor) override {
+        return visitor->visit(this);
+    }
+
+    std::string to_string() const override {
         return (is_mutable ? "var" : "") + std::string("*") + base->to_string();
     }
 };
@@ -117,7 +125,11 @@ public:
     Reference(std::shared_ptr<Annotation> base, bool is_mutable = false)
         : base(std::move(base)), is_mutable(is_mutable) {}
 
-    std::string to_string() const {
+    std::any accept(Visitor* visitor) override {
+        return visitor->visit(this);
+    }
+
+    std::string to_string() const override {
         return (is_mutable ? "var" : "") + std::string("&") + base->to_string();
     }
 };
@@ -136,7 +148,12 @@ public:
 
     Array(std::shared_ptr<Annotation> base, std::optional<size_t> size = std::nullopt)
         : base(std::move(base)), size(size) {}
-    std::string to_string() const {
+
+    std::any accept(Visitor* visitor) override {
+        return visitor->visit(this);
+    }
+
+    std::string to_string() const override {
         return "[" + base->to_string() + (size ? "; " + std::to_string(*size) : "") + "]";
     }
 };
@@ -154,7 +171,11 @@ public:
     Object(Dictionary<std::string, std::shared_ptr<Annotation>> properties)
         : properties(std::move(properties)) {}
 
-    std::string to_string() const {
+    std::any accept(Visitor* visitor) override {
+        return visitor->visit(this);
+    }
+
+    std::string to_string() const override {
         std::string result = "{";
         for (const auto& [key, value] : properties) {
             result += key + ": " + value->to_string() + ", ";
@@ -182,7 +203,11 @@ public:
     Tuple(std::vector<std::shared_ptr<Annotation>> elements)
         : elements(std::move(elements)) {}
 
-    std::string to_string() const {
+    std::any accept(Visitor* visitor) override {
+        return visitor->visit(this);
+    }
+
+    std::string to_string() const override {
         std::string result = "(";
         for (const auto& element : elements) {
             result += element->to_string() + ", ";
