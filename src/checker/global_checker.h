@@ -4,7 +4,7 @@
 #include <memory>
 #include <vector>
 
-#include "../parser/stmt.h"
+#include "../parser/ast.h"
 
 class GlobalChecker {
 public:

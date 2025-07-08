@@ -5,8 +5,7 @@
 #include <memory>
 #include <vector>
 
-#include "../parser/annotation.h"
-#include "../parser/stmt.h"
+#include "../parser/ast.h"
 #include "symbol_tree.h"
 
 /**

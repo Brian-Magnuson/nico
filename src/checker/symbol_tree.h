@@ -9,7 +9,7 @@
 #include <utility>
 
 #include "../logger/error_code.h"
-#include "../parser/annotation.h"
+#include "../parser/ast.h"
 #include "../parser/dictionary.h"
 #include "../parser/ident.h"
 #include "../parser/type.h"

@@ -11,8 +11,8 @@
 #include "../src/lexer/lexer.h"
 #include "../src/lexer/token.h"
 #include "../src/logger/logger.h"
+#include "../src/parser/ast.h"
 #include "../src/parser/parser.h"
-#include "../src/parser/stmt.h"
 
 TEST_CASE("Local variable declarations", "[checker]") {
     Lexer lexer;

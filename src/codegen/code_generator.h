@@ -6,7 +6,7 @@
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
 
-#include "../parser/stmt.h"
+#include "../parser/ast.h"
 
 /**
  * @brief A class to perform LLVM code generation.
