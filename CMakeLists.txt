@@ -50,7 +50,6 @@ set(PARSER_SRC
 set(CHECKER_SRC
     src/checker/global_checker.cpp
     src/checker/local_checker.cpp
-    src/checker/symbol_table.cpp
     src/checker/symbol_tree.cpp
 )
 set(CODEGEN_SRC

@@ -14,44 +14,6 @@ std::any LocalChecker::visit(Stmt::Expression* stmt) {
 std::any LocalChecker::visit(Stmt::Let* stmt) {
     std::shared_ptr<Type> expr_type = nullptr;
 
-    // // Visit the initializer (if present).
-    // if (stmt->expression.has_value()) {
-    //     auto type = stmt->expression.value()->accept(this, false);
-    //     if (type.has_value()) {
-    //         expr_type = std::any_cast<std::shared_ptr<Type>>(type);
-    //     } else {
-    //         // Error should already be logged.
-    //         return std::any();
-    //     }
-    // }
-    // // If the initializer is not present, the annotation will be.
-
-    // // If the type annotation is present, check that it matches the initializer.
-    // if (expr_type != nullptr && stmt->_annotation.has_value()) {
-    //     auto annotation_type = stmt->_annotation.value();
-    //     if (*expr_type != *annotation_type) {
-    //         Logger::inst().log_error(
-    //             Err::LetTypeMismatch,
-    //             *stmt->expression.value()->location,
-    //             std::string("Type `") + expr_type->to_string() + "` is not compatible with type `" + annotation_type->to_string() + "`."
-    //         );
-    //         return std::any();
-    //     }
-    // }
-
-    // // If the annotation is not present at this point, we add it in manually.
-    // if (!stmt->_annotation) {
-    //     stmt->_annotation = expr_type;
-    // }
-
-    // // Insert the variable into the symbol table.
-    // symbol_table->insert(
-    //     std::string(stmt->identifier->lexeme),
-    //     stmt->has_var,
-    //     stmt->identifier,
-    //     stmt->_annotation.value()
-    // );
-
     // Visit the initializer (if present).
     if (stmt->expression.has_value()) {
         auto type = stmt->expression.value()->accept(this, false);
@@ -192,18 +154,8 @@ std::any LocalChecker::visit(Expr::Unary* expr, bool as_lvalue) {
 }
 
 std::any LocalChecker::visit(Expr::Identifier* expr, bool as_lvalue) {
-    // auto var_entry = symbol_table->get(std::string(expr->token->lexeme));
-    // if (!var_entry.has_value()) {
-    //     Logger::inst().log_error(Err::UndeclaredIdentifier, expr->token->location, "Identifier `" + std::string(expr->token->lexeme) + "` was not declared.");
-    //     return std::any();
-    // }
-    // if (!var_entry->is_var && as_lvalue) {
-    //     Logger::inst().log_error(Err::AssignToImmutable, expr->token->location, "Cannot assign to immutable identifier `" + std::string(expr->token->lexeme) + "`.");
-    //     Logger::inst().log_note(var_entry->token->location, "Identifier declared here.");
-    //     return std::any();
-    // }
-
     auto node = symbol_tree->search_ident(expr->ident);
+
     if (!node) {
         Logger::inst().log_error(Err::UndeclaredIdentifier, expr->ident.parts.back().token->location, "Identifier `" + expr->ident.to_string() + "` was not declared.");
         return std::any();

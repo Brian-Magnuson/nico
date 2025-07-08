@@ -7,7 +7,6 @@
 
 #include "../parser/annotation.h"
 #include "../parser/stmt.h"
-#include "symbol_table.h"
 #include "symbol_tree.h"
 
 /**
@@ -16,8 +15,7 @@
  * The local type checker checks statements and expressions at the local level, i.e., within functions, blocks, and the main script.
  */
 class LocalChecker : public Stmt::Visitor, public Expr::Visitor, public Annotation::Visitor {
-    // The symbol table for this local type checker.
-    // std::unique_ptr<SymbolTable> symbol_table;
+    // The symbol tree used for type checking.
     std::unique_ptr<SymbolTree> symbol_tree;
 
     std::any visit(Stmt::Expression* stmt) override;
