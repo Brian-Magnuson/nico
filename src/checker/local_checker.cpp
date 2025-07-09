@@ -2,6 +2,7 @@
 
 #include "../logger/error_code.h"
 #include "../logger/logger.h"
+#include "../parser/type.h"
 
 // MARK: Statements
 
@@ -122,7 +123,7 @@ std::any LocalChecker::visit(Expr::Binary* expr, bool as_lvalue) {
             return std::any();
         }
         // Types must inherit from `Type::INumeric`.
-        if (!dynamic_cast<Type::INumeric*>(l_type.get())) {
+        if (std::dynamic_pointer_cast<Type::INumeric>(l_type) == nullptr) {
             Logger::inst().log_error(Err::NoOperatorOverload, expr->op->location, "Operands must be of a numeric type.");
             return std::any();
         }
@@ -142,7 +143,7 @@ std::any LocalChecker::visit(Expr::Unary* expr, bool as_lvalue) {
     switch (expr->op->tok_type) {
     case Tok::Minus:
         // Types must inherit from `Type::INumeric`.
-        if (!dynamic_cast<Type::INumeric*>(type.get())) {
+        if (std::dynamic_pointer_cast<Type::INumeric>(type) == nullptr) {
             Logger::inst().log_error(Err::NoOperatorOverload, expr->op->location, "Operand must be of a numeric type.");
             return std::any();
         }

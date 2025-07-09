@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 
+#include "../lexer/token.h"
 #include "dictionary.h"
 
 /**
@@ -117,6 +118,228 @@ public:
     bool operator==(const Field& other) const {
         return is_var == other.is_var && token->lexeme == other.token->lexeme && *type == *other.type;
     }
+};
+
+/**
+ * @brief The base class for all nodes in the symbol tree.
+ *
+ * All nodes in the symbol tree have a unique name to identify them.
+ * Most subclasses of Node inherit from Node::IScope, meaning they have other nodes as children.
+ *
+ * Do not extend this class directly; use Node::IBasicNode instead.
+ */
+class Node : public std::enable_shared_from_this<Node> {
+public:
+    class IBasicNode;
+
+    class IScope;
+    class IGlobalScope;
+    class ITypeNode;
+
+    class RootScope;
+    class Namespace;
+    class PrimitiveType;
+    class StructDef;
+    class LocalScope;
+    class FieldEntry;
+
+    // This node's parent scope, if it exists.
+    std::weak_ptr<Node::IScope> parent;
+    // This node's unique name, assigned upon construction.
+    const std::string unique_name;
+    // A short name for this node, used for adding this node to the parent node's children.
+    const std::string short_name;
+
+    virtual ~Node() = default;
+
+protected:
+    Node(std::weak_ptr<Node::IScope> parent_scope, const std::string& name);
+
+public:
+    /**
+     * @brief Adds this node to its parent scope's children.
+     *
+     * If this node is an instance of Node::RootScope, this function does nothing.
+     *
+     * If this node is an instance of Node::ITypeNode, it will also set the type of the node to a Named type that references this node.
+     *
+     * Should be called immediately after constructing a node that is part of a scope.
+     */
+    void add_self_to_parent();
+};
+
+// MARK: Nodes
+
+/**
+ * @brief A basic node in the symbol tree.
+ *
+ * This class adds no additional members to Node.
+ * Its purpose is to be the sole subclass of Node, thereby preventing Node from
+ * being a diamond inheritance base class, which would otherwise result in
+ * ambiguity when using `shared_from_this()`.
+ */
+class Node::IBasicNode : public Node {
+protected:
+    IBasicNode(std::weak_ptr<Node::IScope> parent_scope, const std::string& name)
+        : Node(parent_scope, name) {}
+
+public:
+    virtual ~IBasicNode() = default;
+};
+
+/**
+ * @brief A scope interface for nodes in the symbol tree.
+ *
+ * A scope may contain other nodes as children, allowing for a hierarchical structure.
+ */
+class Node::IScope : public virtual Node::IBasicNode {
+public:
+    // A dictionary of child nodes, indexed by their name parts.
+    Dictionary<std::string, std::shared_ptr<Node>> children;
+
+    virtual ~IScope() = default;
+
+protected:
+    IScope(std::weak_ptr<Node::IScope> parent_scope, const std::string& name)
+        : Node::IBasicNode(parent_scope, name) {}
+};
+
+/**
+ * @brief A global scope interface for nodes in the symbol tree.
+ *
+ * Global scopes include the root scope, namespaces, and struct definitions.
+ *
+ * The global scope interface adds no additional members to IScope.
+ * Rather, it is used to distinguish global scopes from local scopes.
+ */
+class Node::IGlobalScope : public virtual Node::IScope {
+public:
+    virtual ~IGlobalScope() = default;
+
+protected:
+    IGlobalScope()
+        : Node::IBasicNode(std::weak_ptr<Node::IScope>(), ""),
+          Node::IScope(std::weak_ptr<Node::IScope>(), "")
+    // Note: These values won't actually be used since only derived classes will call this constructor.
+    {}
+};
+
+/**
+ * @brief An interface for nodes that represent types in the symbol tree.
+ *
+ * Note: For the purpose of avoiding diamond inheritance, this interface does not extend Node. Despite this, it is still used as a base class for type nodes.
+ */
+class Node::ITypeNode : public virtual Node::IBasicNode {
+public:
+    std::shared_ptr<Type> type;
+
+    virtual ~ITypeNode() = default;
+
+protected:
+    ITypeNode()
+        : Node::IBasicNode(std::weak_ptr<Node::IScope>(), "") {
+    }
+};
+
+/**
+ * @brief The root scope of the symbol tree.
+ *
+ * The root scope is the top-level scope that contains all other scopes.
+ * Its unique identifier is always "::" and the pointer to its parent scope is empty.
+ */
+class Node::RootScope : public virtual Node::IGlobalScope {
+public:
+    virtual ~RootScope() = default;
+
+    RootScope()
+        : Node::IBasicNode(std::weak_ptr<Node::IScope>(), "::"),
+          Node::IScope(std::weak_ptr<Node::IScope>(), "::"),
+          Node::IGlobalScope() {}
+};
+
+/**
+ * @brief A namespace scope in the symbol tree.
+ *
+ * Namespace scopes are used to group related symbols together and avoid naming conflicts.
+ * It is a kind of global scope.
+ *
+ * Unlike struct definitions, namespaces may be closed and reopened in another location.
+ * They may also be nested within other namespaces, including namespaces with the same name (though not recommended; name resolution will be done based on the searching algorithm).
+ *
+ * A namespace may not be declared within a local scope or a struct definition.
+ */
+class Node::Namespace : public virtual Node::IGlobalScope {
+public:
+    virtual ~Namespace() = default;
+
+    Namespace(std::weak_ptr<Node::IScope> parent_scope, const std::string& name)
+        : Node::IBasicNode(parent_scope, name),
+          Node::IScope(parent_scope, name),
+          Node::IGlobalScope() {
+    }
+};
+
+/**
+ * @brief A struct definition scope in the symbol tree.
+ *
+ * Struct definitions are used to define custom data types with fields and methods.
+ * It is a kind of global scope.
+ *
+ * Unlike namespaces, struct definitions cannot be closed and reopened in another location. They also cannot be nested within a struct of the same name.
+ *
+ * A struct may not be declared within a local scope.
+ */
+class Node::StructDef : public virtual Node::IGlobalScope, public virtual Node::ITypeNode {
+public:
+    // Whether this struct is declared with `class` or not. Classes may follow different semantic rules than structs, such as memory management.
+    const bool is_class = false;
+    // A dictionary of properties (fields) in this struct, indexed by their names.
+    Dictionary<std::string, Field> properties;
+    // A dictionary of methods in this struct, indexed by their names. Methods are also stored as fields, but are never `var` and always have a type of `Function`.
+    Dictionary<std::string, Field> methods;
+
+    virtual ~StructDef() = default;
+
+    StructDef(std::weak_ptr<Node::IScope> parent_scope, const std::string& name, bool is_class = false)
+        : Node::IBasicNode(parent_scope, name),
+          Node::IScope(parent_scope, name),
+          Node::IGlobalScope(),
+          Node::ITypeNode(),
+          is_class(is_class) {}
+};
+
+/**
+ * @brief A local scope node in the symbol tree.
+ *
+ * Local scopes are used to define variables and functions that are only accessible within a specific block of code.
+ * They do not have names; their unique identifiers are generated using numbers, which increment with each new local scope created.
+ * They are not global scopes and cannot contain other global scopes.
+ *
+ * As a side effect of having only numbers as identifiers, it is impossible to reference a variable declared in a local scope from outside that scope (since an identifier expression cannot start with a number).
+ */
+class Node::LocalScope : public virtual Node::IScope {
+public:
+    static int next_scope_id;
+
+    LocalScope(std::weak_ptr<Node::IScope> parent_scope)
+        : Node::IBasicNode(parent_scope, std::to_string(next_scope_id++)),
+          Node::IScope(parent_scope, std::to_string(next_scope_id++)) {}
+};
+
+/**
+ * @brief A field entry in the symbol tree.
+ *
+ * Field entries are any variable declared with `let` or any function declared with `func`.
+ *
+ * Field objects carry a type object, and must therefore have their types resolved before being constructed.
+ */
+class Node::FieldEntry : public virtual Node::IBasicNode {
+public:
+    // The field object that this entry represents.
+    Field field;
+
+    FieldEntry(std::weak_ptr<Node::IScope> parent_scope, const Field& field)
+        : Node::IBasicNode(parent_scope, std::string(field.token->lexeme)), field(field) {}
 };
 
 // MARK: Numeric types
@@ -369,18 +592,27 @@ public:
  */
 class Type::Named : public Type {
 public:
-    // The name of the type.
-    const std::string name;
+    // The node associated with this named type; uses a weak pointer to avoid circular references.
+    const std::weak_ptr<Node::ITypeNode> node;
 
-    Named(const std::string& name) : name(name) {}
+    Named(std::weak_ptr<Node::ITypeNode> node)
+        : node(node) {
+        if (node.expired()) {
+            std::cerr << "Type::Named: Node cannot be null." << std::endl;
+            std::abort();
+        }
+    }
 
     std::string to_string() const override {
-        return name;
+        if (auto node_ptr = node.lock()) {
+            return node_ptr->unique_name;
+        }
+        return "<expired>";
     }
 
     bool operator==(const Type& other) const override {
         if (const auto* other_named = dynamic_cast<const Named*>(&other)) {
-            return name == other_named->name;
+            return node.lock() == other_named->node.lock();
         }
         return false;
     }
@@ -421,46 +653,5 @@ public:
         return false;
     }
 };
-
-// TODO: Remove this definition.
-// MARK: Non-declarable types
-
-// class Type::StructDef : public Type {
-// public:
-//     bool is_class = false;
-
-//     Dictionary<std::string, Field> properties;
-
-//     Dictionary<std::string, std::shared_ptr<Type::Function>> methods;
-
-//     StructDef() = default;
-//     StructDef(bool is_class) : is_class(is_class) {}
-
-//     std::string to_string() const override {
-//         std::string result = (is_class ? "class " : "struct ") + std::string("{");
-//         for (const auto& [key, value] : properties) {
-//             result += value.to_string() + ", ";
-//         }
-//         if (properties.size() > 0) {
-//             result.pop_back();
-//             result.pop_back();
-//         }
-//         result += "}";
-
-//         if (!methods.empty()) {
-//             result += " impl {";
-//             for (const auto& [key, value] : methods) {
-//                 result += key + ": " + value->to_string() + ", ";
-//             }
-//             if (methods.size() > 0) {
-//                 result.pop_back();
-//                 result.pop_back();
-//             }
-//             result += "}";
-//         }
-
-//         return result;
-//     }
-// };
 
 #endif // NICO_TYPE_H

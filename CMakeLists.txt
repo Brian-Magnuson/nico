@@ -46,6 +46,7 @@ set(LEXER_SRC
 )
 set(PARSER_SRC
     src/parser/parser.cpp
+    src/parser/type.cpp
 )
 set(CHECKER_SRC
     src/checker/global_checker.cpp
