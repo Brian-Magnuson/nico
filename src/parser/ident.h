@@ -1,8 +1,6 @@
 #ifndef NICO_IDENT_H
 #define NICO_IDENT_H
 
-#include <cstdlib>
-#include <iostream>
 #include <memory>
 #include <string>
 #include <vector>

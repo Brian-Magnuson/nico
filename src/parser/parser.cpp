@@ -1,8 +1,5 @@
 #include "parser.h"
 
-#include <cstdlib>
-#include <iostream>
-
 #include "../common/utils.h"
 #include "../logger/logger.h"
 #include "ident.h"

@@ -2,8 +2,6 @@
 #define NICO_TYPE_H
 
 #include <cstdint>
-#include <cstdlib>
-#include <iostream>
 #include <memory>
 #include <optional>
 #include <string>

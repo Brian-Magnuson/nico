@@ -1,8 +1,6 @@
 #include "lexer.h"
 
 #include <cstdint>
-#include <cstdlib>
-#include <iostream>
 #include <string>
 
 #include "../common/utils.h"
