@@ -16,6 +16,9 @@
 
 /**
  * @brief A statement AST node.
+ *
+ * Statements are pieces of code that do not evaluate to a value.
+ * Includes the expression statement, declarations, and non-declaring statements.
  */
 class Stmt {
 public:
@@ -90,7 +93,7 @@ public:
 };
 
 /**
- * @brief Base class for all annotations.
+ * @brief An annotation AST node.
  *
  * An annotation object is used in the AST to organize parts of the type annotation.
  * Annotations are effectively unresolved types, which can be resolved to proper type objects in the type checker.
@@ -179,7 +182,6 @@ public:
     // The type annotation; should be type-checked, even if not nullopt.
     std::optional<std::shared_ptr<Annotation>> annotation;
 
-    // Let(std::shared_ptr<Token> identifier, std::optional<std::shared_ptr<Expr>> expression, bool has_var) : identifier(identifier), expression(expression), has_var(has_var) {}
     Let(
         std::shared_ptr<Token> identifier,
         std::optional<std::shared_ptr<Expr>> expression,

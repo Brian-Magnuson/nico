@@ -12,7 +12,70 @@
 #include "../lexer/token.h"
 
 /**
- * @brief A base class for all types.
+ * @brief A node in the symbol tree.
+ *
+ * Symbol tree nodes are used to store information whenever a new symbol is introduced in the source code. Theoretically, every declaration should result in only one node in the symbol tree, so nodes may be compared directly for equality.
+ *
+ * All nodes in the symbol tree have a unique name to identify them.
+ * Most subclasses of Node inherit from Node::IScope, meaning they have other nodes as children.
+ *
+ * Do not extend this class directly; use Node::IBasicNode instead.
+ *
+ * Nodes may require additional initialization after construction to ensure parent references are set up correctly.
+ * Please use `initialize_node()` immediately after constructing nodes.
+ */
+class Node : public std::enable_shared_from_this<Node> {
+public:
+    class IBasicNode;
+
+    class IScope;
+    class IGlobalScope;
+    class ITypeNode;
+
+    class RootScope;
+    class Namespace;
+    class PrimitiveType;
+    class StructDef;
+    class LocalScope;
+    class FieldEntry;
+
+    // This node's parent scope, if it exists.
+    std::weak_ptr<Node::IScope> parent;
+    // This node's unique name, assigned upon construction.
+    const std::string unique_name;
+    // A short name for this node, used for adding this node to the parent node's children.
+    const std::string short_name;
+
+    virtual ~Node() = default;
+
+protected:
+    Node(std::weak_ptr<Node::IScope> parent_scope, const std::string& name);
+
+public:
+    /**
+     * @brief Adds this node to its parent scope's children.
+     *
+     * If this node is an instance of Node::RootScope, this function does nothing.
+     *
+     * If this node is an instance of Node::ITypeNode, it will also set the type of the node to a Named type that references this node.
+     *
+     * Should be called immediately after constructing a node that is part of a scope.
+     */
+    void initialize_node();
+};
+
+/**
+ * @brief A type object.
+ *
+ * This class serves as the base class for all types in the symbol tree.
+ * Type objects are used to represent the resolved types of expressions and variables.
+ * They should not be confused with annotation objects, which are part of the AST and represent unresolved types.
+ * They should not be used in the parser, except when the expression is a literal value, such as an integer.
+ *
+ * Types can be compared for equality, converted to a unique string, and converted to an equivalent LLVM type.
+ *
+ * Note that LLVM types may not carry less information than the type object from which it was generated.
+ * Thus, care should be taken when converting between the two.
  */
 class Type {
 public:
@@ -36,10 +99,6 @@ public:
     // Special types
     class Named;
     class Function;
-
-    // TODO: Remove this declaration.
-    // Non-declarable types
-    // class StructDef;
 
     Type() = default;
     virtual ~Type() = default;
@@ -113,57 +172,18 @@ public:
         return (is_var ? "var " : "") + std::string(token->lexeme) + ": " + type->to_string();
     }
 
+    /**
+     * @brief Checks if this field is equivalent to another field.
+     *
+     * Fields are considered equivalent if they have the same `is_var` status,
+     * the same name, and the same type. The token does not necessarily have to be the same; just the lexeme.
+     *
+     * @param other The other field to compare.
+     * @return True if the fields are equivalent, false otherwise.
+     */
     bool operator==(const Field& other) const {
         return is_var == other.is_var && token->lexeme == other.token->lexeme && *type == *other.type;
     }
-};
-
-/**
- * @brief The base class for all nodes in the symbol tree.
- *
- * All nodes in the symbol tree have a unique name to identify them.
- * Most subclasses of Node inherit from Node::IScope, meaning they have other nodes as children.
- *
- * Do not extend this class directly; use Node::IBasicNode instead.
- */
-class Node : public std::enable_shared_from_this<Node> {
-public:
-    class IBasicNode;
-
-    class IScope;
-    class IGlobalScope;
-    class ITypeNode;
-
-    class RootScope;
-    class Namespace;
-    class PrimitiveType;
-    class StructDef;
-    class LocalScope;
-    class FieldEntry;
-
-    // This node's parent scope, if it exists.
-    std::weak_ptr<Node::IScope> parent;
-    // This node's unique name, assigned upon construction.
-    const std::string unique_name;
-    // A short name for this node, used for adding this node to the parent node's children.
-    const std::string short_name;
-
-    virtual ~Node() = default;
-
-protected:
-    Node(std::weak_ptr<Node::IScope> parent_scope, const std::string& name);
-
-public:
-    /**
-     * @brief Adds this node to its parent scope's children.
-     *
-     * If this node is an instance of Node::RootScope, this function does nothing.
-     *
-     * If this node is an instance of Node::ITypeNode, it will also set the type of the node to a Named type that references this node.
-     *
-     * Should be called immediately after constructing a node that is part of a scope.
-     */
-    void initialize_node();
 };
 
 // MARK: Nodes
@@ -225,7 +245,9 @@ protected:
 /**
  * @brief An interface for nodes that represent types in the symbol tree.
  *
- * Note: For the purpose of avoiding diamond inheritance, this interface does not extend Node. Despite this, it is still used as a base class for type nodes.
+ * Note: the node is not ready to use until `initialize_node()` is called.
+ * This is because the type needs to be constructed from a weak pointer to this node,
+ * which cannot be safely created in the constructor.
  */
 class Node::ITypeNode : public virtual Node::IBasicNode {
 public:
@@ -317,6 +339,7 @@ public:
  */
 class Node::LocalScope : public virtual Node::IScope {
 public:
+    // A static counter to generate unique identifiers for local scopes.
     static int next_scope_id;
 
     LocalScope(std::weak_ptr<Node::IScope> parent_scope)
@@ -586,6 +609,9 @@ public:
  * @brief A named type.
  *
  * Used to represent types that have a name, such as complex types and aliased types.
+ *
+ * Named types must point to a node in the symbol tree that is an instance of Node::ITypeNode to be considered resolved.
+ * When converted to a string, the unique name of the node is used.
  */
 class Type::Named : public Type {
 public:

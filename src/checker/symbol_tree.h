@@ -12,6 +12,10 @@
 
 /**
  * @brief A symbol tree that represents the structure of the program's symbols.
+ *
+ * All scopes/declarations are stored in this tree, which is used to resolve identifiers and types.
+ *
+ * The tree structure enables identifiers with multiple parts to be resolved by searching upward and downward through different scopes.
  */
 class SymbolTree {
     // The root scope of the symbol tree, which is the top-level scope that contains all other scopes.
