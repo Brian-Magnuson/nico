@@ -14,7 +14,7 @@ std::pair<std::shared_ptr<Node::Namespace>, Err> SymbolTree::add_namespace(const
     }
 
     auto new_namespace = std::make_shared<Node::Namespace>(current_scope, name);
-    new_namespace->add_self_to_parent(); // Add the namespace to its parent scope's children
+    new_namespace->initialize_node(); // Add the namespace to its parent scope's children
     current_scope = new_namespace;
     return std::make_pair(new_namespace, Err::Null);
 }
@@ -30,14 +30,14 @@ std::pair<std::shared_ptr<Node::StructDef>, Err> SymbolTree::add_struct_def(cons
     }
 
     auto new_struct = std::make_shared<Node::StructDef>(current_scope, name, is_class);
-    new_struct->add_self_to_parent(); // Add the struct to its parent scope's children
+    new_struct->initialize_node(); // Add the struct to its parent scope's children
     current_scope = new_struct;
     return std::make_pair(new_struct, Err::Null);
 }
 
 std::pair<std::shared_ptr<Node::LocalScope>, Err> SymbolTree::add_local_scope() {
     auto new_local_scope = std::make_shared<Node::LocalScope>(current_scope);
-    new_local_scope->add_self_to_parent(); // Add the local scope to its parent scope's children
+    new_local_scope->initialize_node(); // Add the local scope to its parent scope's children
     current_scope = new_local_scope;
     return std::make_pair(new_local_scope, Err::Null);
 }
@@ -99,6 +99,6 @@ std::optional<std::shared_ptr<Node::FieldEntry>> SymbolTree::add_field_entry(con
     }
 
     auto new_field_entry = std::make_shared<Node::FieldEntry>(current_scope, field);
-    new_field_entry->add_self_to_parent(); // Add the field entry to its parent scope's children
+    new_field_entry->initialize_node(); // Add the field entry to its parent scope's children
     return new_field_entry;
 }

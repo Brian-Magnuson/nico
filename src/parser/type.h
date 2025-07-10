@@ -165,7 +165,7 @@ public:
      *
      * Should be called immediately after constructing a node that is part of a scope.
      */
-    void add_self_to_parent();
+    void initialize_node();
 };
 
 // MARK: Nodes
