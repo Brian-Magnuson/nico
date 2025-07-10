@@ -1,7 +1,18 @@
 #include "symbol_tree.h"
 #include "../common/utils.h"
 
-int Node::LocalScope::next_scope_id = 0;
+void SymbolTree::install_primitive_types() {
+    std::shared_ptr<Node> new_node;
+
+    new_node = std::make_shared<Node::PrimitiveType>(root_scope, "i32", std::make_shared<Type::Int>(true, 32));
+    new_node->initialize_node();
+
+    new_node = std::make_shared<Node::PrimitiveType>(root_scope, "f64", std::make_shared<Type::Float>(64));
+    new_node->initialize_node();
+
+    new_node = std::make_shared<Node::PrimitiveType>(root_scope, "bool", std::make_shared<Type::Bool>());
+    new_node->initialize_node();
+}
 
 std::pair<std::shared_ptr<Node::Namespace>, Err> SymbolTree::add_namespace(const std::string& name) {
     // Namespaces cannot be added in a local scope

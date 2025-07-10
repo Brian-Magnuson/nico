@@ -300,6 +300,31 @@ public:
 };
 
 /**
+ * @brief A primitive type in the symbol tree.
+ *
+ * A primitive type node references a basic type object instead of a custom type.
+ * This allows the type checker to look up basic types as if they were any other named type.
+ *
+ * Unlike Node::StructDef, the type object is constructed *before* the node rather than after.
+ * This is possible since the basic types do not need to reference any nodes in the symbol tree.
+ *
+ * Ideally, the symbol tree should install primitive types in the root scope.
+ */
+class Node::PrimitiveType : public virtual Node::ITypeNode {
+public:
+    virtual ~PrimitiveType() = default;
+
+    PrimitiveType(std::weak_ptr<Node::IScope> parent_scope, const std::string& name, std::shared_ptr<Type> type)
+        : Node::IBasicNode(parent_scope, name),
+          Node::ITypeNode() {
+        if (type == nullptr) {
+            panic("Node::PrimitiveType: Type cannot be null.");
+        }
+        this->type = type;
+    }
+};
+
+/**
  * @brief A struct definition scope in the symbol tree.
  *
  * Struct definitions are used to define custom data types with fields and methods.

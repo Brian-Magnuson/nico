@@ -27,7 +27,14 @@ public:
     SymbolTree()
         : root_scope(std::make_shared<Node::RootScope>()) {
         current_scope = std::static_pointer_cast<Node::IScope>(root_scope);
+
+        install_primitive_types();
     }
+
+    /**
+     * @brief Installs primitive types into the root scope of the symbol tree.
+     */
+    void install_primitive_types();
 
     /**
      * @brief Adds a namespace to the symbol tree, then enters the namespace scope.
