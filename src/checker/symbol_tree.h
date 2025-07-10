@@ -1,16 +1,12 @@
 #ifndef NICO_SYMBOL_TREE_H
 #define NICO_SYMBOL_TREE_H
 
-#include <cstdlib>
-#include <iostream>
 #include <memory>
 #include <optional>
 #include <string>
 #include <utility>
 
 #include "../logger/error_code.h"
-#include "../parser/ast.h"
-#include "../parser/dictionary.h"
 #include "../parser/ident.h"
 #include "../parser/type.h"
 
