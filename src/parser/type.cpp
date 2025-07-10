@@ -7,7 +7,7 @@ Node::Node(std::weak_ptr<Node::IScope> parent_scope, const std::string& name)
 
 void Node::add_self_to_parent() {
     auto shared_this = shared_from_this();
-    if (std::dynamic_pointer_cast<Node::RootScope>(shared_this)) {
+    if (PTR_INSTANCEOF(shared_this, Node::RootScope)) {
         // Root scope does not have a parent, so we do nothing.
         return;
     }
@@ -15,8 +15,7 @@ void Node::add_self_to_parent() {
         type_node->type = std::make_shared<Type::Named>(type_node);
     }
     if (parent.expired()) {
-        std::cerr << "Node::add_self_to_parent: Parent scope is expired." << std::endl;
-        std::abort();
+        panic("Node::add_self_to_parent: Parent scope is expired.");
     }
     auto parent_ptr = parent.lock();
     if (parent_ptr) {

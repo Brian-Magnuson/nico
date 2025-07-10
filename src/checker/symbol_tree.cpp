@@ -1,7 +1,5 @@
 #include "symbol_tree.h"
-
-#define PTR_INSTANCEOF(ptr, type) \
-    (std::dynamic_pointer_cast<type>(ptr) != nullptr)
+#include "../common/utils.h"
 
 int Node::LocalScope::next_scope_id = 0;
 

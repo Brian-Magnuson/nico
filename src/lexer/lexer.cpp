@@ -5,6 +5,7 @@
 #include <iostream>
 #include <string>
 
+#include "../common/utils.h"
 #include "../logger/error_code.h"
 #include "../logger/logger.h"
 
@@ -84,8 +85,7 @@ bool Lexer::is_digit(char c, int base, bool allow_underscore) const {
                (c >= 'a' && c <= 'f') ||
                (c >= 'A' && c <= 'F');
     default:
-        std::cerr << "Lexer::is_digit: Invalid base: " << base << std::endl;
-        std::abort();
+        panic("Lexer::is_digit: Invalid base: " + std::to_string(base));
     }
 }
 

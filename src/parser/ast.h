@@ -7,8 +7,8 @@
 #include <string>
 #include <vector>
 
+#include "../common/dictionary.h"
 #include "../lexer/token.h"
-#include "dictionary.h"
 #include "ident.h"
 #include "type.h"
 

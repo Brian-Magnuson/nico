@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 
+#include "../common/utils.h"
 #include "../lexer/token.h"
 
 class Ident {
@@ -24,8 +25,7 @@ public:
     Ident(std::vector<Part> elements)
         : parts(elements) {
         if (parts.empty()) {
-            std::cerr << "Ident::Ident: parts cannot be empty" << std::endl;
-            std::abort();
+            panic("Ident::Ident: parts cannot be empty");
         }
     }
 

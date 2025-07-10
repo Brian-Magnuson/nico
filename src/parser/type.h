@@ -9,8 +9,9 @@
 #include <string>
 #include <vector>
 
+#include "../common/dictionary.h"
+#include "../common/utils.h"
 #include "../lexer/token.h"
-#include "dictionary.h"
 
 /**
  * @brief A base class for all types.
@@ -101,8 +102,7 @@ public:
     Field(bool is_var, std::shared_ptr<Token> token, std::shared_ptr<Type> type)
         : is_var(is_var), token(token), type(type) {
         if (type == nullptr) {
-            std::cerr << "Field::Field: Type cannot be null." << std::endl;
-            std::abort();
+            panic("Field::Field: Type cannot be null.");
         }
     }
 
@@ -392,8 +392,7 @@ public:
 
     Float(uint8_t width) : width(width) {
         if (width != 32 && width != 64) {
-            std::cerr << "Type::Float: Invalid width " << width << ". Must be 32 or 64." << std::endl;
-            std::abort();
+            panic("Type::Float: Invalid width " + std::to_string(width) + ". Must be 32 or 64.");
         }
     }
 
@@ -598,8 +597,7 @@ public:
     Named(std::weak_ptr<Node::ITypeNode> node)
         : node(node) {
         if (node.expired()) {
-            std::cerr << "Type::Named: Node cannot be null." << std::endl;
-            std::abort();
+            panic("Type::Named: Node cannot be null.");
         }
     }
 

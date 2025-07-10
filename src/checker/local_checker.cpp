@@ -1,5 +1,6 @@
 #include "local_checker.h"
 
+#include "../common/utils.h"
 #include "../logger/error_code.h"
 #include "../logger/logger.h"
 #include "../parser/type.h"
@@ -123,7 +124,7 @@ std::any LocalChecker::visit(Expr::Binary* expr, bool as_lvalue) {
             return std::any();
         }
         // Types must inherit from `Type::INumeric`.
-        if (std::dynamic_pointer_cast<Type::INumeric>(l_type) == nullptr) {
+        if (!PTR_INSTANCEOF(l_type, Type::INumeric)) {
             Logger::inst().log_error(Err::NoOperatorOverload, expr->op->location, "Operands must be of a numeric type.");
             return std::any();
         }
@@ -143,7 +144,7 @@ std::any LocalChecker::visit(Expr::Unary* expr, bool as_lvalue) {
     switch (expr->op->tok_type) {
     case Tok::Minus:
         // Types must inherit from `Type::INumeric`.
-        if (std::dynamic_pointer_cast<Type::INumeric>(type) == nullptr) {
+        if (!PTR_INSTANCEOF(type, Type::INumeric)) {
             Logger::inst().log_error(Err::NoOperatorOverload, expr->op->location, "Operand must be of a numeric type.");
             return std::any();
         }
@@ -161,7 +162,7 @@ std::any LocalChecker::visit(Expr::Identifier* expr, bool as_lvalue) {
         Logger::inst().log_error(Err::UndeclaredIdentifier, expr->ident.parts.back().token->location, "Identifier `" + expr->ident.to_string() + "` was not declared.");
         return std::any();
     }
-    if (std::dynamic_pointer_cast<Node::FieldEntry>(*node) == nullptr) {
+    if (!PTR_INSTANCEOF(*node, Node::FieldEntry)) {
         Logger::inst().log_error(Err::NotAVariable, expr->ident.parts.back().token->location, "Identifier `" + expr->ident.to_string() + "` is not a variable.");
         return std::any();
     }

@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <iostream>
 
+#include "../common/utils.h"
 #include "../logger/logger.h"
 #include "ident.h"
 
@@ -25,8 +26,7 @@ const std::shared_ptr<Token>& Parser::peek() const {
 
 const std::shared_ptr<Token>& Parser::previous() const {
     if (current == 0) {
-        std::cerr << "Parser::previous: No previous token." << std::endl;
-        std::abort();
+        panic("Parser::previous: No previous token.");
     }
     return tokens.at(current - 1);
 }
