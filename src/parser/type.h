@@ -57,7 +57,7 @@ public:
      *
      * If this node is an instance of Node::RootScope, this function does nothing.
      *
-     * If this node is an instance of Node::ITypeNode, it will also set the type of the node to a Named type that references this node.
+     * If this node is an instance of Node::StructDef, it will also set the type of the node to a Named type that references this node.
      *
      * Should be called immediately after constructing a node that is part of a scope.
      */
