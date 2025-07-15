@@ -1,15 +1,12 @@
 # CMake configuration
-cmake_minimum_required(VERSION 3.19)
+cmake_minimum_required(VERSION 3.20)
 project(nico)
 include(FetchContent)
 include(CTest)
 
 # Compiler configuration
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 20)
 add_compile_options(-Wall)
-
-# zstd
-find_package(zstd REQUIRED)
 
 # LLVM
 find_package(LLVM 18.1.0 REQUIRED CONFIG)
@@ -18,8 +15,7 @@ message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 include_directories(${LLVM_INCLUDE_DIRS})
 separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
 add_definitions(${LLVM_DEFINITIONS_LIST})
-set(LLVM_ENABLE_ZSTD OFF)
-llvm_map_components_to_libnames(llvm_libs core orcjit native interpreter)
+llvm_map_components_to_libnames(llvm_libs core support target native mc asmparser asmprinter targetparser)
 message(STATUS "LLVM libraries: ${llvm_libs}")
 
 # Catch2
