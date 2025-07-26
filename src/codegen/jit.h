@@ -8,6 +8,7 @@
 #include <llvm/ExecutionEngine/Orc/ThreadSafeModule.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
+#include <llvm/Support/Error.h>
 #include <llvm/Support/TargetSelect.h>
 
 /**
@@ -50,6 +51,23 @@ public:
      * @return An Expected containing the address of the symbol if found, or an error if not found.
      */
     virtual llvm::Expected<llvm::orc::ExecutorAddr> lookup(const std::string& name) = 0;
+};
+
+/**
+ * @brief A simple JIT implementation using LLVM's LLJIT.
+ *
+ * This class provides a basic JIT compiler that can add modules and look up symbols.
+ */
+class SimpleJit : public IJit {
+    // LLJIT instance for managing JIT compilation.
+    std::unique_ptr<llvm::orc::LLJIT> jit;
+
+public:
+    SimpleJit();
+
+    llvm::Error add_module(llvm::orc::ThreadSafeModule tsm) override;
+
+    llvm::Expected<llvm::orc::ExecutorAddr> lookup(const std::string& name) override;
 };
 
 #endif // NICO_JIT_H
