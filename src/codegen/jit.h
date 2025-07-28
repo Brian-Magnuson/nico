@@ -51,6 +51,27 @@ public:
      * @return An Expected containing the address of the symbol if found, or an error if not found.
      */
     virtual llvm::Expected<llvm::orc::ExecutorAddr> lookup(const std::string& name) = 0;
+
+    /**
+     * @brief Runs the main function of the JIT-compiled module.
+     * @param argc The number of command-line arguments.
+     * @param argv The command-line arguments.
+     * @return An Expected containing the return value of the main function, or an error if the function could not be run.
+     */
+    virtual llvm::Expected<int> run_main(int argc, char** argv) {
+        auto symbol = lookup("main");
+        if (!symbol)
+            return symbol.takeError();
+        auto addr = symbol->getValue();
+        if (!addr)
+            return llvm::make_error<llvm::StringError>("Null function pointer", llvm::inconvertibleErrorCode());
+        using FuncPtr = int (*)(int, char**);
+        auto func = reinterpret_cast<FuncPtr>(addr);
+        if (!func)
+            return llvm::make_error<llvm::StringError>("Failed to cast function pointer", llvm::inconvertibleErrorCode());
+
+        return func(argc, argv);
+    }
 };
 
 /**
