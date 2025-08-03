@@ -2,6 +2,29 @@
 
 #include <llvm/Support/InitLLVM.h>
 
+#include "../logger/logger.h"
+
+llvm::Expected<int> IJit::run_main(int argc, char** argv) {
+    auto symbol = lookup("main");
+    if (!symbol) {
+        Logger::inst().log_error(Err::JitMissingEntryPoint, "Failed to find 'main' function in JIT module: " + llvm::toString(symbol.takeError()));
+        return symbol.takeError();
+    }
+    auto addr = symbol->getValue();
+    if (!addr) {
+        Logger::inst().log_error(Err::JitBadMainPointer, "Cannot cast 'main' function address to a function pointer because it is null.");
+        return llvm::make_error<llvm::StringError>("Null function pointer", llvm::inconvertibleErrorCode());
+    }
+    using FuncPtr = int (*)(int, char**);
+    auto func = reinterpret_cast<FuncPtr>(addr);
+    if (!func) {
+        Logger::inst().log_error(Err::JitBadMainPointer, "Failed to cast 'main' function address to a function pointer.");
+        return llvm::make_error<llvm::StringError>("Failed to cast function pointer", llvm::inconvertibleErrorCode());
+    }
+
+    return func(argc, argv);
+}
+
 SimpleJit::SimpleJit() {
     llvm::InitializeNativeTarget();
     llvm::InitializeNativeTargetAsmParser();

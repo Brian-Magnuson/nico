@@ -85,6 +85,14 @@ enum class Err {
 
     // Code generation error.
     CodeGen = 6000,
+    // The JIT compiler could not find an entry point for the module to run.
+    JitMissingEntryPoint,
+    // // The emitter cannot look up a target machine.
+    // EmitterCannotLookupTarget,
+    // // The emitter cannot create a target machine.
+    // EmitterCannotCreateTargetMachine,
+    // // The emitter cannot open the output file.
+    // FileIO,
 
     // Post-processing error.
     PostProcess = 8000,
@@ -100,7 +108,9 @@ enum class Err {
     // Statement was reached that should be unimplemented.
     Unimplemented,
     // Error for testing purposes.
-    TestError
+    TestError,
+    // The JIT compiler found a symbol for `main`, but could not cast it to a function pointer.
+    JitBadMainPointer,
 };
 
 #endif // ERROR_CODE_H

@@ -101,6 +101,13 @@ void Logger::log_error(Err ec, const Location& location, const std::string& mess
     }
 }
 
+void Logger::log_error(Err ec, const std::string& message) {
+    errors.push_back(ec);
+    if (printing_enabled) {
+        *out << colorize(Color::Red) << "Error " << errors.size() << ": " << colorize(Color::Reset) << (int)ec << " " << message << "\n";
+    }
+}
+
 void Logger::log_note(const Location& location, const std::string& message) {
     if (printing_enabled) {
         *out << colorize(Color::Cyan) << "⤷ Note: " << colorize(Color::Reset) << message << "\n  ";

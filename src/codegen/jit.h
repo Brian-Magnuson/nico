@@ -58,20 +58,7 @@ public:
      * @param argv The command-line arguments.
      * @return An Expected containing the return value of the main function, or an error if the function could not be run.
      */
-    virtual llvm::Expected<int> run_main(int argc, char** argv) {
-        auto symbol = lookup("main");
-        if (!symbol)
-            return symbol.takeError();
-        auto addr = symbol->getValue();
-        if (!addr)
-            return llvm::make_error<llvm::StringError>("Null function pointer", llvm::inconvertibleErrorCode());
-        using FuncPtr = int (*)(int, char**);
-        auto func = reinterpret_cast<FuncPtr>(addr);
-        if (!func)
-            return llvm::make_error<llvm::StringError>("Failed to cast function pointer", llvm::inconvertibleErrorCode());
-
-        return func(argc, argv);
-    }
+    virtual llvm::Expected<int> run_main(int argc, char** argv);
 };
 
 /**

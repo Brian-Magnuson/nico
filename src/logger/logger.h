@@ -102,6 +102,17 @@ public:
     void log_error(Err ec, const Location& location, const std::string& message);
 
     /**
+     * @brief Logs an error message without a location.
+     *
+     * If printing is enabled, the error message will be printed to the output stream.
+     * The error code will be added to the stored list of errors.
+     *
+     * @param ec The error code to log.
+     * @param message The message to log with the error.
+     */
+    void log_error(Err ec, const std::string& message);
+
+    /**
      * @brief Logs a note message with a location.
      *
      * If printing is enabled, the note message will be printed to the output stream.
