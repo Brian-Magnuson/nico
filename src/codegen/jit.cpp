@@ -1,6 +1,7 @@
 #include "jit.h"
 
 #include <llvm/Support/InitLLVM.h>
+#include <llvm/Support/TargetSelect.h>
 
 #include "../logger/logger.h"
 
