@@ -32,7 +32,7 @@ SimpleJit::SimpleJit() {
 
     auto jit_or_err = llvm::orc::LLJITBuilder().create();
     if (!jit_or_err) {
-        llvm::errs() << "Failed to create LLJIT: " << toString(jit_or_err.takeError()) << "\n";
+        Logger::inst().log_error(Err::JitCannotInstantiate, "Failed to create LLJIT: " + llvm::toString(jit_or_err.takeError()));
         exit(1);
     }
     jit = std::move(jit_or_err.get());

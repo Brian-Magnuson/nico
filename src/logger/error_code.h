@@ -109,6 +109,8 @@ enum class Err {
     Unimplemented,
     // Error for testing purposes.
     TestError,
+    // SimpleJit could not create an LLJIT instance.
+    JitCannotInstantiate,
     // The JIT compiler found a symbol for `main`, but could not cast it to a function pointer.
     JitBadMainPointer,
 };
