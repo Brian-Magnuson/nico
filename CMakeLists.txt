@@ -15,7 +15,7 @@ message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 include_directories(${LLVM_INCLUDE_DIRS})
 separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
 add_definitions(${LLVM_DEFINITIONS_LIST})
-llvm_map_components_to_libnames(llvm_libs core support target native mc asmparser asmprinter targetparser)
+llvm_map_components_to_libnames(llvm_libs core support target native mc asmparser asmprinter targetparser orcjit)
 message(STATUS "LLVM libraries: ${llvm_libs}")
 
 # Catch2
@@ -51,6 +51,9 @@ set(CHECKER_SRC
 )
 set(CODEGEN_SRC
     src/codegen/code_generator.cpp
+    src/codegen/emitter.cpp
+    src/codegen/jit.cpp
+    src/codegen/optimizer.cpp
 )
 set(LOGGER_SRC
     src/logger/logger.cpp
@@ -59,6 +62,7 @@ set(CORE_SRC
     ${LEXER_SRC}
     ${PARSER_SRC}
     ${CHECKER_SRC}
+    ${CODEGEN_SRC}
     ${LOGGER_SRC}
 )
 
