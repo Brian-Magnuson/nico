@@ -58,6 +58,8 @@ public:
     /**
      * @brief Access the value associated with a key.
      *
+     * If the key does not exist, it is added to the dictionary with a default value.
+     *
      * The value type must have a default constructor, even if this operator is used to set the value.
      *
      * @param key The key.
