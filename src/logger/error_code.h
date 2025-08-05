@@ -87,12 +87,14 @@ enum class Err {
     CodeGen = 6000,
     // The JIT compiler could not find an entry point for the module to run.
     JitMissingEntryPoint,
-    // // The emitter cannot look up a target machine.
-    // EmitterCannotLookupTarget,
-    // // The emitter cannot create a target machine.
-    // EmitterCannotCreateTargetMachine,
-    // // The emitter cannot open the output file.
-    // FileIO,
+    // The emitter cannot look up a target machine.
+    EmitterCannotLookupTarget,
+    // The emitter cannot create a target machine.
+    EmitterCannotCreateTargetMachine,
+    // The emitter cannot open the output file.
+    FileIO,
+    // The emitter failed to emit the intended file.
+    EmitterCannotEmitFile,
 
     // Post-processing error.
     PostProcess = 8000,

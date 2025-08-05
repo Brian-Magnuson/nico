@@ -12,6 +12,8 @@
 #include <llvm/Target/TargetOptions.h>
 #include <llvm/TargetParser/Host.h>
 
+#include "../logger/logger.h"
+
 void Emitter::emit(const std::unique_ptr<llvm::Module>& ir_module, const std::string& target_destination) {
     auto target_triple = llvm::sys::getDefaultTargetTriple();
     llvm::InitializeNativeTarget();
@@ -21,7 +23,7 @@ void Emitter::emit(const std::unique_ptr<llvm::Module>& ir_module, const std::st
     std::string error;
     auto target = llvm::TargetRegistry::lookupTarget(target_triple, error);
     if (!target) {
-        llvm::errs() << "Error: " << error << "\n";
+        Logger::inst().log_error(Err::EmitterCannotLookupTarget, "Failed to lookup target: " + error);
         return;
     }
 
@@ -31,7 +33,7 @@ void Emitter::emit(const std::unique_ptr<llvm::Module>& ir_module, const std::st
     auto target_machine = target->createTargetMachine(target_triple, cpu, features, options, llvm::Reloc::PIC_);
 
     if (!target_machine) {
-        llvm::errs() << "Error creating target machine.\n";
+        Logger::inst().log_error(Err::EmitterCannotCreateTargetMachine, "Failed to create target machine for triple: " + target_triple);
         return;
     }
 
@@ -41,7 +43,7 @@ void Emitter::emit(const std::unique_ptr<llvm::Module>& ir_module, const std::st
     std::error_code err;
     llvm::raw_fd_ostream dest(target_destination, err, llvm::sys::fs::OF_None);
     if (err) {
-        llvm::errs() << "Error opening file: " << err.message() << "\n";
+        Logger::inst().log_error(Err::FileIO, "Error opening output file: " + err.message());
         return;
     }
 
@@ -49,12 +51,10 @@ void Emitter::emit(const std::unique_ptr<llvm::Module>& ir_module, const std::st
     llvm::legacy::PassManager pass;
     auto file_type = llvm::CodeGenFileType::ObjectFile;
     if (target_machine->addPassesToEmitFile(pass, dest, nullptr, file_type)) {
-        llvm::errs() << "Target machine can't emit a file of this type.\n";
+        Logger::inst().log_error(Err::EmitterCannotEmitFile, "Target machine cannot emit a file of this type.");
         return;
     }
 
     pass.run(*ir_module);
     dest.flush();
-
-    llvm::outs() << "Module emitted successfully to " << target_destination << "\n";
 }
