@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -7,6 +8,24 @@
 
 #include "compiler/code_file.h"
 #include "lexer/lexer.h"
+#include "logger/logger.h"
+#include "parser/parser.h"
+
+/**
+ * @brief Checks if there are any errors logged in the Logger singleton and
+ * exits the program if there are.
+ *
+ * This function is used to ensure that the compilation process does not continue
+ * if there are any errors logged. If there are errors, it prints a message to
+ * std::cerr and exits with a non-zero status code.
+ */
+void exit_if_errors() {
+    const auto& errors = Logger::inst().get_errors();
+    if (!errors.empty()) {
+        std::cerr << "Compilation failed; exiting...";
+        std::exit(1);
+    }
+}
 
 int main(int argc, char** argv) {
     if (argc != 2) {
@@ -41,7 +60,12 @@ int main(int argc, char** argv) {
     file.close();
 
     Lexer lexer;
-    lexer.scan(code_file);
+    auto tokens = lexer.scan(code_file);
+    exit_if_errors();
+
+    Parser parser;
+    auto ast = parser.parse(std::move(tokens));
+    exit_if_errors();
 
     return 0;
 }
