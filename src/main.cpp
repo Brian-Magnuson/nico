@@ -5,9 +5,15 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
+#include "checker/global_checker.h"
+#include "checker/local_checker.h"
+#include "codegen/code_generator.h"
+#include "codegen/jit.h"
 #include "compiler/code_file.h"
 #include "lexer/lexer.h"
+#include "lexer/token.h"
 #include "logger/logger.h"
 #include "parser/parser.h"
 
@@ -28,43 +34,64 @@ void exit_if_errors() {
 }
 
 int main(int argc, char** argv) {
-    if (argc != 2) {
-        std::cout << "Usage: nico <source file>" << std::endl;
-        return 64;
-    }
+    // if (argc != 2) {
+    //     std::cout << "Usage: nico <source file>" << std::endl;
+    //     return 64;
+    // }
 
-    // Open the file.
-    std::ifstream file(argv[1]);
-    if (!file.is_open()) {
-        std::cerr << "Could not open file: " << argv[1] << std::endl;
-        return 66;
-    }
+    // // Open the file.
+    // std::ifstream file(argv[1]);
+    // if (!file.is_open()) {
+    //     std::cerr << "Could not open file: " << argv[1] << std::endl;
+    //     return 66;
+    // }
 
-    // Read the file's path.
-    std::filesystem::path path = argv[1];
+    // // Read the file's path.
+    // std::filesystem::path path = argv[1];
 
-    // Read the entire file.
-    file.seekg(0, std::ios::end);
-    size_t size = file.tellg();
-    file.seekg(0, std::ios::beg);
+    // // Read the entire file.
+    // file.seekg(0, std::ios::end);
+    // size_t size = file.tellg();
+    // file.seekg(0, std::ios::beg);
 
-    std::string src_code;
-    src_code.resize(size);
-    file.read(&src_code[0], size);
+    // std::string src_code;
+    // src_code.resize(size);
+    // file.read(&src_code[0], size);
 
-    std::shared_ptr<CodeFile> code_file = std::make_shared<CodeFile>(
-        std::filesystem::absolute(path),
-        std::move(src_code)
-    );
+    // std::shared_ptr<CodeFile> code_file = std::make_shared<CodeFile>(
+    //     std::filesystem::absolute(path),
+    //     std::move(src_code)
+    // );
 
-    file.close();
+    // file.close();
 
-    Lexer lexer;
-    auto tokens = lexer.scan(code_file);
+    // Lexer lexer;
+    // auto tokens = lexer.scan(code_file);
+    // exit_if_errors();
+
+    // Parser parser;
+    // auto ast = parser.parse(std::move(tokens));
+    // exit_if_errors();
+
+    // GlobalChecker global_checker;
+    // global_checker.check(ast);
+    // exit_if_errors();
+
+    // LocalChecker local_checker;
+    // local_checker.check(ast);
+    // exit_if_errors();
+
+    CodeGenerator codegen;
+    codegen.generate({});
     exit_if_errors();
 
-    Parser parser;
-    auto ast = parser.parse(std::move(tokens));
+    // Eject the generated LLVM module and context.
+    auto output = codegen.eject();
+    std::unique_ptr<IJit> jit = std::make_unique<SimpleJit>();
+    jit->add_module(std::move(output.module), std::move(output.context));
+    exit_if_errors();
+
+    jit->run_main(0, nullptr);
     exit_if_errors();
 
     return 0;
