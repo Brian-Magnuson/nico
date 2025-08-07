@@ -87,11 +87,12 @@ int main(int argc, char** argv) {
 
     // Eject the generated LLVM module and context.
     auto output = codegen.eject();
+
     std::unique_ptr<IJit> jit = std::make_unique<SimpleJit>();
-    jit->add_module(std::move(output.module), std::move(output.context));
+    auto err = jit->add_module(std::move(output.module), std::move(output.context));
     exit_if_errors();
 
-    jit->run_main(0, nullptr);
+    auto result = jit->run_main(0, nullptr);
     exit_if_errors();
 
     return 0;
