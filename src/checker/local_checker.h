@@ -15,7 +15,7 @@
  */
 class LocalChecker : public Stmt::Visitor, public Expr::Visitor, public Annotation::Visitor {
     // The symbol tree used for type checking.
-    std::unique_ptr<SymbolTree> symbol_tree;
+    std::shared_ptr<SymbolTree> symbol_tree;
 
     std::any visit(Stmt::Expression* stmt) override;
     std::any visit(Stmt::Let* stmt) override;
@@ -36,7 +36,8 @@ class LocalChecker : public Stmt::Visitor, public Expr::Visitor, public Annotati
     std::any visit(Annotation::Tuple* annotation) override;
 
 public:
-    LocalChecker() : symbol_tree(std::make_unique<SymbolTree>()) {}
+    LocalChecker(std::shared_ptr<SymbolTree> symbol_tree)
+        : symbol_tree(symbol_tree) {}
 
     /**
      * @brief Type checks the given AST at the local level.
@@ -46,13 +47,6 @@ public:
      * @param ast The list of statements to type check.
      */
     void check(std::vector<std::shared_ptr<Stmt>> ast);
-
-    /**
-     * @brief Resets the local type checker.
-     *
-     * This function will reset the symbol table.
-     */
-    void reset();
 };
 
 #endif // NICO_LOCAL_CHECKER_H

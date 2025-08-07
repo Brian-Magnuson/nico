@@ -5,10 +5,14 @@
 #include <vector>
 
 #include "../parser/ast.h"
+#include "symbol_tree.h"
 
 class GlobalChecker {
+    std::shared_ptr<SymbolTree> symbol_tree;
+
 public:
-    GlobalChecker() = default;
+    GlobalChecker(std::shared_ptr<SymbolTree> symbol_tree)
+        : symbol_tree(symbol_tree) {}
 
     /**
      * @brief Type checks the given AST at the global level.
@@ -18,8 +22,6 @@ public:
      * @param ast The list of statements to type check.
      */
     void check(std::vector<std::shared_ptr<Stmt>> ast) { return; }
-
-    // TODO: Consider adding `reset` function.
 };
 
 #endif // NICO_GLOBAL_CHECKER_H

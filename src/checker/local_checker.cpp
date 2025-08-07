@@ -247,7 +247,3 @@ void LocalChecker::check(std::vector<std::shared_ptr<Stmt>> ast) {
         stmt->accept(this);
     }
 }
-
-void LocalChecker::reset() {
-    symbol_tree = std::make_unique<SymbolTree>();
-}

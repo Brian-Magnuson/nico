@@ -17,8 +17,9 @@
 TEST_CASE("Local variable declarations", "[checker]") {
     Lexer lexer;
     Parser parser;
-    GlobalChecker global_checker;
-    LocalChecker local_checker;
+    std::shared_ptr<SymbolTree> symbol_tree = std::make_shared<SymbolTree>();
+    GlobalChecker global_checker(symbol_tree);
+    LocalChecker local_checker(symbol_tree);
     Logger::inst().set_printing_enabled(false);
 
     SECTION("Valid local variable declarations") {
@@ -98,15 +99,16 @@ TEST_CASE("Local variable declarations", "[checker]") {
 
     lexer.reset();
     parser.reset();
-    local_checker.reset();
+    symbol_tree->reset();
     Logger::inst().reset();
 }
 
 TEST_CASE("Local unary expressions", "[checker]") {
     Lexer lexer;
     Parser parser;
-    GlobalChecker global_checker;
-    LocalChecker local_checker;
+    std::shared_ptr<SymbolTree> symbol_tree = std::make_shared<SymbolTree>();
+    GlobalChecker global_checker(symbol_tree);
+    LocalChecker local_checker(symbol_tree);
     Logger::inst().set_printing_enabled(false);
 
     SECTION("Valid unary expressions") {
@@ -134,15 +136,16 @@ TEST_CASE("Local unary expressions", "[checker]") {
 
     lexer.reset();
     parser.reset();
-    local_checker.reset();
+    symbol_tree->reset();
     Logger::inst().reset();
 }
 
 TEST_CASE("Local binary expressions", "[checker]") {
     Lexer lexer;
     Parser parser;
-    GlobalChecker global_checker;
-    LocalChecker local_checker;
+    std::shared_ptr<SymbolTree> symbol_tree = std::make_shared<SymbolTree>();
+    GlobalChecker global_checker(symbol_tree);
+    LocalChecker local_checker(symbol_tree);
     Logger::inst().set_printing_enabled(false);
 
     SECTION("Valid binary expressions 1") {
@@ -208,6 +211,6 @@ TEST_CASE("Local binary expressions", "[checker]") {
 
     lexer.reset();
     parser.reset();
-    local_checker.reset();
+    symbol_tree->reset();
     Logger::inst().reset();
 }

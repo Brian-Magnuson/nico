@@ -24,8 +24,20 @@ class SymbolTree {
     std::shared_ptr<Node::IScope> current_scope;
 
 public:
-    SymbolTree()
-        : root_scope(std::make_shared<Node::RootScope>()) {
+    SymbolTree() {
+        reset();
+    }
+
+    /**
+     * @brief Resets the symbol tree to its initial state.
+     *
+     * This function will reset the root scope to a new instance of Node::RootScope and set the current scope to the root scope.
+     * It also installs primitive types into the root scope.
+     *
+     * This function should be called before starting a new type-checking pass or when reinitializing the symbol tree.
+     */
+    void reset() {
+        root_scope = std::make_shared<Node::RootScope>();
         current_scope = std::static_pointer_cast<Node::IScope>(root_scope);
 
         install_primitive_types();
