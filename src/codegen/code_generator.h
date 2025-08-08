@@ -1,7 +1,10 @@
 #ifndef NICO_CODE_GENERATOR_H
 #define NICO_CODE_GENERATOR_H
 
+#include <any>
 #include <memory>
+#include <utility>
+#include <vector>
 
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>
@@ -15,13 +18,26 @@
  * This class assumes that the AST has been type-checked.
  * It does not perform type-checking, it does not check for memory safety, and it does not check for undefined behavior.
  */
-class CodeGenerator {
+class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
     // The LLVM context.
     std::unique_ptr<llvm::LLVMContext> context;
     // The LLVM Module that will be generated.
     std::unique_ptr<llvm::Module> ir_module;
     // The IR builder used to generate the IR; always set the insertion point before using it.
     std::unique_ptr<llvm::IRBuilder<>> builder;
+    // Stack of blocks for control flow.
+    std::vector<llvm::BasicBlock*> block_stack;
+
+    std::any visit(Stmt::Expression* stmt) override;
+    std::any visit(Stmt::Let* stmt) override;
+    std::any visit(Stmt::Eof* stmt) override;
+    std::any visit(Stmt::Print* stmt) override;
+
+    std::any visit(Expr::Assign* expr, bool as_lvalue) override;
+    std::any visit(Expr::Binary* expr, bool as_lvalue) override;
+    std::any visit(Expr::Unary* expr, bool as_lvalue) override;
+    std::any visit(Expr::Identifier* expr, bool as_lvalue) override;
+    std::any visit(Expr::Literal* expr, bool as_lvalue) override;
 
 public:
     /**
