@@ -3,6 +3,8 @@
 
 #include <any>
 #include <memory>
+#include <optional>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -19,14 +21,51 @@
  * It does not perform type-checking, it does not check for memory safety, and it does not check for undefined behavior.
  */
 class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
+
+    /**
+     * @brief A block entry for a list of basic blocks.
+     */
+    struct Block {
+        // Whether this block is an exit block.
+        // Return statements use these blocks to exit a function.
+        bool is_exit;
+        // The llvm block pointer.
+        llvm::BasicBlock* block;
+        // A pointer to the previous block.
+        std::shared_ptr<Block> prev;
+        // A pointer to the previous exit block.
+        std::shared_ptr<Block> prev_exit;
+
+        Block(std::shared_ptr<Block> prev, llvm::BasicBlock* block, bool is_exit) {
+            this->block = block;
+            this->is_exit = is_exit;
+            this->prev = prev;
+
+            // If the previous block exists and is an exit block...
+            if (this->prev && this->prev->is_exit) {
+                // Assign the prev exit block pointer accordingly.
+                this->prev_exit = this->prev;
+            }
+            // If the previous block exists, but is not an exit...
+            else if (this->prev) {
+                // Assign the prev exit block pointer to the previous exit block.
+                this->prev_exit = this->prev->prev_exit;
+            }
+            // If prev is null (this is the first block in the list)
+            else {
+                this->prev_exit = nullptr;
+            }
+        }
+    };
+
     // The LLVM context.
     std::unique_ptr<llvm::LLVMContext> context;
     // The LLVM Module that will be generated.
     std::unique_ptr<llvm::Module> ir_module;
     // The IR builder used to generate the IR; always set the insertion point before using it.
     std::unique_ptr<llvm::IRBuilder<>> builder;
-    // Stack of blocks for control flow.
-    std::vector<llvm::BasicBlock*> block_stack;
+    // A linked list of blocks for tracking control flow.
+    std::shared_ptr<Block> block_list = nullptr;
 
     std::any visit(Stmt::Expression* stmt) override;
     std::any visit(Stmt::Let* stmt) override;
