@@ -19,8 +19,8 @@ bool CodeGenerator::generate(const std::vector<std::shared_ptr<Stmt>>& stmts, bo
     );
 
     // Create a basic block for the main function
-    llvm::BasicBlock* exit_block = llvm::BasicBlock::Create(*context, "exit", main_fn);
     llvm::BasicBlock* entry_block = llvm::BasicBlock::Create(*context, "entry", main_fn);
+    llvm::BasicBlock* exit_block = llvm::BasicBlock::Create(*context, "exit", main_fn);
 
     // Append the exit block to the block list.
     block_list = std::make_shared<Block>(block_list, exit_block, true);
