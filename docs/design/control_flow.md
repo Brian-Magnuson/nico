@@ -73,3 +73,75 @@ This design has the following benefits:
 - It allows us to potentially set the return value without immediately exiting the function, which is useful for certain control flow patterns.
 
 If the optimizer is used, it may be able to simplify the generated IR by eliminating unnecessary blocks or instructions, while still preserving the original semantics of the function.
+
+## Non-declaring control statements
+
+All of Nico's non-declaring statements, except `pass`, have some effect on control flow. They are:
+- `return`
+  - Sets the yield value for the function (the return value), then exits the function.
+- `break`
+  - Exits the enclosing loop expression.
+- `continue`
+  - Skips the rest of the current iteration of the enclosing loop expression and continues with the next iteration.
+- `yield`
+  - Sets the yield value for the surrounding block (includes regular Nico blocks, conditional-expressions, loop-expressions, and functions)
+
+From these rules, we can infer a few design requirements for our language:
+- Because every block-based expression is an expression, it must be capable of yielding a value, meaning it must allocate space for such a value.
+- Yield statements don't actually affect control flow; as long as the code generator can access the allocated space for the yield value, no extra mechanisms are needed to manage control flow with yield statements.
+- A function's yield value is special because it can be set within nested blocks (with `return`). There are a few design choices to implement this:
+  - Give the function's yield value a special name and have some mechanism to check if the current surrounding block is a function or another block.
+    - For example, if the function's yield value is named `__retval__` and other yield values are named `__yieldval__`, a yield statement in a function must be able to determine which name use when setting the yield value.
+  - Keep track of the function's yield value separately
+    - This is probably the easier option to implement.
+- A loop's merge and continue blocks must be tracked together; else, we cannot use `break` or `continue`.
+- `break` and `continue`, much like `return`, must also create unreachable blocks.
+- A conditional's then, else, and merge blocks do not need to be tracked together because none of the non-declaring control statements result in a jump to one of these blocks.
+
+## Recommendations
+
+The previous compiler design used a block stack, which was a `std::vector<llvm::BasicBlock*>`. However, this design is not very robust.
+It isn't clear what blocks go into the block stack and what their relationships are.
+
+Since there are different kinds of block-based expressions with different design requirements, a better approach may be to create a new base class that allows different blocks to be chained together in a linked list.
+
+Here is a possible implementation:
+```cpp
+class Block {
+public:
+    class Function;
+
+    class Control;
+    class Plain;
+    class Loop;
+    class Conditional;
+
+    std::shared_ptr<Block> prev;
+    llvm::Value* yield_val;
+};
+
+class Function : public Block {
+public:
+    llvm::BasicBlock* exit_block;
+};
+
+class Control : public Block {
+public:
+    llvm::BasicBlock* merge_block;
+};
+
+class Plain : public Control {
+public:
+    // Adds no additional members
+};
+
+class Loop : public Control {
+public:
+    llvm::BasicBlock* continue_block;
+};
+
+class Conditional : public Control {
+public:
+    // Adds no additional members
+};
+```
