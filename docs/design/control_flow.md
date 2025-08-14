@@ -120,27 +120,27 @@ public:
     llvm::Value* yield_val;
 };
 
-class Function : public Block {
+class Block::Function : public Block {
 public:
     llvm::BasicBlock* exit_block;
 };
 
-class Control : public Block {
+class Block::Control : public Block {
 public:
     llvm::BasicBlock* merge_block;
 };
 
-class Plain : public Control {
+class Block::Plain : public Control {
 public:
     // Adds no additional members
 };
 
-class Loop : public Control {
+class Block::Loop : public Control {
 public:
     llvm::BasicBlock* continue_block;
 };
 
-class Conditional : public Control {
+class Block::Conditional : public Control {
 public:
     // Adds no additional members
 };
