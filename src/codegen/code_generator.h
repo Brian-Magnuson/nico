@@ -13,6 +13,7 @@
 #include <llvm/IR/Module.h>
 
 #include "../parser/ast.h"
+#include "block.h"
 
 /**
  * @brief A class to perform LLVM code generation.
@@ -22,41 +23,41 @@
  */
 class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
 
-    /**
-     * @brief A block entry for a list of basic blocks.
-     */
-    struct Block {
-        // Whether this block is an exit block.
-        // Return statements use these blocks to exit a function.
-        bool is_exit;
-        // The llvm block pointer.
-        llvm::BasicBlock* block;
-        // A pointer to the previous block.
-        std::shared_ptr<Block> prev;
-        // A pointer to the previous exit block.
-        std::shared_ptr<Block> prev_exit;
+    // /**
+    //  * @brief A block entry for a list of basic blocks.
+    //  */
+    // struct Block {
+    //     // Whether this block is an exit block.
+    //     // Return statements use these blocks to exit a function.
+    //     bool is_exit;
+    //     // The llvm block pointer.
+    //     llvm::BasicBlock* block;
+    //     // A pointer to the previous block.
+    //     std::shared_ptr<Block> prev;
+    //     // A pointer to the previous exit block.
+    //     std::shared_ptr<Block> prev_exit;
 
-        Block(std::shared_ptr<Block> prev, llvm::BasicBlock* block, bool is_exit) {
-            this->block = block;
-            this->is_exit = is_exit;
-            this->prev = prev;
+    //     Block(std::shared_ptr<Block> prev, llvm::BasicBlock* block, bool is_exit) {
+    //         this->block = block;
+    //         this->is_exit = is_exit;
+    //         this->prev = prev;
 
-            // If the previous block exists and is an exit block...
-            if (this->prev && this->prev->is_exit) {
-                // Assign the prev exit block pointer accordingly.
-                this->prev_exit = this->prev;
-            }
-            // If the previous block exists, but is not an exit...
-            else if (this->prev) {
-                // Assign the prev exit block pointer to the previous exit block.
-                this->prev_exit = this->prev->prev_exit;
-            }
-            // If prev is null (this is the first block in the list)
-            else {
-                this->prev_exit = nullptr;
-            }
-        }
-    };
+    //         // If the previous block exists and is an exit block...
+    //         if (this->prev && this->prev->is_exit) {
+    //             // Assign the prev exit block pointer accordingly.
+    //             this->prev_exit = this->prev;
+    //         }
+    //         // If the previous block exists, but is not an exit...
+    //         else if (this->prev) {
+    //             // Assign the prev exit block pointer to the previous exit block.
+    //             this->prev_exit = this->prev->prev_exit;
+    //         }
+    //         // If prev is null (this is the first block in the list)
+    //         else {
+    //             this->prev_exit = nullptr;
+    //         }
+    //     }
+    // };
 
     // The LLVM context.
     std::unique_ptr<llvm::LLVMContext> context;

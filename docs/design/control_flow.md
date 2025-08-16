@@ -71,6 +71,7 @@ This design has the following benefits:
 - It allows statements to appear after the return statement without invalidating the IR, even if they are unreachable.
 - It allows us to associate the return value with a variable-like construct, which is useful for type checking.
 - It allows us to potentially set the return value without immediately exiting the function, which is useful for certain control flow patterns.
+- It gives every block an exit point, even if there was no explicit return statement.
 
 If the optimizer is used, it may be able to simplify the generated IR by eliminating unnecessary blocks or instructions, while still preserving the original semantics of the function.
 

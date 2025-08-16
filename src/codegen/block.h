@@ -27,6 +27,11 @@ public:
     // The value yielded by the block. If this is a function block,
     // this will be the return value.
     llvm::Value* yield_value;
+
+    Block(std::shared_ptr<Block> prev, llvm::Value* yield_value)
+        : prev(prev), yield_value(yield_value) {}
+
+    virtual ~Block() = default;
 };
 
 /**
@@ -39,6 +44,15 @@ class Block::Function : public Block {
 public:
     // This function's exit block where the yield value is returned.
     llvm::BasicBlock* exit_block;
+
+    Function(
+        std::shared_ptr<Block> prev,
+        llvm::Value* yield_value,
+        llvm::BasicBlock* exit_block
+    )
+        : Block(prev, yield_value), exit_block(exit_block) {}
+
+    virtual ~Function() = default;
 };
 
 /**
@@ -51,6 +65,15 @@ class Block::Control : public Block {
 public:
     // This control block's merge block where control flow continues.
     llvm::BasicBlock* merge_block;
+
+    Control(
+        std::shared_ptr<Block> prev,
+        llvm::Value* yield_value,
+        llvm::BasicBlock* merge_block
+    )
+        : Block(prev, yield_value), merge_block(merge_block) {}
+
+    virtual ~Control() = default;
 };
 
 /**
@@ -61,7 +84,17 @@ public:
  *
  * Plain blocks, though considered control blocks, do not actually affect control flow.
  */
-class Block::Plain : public Block::Control {};
+class Block::Plain : public Block::Control {
+
+    Plain(
+        std::shared_ptr<Block> prev,
+        llvm::Value* yield_value,
+        llvm::BasicBlock* merge_block
+    )
+        : Control(prev, yield_value, merge_block) {}
+
+    virtual ~Plain() = default;
+};
 
 /**
  * @brief A loop block linked list node.
@@ -73,6 +106,16 @@ class Block::Loop : public Block::Control {
 public:
     // This loop's continue block, allowing control flow to restart from the beginning of the loop.
     llvm::BasicBlock* continue_block;
+
+    Loop(
+        std::shared_ptr<Block> prev,
+        llvm::Value* yield_value,
+        llvm::BasicBlock* merge_block,
+        llvm::BasicBlock* continue_block
+    )
+        : Control(prev, yield_value, merge_block), continue_block(continue_block) {}
+
+    virtual ~Loop() = default;
 };
 
 /**
@@ -84,6 +127,16 @@ public:
  * Conditional blocks are used for conditional control structures.
  * These structures have a merge block where control flow continues after the conditional.
  */
-class Block::Conditional : public Block::Control {};
+class Block::Conditional : public Block::Control {
+
+    Conditional(
+        std::shared_ptr<Block> prev,
+        llvm::Value* yield_value,
+        llvm::BasicBlock* merge_block
+    )
+        : Control(prev, yield_value, merge_block) {}
+
+    virtual ~Conditional() = default;
+};
 
 #endif // NICO_BLOCK_H

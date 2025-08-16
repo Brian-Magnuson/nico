@@ -22,10 +22,16 @@ bool CodeGenerator::generate(const std::vector<std::shared_ptr<Stmt>>& stmts, bo
     llvm::BasicBlock* entry_block = llvm::BasicBlock::Create(*context, "entry", main_fn);
     llvm::BasicBlock* exit_block = llvm::BasicBlock::Create(*context, "exit", main_fn);
 
-    // Append the exit block to the block list.
-    block_list = std::make_shared<Block>(block_list, exit_block, true);
     // Start inserting instructions into the entry block.
     builder->SetInsertPoint(entry_block);
+
+    // Allocate space for the return value.
+    llvm::AllocaInst* ret_val = builder->CreateAlloca(builder->getInt32Ty(), nullptr, "__retval__");
+
+    // Append the exit block to the block list.
+    block_list = std::make_shared<Block::Function>(block_list, ret_val, exit_block);
+
+    // MAIN FUNCTION CODE STARTS HERE
 
     // Create a string constant "Hello, World!"
     llvm::Value* hello_world_str = builder->CreateGlobalStringPtr("Hello, World!");
@@ -41,8 +47,19 @@ bool CodeGenerator::generate(const std::vector<std::shared_ptr<Stmt>>& stmts, bo
     // Call puts with the string constant
     builder->CreateCall(puts_fn, hello_world_str);
 
-    // Return 0 from main
-    builder->CreateRet(builder->getInt32(0));
+    // MAIN FUNCTION CODE ENDS HERE
+
+    // Assign to ret_val
+    builder->CreateStore(builder->getInt32(0), ret_val);
+
+    // Jump to exit block
+    builder->CreateBr(exit_block);
+    builder->SetInsertPoint(exit_block);
+
+    // Return the value from ret_val
+    builder->CreateRet(builder->CreateLoad(builder->getInt32Ty(), ret_val));
+
+    ir_module->print(llvm::outs(), nullptr);
 
     // If verification is required, verify the generated IR
     if (require_verification && llvm::verifyModule(*ir_module, &llvm::errs())) {
