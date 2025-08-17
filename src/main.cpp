@@ -34,57 +34,58 @@ void exit_if_errors() {
 }
 
 int main(int argc, char** argv) {
-    if (argc != 2) {
-        std::cout << "Usage: nico <source file>" << std::endl;
-        return 64;
-    }
+    // if (argc != 2) {
+    //     std::cout << "Usage: nico <source file>" << std::endl;
+    //     return 64;
+    // }
 
-    // Open the file.
-    std::ifstream file(argv[1]);
-    if (!file.is_open()) {
-        std::cerr << "Could not open file: " << argv[1] << std::endl;
-        return 66;
-    }
+    // // Open the file.
+    // std::ifstream file(argv[1]);
+    // if (!file.is_open()) {
+    //     std::cerr << "Could not open file: " << argv[1] << std::endl;
+    //     return 66;
+    // }
 
-    // Read the file's path.
-    std::filesystem::path path = argv[1];
+    // // Read the file's path.
+    // std::filesystem::path path = argv[1];
 
-    // Read the entire file.
-    file.seekg(0, std::ios::end);
-    size_t size = file.tellg();
-    file.seekg(0, std::ios::beg);
+    // // Read the entire file.
+    // file.seekg(0, std::ios::end);
+    // size_t size = file.tellg();
+    // file.seekg(0, std::ios::beg);
 
-    std::string src_code;
-    src_code.resize(size);
-    file.read(&src_code[0], size);
+    // std::string src_code;
+    // src_code.resize(size);
+    // file.read(&src_code[0], size);
 
-    std::shared_ptr<CodeFile> code_file = std::make_shared<CodeFile>(
-        std::filesystem::absolute(path),
-        std::move(src_code)
-    );
+    // std::shared_ptr<CodeFile> code_file = std::make_shared<CodeFile>(
+    //     std::filesystem::absolute(path),
+    //     std::move(src_code)
+    // );
 
-    file.close();
+    // file.close();
 
-    Lexer lexer;
-    auto tokens = lexer.scan(code_file);
-    exit_if_errors();
+    // Lexer lexer;
+    // auto tokens = lexer.scan(code_file);
+    // exit_if_errors();
 
-    Parser parser;
-    auto ast = parser.parse(std::move(tokens));
-    exit_if_errors();
+    // Parser parser;
+    // auto ast = parser.parse(std::move(tokens));
+    // exit_if_errors();
 
-    std::shared_ptr<SymbolTree> symbol_tree = std::make_shared<SymbolTree>();
+    // std::shared_ptr<SymbolTree> symbol_tree = std::make_shared<SymbolTree>();
 
-    GlobalChecker global_checker(symbol_tree);
-    global_checker.check(ast);
-    exit_if_errors();
+    // GlobalChecker global_checker(symbol_tree);
+    // global_checker.check(ast);
+    // exit_if_errors();
 
-    LocalChecker local_checker(symbol_tree);
-    local_checker.check(ast);
-    exit_if_errors();
+    // LocalChecker local_checker(symbol_tree);
+    // local_checker.check(ast);
+    // exit_if_errors();
 
     CodeGenerator codegen;
-    codegen.generate(ast);
+    codegen.generate({}, false);
+    codegen.generate_main();
     exit_if_errors();
 
     // Eject the generated LLVM module and context.

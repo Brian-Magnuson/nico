@@ -45,13 +45,13 @@ This function can be represented in LLVM IR as follows:
 ```llvm
 define i32 @myfunc() {
 entry:
-    %__retval__ = alloca i32
-    ; ... code that stores to %__retval__ ...
-    store i32 0, ptr %__retval__
+    %"$retval" = alloca i32
+    ; ... code that stores to %"$retval" ...
+    store i32 0, ptr %"$retval"
     br label %exit
 
 exit:
-    %result = load i32, ptr %__retval__
+    %result = load i32, ptr %"$retval"
     ret i32 %result
 
 unreachable:
@@ -92,12 +92,33 @@ From these rules, we can infer a few design requirements for our language:
 - Yield statements don't actually affect control flow; as long as the code generator can access the allocated space for the yield value, no extra mechanisms are needed to manage control flow with yield statements.
 - A function's yield value is special because it can be set within nested blocks (with `return`). There are a few design choices to implement this:
   - Give the function's yield value a special name and have some mechanism to check if the current surrounding block is a function or another block.
-    - For example, if the function's yield value is named `__retval__` and other yield values are named `__yieldval__`, a yield statement in a function must be able to determine which name use when setting the yield value.
+    - For example, if the function's yield value is named `$retval` and other yield values are named `$yieldval`, a yield statement in a function must be able to determine which name use when setting the yield value.
   - Keep track of the function's yield value separately
     - This is probably the easier option to implement.
 - A loop's merge and continue blocks must be tracked together; else, we cannot use `break` or `continue`.
 - `break` and `continue`, much like `return`, must also create unreachable blocks.
 - A conditional's then, else, and merge blocks do not need to be tracked together because none of the non-declaring control statements result in a jump to one of these blocks.
+
+## Script and main function
+
+In many languages, executable code contains a special function called `main` where execution starts and ends. For LLVM, one can create a `main` function by defining a function with the name "main" and setting its linkage to external.
+
+Libraries do not have a main function; instead, they provide functions that can be called by the main function or other functions.
+
+We want users to be able to execute Nico code like a script, without needing to wrap it in a function.
+We also want to give users the option to write code for libraries.
+
+For this, we use the following design:
+- Code at the top level is generated as part of a function named "script"
+  - "script" will be an internal-use identifier; it won't have the "::" prefix used by other identifiers.
+    - We specifically avoid using the name "main" for such a function since external programs would mistake it for the entry point of the program.
+  - Variables declared within this script are made global.
+- All Nico code is generated in this way, even code for libraries.
+  - Ideally, libraries would not have any code in these script functions; we can possibly warn the user to not do this.
+- If the code is to be executed, then we will add in a `main` function.
+  - "main" is also considered an internal-use identifier.
+  - It will simply call the "script" function.
+    - Because the structure of `main` is predictable, it won't need the same flexible structure as shown above.
 
 ## Recommendations
 
@@ -111,6 +132,7 @@ Here is a possible implementation:
 class Block {
 public:
     class Function;
+    class Script;
 
     class Control;
     class Plain;
@@ -126,22 +148,26 @@ public:
     llvm::BasicBlock* exit_block;
 };
 
+class Block::Script : public Block::Function {
+    // Adds no additional members
+};
+
 class Block::Control : public Block {
 public:
     llvm::BasicBlock* merge_block;
 };
 
-class Block::Plain : public Control {
+class Block::Plain : public Block::Control {
 public:
     // Adds no additional members
 };
 
-class Block::Loop : public Control {
+class Block::Loop : public Block::Control {
 public:
     llvm::BasicBlock* continue_block;
 };
 
-class Block::Conditional : public Control {
+class Block::Conditional : public Block::Control {
 public:
     // Adds no additional members
 };

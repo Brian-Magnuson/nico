@@ -8,30 +8,29 @@
 
 bool CodeGenerator::generate(const std::vector<std::shared_ptr<Stmt>>& stmts, bool require_verification) {
     // Normally, we would traverse the AST and generate LLVM IR here.
-    // For now, we will generate a simple main function that prints "Hello, World!".
+    // For now, we will generate a simple script that prints "Hello, World!".
 
-    // Create the main function type: int main()
-    llvm::FunctionType* main_fn_type = llvm::FunctionType::get(
-        llvm::Type::getInt32Ty(*context), false
+    llvm::FunctionType* script_fn_type = llvm::FunctionType::get(
+        builder->getInt32Ty(), false
     );
-    llvm::Function* main_fn = llvm::Function::Create(
-        main_fn_type, llvm::Function::ExternalLinkage, "main", ir_module.get()
+    llvm::Function* script_fn = llvm::Function::Create(
+        script_fn_type, llvm::Function::ExternalLinkage, "script", ir_module.get()
     );
 
-    // Create a basic block for the main function
-    llvm::BasicBlock* entry_block = llvm::BasicBlock::Create(*context, "entry", main_fn);
-    llvm::BasicBlock* exit_block = llvm::BasicBlock::Create(*context, "exit", main_fn);
+    // Create a basic block for the script function
+    llvm::BasicBlock* entry_block = llvm::BasicBlock::Create(*context, "entry", script_fn);
+    llvm::BasicBlock* exit_block = llvm::BasicBlock::Create(*context, "exit", script_fn);
 
     // Start inserting instructions into the entry block.
     builder->SetInsertPoint(entry_block);
 
     // Allocate space for the return value.
-    llvm::AllocaInst* ret_val = builder->CreateAlloca(builder->getInt32Ty(), nullptr, "__retval__");
+    llvm::AllocaInst* ret_val = builder->CreateAlloca(builder->getInt32Ty(), nullptr, "$retval");
 
     // Append the exit block to the block list.
-    block_list = std::make_shared<Block::Function>(block_list, ret_val, exit_block);
+    block_list = std::make_shared<Block::Script>(block_list, ret_val, exit_block);
 
-    // MAIN FUNCTION CODE STARTS HERE
+    // CODE STARTS HERE
 
     // Create a string constant "Hello, World!"
     llvm::Value* hello_world_str = builder->CreateGlobalStringPtr("Hello, World!");
@@ -47,7 +46,7 @@ bool CodeGenerator::generate(const std::vector<std::shared_ptr<Stmt>>& stmts, bo
     // Call puts with the string constant
     builder->CreateCall(puts_fn, hello_world_str);
 
-    // MAIN FUNCTION CODE ENDS HERE
+    // CODE ENDS HERE
 
     // Assign to ret_val
     builder->CreateStore(builder->getInt32(0), ret_val);
@@ -58,6 +57,44 @@ bool CodeGenerator::generate(const std::vector<std::shared_ptr<Stmt>>& stmts, bo
 
     // Return the value from ret_val
     builder->CreateRet(builder->CreateLoad(builder->getInt32Ty(), ret_val));
+
+    // If verification is required, verify the generated IR
+    if (require_verification && llvm::verifyModule(*ir_module, &llvm::errs())) {
+        Logger::inst().log_error(
+            Err::ModuleVerificationFailed,
+            "Generated LLVM IR failed verification."
+        );
+        return false;
+    }
+
+    return true;
+}
+
+bool CodeGenerator::generate_main(bool require_verification) {
+    // Generate the main function that calls $script
+    llvm::FunctionType* main_fn_type = llvm::FunctionType::get(
+        builder->getInt32Ty(),
+        {builder->getInt32Ty(), builder->getPtrTy()},
+        false
+    );
+
+    llvm::Function* main_fn = llvm::Function::Create(
+        main_fn_type, llvm::Function::ExternalLinkage, "main", ir_module.get()
+    );
+
+    // Create a basic block for the main function
+    llvm::BasicBlock* main_entry = llvm::BasicBlock::Create(*context, "entry", main_fn);
+    builder->SetInsertPoint(main_entry);
+
+    // Call the script function
+    llvm::Function* script_fn = ir_module->getFunction("script");
+    llvm::Value* script_ret = builder->CreateCall(script_fn);
+
+    // We discard the args for now; later we can come up with a way to make them
+    // accessible to the user.
+
+    // Return the result
+    builder->CreateRet(script_ret);
 
     ir_module->print(llvm::outs(), nullptr);
 

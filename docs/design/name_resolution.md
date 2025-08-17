@@ -142,5 +142,32 @@ The Nico compiler must meet the following requirements for name resolution:
   - When the type checker counters a struct definition, it must be able to create a symbol table/tree entry for the struct, generating a unique identifier for the struct.
   - When the type checker encounters a variable reference, it must be able to look up the variable in the symbol table/tree and retrieve the unique identifier and type information.
 - Code generator
-  - Unique identifiers must be convertible to an LLVM-safe name, which replaces the `::` characters with `_` characters.
   - Type objects must be directly convertible to LLVM types, which are used in the code generation phase.
+  - Special names must be in a format that makes it impossible for them to collide with other names.
+
+## Internal Use Identifiers
+
+According to the LLVM docs:
+
+> Named values are represented as a string of characters with their prefix. For example, %foo, @DivisionByZero, %a.really.long.identifier. The actual regular expression used is ‘[%@][-a-zA-Z$._][-a-zA-Z$._0-9]*’. Identifiers that require other characters in their names can be surrounded with quotes. Special characters may be escaped using "\xx" where xx is the ASCII code for the character in hexadecimal. In this way, any character can be used in a name value, even quotes themselves. The "\01" prefix can be used on global values to suppress mangling.
+
+As mentioned previously, unique identifiers may look like this.
+```
+::s::MyType::my_function::1::2::x
+```
+
+Unique identifiers are used internally by the code generator to prevent naming collisions and ensure that generated code is unique and unambiguous. There is no need to transform the string into an "LLVM safe" name since any character is allowed in an LLVM identifier.
+
+It is impossible for users to access these identifiers directly, largely because they all start with `::`, which is not a valid starting token for user-defined identifiers.
+Additionally, any `:` is not allowed in a single-part identifier.
+It is also impossible for users to write two identifiers that have the same unique identifier; any attempt to do so would be caught by the type checker before the code is generated.
+
+The construction of unique identifiers also mean that certain names that are used internally cannot be accessed by users. For example, if the user attempts to write a function named `main` at the top level, the unique identifier generated would be `::main`, which will not collide with the internal `main` function.
+
+For Nico, there is a need for these **internal use identifiers**, identifiers that are used by the compiler and are named in such a way that they cannot be accessed by users.
+
+Here is a list of the the current internal use identifiers:
+- `main`
+- `script`
+- `$retval`
+- `$yieldval`

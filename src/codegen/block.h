@@ -16,6 +16,7 @@
 class Block {
 public:
     class Function;
+    class Script;
 
     class Control;
     class Plain;
@@ -53,6 +54,27 @@ public:
         : Block(prev, yield_value), exit_block(exit_block) {}
 
     virtual ~Function() = default;
+};
+
+/**
+ * @brief A script block linked list node.
+ *
+ * A script is an implicitly declared function containing all statements
+ * written at the top level.
+ * The difference is that variable declarations are made global.
+ *
+ * This class adds no additional members to `Block::Function`.
+ */
+class Block::Script : public Block::Function {
+public:
+    Script(
+        std::shared_ptr<Block> prev,
+        llvm::Value* yield_value,
+        llvm::BasicBlock* exit_block
+    )
+        : Block::Function(prev, yield_value, exit_block) {}
+
+    virtual ~Script() = default;
 };
 
 /**
