@@ -7,6 +7,9 @@
 #include <string>
 #include <vector>
 
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/Type.h>
+
 #include "../common/dictionary.h"
 #include "../common/utils.h"
 #include "../lexer/token.h"
@@ -135,6 +138,17 @@ public:
     virtual bool operator!=(const Type& other) const {
         return !(*this == other);
     }
+
+    /**
+     * @brief Generates the corresponding LLVM type for this type object.
+     *
+     * If this type is a named type, only the name will be used to create the type.
+     * The type definition should be written elsewhere during code generation.
+     *
+     * @param builder The LLVM IR builder to use for generating the type.
+     * @return The corresponding LLVM type for this type object.
+     */
+    virtual llvm::Type* get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const = 0;
 };
 
 /**
@@ -424,6 +438,10 @@ public:
         }
         return false;
     }
+
+    virtual llvm::Type* get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
+        return llvm::IntegerType::get(builder->getContext(), width);
+    }
 };
 
 /**
@@ -452,6 +470,17 @@ public:
         }
         return false;
     }
+
+    virtual llvm::Type* get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
+        switch (width) {
+        case 32:
+            return llvm::Type::getFloatTy(builder->getContext());
+        case 64:
+            return llvm::Type::getDoubleTy(builder->getContext());
+        default:
+            panic("Type::Float: Invalid width " + std::to_string(width) + ". Must be 32 or 64.");
+        }
+    }
 };
 
 // MARK: Boolean type
@@ -471,6 +500,10 @@ public:
 
     bool operator==(const Type& other) const override {
         return dynamic_cast<const Bool*>(&other) != nullptr;
+    }
+
+    virtual llvm::Type* get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
+        return llvm::Type::getInt1Ty(builder->getContext());
     }
 };
 
@@ -502,6 +535,10 @@ public:
         }
         return false;
     }
+
+    virtual llvm::Type* get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
+        return llvm::PointerType::get(builder->getContext(), 0);
+    }
 };
 
 /**
@@ -529,6 +566,10 @@ public:
             return *base == *other_reference->base;
         }
         return false;
+    }
+
+    virtual llvm::Type* get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
+        return llvm::PointerType::get(builder->getContext(), 0);
     }
 };
 
@@ -559,6 +600,14 @@ public:
             return *base == *other_array->base && size == other_array->size;
         }
         return false;
+    }
+
+    virtual llvm::Type* get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
+        if (size) {
+            return llvm::ArrayType::get(base->get_llvm_type(builder), *size);
+        } else {
+            return llvm::PointerType::get(builder->getContext(), 0);
+        }
     }
 };
 
@@ -593,6 +642,17 @@ public:
         }
         return false;
     }
+
+    virtual llvm::Type* get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
+        std::vector<llvm::Type*> element_types;
+        for (const auto& element : elements) {
+            element_types.push_back(element->get_llvm_type(builder));
+        }
+        return llvm::StructType::get(
+            builder->getContext(),
+            element_types
+        );
+    }
 };
 
 /**
@@ -625,6 +685,17 @@ public:
             return properties == other_object->properties;
         }
         return false;
+    }
+
+    virtual llvm::Type* get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
+        std::vector<llvm::Type*> field_types;
+        for (const auto& [key, value] : properties) {
+            field_types.push_back(value.type->get_llvm_type(builder));
+        }
+        return llvm::StructType::get(
+            builder->getContext(),
+            field_types
+        );
     }
 };
 
@@ -663,6 +734,23 @@ public:
         }
         return false;
     }
+
+    virtual llvm::Type* get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
+        if (auto node_ptr = node.lock()) {
+            llvm::StructType* struct_ty = llvm::StructType::getTypeByName(
+                builder->getContext(),
+                node_ptr->unique_name
+            );
+            if (!struct_ty) {
+                struct_ty = llvm::StructType::create(
+                    builder->getContext(),
+                    node_ptr->unique_name
+                );
+            }
+            return struct_ty;
+        }
+        panic("Type::Named: Node is expired; LLVM type cannot be generated.");
+    }
 };
 
 /**
@@ -698,6 +786,15 @@ public:
             return parameters == other_function->parameters && *return_type == *other_function->return_type;
         }
         return false;
+    }
+
+    virtual llvm::Type* get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
+        std::vector<llvm::Type*> param_types;
+        for (const auto& param : parameters) {
+            param_types.push_back(param.type->get_llvm_type(builder));
+        }
+        llvm::Type* return_llvm_type = return_type->get_llvm_type(builder);
+        return llvm::FunctionType::get(return_llvm_type, param_types, false);
     }
 };
 
