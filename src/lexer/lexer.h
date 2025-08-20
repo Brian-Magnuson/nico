@@ -6,7 +6,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "../compiler/code_file.h"
+#include "../common/code_file.h"
 #include "token.h"
 
 /**

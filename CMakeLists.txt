@@ -50,9 +50,11 @@ set(CHECKER_SRC
 )
 set(CODEGEN_SRC
     src/codegen/code_generator.cpp
-    src/codegen/emitter.cpp
-    src/codegen/jit.cpp
-    src/codegen/optimizer.cpp
+)
+set(COMPILER_SRC
+    src/compiler/emitter.cpp
+    src/compiler/jit.cpp
+    src/compiler/optimizer.cpp
 )
 set(LOGGER_SRC
     src/logger/logger.cpp
@@ -62,6 +64,7 @@ set(CORE_SRC
     ${PARSER_SRC}
     ${CHECKER_SRC}
     ${CODEGEN_SRC}
+    ${COMPILER_SRC}
     ${LOGGER_SRC}
 )
 

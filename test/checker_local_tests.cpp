@@ -6,7 +6,7 @@
 
 #include "../src/checker/global_checker.h"
 #include "../src/checker/local_checker.h"
-#include "../src/compiler/code_file.h"
+#include "../src/common/code_file.h"
 #include "../src/debug/test_utils.h"
 #include "../src/lexer/lexer.h"
 #include "../src/lexer/token.h"

@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-#include "../compiler/code_file.h"
+#include "../common/code_file.h"
 #include "../lexer/token.h"
 
 /**

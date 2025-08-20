@@ -5,7 +5,7 @@
 #include <string>
 #include <string_view>
 
-#include "../compiler/code_file.h"
+#include "../common/code_file.h"
 
 /**
  * @brief A token type.
