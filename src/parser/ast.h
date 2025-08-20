@@ -307,6 +307,8 @@ class Expr::Identifier : public Expr {
 public:
     // The token representing the identifier.
     Ident ident;
+    // The field entry associated with the identifier.
+    std::weak_ptr<Node::FieldEntry> field_entry;
 
     Identifier(std::shared_ptr<Token> token)
         : ident(token) {

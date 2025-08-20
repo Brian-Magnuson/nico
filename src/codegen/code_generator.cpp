@@ -1,10 +1,112 @@
 #include "code_generator.h"
 
+#include <string_view>
+
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/Verifier.h>
 
+#include "../common/utils.h"
 #include "../logger/logger.h"
+
+std::any CodeGenerator::visit(Stmt::Expression* stmt) {
+    // Generate code for the expression statement
+    return std::any();
+}
+
+std::any CodeGenerator::visit(Stmt::Let* stmt) {
+    // Generate code for the let statement
+    return std::any();
+}
+
+std::any CodeGenerator::visit(Stmt::Eof* stmt) {
+    // Generate code for the end-of-file (EOF) statement
+    return std::any();
+}
+
+std::any CodeGenerator::visit(Stmt::Print* stmt) {
+    // Generate code for the print statement
+    return std::any();
+}
+
+std::any CodeGenerator::visit(Expr::Assign* expr, bool as_lvalue) {
+    // Generate code for the assignment expression
+    return std::any();
+}
+
+std::any CodeGenerator::visit(Expr::Binary* expr, bool as_lvalue) {
+    // Generate code for the binary expression
+    return std::any();
+}
+
+std::any CodeGenerator::visit(Expr::Unary* expr, bool as_lvalue) {
+    // Generate code for the unary expression
+    return std::any();
+}
+
+std::any CodeGenerator::visit(Expr::Identifier* expr, bool as_lvalue) {
+    // Generate code for the identifier expression
+    return std::any();
+}
+
+std::any CodeGenerator::visit(Expr::Literal* expr, bool as_lvalue) {
+    llvm::Value* result = nullptr;
+
+    switch (expr->token->tok_type) {
+    case Tok::Int: {
+        std::string_view prefix = expr->token->lexeme.size() >= 2 ? expr->token->lexeme.substr(0, 2) : "0d";
+        uint8_t radix = 10;
+        switch (prefix[1]) {
+        case 'd':
+            radix = 10;
+            break;
+        case 'b':
+            radix = 2;
+            break;
+        case 'o':
+            radix = 8;
+            break;
+        case 'x':
+            radix = 16;
+            break;
+        }
+
+        result = llvm::ConstantInt::get(
+            llvm::Type::getInt32Ty(*context),
+            expr->token->lexeme,
+            radix
+        );
+        break;
+    }
+    case Tok::Float:
+        if (expr->token->lexeme == "inf") {
+            result = llvm::ConstantFP::getInfinity(
+                llvm::Type::getDoubleTy(*context)
+            );
+        } else if (expr->token->lexeme == "NaN") {
+            result = llvm::ConstantFP::getNaN(
+                llvm::Type::getDoubleTy(*context)
+            );
+        } else {
+            result = llvm::ConstantFP::get(
+                llvm::Type::getDoubleTy(*context),
+                expr->token->lexeme
+            );
+        }
+        break;
+    case Tok::Bool:
+        result = llvm::ConstantInt::get(
+            llvm::Type::getInt1Ty(*context),
+            expr->token->lexeme == "true"
+        );
+        break;
+    default:
+        panic("CodeGenerator::visit(Expr::Literal): Unknown literal type.");
+    }
+
+    // Generate code for the literal expression
+    return result;
+}
 
 bool CodeGenerator::generate(const std::vector<std::shared_ptr<Stmt>>& stmts, bool require_verification) {
     // Normally, we would traverse the AST and generate LLVM IR here.

@@ -20,7 +20,7 @@ class Parser {
     // The current token index.
     unsigned current = 0;
     // A table of basic types.
-    static std::unordered_map<std::string, std::shared_ptr<Type>> type_table;
+    // static std::unordered_map<std::string, std::shared_ptr<Type>> type_table;
 
     /**
      * @brief Checks if the parser has reached the end of the tokens list.
@@ -33,12 +33,14 @@ class Parser {
 
     /**
      * @brief Peeks at the current token.
+     *
      * @return A pointer to the current token. If the parser has reached the end of the tokens list, the last token will be returned instead.
      */
     const std::shared_ptr<Token>& peek() const;
 
     /**
      * @brief Peeks at the previous token.
+     *
      * @return A pointer to the previous token.
      * @warning If there is no previous token, the program will abort.
      */
@@ -55,6 +57,7 @@ class Parser {
 
     /**
      * @brief Checks if the current token's type matches any of the provided types, and advances the parser if it does.
+     *
      * @param types The types to match.
      * @return True if the current token's type matches any of the provided types. False otherwise.
      */

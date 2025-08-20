@@ -1,6 +1,7 @@
 #ifndef NICO_TOKEN_H
 #define NICO_TOKEN_H
 
+#include <any>
 #include <string>
 #include <string_view>
 
@@ -158,7 +159,12 @@ public:
      * @param tok_type The type of the token.
      * @param location The location of the token.
      */
-    Token(Tok tok_type, const Location& location);
+    Token(Tok tok_type, const Location& location)
+        : tok_type(tok_type),
+          location(location),
+          lexeme(
+              std::string_view(location.file->src_code).substr(location.start, location.length)
+          ) {}
 };
 
 #endif // NICO_TOKEN_H

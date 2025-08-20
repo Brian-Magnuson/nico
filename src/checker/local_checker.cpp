@@ -18,13 +18,10 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
 
     // Visit the initializer (if present).
     if (stmt->expression.has_value()) {
-        auto type = stmt->expression.value()->accept(this, false);
-        if (type.has_value()) {
-            expr_type = std::any_cast<std::shared_ptr<Type>>(type);
-        } else {
-            // Error should already be logged.
+        stmt->expression.value()->accept(this, false);
+        expr_type = stmt->expression.value()->type;
+        if (!expr_type)
             return std::any();
-        }
     }
     // If the initializer is not present, the annotation will be (this is checked in the parser).
 
@@ -75,15 +72,15 @@ std::any LocalChecker::visit(Expr::Assign* expr, bool as_lvalue) {
         Logger::inst().log_error(Err::NotAnLValue, expr->op->location, "Assignment expression cannot be an lvalue.");
     }
 
-    auto l_any = expr->left->accept(this, true);
-    if (!l_any.has_value())
+    expr->left->accept(this, true);
+    auto l_type = expr->left->type;
+    if (!l_type)
         return std::any();
-    auto l_type = std::any_cast<std::shared_ptr<Type>>(l_any);
 
-    auto r_any = expr->right->accept(this, false);
-    if (!r_any.has_value())
+    expr->right->accept(this, false);
+    auto r_type = expr->right->type;
+    if (!r_type)
         return std::any();
-    auto r_type = std::any_cast<std::shared_ptr<Type>>(r_any);
 
     // The types of the left and right sides must match.
     if (*l_type != *r_type) {
@@ -95,19 +92,20 @@ std::any LocalChecker::visit(Expr::Assign* expr, bool as_lvalue) {
         return std::any();
     }
 
-    return l_type;
+    expr->type = l_type;
+    return std::any();
 }
 
 std::any LocalChecker::visit(Expr::Binary* expr, bool as_lvalue) {
-    auto l_any = expr->left->accept(this, true);
-    if (!l_any.has_value())
+    expr->left->accept(this, true);
+    auto l_type = expr->left->type;
+    if (!l_type)
         return std::any();
-    auto l_type = std::any_cast<std::shared_ptr<Type>>(l_any);
 
-    auto r_any = expr->right->accept(this, false);
-    if (!r_any.has_value())
+    expr->right->accept(this, false);
+    auto r_type = expr->right->type;
+    if (!r_type)
         return std::any();
-    auto r_type = std::any_cast<std::shared_ptr<Type>>(r_any);
 
     switch (expr->op->tok_type) {
     case Tok::Plus:
@@ -128,27 +126,29 @@ std::any LocalChecker::visit(Expr::Binary* expr, bool as_lvalue) {
             Logger::inst().log_error(Err::NoOperatorOverload, expr->op->location, "Operands must be of a numeric type.");
             return std::any();
         }
-        return l_type;
+        expr->type = l_type; // The result type is the same as the operand type.
+        break;
     default:
         Logger::inst().log_error(Err::Unimplemented, expr->op->location, "Binary operator not implemented.");
-        return std::any();
     }
+    return std::any();
 }
 
 std::any LocalChecker::visit(Expr::Unary* expr, bool as_lvalue) {
-    auto r_any = expr->right->accept(this, false);
-    if (!r_any.has_value())
+    expr->right->accept(this, false);
+    auto r_type = expr->right->type;
+    if (!r_type)
         return std::any();
-    auto type = std::any_cast<std::shared_ptr<Type>>(r_any);
 
     switch (expr->op->tok_type) {
     case Tok::Minus:
         // Types must inherit from `Type::INumeric`.
-        if (!PTR_INSTANCEOF(type, Type::INumeric)) {
+        if (!PTR_INSTANCEOF(r_type, Type::INumeric)) {
             Logger::inst().log_error(Err::NoOperatorOverload, expr->op->location, "Operand must be of a numeric type.");
             return std::any();
         }
-        return type;
+        expr->type = r_type;
+        return std::any();
     default:
         Logger::inst().log_error(Err::Unimplemented, expr->op->location, "Unary operator not implemented.");
         return std::any();
@@ -173,26 +173,26 @@ std::any LocalChecker::visit(Expr::Identifier* expr, bool as_lvalue) {
         return std::any();
     }
 
-    return field_entry->field.type;
+    expr->type = field_entry->field.type;
+    expr->field_entry = field_entry;
+    return std::any();
 }
 
 std::any LocalChecker::visit(Expr::Literal* expr, bool as_lvalue) {
-    std::shared_ptr<Type> type = nullptr;
     switch (expr->token->tok_type) {
     case Tok::Int:
-        type = std::make_shared<Type::Int>(true, 32);
+        expr->type = std::make_shared<Type::Int>(true, 32);
         break;
     case Tok::Float:
-        type = std::make_shared<Type::Float>(64);
+        expr->type = std::make_shared<Type::Float>(64);
         break;
     case Tok::Bool:
-        type = std::make_shared<Type::Bool>();
+        expr->type = std::make_shared<Type::Bool>();
         break;
     default:
         Logger::inst().log_error(Err::Unimplemented, expr->token->location, "Literal type not implemented.");
-        return std::any();
     }
-    return type;
+    return std::any();
 }
 
 // MARK: Annotations

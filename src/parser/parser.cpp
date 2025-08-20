@@ -4,11 +4,11 @@
 #include "../logger/logger.h"
 #include "ident.h"
 
-std::unordered_map<std::string, std::shared_ptr<Type>> Parser::type_table = {
-    {"i32", std::make_shared<Type::Int>(true, 32)},
-    {"f64", std::make_shared<Type::Float>(64)},
-    {"bool", std::make_shared<Type::Bool>()}
-};
+// std::unordered_map<std::string, std::shared_ptr<Type>> Parser::type_table = {
+//     {"i32", std::make_shared<Type::Int>(true, 32)},
+//     {"f64", std::make_shared<Type::Float>(64)},
+//     {"bool", std::make_shared<Type::Bool>()}
+// };
 
 bool Parser::is_at_end() const {
     return current >= tokens.size();

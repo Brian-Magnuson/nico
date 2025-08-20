@@ -37,7 +37,6 @@ include(Catch)
 
 # Core files
 set(LEXER_SRC
-    src/lexer/token.cpp
     src/lexer/lexer.cpp
 )
 set(PARSER_SRC
