@@ -10,12 +10,41 @@
 #include "../logger/logger.h"
 
 std::any CodeGenerator::visit(Stmt::Expression* stmt) {
-    // Generate code for the expression statement
+    stmt->expression->accept(this, false);
     return std::any();
 }
 
 std::any CodeGenerator::visit(Stmt::Let* stmt) {
-    // Generate code for the let statement
+    auto llvm_type = stmt->field_entry.lock()->field.type->get_llvm_type(builder);
+    llvm::Value* allocation = nullptr;
+
+    if (PTR_INSTANCEOF(block_list, Block::Script)) {
+        // If we are in a script, create a global variable instead of a local
+        allocation = new llvm::GlobalVariable(
+            *ir_module,
+            llvm_type,
+            false,
+            llvm::GlobalValue::InternalLinkage,
+            llvm::Constant::getNullValue(llvm_type), // We cannot assign non-constants here, so we use this instead
+            stmt->identifier->lexeme
+        );
+    } else {
+        allocation = builder->CreateAlloca(
+            llvm_type,
+            nullptr,
+            stmt->identifier->lexeme
+        );
+    }
+
+    stmt->field_entry.lock()->llvm_ptr = allocation;
+
+    if (stmt->expression.has_value()) {
+        // Here, storing a non-constant is okay.
+        builder->CreateStore(
+            std::any_cast<llvm::Value*>(stmt->expression.value()->accept(this, false)),
+            allocation
+        );
+    }
     return std::any();
 }
 
@@ -45,8 +74,17 @@ std::any CodeGenerator::visit(Expr::Unary* expr, bool as_lvalue) {
 }
 
 std::any CodeGenerator::visit(Expr::Identifier* expr, bool as_lvalue) {
-    // Generate code for the identifier expression
-    return std::any();
+    llvm::Value* result = nullptr;
+
+    if (as_lvalue) {
+        // We use the pointer to the variable (its alloca inst or global ptr)
+        result = expr->field_entry.lock()->llvm_ptr;
+    } else {
+        // We load the value from the variable's memory location
+        result = builder->CreateLoad(expr->type->get_llvm_type(builder), expr->field_entry.lock()->llvm_ptr);
+    }
+
+    return result;
 }
 
 std::any CodeGenerator::visit(Expr::Literal* expr, bool as_lvalue) {

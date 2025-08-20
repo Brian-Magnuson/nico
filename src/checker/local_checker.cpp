@@ -49,6 +49,7 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
         return std::any();
     }
 
+    stmt->field_entry = new_node.value();
     return std::any();
 }
 

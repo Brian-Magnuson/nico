@@ -397,6 +397,9 @@ class Node::FieldEntry : public virtual Node::IBasicNode {
 public:
     // The field object that this entry represents.
     Field field;
+    // The LLVM IR value containing the pointer to the field's memory location
+    // (AllocaInst if it is a local variable and GlobalVariable if it is a global variable).
+    llvm::Value* llvm_ptr = nullptr;
 
     FieldEntry(std::weak_ptr<Node::IScope> parent_scope, const Field& field)
         : Node::IBasicNode(parent_scope, std::string(field.token->lexeme)), field(field) {}

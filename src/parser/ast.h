@@ -181,6 +181,8 @@ public:
     bool has_var;
     // The type annotation; should be type-checked, even if not nullopt.
     std::optional<std::shared_ptr<Annotation>> annotation;
+    // A weak pointer to the field entry in the symbol table.
+    std::weak_ptr<Node::FieldEntry> field_entry;
 
     Let(
         std::shared_ptr<Token> identifier,
