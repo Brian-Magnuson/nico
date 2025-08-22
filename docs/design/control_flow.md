@@ -110,13 +110,13 @@ We also want to give users the option to write code for libraries.
 
 For this, we use the following design:
 - Code at the top level is generated as part of a function named "script"
-  - "script" will be an internal-use identifier; it won't have the "::" prefix used by other identifiers.
+  - "script" will be an internal-use symbol; it won't have the "::" prefix used by other symbols.
     - We specifically avoid using the name "main" for such a function since external programs would mistake it for the entry point of the program.
   - Variables declared within this script are made global.
 - All Nico code is generated in this way, even code for libraries.
   - Ideally, libraries would not have any code in these script functions; we can possibly warn the user to not do this.
 - If the code is to be executed, then we will add in a `main` function.
-  - "main" is also considered an internal-use identifier.
+  - "main" is also considered an internal-use symbol.
   - It will simply call the "script" function.
     - Because the structure of `main` is predictable, it won't need the same flexible structure as shown above.
 
