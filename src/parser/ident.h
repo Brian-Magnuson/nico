@@ -9,18 +9,18 @@
 #include "../lexer/token.h"
 
 /**
- * @brief An identifier class used to represent identifiers with multiple parts.
+ * @brief A name class used to represent names with multiple parts.
  *
- * Ident should only be used where multi-part identifiers are allowed.
- * Multi-part identifiers are not allowed in declarations, but are in identifier expressions and annotations.
+ * Name should only be used where multi-part names are allowed.
+ * Multi-part names are not allowed in declarations, but are in name expressions and annotations.
  *
- * Idents should not be compared directly as different identifiers may refer to the same thing and similar identifiers may refer to different things.
- * Instead, search for the identifier in the symbol tree and resolve it to a node.
+ * Names should not be compared directly as different names may refer to the same thing and similar names may refer to different things.
+ * Instead, search for the name in the symbol tree and resolve it to a node.
  */
-class Ident {
+class Name {
 public:
     /**
-     * @brief A part of an identifier.
+     * @brief A part of a name.
      *
      * Consists of the token representing the part and a vector of arguments.
      *
@@ -29,29 +29,29 @@ public:
      * - The second part would be `object` with two arguments: `with` and `args`.
      */
     struct Part {
-        // The token representing this part of the identifier.
+        // The token representing this part of the name.
         std::shared_ptr<Token> token;
-        // The arguments for this part of the identifier, if any.
-        std::vector<std::shared_ptr<Ident>> args;
+        // The arguments for this part of the name, if any.
+        std::vector<std::shared_ptr<Name>> args;
     };
 
-    // The parts of the identifier.
+    // The parts of the name.
     std::vector<Part> parts;
 
-    Ident(std::shared_ptr<Token> token)
+    Name(std::shared_ptr<Token> token)
         : parts({{token, {}}}) {}
 
-    Ident(std::vector<Part> elements)
+    Name(std::vector<Part> elements)
         : parts(elements) {
         if (parts.empty()) {
-            panic("Ident::Ident: parts cannot be empty");
+            panic("Name::Name: parts cannot be empty");
         }
     }
 
     /**
-     * @brief Converts this identifier to a string representation.
+     * @brief Converts this name to a string representation.
      *
-     * @return std::string The string representation of the identifier.
+     * @return std::string The string representation of the name.
      */
     std::string to_string() const {
         std::string result = "";

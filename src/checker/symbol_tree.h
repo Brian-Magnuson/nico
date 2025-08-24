@@ -89,21 +89,21 @@ public:
     std::optional<std::shared_ptr<Node::IScope>> exit_scope();
 
     /**
-     * @brief Searches the symbol tree for a node with the matching identifier.
+     * @brief Searches the symbol tree for a node with the matching name.
      *
      * The search algorithm comes in two parts: upward search and downward search.
      *
-     * Upward search: Search from the current scope upward until the first part of the Ident matches.
-     * Downward search: Search from the matched scope downward for the remaining parts of the Ident.
+     * Upward search: Search from the current scope upward until the first part of the Name matches.
+     * Downward search: Search from the matched scope downward for the remaining parts of the Name.
      * If downward search fails, resume upward search until the next match is found or the root scope is reached.
      *
      * Note: If the desired node is a FieldEntry, this function does not reveal whether the field entry is currently declared. Consider adding a check in the type checker.
      *
-     * @param ident The identifier to search for.
+     * @param name The name to search for.
      * @return std::optional<std::shared_ptr<Node>> The node if found, or
      * std::nullopt if not found.
      */
-    std::optional<std::shared_ptr<Node>> search_ident(const Ident& ident) const;
+    std::optional<std::shared_ptr<Node>> search_name(const Name& name) const;
 
     /**
      * @brief Adds a field entry to the symbol tree in the current scope.

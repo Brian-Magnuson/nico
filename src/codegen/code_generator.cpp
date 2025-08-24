@@ -73,7 +73,7 @@ std::any CodeGenerator::visit(Expr::Unary* expr, bool as_lvalue) {
     return std::any();
 }
 
-std::any CodeGenerator::visit(Expr::Identifier* expr, bool as_lvalue) {
+std::any CodeGenerator::visit(Expr::NameRef* expr, bool as_lvalue) {
     llvm::Value* result = nullptr;
 
     if (as_lvalue) {

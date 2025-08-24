@@ -2,10 +2,10 @@
 
 int Node::LocalScope::next_scope_id = 0;
 
-Node::Node(std::weak_ptr<Node::IScope> parent_scope, const std::string& name)
+Node::Node(std::weak_ptr<Node::IScope> parent_scope, const std::string& identifier)
     : parent(parent_scope),
-      unique_name(parent_scope.lock() ? parent_scope.lock()->unique_name + "::" + name : name),
-      short_name(name) {}
+      symbol(parent_scope.lock() ? parent_scope.lock()->symbol + "::" + identifier : identifier),
+      short_name(identifier) {}
 
 void Node::initialize_node() {
     auto shared_this = shared_from_this();

@@ -62,10 +62,10 @@ std::optional<std::shared_ptr<Node::IScope>> SymbolTree::exit_scope() {
     return current_scope;
 }
 
-std::optional<std::shared_ptr<Node>> SymbolTree::search_ident(const Ident& ident) const {
-    auto& parts = ident.parts;
+std::optional<std::shared_ptr<Node>> SymbolTree::search_name(const Name& name) const {
+    auto& parts = name.parts;
 
-    // Upward search: Search from the current scope upward until the first part of the Ident matches.
+    // Upward search: Search from the current scope upward until the first part of the Name matches.
     auto scope = current_scope;
 
     while (scope) {
@@ -75,7 +75,7 @@ std::optional<std::shared_ptr<Node>> SymbolTree::search_ident(const Ident& ident
             auto node = it.value();
             bool found = true;
 
-            // Downward search: Search from the matched scope downward for the remaining parts of the Ident.
+            // Downward search: Search from the matched scope downward for the remaining parts of the Name.
             for (size_t i = 1; i < parts.size(); ++i) {
                 if (PTR_INSTANCEOF(node, Node::IScope)) {
                     auto scope_node = std::dynamic_pointer_cast<Node::IScope>(node);
@@ -93,7 +93,7 @@ std::optional<std::shared_ptr<Node>> SymbolTree::search_ident(const Ident& ident
             }
 
             if (found) {
-                return node; // Successfully found the full Ident
+                return node; // Successfully found the full Name
             }
         }
         // Move up to the parent scope for the next iteration

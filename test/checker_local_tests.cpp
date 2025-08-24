@@ -81,7 +81,7 @@ TEST_CASE("Local variable declarations", "[checker]") {
         auto& errors = Logger::inst().get_errors();
 
         REQUIRE(errors.size() >= 1);
-        CHECK(errors.at(0) == Err::UndeclaredIdentifier);
+        CHECK(errors.at(0) == Err::UndeclaredName);
     }
 
     SECTION("Immutable variables") {

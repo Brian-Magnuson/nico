@@ -60,7 +60,7 @@ public:
     class Assign;
     class Binary;
     class Unary;
-    class Identifier;
+    class NameRef;
     class Literal;
 
     virtual ~Expr() {}
@@ -73,7 +73,7 @@ public:
         virtual std::any visit(Assign* expr, bool as_lvalue) = 0;
         virtual std::any visit(Binary* expr, bool as_lvalue) = 0;
         virtual std::any visit(Unary* expr, bool as_lvalue) = 0;
-        virtual std::any visit(Identifier* expr, bool as_lvalue) = 0;
+        virtual std::any visit(NameRef* expr, bool as_lvalue) = 0;
         virtual std::any visit(Literal* expr, bool as_lvalue) = 0;
     };
 
@@ -103,7 +103,7 @@ public:
  */
 class Annotation {
 public:
-    class Named;
+    class NameRef;
 
     class Pointer;
     class Reference;
@@ -119,7 +119,7 @@ public:
      */
     class Visitor {
     public:
-        virtual std::any visit(Named* annotation) = 0;
+        virtual std::any visit(NameRef* annotation) = 0;
         virtual std::any visit(Pointer* annotation) = 0;
         virtual std::any visit(Reference* annotation) = 0;
         virtual std::any visit(Array* annotation) = 0;
@@ -303,23 +303,28 @@ public:
 };
 
 /**
- * @brief An identifier expression.
+ * @brief A name reference expression.
+ *
+ * Name reference expressions refer to variables or functions by name.
+ *
+ * Note: This class used to be called Expr::Identifier, but was changed to use
+ * more consistent name terminology.
  */
-class Expr::Identifier : public Expr {
+class Expr::NameRef : public Expr {
 public:
     // The token representing the identifier.
-    Ident ident;
+    Name name;
     // The field entry associated with the identifier.
     std::weak_ptr<Node::FieldEntry> field_entry;
 
-    Identifier(std::shared_ptr<Token> token)
-        : ident(token) {
+    NameRef(std::shared_ptr<Token> token)
+        : name(token) {
         location = &token->location;
     }
 
-    Identifier(Ident ident)
-        : ident(ident) {
-        location = &ident.parts[0].token->location;
+    NameRef(Name name)
+        : name(name) {
+        location = &name.parts[0].token->location;
     }
 
     std::any accept(Visitor* visitor, bool as_lvalue) override {
@@ -350,23 +355,23 @@ public:
 // MARK: Annotations
 
 /**
- * @brief An annotation consisting of an identifier.
+ * @brief An annotation consisting of a name.
  *
  * This annotation is used to represent named types, such as classes or interfaces.
  */
-class Annotation::Named : public Annotation {
+class Annotation::NameRef : public Annotation {
 public:
-    // The identifier of the named annotation.
-    const Ident ident;
+    // The name in the name reference annotation.
+    const Name name;
 
-    Named(Ident ident) : ident(std::move(ident)) {}
+    NameRef(Name name) : name(std::move(name)) {}
 
     std::any accept(Visitor* visitor) override {
         return visitor->visit(this);
     }
 
     std::string to_string() const override {
-        return ident.to_string();
+        return name.to_string();
     }
 };
 

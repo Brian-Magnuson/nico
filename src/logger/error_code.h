@@ -74,11 +74,11 @@ enum class Err {
     LetTypeMismatch,
     // A type mismatch was found in an assignment expression.
     AssignmentTypeMismatch,
-    // An identifier was not found in the symbol table.
-    UndeclaredIdentifier,
-    // An identifier was matched to a non-FieldEntry node where one was expected.
+    // An name was not found in the symbol table.
+    UndeclaredName,
+    // An name was matched to a non-FieldEntry node where one was expected.
     NotAVariable,
-    // An identifier was visited as an lvalue, but was not declared with `var`.
+    // An name was visited as an lvalue, but was not declared with `var`.
     AssignToImmutable,
     // An operator was found that cannot be used with the given types.
     NoOperatorOverload,

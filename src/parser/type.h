@@ -19,7 +19,7 @@
  *
  * Symbol tree nodes are used to store information whenever a new symbol is introduced in the source code. Theoretically, every declaration should result in only one node in the symbol tree, so nodes may be compared directly for equality.
  *
- * All nodes in the symbol tree have a unique name to identify them.
+ * All nodes in the symbol tree have a unique symbol to identify them.
  * Most subclasses of Node inherit from Node::IScope, meaning they have other nodes as children.
  *
  * Do not extend this class directly; use Node::IBasicNode instead.
@@ -44,15 +44,15 @@ public:
 
     // This node's parent scope, if it exists.
     std::weak_ptr<Node::IScope> parent;
-    // This node's unique name, assigned upon construction.
-    const std::string unique_name;
+    // This node's unique symbol, assigned upon construction.
+    const std::string symbol;
     // A short name for this node, used for adding this node to the parent node's children.
     const std::string short_name;
 
     virtual ~Node() = default;
 
 protected:
-    Node(std::weak_ptr<Node::IScope> parent_scope, const std::string& name);
+    Node(std::weak_ptr<Node::IScope> parent_scope, const std::string& identifier);
 
 public:
     /**
@@ -726,7 +726,7 @@ public:
 
     std::string to_string() const override {
         if (auto node_ptr = node.lock()) {
-            return node_ptr->unique_name;
+            return node_ptr->symbol;
         }
         return "<expired>";
     }
@@ -742,12 +742,12 @@ public:
         if (auto node_ptr = node.lock()) {
             llvm::StructType* struct_ty = llvm::StructType::getTypeByName(
                 builder->getContext(),
-                node_ptr->unique_name
+                node_ptr->symbol
             );
             if (!struct_ty) {
                 struct_ty = llvm::StructType::create(
                     builder->getContext(),
-                    node_ptr->unique_name
+                    node_ptr->symbol
                 );
             }
             return struct_ty;

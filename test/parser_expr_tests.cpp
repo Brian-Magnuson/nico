@@ -25,7 +25,7 @@ TEST_CASE("Parser basic", "[parser]") {
         auto tokens = lexer.scan(file);
         auto ast = parser.parse(std::move(tokens));
         std::vector<std::string> expected = {
-            "(expr (ident basic))",
+            "(expr (nameref basic))",
             "(stmt:eof)"
         };
         CHECK(printer.stmts_to_strings(ast) == expected);
@@ -146,7 +146,7 @@ TEST_CASE("Parser expressions", "[parser]") {
         auto tokens = lexer.scan(file);
         auto ast = parser.parse(std::move(tokens));
         std::vector<std::string> expected = {
-            "(expr (assign (ident a) (lit 1)))",
+            "(expr (assign (nameref a) (lit 1)))",
             "(stmt:eof)"
         };
         CHECK(printer.stmts_to_strings(ast) == expected);
@@ -157,7 +157,7 @@ TEST_CASE("Parser expressions", "[parser]") {
         auto tokens = lexer.scan(file);
         auto ast = parser.parse(std::move(tokens));
         std::vector<std::string> expected = {
-            "(expr (assign (ident a) (assign (ident b) (ident c))))",
+            "(expr (assign (nameref a) (assign (nameref b) (nameref c))))",
             "(stmt:eof)"
         };
     }

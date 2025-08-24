@@ -49,8 +49,8 @@ std::any AstPrinter::visit(Expr::Unary* expr, bool as_lvalue) {
     return std::string("(unary " + std::string(expr->op->lexeme) + " " + std::any_cast<std::string>(expr->right->accept(this, false)) + ")");
 }
 
-std::any AstPrinter::visit(Expr::Identifier* expr, bool as_lvalue) {
-    return std::string("(ident " + expr->ident.to_string() + ")");
+std::any AstPrinter::visit(Expr::NameRef* expr, bool as_lvalue) {
+    return std::string("(nameref " + expr->name.to_string() + ")");
 }
 
 std::any AstPrinter::visit(Expr::Literal* expr, bool as_lvalue) {

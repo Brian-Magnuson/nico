@@ -156,21 +156,21 @@ std::any LocalChecker::visit(Expr::Unary* expr, bool as_lvalue) {
     }
 }
 
-std::any LocalChecker::visit(Expr::Identifier* expr, bool as_lvalue) {
-    auto node = symbol_tree->search_ident(expr->ident);
+std::any LocalChecker::visit(Expr::NameRef* expr, bool as_lvalue) {
+    auto node = symbol_tree->search_name(expr->name);
 
     if (!node) {
-        Logger::inst().log_error(Err::UndeclaredIdentifier, expr->ident.parts.back().token->location, "Identifier `" + expr->ident.to_string() + "` was not declared.");
+        Logger::inst().log_error(Err::UndeclaredName, expr->name.parts.back().token->location, "Name `" + expr->name.to_string() + "` was not declared.");
         return std::any();
     }
     if (!PTR_INSTANCEOF(*node, Node::FieldEntry)) {
-        Logger::inst().log_error(Err::NotAVariable, expr->ident.parts.back().token->location, "Identifier `" + expr->ident.to_string() + "` is not a variable.");
+        Logger::inst().log_error(Err::NotAVariable, expr->name.parts.back().token->location, "Name reference `" + expr->name.to_string() + "` is not a variable.");
         return std::any();
     }
     auto field_entry = std::dynamic_pointer_cast<Node::FieldEntry>(*node);
     if (!field_entry->field.is_var && as_lvalue) {
-        Logger::inst().log_error(Err::AssignToImmutable, expr->ident.parts.back().token->location, "Cannot assign to immutable identifier `" + expr->ident.to_string() + "`.");
-        Logger::inst().log_note(field_entry->field.token->location, "Identifier declared here.");
+        Logger::inst().log_error(Err::AssignToImmutable, expr->name.parts.back().token->location, "Cannot assign to immutable binding `" + expr->name.to_string() + "`.");
+        Logger::inst().log_note(field_entry->field.token->location, "Binding introduced here.");
         return std::any();
     }
 
@@ -198,14 +198,14 @@ std::any LocalChecker::visit(Expr::Literal* expr, bool as_lvalue) {
 
 // MARK: Annotations
 
-std::any LocalChecker::visit(Annotation::Named* annotation) {
+std::any LocalChecker::visit(Annotation::NameRef* annotation) {
     std::shared_ptr<Type> type = nullptr;
     // Temporary solution: only allow primitive types.
-    if (annotation->ident.to_string() == "i32") {
+    if (annotation->name.to_string() == "i32") {
         type = std::make_shared<Type::Int>(true, 32);
-    } else if (annotation->ident.to_string() == "f64") {
+    } else if (annotation->name.to_string() == "f64") {
         type = std::make_shared<Type::Float>(64);
-    } else if (annotation->ident.to_string() == "bool") {
+    } else if (annotation->name.to_string() == "bool") {
         type = std::make_shared<Type::Bool>();
     }
     return type;

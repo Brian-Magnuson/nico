@@ -68,7 +68,7 @@ std::optional<std::shared_ptr<Expr>> Parser::primary() {
         return std::make_shared<Expr::Literal>(previous());
     }
     if (match({Tok::Identifier})) {
-        return std::make_shared<Expr::Identifier>(previous());
+        return std::make_shared<Expr::NameRef>(previous());
     }
 
     Logger::inst().log_error(Err::NotAnExpression, peek()->location, "Expected expression.");
@@ -258,7 +258,7 @@ std::optional<std::shared_ptr<Stmt>> Parser::statement() {
 std::optional<std::shared_ptr<Annotation>> Parser::annotation() {
     if (match({Tok::Identifier})) {
         auto token = previous();
-        return std::make_shared<Annotation::Named>(Ident(token));
+        return std::make_shared<Annotation::NameRef>(Name(token));
     }
     Logger::inst().log_error(Err::NotAType, peek()->location, "Not a valid type.");
     return std::nullopt;
