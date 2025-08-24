@@ -1,5 +1,5 @@
-#ifndef NICO_IDENT_H
-#define NICO_IDENT_H
+#ifndef NICO_NAME_H
+#define NICO_NAME_H
 
 #include <memory>
 #include <string>
@@ -78,4 +78,4 @@ public:
     }
 };
 
-#endif // NICO_IDENT_H
+#endif // NICO_NAME_H

@@ -7,7 +7,7 @@
 #include <utility>
 
 #include "../logger/error_code.h"
-#include "../parser/ident.h"
+#include "../parser/name.h"
 #include "../parser/type.h"
 
 /**

@@ -2,7 +2,7 @@
 
 #include "../common/utils.h"
 #include "../logger/logger.h"
-#include "ident.h"
+#include "name.h"
 
 // std::unordered_map<std::string, std::shared_ptr<Type>> Parser::type_table = {
 //     {"i32", std::make_shared<Type::Int>(true, 32)},

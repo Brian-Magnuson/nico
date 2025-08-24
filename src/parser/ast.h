@@ -9,7 +9,7 @@
 
 #include "../common/dictionary.h"
 #include "../lexer/token.h"
-#include "ident.h"
+#include "name.h"
 #include "type.h"
 
 // MARK: Base classes
