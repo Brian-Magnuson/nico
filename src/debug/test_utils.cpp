@@ -42,7 +42,7 @@ std::vector<Tok> extract_token_types(const std::vector<std::shared_ptr<Token>>& 
 std::string capture_stdout(std::function<void()> func, int buffer_size) {
     int pipefd[2];
 #if defined(_WIN32) || defined(_WIN64)
-    _pipe(pipefd, 4096, _O_BINARY);
+    _pipe(pipefd, buffer_size, _O_BINARY);
 
     int stdout_fd = _dup(_fileno(stdout));
     std::fflush(stdout);
@@ -62,7 +62,7 @@ std::string capture_stdout(std::function<void()> func, int buffer_size) {
     _dup2(stdout_fd, _fileno(stdout));
     _close(stdout_fd);
 
-    std::vector<char> buffer(4096);
+    std::vector<char> buffer(buffer_size);
     int n = _read(pipefd[0], buffer.data(), buffer.size());
     _close(pipefd[0]);
     return std::string(buffer.data(), n > 0 ? n : 0);
@@ -87,7 +87,7 @@ std::string capture_stdout(std::function<void()> func, int buffer_size) {
     dup2(stdout_fd, fileno(stdout));
     close(stdout_fd);
 
-    std::vector<char> buffer(4096);
+    std::vector<char> buffer(buffer_size);
     ssize_t n = read(pipefd[0], buffer.data(), buffer.size());
     close(pipefd[0]);
     return std::string(buffer.data(), n > 0 ? n : 0);
