@@ -46,3 +46,13 @@ llvm::Error SimpleJit::add_module(llvm::orc::ThreadSafeModule tsm) {
 llvm::Expected<llvm::orc::ExecutorAddr> SimpleJit::lookup(const std::string& name) {
     return jit->lookup(name);
 }
+
+void SimpleJit::reset() {
+    jit.reset(); // Destroys the current LLJIT instance
+    auto jit_or_err = llvm::orc::LLJITBuilder().create();
+    if (!jit_or_err) {
+        Logger::inst().log_error(Err::JitCannotInstantiate, "Failed to create LLJIT: " + llvm::toString(jit_or_err.takeError()));
+        exit(1);
+    }
+    jit = std::move(jit_or_err.get());
+}

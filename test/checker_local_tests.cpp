@@ -6,6 +6,7 @@
 
 #include "../src/checker/global_checker.h"
 #include "../src/checker/local_checker.h"
+#include "../src/checker/symbol_tree.h"
 #include "../src/common/code_file.h"
 #include "../src/debug/test_utils.h"
 #include "../src/lexer/lexer.h"
@@ -207,6 +208,30 @@ TEST_CASE("Local binary expressions", "[checker]") {
 
         REQUIRE(errors.size() >= 1);
         CHECK(errors.at(0) == Err::NoOperatorOverload);
+    }
+
+    lexer.reset();
+    parser.reset();
+    symbol_tree->reset();
+    Logger::inst().reset();
+}
+
+TEST_CASE("Local print statements", "[checker]") {
+    Lexer lexer;
+    Parser parser;
+    std::shared_ptr<SymbolTree> symbol_tree = std::make_shared<SymbolTree>();
+    GlobalChecker global_checker(symbol_tree);
+    LocalChecker local_checker(symbol_tree);
+    Logger::inst().set_printing_enabled(false);
+
+    SECTION("Print hello world") {
+        auto file = make_test_code_file("print \"Hello, World!\"");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+
+        CHECK(Logger::inst().get_errors().empty());
     }
 
     lexer.reset();

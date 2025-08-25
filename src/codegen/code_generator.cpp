@@ -74,13 +74,13 @@ std::any CodeGenerator::visit(Stmt::Print* stmt) {
     for (const auto& expr : stmt->expressions) {
         auto value = std::any_cast<llvm::Value*>(expr->accept(this, false));
         if (PTR_INSTANCEOF(expr->type, Type::Int)) {
-            format_str = builder->CreateGlobalStringPtr("%d\n");
+            format_str = builder->CreateGlobalStringPtr("%d");
             builder->CreateCall(printf_fn, {format_str, value});
         } else if (PTR_INSTANCEOF(expr->type, Type::Float)) {
-            format_str = builder->CreateGlobalStringPtr("%f\n");
+            format_str = builder->CreateGlobalStringPtr("%f");
             builder->CreateCall(printf_fn, {format_str, value});
         } else if (PTR_INSTANCEOF(expr->type, Type::Bool)) {
-            format_str = builder->CreateGlobalStringPtr("%s\n");
+            format_str = builder->CreateGlobalStringPtr("%s");
             llvm::Value* bool_str = builder->CreateSelect(
                 value,
                 builder->CreateGlobalStringPtr("true"),
@@ -88,7 +88,7 @@ std::any CodeGenerator::visit(Stmt::Print* stmt) {
             );
             builder->CreateCall(printf_fn, {format_str, bool_str});
         } else if (PTR_INSTANCEOF(expr->type, Type::Str)) {
-            format_str = builder->CreateGlobalStringPtr("%s\n");
+            format_str = builder->CreateGlobalStringPtr("%s");
             builder->CreateCall(printf_fn, {format_str, value});
         } else {
             Logger::inst().log_error(Err::Unimplemented, *expr->location, "Print statement for this type is not implemented.");
@@ -179,6 +179,9 @@ std::any CodeGenerator::visit(Expr::Literal* expr, bool as_lvalue) {
             expr->token->lexeme == "true"
         );
         break;
+    case Tok::Str:
+        result = builder->CreateGlobalStringPtr(std::any_cast<std::string>(expr->token->literal));
+        break;
     default:
         panic("CodeGenerator::visit(Expr::Literal): Unknown literal type.");
     }
@@ -213,19 +216,23 @@ bool CodeGenerator::generate(const std::vector<std::shared_ptr<Stmt>>& stmts, bo
 
     // CODE STARTS HERE
 
-    // Create a string constant "Hello, World!"
-    llvm::Value* hello_world_str = builder->CreateGlobalStringPtr("Hello, World!");
+    for (auto& stmt : stmts) {
+        stmt->accept(this);
+    }
 
-    // Get the puts function
-    llvm::FunctionType* puts_fn_type = llvm::FunctionType::get(
-        builder->getInt32Ty(), builder->getPtrTy(), false
-    );
-    llvm::Function* puts_fn = llvm::Function::Create(
-        puts_fn_type, llvm::Function::ExternalLinkage, "puts", ir_module.get()
-    );
+    // // Create a string constant "Hello, World!"
+    // llvm::Value* hello_world_str = builder->CreateGlobalStringPtr("Hello, World!");
 
-    // Call puts with the string constant
-    builder->CreateCall(puts_fn, hello_world_str);
+    // // Get the puts function
+    // llvm::FunctionType* puts_fn_type = llvm::FunctionType::get(
+    //     builder->getInt32Ty(), builder->getPtrTy(), false
+    // );
+    // llvm::Function* puts_fn = llvm::Function::Create(
+    //     puts_fn_type, llvm::Function::ExternalLinkage, "puts", ir_module.get()
+    // );
+
+    // // Call puts with the string constant
+    // builder->CreateCall(puts_fn, hello_world_str);
 
     // CODE ENDS HERE
 
@@ -277,7 +284,7 @@ bool CodeGenerator::generate_main(bool require_verification) {
     // Return the result
     builder->CreateRet(script_ret);
 
-    ir_module->print(llvm::outs(), nullptr);
+    // ir_module->print(llvm::outs(), nullptr);
 
     // If verification is required, verify the generated IR
     if (require_verification && llvm::verifyModule(*ir_module, &llvm::errs())) {

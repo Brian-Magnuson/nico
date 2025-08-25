@@ -46,7 +46,7 @@ public:
      *
      * @param ast The list of statements to type check.
      */
-    void check(std::vector<std::shared_ptr<Stmt>> ast);
+    void check(std::vector<std::shared_ptr<Stmt>>& ast);
 };
 
 #endif // NICO_LOCAL_CHECKER_H

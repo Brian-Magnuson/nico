@@ -58,6 +58,11 @@ public:
      * @return An Expected containing the return value of the main function, or an error if the function could not be run.
      */
     virtual llvm::Expected<int> run_main(int argc, char** argv);
+
+    /**
+     * @brief Resets the JIT to its initial state, clearing all added modules.
+     */
+    virtual void reset() = 0;
 };
 
 /**
@@ -75,6 +80,8 @@ public:
     llvm::Error add_module(llvm::orc::ThreadSafeModule tsm) override;
 
     llvm::Expected<llvm::orc::ExecutorAddr> lookup(const std::string& name) override;
+
+    void reset() override;
 };
 
 #endif // NICO_JIT_H

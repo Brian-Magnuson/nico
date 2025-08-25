@@ -1,6 +1,7 @@
 #ifndef NICO_LEXER_H
 #define NICO_LEXER_H
 
+#include <any>
 #include <memory>
 #include <string_view>
 #include <unordered_map>
@@ -51,9 +52,10 @@ class Lexer {
      * The token's location is set based on the lexer's current position.
      *
      * @param tok_type The type of token to create.
+     * @param literal The literal value of the token, if any. Default is an empty std::any value.
      * @return A shared pointer to the new token.
      */
-    std::shared_ptr<Token> make_token(Tok tok_type) const;
+    std::shared_ptr<Token> make_token(Tok tok_type, std::any literal = std::any()) const;
 
     /**
      * @brief Creates a new token with the provided type and adds it to the list of tokens.
@@ -61,8 +63,9 @@ class Lexer {
      * The token's location is set based on the lexer's current position.
      *
      * @param tok_type The type of token to add.
+     * @param literal The literal value of the token, if any. Default is an empty std::any value.
      */
-    void add_token(Tok tok_type);
+    void add_token(Tok tok_type, std::any literal = std::any());
 
     /**
      * @brief Peeks at the current character without advancing the lexer.

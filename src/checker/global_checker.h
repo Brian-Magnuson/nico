@@ -21,7 +21,7 @@ public:
      *
      * @param ast The list of statements to type check.
      */
-    void check(std::vector<std::shared_ptr<Stmt>> ast) { return; }
+    void check(std::vector<std::shared_ptr<Stmt>>& ast) { return; }
 };
 
 #endif // NICO_GLOBAL_CHECKER_H

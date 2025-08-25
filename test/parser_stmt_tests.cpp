@@ -149,6 +149,17 @@ TEST_CASE("Parser print statements", "[parser]") {
         CHECK(printer.stmts_to_strings(ast) == expected);
     }
 
+    SECTION("Print statements 4") {
+        auto file = make_test_code_file("print \"Hello, World!\"");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(stmt:print (lit \"Hello, World!\"))",
+            "(stmt:eof)"
+        };
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
     lexer.reset();
     parser.reset();
     Logger::inst().reset();

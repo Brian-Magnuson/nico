@@ -153,18 +153,23 @@ public:
     const Location location;
     // A string view of the lexeme of this token.
     const std::string_view lexeme;
+    // The literal value of this token, if any; primarily used for string literals
+    const std::any literal;
 
     /**
      * @brief Constructs a new Token object.
+     *
      * @param tok_type The type of the token.
      * @param location The location of the token.
+     * @param literal The literal value of the token, if any. Default is an empty std::any value.
      */
-    Token(Tok tok_type, const Location& location)
+    Token(Tok tok_type, const Location& location, std::any literal = std::any())
         : tok_type(tok_type),
           location(location),
           lexeme(
               std::string_view(location.file->src_code).substr(location.start, location.length)
-          ) {}
+          ),
+          literal(literal) {}
 };
 
 #endif // NICO_TOKEN_H

@@ -83,6 +83,7 @@ set(TEST_SRC
     test/parser_expr_tests.cpp
     test/parser_stmt_tests.cpp
     test/checker_local_tests.cpp
+    test/jit_tests.cpp
 )
 
 # Main executable

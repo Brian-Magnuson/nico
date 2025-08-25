@@ -248,7 +248,7 @@ std::any LocalChecker::visit(Annotation::Tuple* annotation) {
     return std::any();
 }
 
-void LocalChecker::check(std::vector<std::shared_ptr<Stmt>> ast) {
+void LocalChecker::check(std::vector<std::shared_ptr<Stmt>>& ast) {
     for (auto& stmt : ast) {
         stmt->accept(this);
     }

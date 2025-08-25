@@ -33,13 +33,13 @@ bool Lexer::is_at_end() const {
     return current >= file->src_code.length();
 }
 
-std::shared_ptr<Token> Lexer::make_token(Tok tok_type) const {
+std::shared_ptr<Token> Lexer::make_token(Tok tok_type, std::any literal) const {
     Location location(file, start, current - start, line);
-    return std::make_shared<Token>(tok_type, location);
+    return std::make_shared<Token>(tok_type, location, literal);
 }
 
-void Lexer::add_token(Tok tok_type) {
-    tokens.push_back(make_token(tok_type));
+void Lexer::add_token(Tok tok_type, std::any literal) {
+    tokens.push_back(make_token(tok_type, literal));
 }
 
 char Lexer::peek(int lookahead) const {
@@ -288,6 +288,7 @@ void Lexer::numeric_literal() {
 }
 
 void Lexer::str_literal() {
+    std::string str_content;
     while (peek() != '"' && !is_at_end()) {
         // A normal str literal cannot span multiple lines
         if (peek() == '\n') {
@@ -299,19 +300,39 @@ void Lexer::str_literal() {
         // Handle escape sequences.
         if (peek() == '\\') {
             advance();
-            switch (peek()) {
+            switch (advance()) {
             case 'n':
+                str_content += '\n';
+                break;
             case 'r':
+                str_content += '\r';
+                break;
             case 't':
+                str_content += '\t';
+                break;
             case 'b':
+                str_content += '\b';
+                break;
             case 'f':
+                str_content += '\f';
+                break;
             case '0':
+                str_content += '\0';
+                break;
             case '\\':
+                str_content += '\\';
+                break;
             case '"':
+                str_content += '"';
+                break;
             case '\'':
+                str_content += '\'';
+                break;
             case '%':
+                str_content += '%';
+                break;
             case '{':
-                advance();
+                str_content += '{';
                 break;
             default: {
                 auto prev_start = start;
@@ -320,8 +341,9 @@ void Lexer::str_literal() {
                 start = prev_start;
             }
             }
+        } else {
+            str_content += advance();
         }
-        advance();
     }
 
     if (is_at_end()) {
@@ -331,7 +353,7 @@ void Lexer::str_literal() {
 
     advance(); // Consume the closing quote.
 
-    add_token(Tok::Str);
+    add_token(Tok::Str, str_content);
 }
 
 void Lexer::multi_line_comment() {

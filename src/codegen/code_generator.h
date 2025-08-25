@@ -63,9 +63,7 @@ public:
     };
 
     CodeGenerator() {
-        context = std::make_unique<llvm::LLVMContext>();
-        ir_module = std::make_unique<llvm::Module>("main", *context);
-        builder = std::make_unique<llvm::IRBuilder<>>(*context);
+        this->reset();
     }
 
     /**
@@ -91,6 +89,9 @@ public:
      * It calls a function named `$script`, which begins executing code
      * generated from top-level statements.
      *
+     * If `require_verification` is true, it will verify the generated IR for
+     * correctness and return false if verification fails.
+     *
      * @param require_verification Whether to verify the generated IR. Defaults to true.
      * @return true if the main function was generated successfully, false otherwise.
      */
@@ -108,6 +109,18 @@ public:
      */
     Output eject() {
         return Output(std::move(ir_module), std::move(context));
+    }
+
+    /**
+     * @brief Reset the code generator to its initial state.
+     *
+     * This method creates a new LLVMContext object and Module object.
+     */
+    void reset() {
+        context = std::make_unique<llvm::LLVMContext>();
+        ir_module = std::make_unique<llvm::Module>("main", *context);
+        builder = std::make_unique<llvm::IRBuilder<>>(*context);
+        block_list = nullptr;
     }
 };
 
