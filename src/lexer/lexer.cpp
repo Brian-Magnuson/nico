@@ -214,6 +214,7 @@ void Lexer::numeric_literal() {
     uint8_t base = 10;
     bool has_dot = false;
     bool has_exp = false;
+    std::string numeric_string;
 
     if (peek() == '0') {
         advance();
@@ -230,10 +231,10 @@ void Lexer::numeric_literal() {
     }
 
     while (is_digit(peek(), base, true)) {
-        advance();
+        numeric_string += advance();
 
         if (peek() == '.') {
-            advance();
+            numeric_string += advance();
             // A dot can only appear once, before any exponent, only in base 10, and only if the next character is a digit.
             if (has_dot || has_exp || base != 10 || !is_digit(peek())) {
                 auto prev_start = start;
@@ -246,10 +247,10 @@ void Lexer::numeric_literal() {
         }
 
         if (base != 16 && (peek() == 'e' || peek() == 'E')) {
-            advance();
+            numeric_string += advance();
             // If the next character is a '+' or '-', advance.
             if (peek() == '+' || peek() == '-') {
-                advance();
+                numeric_string += advance();
             }
             // An exponent can only appear once, only in base 10, and only if the next character is a digit.
             if (has_exp || base != 10 || !is_digit(peek())) {
@@ -272,9 +273,23 @@ void Lexer::numeric_literal() {
     }
 
     if (has_dot || has_exp) {
-        add_token(Tok::Float);
+        double value;
+        try {
+            value = std::stod(numeric_string);
+        } catch (...) {
+            Logger::inst().log_error(Err::BadConversion, make_token(Tok::Unknown)->location, "Invalid number.");
+            return;
+        }
+        add_token(Tok::Float, value);
     } else {
-        add_token(Tok::Int);
+        int32_t value;
+        try {
+            value = static_cast<int32_t>(std::stoll(numeric_string, nullptr, base));
+        } catch (...) {
+            Logger::inst().log_error(Err::BadConversion, make_token(Tok::Unknown)->location, "Invalid number.");
+            return;
+        }
+        add_token(Tok::Int, value);
     }
 
     // Numbers cannot be followed by alphanumeric characters.

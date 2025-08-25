@@ -109,6 +109,8 @@ enum class Err {
     Impossible,
     // Statement was reached that should be unimplemented.
     Unimplemented,
+    // A bad conversion was attempted.
+    BadConversion,
     // Error for testing purposes.
     TestError,
     // The generated LLVM IR failed verification.

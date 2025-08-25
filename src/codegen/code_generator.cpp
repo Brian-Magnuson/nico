@@ -133,27 +133,9 @@ std::any CodeGenerator::visit(Expr::Literal* expr, bool as_lvalue) {
 
     switch (expr->token->tok_type) {
     case Tok::Int: {
-        std::string_view prefix = expr->token->lexeme.size() >= 2 ? expr->token->lexeme.substr(0, 2) : "0d";
-        uint8_t radix = 10;
-        switch (prefix[1]) {
-        case 'd':
-            radix = 10;
-            break;
-        case 'b':
-            radix = 2;
-            break;
-        case 'o':
-            radix = 8;
-            break;
-        case 'x':
-            radix = 16;
-            break;
-        }
-
         result = llvm::ConstantInt::get(
             llvm::Type::getInt32Ty(*context),
-            expr->token->lexeme,
-            radix
+            std::any_cast<int32_t>(expr->token->literal)
         );
         break;
     }
@@ -169,7 +151,7 @@ std::any CodeGenerator::visit(Expr::Literal* expr, bool as_lvalue) {
         } else {
             result = llvm::ConstantFP::get(
                 llvm::Type::getDoubleTy(*context),
-                expr->token->lexeme
+                std::any_cast<double>(expr->token->literal)
             );
         }
         break;

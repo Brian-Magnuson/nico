@@ -422,7 +422,9 @@ TEST_CASE("Lexer numbers", "[lexer]") {
             Tok::Float,
             Tok::Eof
         };
-        CHECK(extract_token_types(tokens) == expected);
+        REQUIRE(extract_token_types(tokens) == expected);
+        CHECK(std::any_cast<int32_t>(tokens[0]->literal) == 123);
+        CHECK(std::any_cast<double>(tokens[1]->literal) == 123.0);
     }
 
     SECTION("Numbers 2") {
@@ -434,7 +436,10 @@ TEST_CASE("Lexer numbers", "[lexer]") {
             Tok::Int,
             Tok::Eof
         };
-        CHECK(extract_token_types(tokens) == expected);
+        REQUIRE(extract_token_types(tokens) == expected);
+        CHECK(std::any_cast<int32_t>(tokens[0]->literal) == 0x1A);
+        CHECK(std::any_cast<int32_t>(tokens[1]->literal) == 017);
+        CHECK(std::any_cast<int32_t>(tokens[2]->literal) == 0b101);
     }
 
     SECTION("Numbers 3") {
@@ -445,7 +450,9 @@ TEST_CASE("Lexer numbers", "[lexer]") {
             Tok::Float,
             Tok::Eof
         };
-        CHECK(extract_token_types(tokens) == expected);
+        REQUIRE(extract_token_types(tokens) == expected);
+        CHECK(std::any_cast<double>(tokens[0]->literal) == 1.23);
+        CHECK(std::any_cast<double>(tokens[1]->literal) == 1.23);
     }
 
     SECTION("Numbers 4") {
@@ -460,6 +467,11 @@ TEST_CASE("Lexer numbers", "[lexer]") {
             Tok::Eof
         };
         CHECK(extract_token_types(tokens) == expected);
+        CHECK(std::any_cast<double>(tokens[0]->literal) == 1.23e10);
+        CHECK(std::any_cast<double>(tokens[1]->literal) == 1.23e-10);
+        CHECK(std::any_cast<double>(tokens[2]->literal) == 1.23E10);
+        CHECK(std::any_cast<double>(tokens[3]->literal) == 1.23E-10);
+        CHECK(std::any_cast<double>(tokens[4]->literal) == 123E+10);
     }
 
     lexer.reset();
