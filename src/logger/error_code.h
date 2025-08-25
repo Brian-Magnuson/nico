@@ -82,6 +82,8 @@ enum class Err {
     AssignToImmutable,
     // An operator was found that cannot be used with the given types.
     NoOperatorOverload,
+    // An attempt was made to introduce a new name in a scope where the same name already exists.
+    NameAlreadyExists,
 
     // Code generation error.
     CodeGen = 6000,

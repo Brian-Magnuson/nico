@@ -45,7 +45,7 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
     Field field(stmt->has_var, stmt->identifier, expr_type);
     auto new_node = symbol_tree->add_field_entry(field);
     if (!new_node) {
-        Logger::inst().log_error(Err::Impossible, stmt->identifier->location, "Failed to add variable to symbol tree.");
+        Logger::inst().log_error(Err::NameAlreadyExists, stmt->identifier->location, "Name `" + std::string(stmt->identifier->lexeme) + "` already exists in this scope.");
         return std::any();
     }
 
@@ -130,7 +130,7 @@ std::any LocalChecker::visit(Expr::Binary* expr, bool as_lvalue) {
         expr->type = l_type; // The result type is the same as the operand type.
         break;
     default:
-        Logger::inst().log_error(Err::Unimplemented, expr->op->location, "Binary operator not implemented.");
+        panic("LocalChecker::visit(Expr::Binary): Could not handle case for operator of token type " + std::to_string(static_cast<int>(expr->op->tok_type)));
     }
     return std::any();
 }
@@ -151,7 +151,7 @@ std::any LocalChecker::visit(Expr::Unary* expr, bool as_lvalue) {
         expr->type = r_type;
         return std::any();
     default:
-        Logger::inst().log_error(Err::Unimplemented, expr->op->location, "Unary operator not implemented.");
+        panic("LocalChecker::visit(Expr::Unary): Could not handle case for operator of token type " + std::to_string(static_cast<int>(expr->op->tok_type)));
         return std::any();
     }
 }
@@ -194,7 +194,7 @@ std::any LocalChecker::visit(Expr::Literal* expr, bool as_lvalue) {
         expr->type = std::make_shared<Type::Str>();
         break;
     default:
-        Logger::inst().log_error(Err::Unimplemented, expr->token->location, "Literal type not implemented.");
+        panic("LocalChecker::visit(Expr::Literal): Could not handle case for token type " + std::to_string(static_cast<int>(expr->token->tok_type)));
     }
     return std::any();
 }
