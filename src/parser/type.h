@@ -93,6 +93,7 @@ public:
     // Pointer types
     class Pointer;
     class Reference;
+    class Str;
 
     // Aggregate types
     class Array;
@@ -569,6 +570,30 @@ public:
             return *base == *other_reference->base;
         }
         return false;
+    }
+
+    virtual llvm::Type* get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
+        return llvm::PointerType::get(builder->getContext(), 0);
+    }
+};
+
+/**
+ * @brief A primitive string type.
+ *
+ * The primitive string type is a pointer to a sequence of characters in static memory.
+ * Primitive strings are immutable and live for as long as the program runs.
+ *
+ * It is similar to the `char *` type in C, but is kept a separate type for
+ * safety purposes such as to prevent pointer casting.
+ */
+class Type::Str : public Type {
+public:
+    std::string to_string() const override {
+        return "str";
+    }
+
+    bool operator==(const Type& other) const override {
+        return dynamic_cast<const Str*>(&other) != nullptr;
     }
 
     virtual llvm::Type* get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {

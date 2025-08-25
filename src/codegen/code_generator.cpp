@@ -54,6 +54,47 @@ std::any CodeGenerator::visit(Stmt::Eof* stmt) {
 }
 
 std::any CodeGenerator::visit(Stmt::Print* stmt) {
+    // Get printf
+    llvm::Function* printf_fn = ir_module->getFunction("printf");
+    if (!printf_fn) {
+        llvm::FunctionType* printf_type = llvm::FunctionType::get(
+            llvm::Type::getInt32Ty(*context),
+            {llvm::PointerType::get(*context, 0)},
+            true // true = variadic
+        );
+        printf_fn = llvm::Function::Create(
+            printf_type,
+            llvm::Function::ExternalLinkage,
+            "printf",
+            *ir_module
+        );
+    }
+
+    llvm::Value* format_str = nullptr;
+    for (const auto& expr : stmt->expressions) {
+        auto value = std::any_cast<llvm::Value*>(expr->accept(this, false));
+        if (PTR_INSTANCEOF(expr->type, Type::Int)) {
+            format_str = builder->CreateGlobalStringPtr("%d\n");
+            builder->CreateCall(printf_fn, {format_str, value});
+        } else if (PTR_INSTANCEOF(expr->type, Type::Float)) {
+            format_str = builder->CreateGlobalStringPtr("%f\n");
+            builder->CreateCall(printf_fn, {format_str, value});
+        } else if (PTR_INSTANCEOF(expr->type, Type::Bool)) {
+            format_str = builder->CreateGlobalStringPtr("%s\n");
+            llvm::Value* bool_str = builder->CreateSelect(
+                value,
+                builder->CreateGlobalStringPtr("true"),
+                builder->CreateGlobalStringPtr("false")
+            );
+            builder->CreateCall(printf_fn, {format_str, bool_str});
+        } else if (PTR_INSTANCEOF(expr->type, Type::Str)) {
+            format_str = builder->CreateGlobalStringPtr("%s\n");
+            builder->CreateCall(printf_fn, {format_str, value});
+        } else {
+            Logger::inst().log_error(Err::Unimplemented, *expr->location, "Print statement for this type is not implemented.");
+        }
+    }
+
     // Generate code for the print statement
     return std::any();
 }

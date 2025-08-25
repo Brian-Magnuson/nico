@@ -190,6 +190,9 @@ std::any LocalChecker::visit(Expr::Literal* expr, bool as_lvalue) {
     case Tok::Bool:
         expr->type = std::make_shared<Type::Bool>();
         break;
+    case Tok::Str:
+        expr->type = std::make_shared<Type::Str>();
+        break;
     default:
         Logger::inst().log_error(Err::Unimplemented, expr->token->location, "Literal type not implemented.");
     }
@@ -207,6 +210,8 @@ std::any LocalChecker::visit(Annotation::NameRef* annotation) {
         type = std::make_shared<Type::Float>(64);
     } else if (annotation->name.to_string() == "bool") {
         type = std::make_shared<Type::Bool>();
+    } else if (annotation->name.to_string() == "str") {
+        type = std::make_shared<Type::Str>();
     }
     return type;
 }
