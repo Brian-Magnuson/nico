@@ -165,6 +165,39 @@ TEST_CASE("Parser print statements", "[parser]") {
     Logger::inst().reset();
 }
 
+TEST_CASE("Parser statement separation", "[parser]") {
+    Lexer lexer;
+    Parser parser;
+    AstPrinter printer;
+
+    SECTION("Unseparated binary statement") {
+        auto file = make_test_code_file("1 - 2");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(expr (binary - (lit 1) (lit 2)))",
+            "(stmt:eof)"
+        };
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
+    SECTION("Separated unary statements") {
+        auto file = make_test_code_file("1; - 2");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(expr (lit 1))",
+            "(expr (unary - (lit 2)))",
+            "(stmt:eof)"
+        };
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
+    lexer.reset();
+    parser.reset();
+    Logger::inst().reset();
+}
+
 // MARK: Error tests
 
 TEST_CASE("Parser let stmt errors", "[parser]") {
