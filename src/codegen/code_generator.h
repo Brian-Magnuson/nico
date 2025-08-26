@@ -62,6 +62,9 @@ public:
             : module(std::move(mod)), context(std::move(ctx)) {}
     };
 
+    /**
+     * @brief Constructs a code generator with a new LLVM context and module.
+     */
     CodeGenerator() {
         this->reset();
     }
@@ -115,6 +118,8 @@ public:
      * @brief Reset the code generator to its initial state.
      *
      * This method creates a new LLVMContext object and Module object.
+     *
+     * Effectively equivalent to constructing a new CodeGenerator object.
      */
     void reset() {
         context = std::make_unique<llvm::LLVMContext>();

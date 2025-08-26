@@ -26,10 +26,23 @@ class Dictionary {
     std::vector<std::pair<K, V>> keys;
 
 public:
+    /**
+     * @brief Default constructs an empty dictionary.
+     */
     Dictionary() = default;
 
+    /**
+     * @brief Copy constructs a dictionary.
+     */
     Dictionary(const Dictionary& other) = default;
 
+    /**
+     * @brief Constructs a dictionary from a list of keys.
+     *
+     * Enables the use of initializer lists to construct a dictionary.
+     *
+     * @param initial_keys A vector of key-value pairs to initialize the dictionary.
+     */
     Dictionary(std::vector<std::pair<K, V>> initial_keys) {
         for (const auto& pair : initial_keys) {
             insert(pair.first, pair.second);

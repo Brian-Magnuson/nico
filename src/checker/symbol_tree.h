@@ -48,6 +48,9 @@ class SymbolTree {
     std::optional<std::shared_ptr<Node>> search_name_from_scope(const Name& name, std::shared_ptr<Node::IScope> scope) const;
 
 public:
+    /**
+     * @brief Constructs a symbol tree with a root scope and installs primitive types.
+     */
     SymbolTree() {
         reset();
     }

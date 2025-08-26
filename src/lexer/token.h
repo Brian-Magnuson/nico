@@ -134,6 +134,7 @@ struct Location {
 
     /**
      * @brief Constructs a new Location object.
+     *
      * @param file A pointer to the code file.
      * @param start The start index of the token.
      * @param length The length of the token.

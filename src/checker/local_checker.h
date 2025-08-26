@@ -36,6 +36,11 @@ class LocalChecker : public Stmt::Visitor, public Expr::Visitor, public Annotati
     std::any visit(Annotation::Tuple* annotation) override;
 
 public:
+    /**
+     * @brief Constructs a new LocalChecker.
+     *
+     * @param symbol_tree The symbol tree to use for type checking.
+     */
     LocalChecker(std::shared_ptr<SymbolTree> symbol_tree)
         : symbol_tree(symbol_tree) {}
 

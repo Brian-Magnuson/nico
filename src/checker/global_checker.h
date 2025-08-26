@@ -11,6 +11,11 @@ class GlobalChecker {
     std::shared_ptr<SymbolTree> symbol_tree;
 
 public:
+    /**
+     * @brief Constructs a new GlobalChecker.
+     *
+     * @param symbol_tree The symbol tree to use for type checking.
+     */
     GlobalChecker(std::shared_ptr<SymbolTree> symbol_tree)
         : symbol_tree(symbol_tree) {}
 
