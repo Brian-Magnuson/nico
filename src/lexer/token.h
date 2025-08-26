@@ -114,7 +114,7 @@ enum class Tok {
     KwAlloc,
     KwDealloc,
 
-    KwPrint, // Temporary print keyword for development.
+    KwPrintout, // Temporary print keyword for development.
 };
 
 /**

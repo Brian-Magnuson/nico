@@ -30,7 +30,7 @@ TEST_CASE("JIT print statements", "[jit]") {
     Logger::inst().set_printing_enabled(true);
 
     SECTION("Print hello world 1") {
-        auto file = make_test_code_file("print \"Hello, World!\"");
+        auto file = make_test_code_file("printout \"Hello, World!\"");
 
         auto tokens = lexer.scan(file);
         auto ast = parser.parse(std::move(tokens));
@@ -48,7 +48,7 @@ TEST_CASE("JIT print statements", "[jit]") {
     }
 
     SECTION("Print hello world 2") {
-        auto file = make_test_code_file(R"(print "Hello, World!" print "Goodbye, World!")");
+        auto file = make_test_code_file(R"(printout "Hello, World!" printout "Goodbye, World!")");
 
         auto tokens = lexer.scan(file);
         auto ast = parser.parse(std::move(tokens));
@@ -67,7 +67,7 @@ TEST_CASE("JIT print statements", "[jit]") {
     }
 
     SECTION("Print hello world 3") {
-        auto file = make_test_code_file(R"(print "Hello, World!\n" print "Goodbye, World!")");
+        auto file = make_test_code_file(R"(printout "Hello, World!\n" printout "Goodbye, World!")");
 
         auto tokens = lexer.scan(file);
         auto ast = parser.parse(std::move(tokens));
@@ -86,7 +86,7 @@ TEST_CASE("JIT print statements", "[jit]") {
     }
 
     SECTION("Print hello world 4") {
-        auto file = make_test_code_file(R"(print "Hello", ", World!")");
+        auto file = make_test_code_file(R"(printout "Hello", ", World!")");
 
         auto tokens = lexer.scan(file);
         auto ast = parser.parse(std::move(tokens));
@@ -122,7 +122,7 @@ TEST_CASE("JIT let statements", "[jit]") {
     Logger::inst().set_printing_enabled(true);
 
     SECTION("Basic variable reference") {
-        auto file = make_test_code_file(R"(let x = 5 print x)");
+        auto file = make_test_code_file(R"(let x = 5 printout x)");
         auto tokens = lexer.scan(file);
         auto ast = parser.parse(std::move(tokens));
         global_checker.check(ast);

@@ -245,7 +245,7 @@ std::optional<std::shared_ptr<Stmt>> Parser::statement() {
         return let_statement();
     } else if (match({Tok::Eof})) {
         return eof_statement();
-    } else if (match({Tok::KwPrint})) {
+    } else if (match({Tok::KwPrintout})) {
         return print_statement();
     }
     return expression_statement();

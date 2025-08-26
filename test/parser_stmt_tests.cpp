@@ -117,7 +117,7 @@ TEST_CASE("Parser print statements", "[parser]") {
     AstPrinter printer;
 
     SECTION("Print statements 1") {
-        auto file = make_test_code_file("print 1");
+        auto file = make_test_code_file("printout 1");
         auto tokens = lexer.scan(file);
         auto ast = parser.parse(std::move(tokens));
         std::vector<std::string> expected = {
@@ -128,7 +128,7 @@ TEST_CASE("Parser print statements", "[parser]") {
     }
 
     SECTION("Print statements 2") {
-        auto file = make_test_code_file("print 1, 2");
+        auto file = make_test_code_file("printout 1, 2");
         auto tokens = lexer.scan(file);
         auto ast = parser.parse(std::move(tokens));
         std::vector<std::string> expected = {
@@ -139,7 +139,7 @@ TEST_CASE("Parser print statements", "[parser]") {
     }
 
     SECTION("Print statements 3") {
-        auto file = make_test_code_file("print 1, 2, 3");
+        auto file = make_test_code_file("printout 1, 2, 3");
         auto tokens = lexer.scan(file);
         auto ast = parser.parse(std::move(tokens));
         std::vector<std::string> expected = {
@@ -150,7 +150,7 @@ TEST_CASE("Parser print statements", "[parser]") {
     }
 
     SECTION("Print statements 4") {
-        auto file = make_test_code_file("print \"Hello, World!\"");
+        auto file = make_test_code_file("printout \"Hello, World!\"");
         auto tokens = lexer.scan(file);
         auto ast = parser.parse(std::move(tokens));
         std::vector<std::string> expected = {

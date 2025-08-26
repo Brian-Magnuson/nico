@@ -251,7 +251,7 @@ TEST_CASE("Local print statements", "[checker]") {
     Logger::inst().set_printing_enabled(false);
 
     SECTION("Print hello world") {
-        auto file = make_test_code_file("print \"Hello, World!\"");
+        auto file = make_test_code_file("printout \"Hello, World!\"");
         auto tokens = lexer.scan(file);
         auto ast = parser.parse(std::move(tokens));
         global_checker.check(ast);
