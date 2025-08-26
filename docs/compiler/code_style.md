@@ -6,6 +6,14 @@ The goal of this document is to establish a consistent coding style that enhance
 It is not a strict guideline; we recognize that exceptions may occur.
 Exceptions will be considered on a case-by-case basis.
 
+As this project was originally built for fun, many of the existing styles are a reflection of how I like to write my code.
+This document represents my best attempt at formalizing those styles into a coherent set of guidelines.
+If this project becomes more widely used in the future, these guidelines may be revisited and updated for a higher level of strictness.
+
+## C++ Version
+
+Use C++ features up to and including `C++20`. This may change in the future.
+
 ## File Naming
 
 When creating new files, please follow these naming conventions:
@@ -176,6 +184,8 @@ For documentation comments:
   - Make it clear when a function may not behave as expected for when it needs specific inputs.
   - Use `@warning` if the function has potential pitfalls or important considerations.
 - Some functions such as the visit functions of the visitor pattern may not require extensive documentation.
+
+Class member variables may not need documentation comments if their purpose can be expressed in 1 or 2 lines.
 
 ## Other Code Style Preferences
 
