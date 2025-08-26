@@ -45,13 +45,14 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
     Field field(stmt->has_var, stmt->identifier, expr_type);
 
     auto [node, err] = symbol_tree->add_field_entry(field);
-    if (err != Err::Null) {
+    if (err == Err::NameAlreadyExists) {
         Logger::inst().log_error(err, stmt->identifier->location, "Name `" + std::string(stmt->identifier->lexeme) + "` already exists in this scope.");
         if (auto locatable = std::dynamic_pointer_cast<Node::ILocatable>(node)) {
             Logger::inst().log_note(locatable->location_token->location, "Previous declaration here.");
-        } else if (auto primitive_type = std::dynamic_pointer_cast<Node::PrimitiveType>(node)) {
-            Logger::inst().log_note("Basic type `" + primitive_type->short_name + "` cannot be used as a name.");
         }
+        return std::any();
+    } else if (err == Err::NameIsReserved) {
+        Logger::inst().log_error(err, stmt->identifier->location, "Name `" + std::string(stmt->identifier->lexeme) + "` is reserved.");
         return std::any();
     } else if (auto field_node = std::dynamic_pointer_cast<Node::FieldEntry>(node)) {
         stmt->field_entry = field_node;

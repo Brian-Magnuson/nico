@@ -6,6 +6,7 @@
 #include <string>
 #include <utility>
 
+#include "../common/dictionary.h"
 #include "../logger/error_code.h"
 #include "../parser/name.h"
 #include "../parser/type.h"
@@ -22,6 +23,29 @@ class SymbolTree {
     std::shared_ptr<Node::RootScope> root_scope;
     // The current scope in the symbol tree, which is the scope that is currently being modified or accessed.
     std::shared_ptr<Node::IScope> current_scope;
+    // A special scope for reserved names. Reserved names cannot be shadowed in any scope.
+    // This scope is searched first, regardless of what scope is currently active.
+    std::shared_ptr<Node::RootScope> reserved_scope;
+
+    /**
+     * @brief Installs primitive types into the root scope of the symbol tree.
+     */
+    void install_primitive_types();
+
+    /**
+     * @brief Helper function to search a name, starting from a specific location.
+     *
+     * The search algorithm comes in two parts: upward search and downward search.
+     *
+     * Upward search: Search from the current scope upward until the first part of the Name matches.
+     * Downward search: Search from the matched scope downward for the remaining parts of the Name.
+     * If downward search fails, resume upward search until the next match is found or the root scope is reached.
+     *
+     * @param name The name to search for.
+     * @param scope The scope to start the search from.
+     * @return std::optional<std::shared_ptr<Node>> The node if found, or std::nullopt if not found.
+     */
+    std::optional<std::shared_ptr<Node>> search_name_from_scope(const Name& name, std::shared_ptr<Node::IScope> scope) const;
 
 public:
     SymbolTree() {
@@ -38,15 +62,11 @@ public:
      */
     void reset() {
         root_scope = std::make_shared<Node::RootScope>();
-        current_scope = std::static_pointer_cast<Node::IScope>(root_scope);
+        current_scope = root_scope;
+        reserved_scope = std::make_shared<Node::RootScope>();
 
         install_primitive_types();
     }
-
-    /**
-     * @brief Installs primitive types into the root scope of the symbol tree.
-     */
-    void install_primitive_types();
 
     /**
      * @brief Enters the namespace with the name contained in token, adding it
@@ -99,11 +119,8 @@ public:
     /**
      * @brief Searches the symbol tree for a node with the matching name.
      *
-     * The search algorithm comes in two parts: upward search and downward search.
-     *
-     * Upward search: Search from the current scope upward until the first part of the Name matches.
-     * Downward search: Search from the matched scope downward for the remaining parts of the Name.
-     * If downward search fails, resume upward search until the next match is found or the root scope is reached.
+     * First, the search is performed starting from the reserved scope.
+     * Then, if the node wasn't found, the search is performed starting from the current scope.
      *
      * Note: If the desired node is a FieldEntry, this function does not reveal whether the field entry is currently declared. Consider adding a check in the type checker.
      *

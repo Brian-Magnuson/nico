@@ -63,6 +63,8 @@ enum class Err {
     StructInLocalScope,
     // An attempt was made to introduce a new name in a scope where the same name already exists.
     NameAlreadyExists,
+    // An attempt was made to shadow a reserved name.
+    NameIsReserved,
 
     // Local type check error.
     LocalType = 5000,
