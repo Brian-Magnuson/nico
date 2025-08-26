@@ -61,8 +61,8 @@ enum class Err {
     NamespaceInStructDef,
     // An attempt was made to declare a struct in a local scope.
     StructInLocalScope,
-    // An attempt was made to declare a struct that already exists in the same scope.
-    StructAlreadyDeclared,
+    // An attempt was made to introduce a new name in a scope where the same name already exists.
+    NameAlreadyExists,
 
     // Local type check error.
     LocalType = 5000,
@@ -82,8 +82,6 @@ enum class Err {
     AssignToImmutable,
     // An operator was found that cannot be used with the given types.
     NoOperatorOverload,
-    // An attempt was made to introduce a new name in a scope where the same name already exists.
-    NameAlreadyExists,
 
     // Code generation error.
     CodeGen = 6000,

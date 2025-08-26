@@ -43,13 +43,23 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
 
     // Create the field entry.
     Field field(stmt->has_var, stmt->identifier, expr_type);
-    auto new_node = symbol_tree->add_field_entry(field);
-    if (!new_node) {
-        Logger::inst().log_error(Err::NameAlreadyExists, stmt->identifier->location, "Name `" + std::string(stmt->identifier->lexeme) + "` already exists in this scope.");
+
+    auto [node, err] = symbol_tree->add_field_entry(field);
+    if (err != Err::Null) {
+        Logger::inst().log_error(err, stmt->identifier->location, "Name `" + std::string(stmt->identifier->lexeme) + "` already exists in this scope.");
+        if (auto locatable = std::dynamic_pointer_cast<Node::ILocatable>(node)) {
+            Logger::inst().log_note(locatable->location_token->location, "Previous declaration here.");
+        } else if (auto primitive_type = std::dynamic_pointer_cast<Node::PrimitiveType>(node)) {
+            Logger::inst().log_note("Basic type `" + primitive_type->short_name + "` cannot be used as a name.");
+        }
         return std::any();
+    } else if (auto field_node = std::dynamic_pointer_cast<Node::FieldEntry>(node)) {
+        stmt->field_entry = field_node;
+        return std::any();
+    } else {
+        panic("LocalChecker::visit(Stmt::Let*): Symbol tree returned a non-field entry for a field entry.");
     }
 
-    stmt->field_entry = new_node.value();
     return std::any();
 }
 
@@ -130,7 +140,7 @@ std::any LocalChecker::visit(Expr::Binary* expr, bool as_lvalue) {
         expr->type = l_type; // The result type is the same as the operand type.
         break;
     default:
-        panic("LocalChecker::visit(Expr::Binary): Could not handle case for operator of token type " + std::to_string(static_cast<int>(expr->op->tok_type)));
+        panic("LocalChecker::visit(Expr::Binary*): Could not handle case for operator of token type " + std::to_string(static_cast<int>(expr->op->tok_type)));
     }
     return std::any();
 }
@@ -151,7 +161,7 @@ std::any LocalChecker::visit(Expr::Unary* expr, bool as_lvalue) {
         expr->type = r_type;
         return std::any();
     default:
-        panic("LocalChecker::visit(Expr::Unary): Could not handle case for operator of token type " + std::to_string(static_cast<int>(expr->op->tok_type)));
+        panic("LocalChecker::visit(Expr::Unary*): Could not handle case for operator of token type " + std::to_string(static_cast<int>(expr->op->tok_type)));
         return std::any();
     }
 }
@@ -194,7 +204,7 @@ std::any LocalChecker::visit(Expr::Literal* expr, bool as_lvalue) {
         expr->type = std::make_shared<Type::Str>();
         break;
     default:
-        panic("LocalChecker::visit(Expr::Literal): Could not handle case for token type " + std::to_string(static_cast<int>(expr->token->tok_type)));
+        panic("LocalChecker::visit(Expr::Literal*): Could not handle case for token type " + std::to_string(static_cast<int>(expr->token->tok_type)));
     }
     return std::any();
 }

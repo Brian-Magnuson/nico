@@ -1,4 +1,5 @@
 #include "symbol_tree.h"
+
 #include "../common/utils.h"
 
 void SymbolTree::install_primitive_types() {
@@ -14,7 +15,7 @@ void SymbolTree::install_primitive_types() {
     new_node->initialize_node();
 }
 
-std::pair<std::shared_ptr<Node::Namespace>, Err> SymbolTree::add_namespace(const std::string& name) {
+std::pair<std::shared_ptr<Node>, Err> SymbolTree::add_namespace(std::shared_ptr<Token> token) {
     // Namespaces cannot be added in a local scope
     if (PTR_INSTANCEOF(current_scope, Node::LocalScope)) {
         return std::make_pair(nullptr, Err::NamespaceInLocalScope);
@@ -23,24 +24,36 @@ std::pair<std::shared_ptr<Node::Namespace>, Err> SymbolTree::add_namespace(const
     if (PTR_INSTANCEOF(current_scope, Node::StructDef)) {
         return std::make_pair(nullptr, Err::NamespaceInStructDef);
     }
-
-    auto new_namespace = std::make_shared<Node::Namespace>(current_scope, name);
-    new_namespace->initialize_node(); // Add the namespace to its parent scope's children
-    current_scope = new_namespace;
-    return std::make_pair(new_namespace, Err::Null);
+    // Check if the name already exists.
+    if (auto node = current_scope->children.at(std::string(token->lexeme))) {
+        if (auto ns_node = std::dynamic_pointer_cast<Node::Namespace>(node.value())) {
+            // If existing name is a namespace...
+            current_scope = ns_node;
+            return std::make_pair(ns_node, Err::Null);
+        } else {
+            // If existing name is not a namespace...
+            return std::make_pair(node.value(), Err::NameAlreadyExists);
+        }
+    } else {
+        // If name does not exist...
+        auto new_namespace = std::make_shared<Node::Namespace>(current_scope, token);
+        new_namespace->initialize_node(); // Add the namespace to its parent scope's children
+        current_scope = new_namespace;
+        return std::make_pair(new_namespace, Err::Null);
+    }
 }
 
-std::pair<std::shared_ptr<Node::StructDef>, Err> SymbolTree::add_struct_def(const std::string& name, bool is_class) {
+std::pair<std::shared_ptr<Node>, Err> SymbolTree::add_struct_def(std::shared_ptr<Token> token, bool is_class) {
     // Structs cannot be added in a local scope
     if (PTR_INSTANCEOF(current_scope, Node::LocalScope)) {
         return std::make_pair(nullptr, Err::StructInLocalScope);
     }
     // Check if the struct already exists in the current scope
-    if (current_scope->children.at(name)) {
-        return std::make_pair(nullptr, Err::StructAlreadyDeclared);
+    if (auto node = current_scope->children.at(std::string(token->lexeme))) {
+        return std::make_pair(node.value(), Err::NameAlreadyExists);
     }
 
-    auto new_struct = std::make_shared<Node::StructDef>(current_scope, name, is_class);
+    auto new_struct = std::make_shared<Node::StructDef>(current_scope, token, is_class);
     new_struct->initialize_node(); // Add the struct to its parent scope's children
     current_scope = new_struct;
     return std::make_pair(new_struct, Err::Null);
@@ -104,12 +117,12 @@ std::optional<std::shared_ptr<Node>> SymbolTree::search_name(const Name& name) c
     return std::nullopt; // Not found
 }
 
-std::optional<std::shared_ptr<Node::FieldEntry>> SymbolTree::add_field_entry(const Field& field) {
-    if (current_scope->children.contains(std::string(field.token->lexeme))) {
-        return std::nullopt; // Field already exists
+std::pair<std::shared_ptr<Node>, Err> SymbolTree::add_field_entry(const Field& field) {
+    if (auto node = current_scope->children.at(std::string(field.token->lexeme))) {
+        return std::make_pair(node.value(), Err::NameAlreadyExists);
     }
 
     auto new_field_entry = std::make_shared<Node::FieldEntry>(current_scope, field);
     new_field_entry->initialize_node(); // Add the field entry to its parent scope's children
-    return new_field_entry;
+    return std::make_pair(new_field_entry, Err::Null);
 }

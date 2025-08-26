@@ -49,24 +49,32 @@ public:
     void install_primitive_types();
 
     /**
-     * @brief Adds a namespace to the symbol tree, then enters the namespace scope.
+     * @brief Enters the namespace with the name contained in token, adding it
+     * if it does not exist.
      *
      * If the current scope does not allow namespaces, this function does not add the namespace and returns a pair with nullptr and an error.
      *
+     * If the namespace already exists, the namespace will not be added, and the
+     * existing namespace will be entered. The existing namespace will be returned.
+     *
+     * If the name already exists in the current scope and does not correspond
+     * to a namespace, this function does not add the namespace and returns a pair
+     * with the conflicting node and an error.
+     *
      * @param name The name of the namespace.
-     * @return std::pair<std::shared_ptr<Node::Namespace>, Err> The namespace if added successfully (first), or nullptr and an error (second).
+     * @return std::pair<std::shared_ptr<Node>, Err> The result of adding the namespace (see description).
      */
-    std::pair<std::shared_ptr<Node::Namespace>, Err> add_namespace(const std::string& name);
+    std::pair<std::shared_ptr<Node>, Err> add_namespace(std::shared_ptr<Token> token);
 
     /**
      * @brief Adds a struct definition to the symbol tree, then enters the struct definition scope.
      *
-     * If the struct definition already exists, or the current scope does not allow structs, this function does not add the struct and returns a pair with nullptr and an error.
+     * If the struct definition already exists, or the current scope does not allow structs, this function does not add the struct and returns a pair with the existing node and an error.
      *
      * @param name The name of the struct.
-     * @return std::pair<std::shared_ptr<Node::StructDef>, Err> The struct definition if added successfully (first), or nullptr and an error (second).
+     * @return std::pair<std::shared_ptr<Node>, Err> The struct definition if added successfully (first), or the existing node and an error (second).
      */
-    std::pair<std::shared_ptr<Node::StructDef>, Err> add_struct_def(const std::string& name, bool is_class = false);
+    std::pair<std::shared_ptr<Node>, Err> add_struct_def(std::shared_ptr<Token> token, bool is_class = false);
 
     /**
      * @brief Adds a new local scope to the symbol tree, then enters the local scope.
@@ -108,14 +116,14 @@ public:
     /**
      * @brief Adds a field entry to the symbol tree in the current scope.
      *
-     * If the field name already exists in the current scope, this function does not add the field and returns std::nullopt.
+     * If the field name already exists in the current scope, this function does not add the field and returns the existing node and an error.
      *
      * Because a field entry carries a type object, the field's type must be resolved before being added to the symbol tree.
      *
      * @param field The field to add.
-     * @return std::optional<std::shared_ptr<Node::FieldEntry>> The field entry if added successfully, or std::nullopt if the field name already exists in the current scope.
+     * @return std::pair<std::shared_ptr<Node>, Err> The field entry if added successfully, or the existing node and an error (second).
      */
-    std::optional<std::shared_ptr<Node::FieldEntry>> add_field_entry(const Field& field);
+    std::pair<std::shared_ptr<Node>, Err> add_field_entry(const Field& field);
 };
 
 #endif // NICO_SYMBOL_TREE_H

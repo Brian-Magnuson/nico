@@ -34,6 +34,7 @@ public:
     class IScope;
     class IGlobalScope;
     class ITypeNode;
+    class ILocatable;
 
     class RootScope;
     class Namespace;
@@ -277,6 +278,30 @@ protected:
 };
 
 /**
+ * @brief An interfaces for nodes that reference a location in the source code.
+ *
+ * Locatable nodes are useful for error logging, allowing one to report where
+ * a symbol was first declared.
+ *
+ * All nodes that have some "name" associated with them are locatable.
+ * This includes all node kinds except Node::RootScope, Node::PrimitiveType, and
+ * Node::LocalScope.
+ */
+class Node::ILocatable : public virtual Node::IBasicNode {
+public:
+    // The original token used to create this node.
+    std::shared_ptr<Token> location_token;
+
+    virtual ~ILocatable() = default;
+
+protected:
+    ILocatable(std::shared_ptr<Token> token)
+        : Node::IBasicNode(std::weak_ptr<Node::IScope>(), ""),
+          location_token(token) {
+    }
+};
+
+/**
  * @brief The root scope of the symbol tree.
  *
  * The root scope is the top-level scope that contains all other scopes.
@@ -303,14 +328,15 @@ public:
  *
  * A namespace may not be declared within a local scope or a struct definition.
  */
-class Node::Namespace : public virtual Node::IGlobalScope {
+class Node::Namespace : public virtual Node::IGlobalScope, public virtual Node::ILocatable {
 public:
     virtual ~Namespace() = default;
 
-    Namespace(std::weak_ptr<Node::IScope> parent_scope, const std::string& name)
-        : Node::IBasicNode(parent_scope, name),
-          Node::IScope(parent_scope, name),
-          Node::IGlobalScope() {
+    Namespace(std::weak_ptr<Node::IScope> parent_scope, std::shared_ptr<Token> token)
+        : Node::IBasicNode(parent_scope, std::string(token->lexeme)),
+          Node::IScope(parent_scope, std::string(token->lexeme)),
+          Node::IGlobalScope(),
+          Node::ILocatable(token) {
     }
 };
 
@@ -349,7 +375,7 @@ public:
  *
  * A struct may not be declared within a local scope.
  */
-class Node::StructDef : public virtual Node::IGlobalScope, public virtual Node::ITypeNode {
+class Node::StructDef : public virtual Node::IGlobalScope, public virtual Node::ITypeNode, public virtual Node::ILocatable {
 public:
     // Whether this struct is declared with `class` or not. Classes may follow different semantic rules than structs, such as memory management.
     const bool is_class = false;
@@ -360,11 +386,12 @@ public:
 
     virtual ~StructDef() = default;
 
-    StructDef(std::weak_ptr<Node::IScope> parent_scope, const std::string& name, bool is_class = false)
-        : Node::IBasicNode(parent_scope, name),
-          Node::IScope(parent_scope, name),
+    StructDef(std::weak_ptr<Node::IScope> parent_scope, std::shared_ptr<Token> token, bool is_class = false)
+        : Node::IBasicNode(parent_scope, std::string(token->lexeme)),
+          Node::IScope(parent_scope, std::string(token->lexeme)),
           Node::IGlobalScope(),
           Node::ITypeNode(),
+          Node::ILocatable(token),
           is_class(is_class) {}
 };
 
@@ -394,7 +421,7 @@ public:
  *
  * Field objects carry a type object, and must therefore have their types resolved before being constructed.
  */
-class Node::FieldEntry : public virtual Node::IBasicNode {
+class Node::FieldEntry : public virtual Node::IBasicNode, public virtual Node::ILocatable {
 public:
     // The field object that this entry represents.
     Field field;
@@ -403,7 +430,9 @@ public:
     llvm::Value* llvm_ptr = nullptr;
 
     FieldEntry(std::weak_ptr<Node::IScope> parent_scope, const Field& field)
-        : Node::IBasicNode(parent_scope, std::string(field.token->lexeme)), field(field) {}
+        : Node::IBasicNode(parent_scope, std::string(field.token->lexeme)),
+          Node::ILocatable(field.token),
+          field(field) {}
 };
 
 // MARK: Numeric types

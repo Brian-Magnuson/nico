@@ -98,6 +98,32 @@ TEST_CASE("Local variable declarations", "[checker]") {
         CHECK(errors.at(0) == Err::AssignToImmutable);
     }
 
+    SECTION("Variable name conflict") {
+        // Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file("let a = 1 let a = 2");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::NameAlreadyExists);
+    }
+
+    SECTION("Primitive type name conflict") {
+        // Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file("let i32 = 1");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::NameAlreadyExists);
+    }
+
     lexer.reset();
     parser.reset();
     symbol_tree->reset();
