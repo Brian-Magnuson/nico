@@ -91,7 +91,7 @@ std::any CodeGenerator::visit(Stmt::Print* stmt) {
             format_str = builder->CreateGlobalStringPtr("%s");
             builder->CreateCall(printf_fn, {format_str, value});
         } else {
-            Logger::inst().log_error(Err::Unimplemented, *expr->location, "Print statement for this type is not implemented.");
+            panic("CodeGenerator::visit(Stmt::Print*): Cannot print expression of this type.");
         }
     }
 
@@ -201,20 +201,6 @@ bool CodeGenerator::generate(const std::vector<std::shared_ptr<Stmt>>& stmts, bo
     for (auto& stmt : stmts) {
         stmt->accept(this);
     }
-
-    // // Create a string constant "Hello, World!"
-    // llvm::Value* hello_world_str = builder->CreateGlobalStringPtr("Hello, World!");
-
-    // // Get the puts function
-    // llvm::FunctionType* puts_fn_type = llvm::FunctionType::get(
-    //     builder->getInt32Ty(), builder->getPtrTy(), false
-    // );
-    // llvm::Function* puts_fn = llvm::Function::Create(
-    //     puts_fn_type, llvm::Function::ExternalLinkage, "puts", ir_module.get()
-    // );
-
-    // // Call puts with the string constant
-    // builder->CreateCall(puts_fn, hello_world_str);
 
     // CODE ENDS HERE
 
