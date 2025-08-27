@@ -12,6 +12,7 @@
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 
+#include "../lexer/token.h"
 #include "../parser/ast.h"
 #include "block.h"
 
@@ -68,8 +69,9 @@ class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
      * the program will abort with an error message.
      *
      * @param divisor The divisor value to check.
+     * @param location The location in the source code where the division occurs, used for the panic message.
      */
-    void add_div_zero_check(llvm::Value* divisor);
+    void add_div_zero_check(llvm::Value* divisor, const Location* location);
 
     /**
      * @brief Adds a panic call to the generated code.
@@ -79,8 +81,9 @@ class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
      * The implementation of this may vary.
      *
      * @param message The error message to pass to the `panic` function.
+     * @param location The location in the source code where the panic occurs, used for the panic message.
      */
-    void add_panic(std::string_view message);
+    void add_panic(std::string_view message, const Location* location);
 
 public:
     /**

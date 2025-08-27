@@ -31,58 +31,89 @@ std::vector<Tok> extract_token_types(const std::vector<std::shared_ptr<Token>>& 
     return token_types;
 }
 
-std::string capture_stdout(std::function<void()> func, int buffer_size) {
-    int pipefd[2];
+std::pair<std::string, std::string> capture_stdout(std::function<void()> func, int buffer_size) {
+    int out_pipefd[2];
+    int err_pipefd[2];
 #if defined(_WIN32) || defined(_WIN64)
-    _pipe(pipefd, buffer_size, _O_BINARY);
+    _pipe(out_pipefd, buffer_size, _O_BINARY);
+    _pipe(err_pipefd, buffer_size, _O_BINARY);
 
     int stdout_fd = _dup(_fileno(stdout));
+    int stderr_fd = _dup(_fileno(stderr));
     std::fflush(stdout);
-    _dup2(pipefd[1], _fileno(stdout));
-    _close(pipefd[1]);
+    std::fflush(stderr);
+    _dup2(out_pipefd[1], _fileno(stdout));
+    _dup2(err_pipefd[1], _fileno(stderr));
+    _close(out_pipefd[1]);
+    _close(err_pipefd[1]);
 
     try {
         func();
     } catch (...) {
         std::fflush(stdout);
+        std::fflush(stderr);
         _dup2(stdout_fd, _fileno(stdout));
+        _dup2(stderr_fd, _fileno(stderr));
         _close(stdout_fd);
+        _close(stderr_fd);
         throw;
     }
 
     std::fflush(stdout);
+    std::fflush(stderr);
     _dup2(stdout_fd, _fileno(stdout));
+    _dup2(stderr_fd, _fileno(stderr));
     _close(stdout_fd);
+    _close(stderr_fd);
 
     std::vector<char> buffer(buffer_size);
-    int n = _read(pipefd[0], buffer.data(), buffer.size());
-    _close(pipefd[0]);
-    return std::string(buffer.data(), n > 0 ? n : 0);
+    ssize_t n = _read(out_pipefd[0], buffer.data(), buffer.size());
+    _close(out_pipefd[0]);
+    std::string out = std::string(buffer.data(), n > 0 ? n : 0);
+    ssize_t m = _read(err_pipefd[0], buffer.data(), buffer.size());
+    std::string err = std::string(buffer.data(), m > 0 ? m : 0);
+    _close(err_pipefd[0]);
+    return {out, err};
 #elif defined(__unix__) || defined(__unix) || (defined(__APPLE__) && defined(__MACH__))
-    pipe(pipefd);
+    pipe(out_pipefd);
+    pipe(err_pipefd);
 
     int stdout_fd = dup(fileno(stdout));
+    int stderr_fd = dup(fileno(stderr));
     std::fflush(stdout);
-    dup2(pipefd[1], fileno(stdout));
-    close(pipefd[1]);
+    std::fflush(stderr);
+    dup2(out_pipefd[1], fileno(stdout));
+    dup2(err_pipefd[1], fileno(stderr));
+    close(out_pipefd[1]);
+    close(err_pipefd[1]);
 
     try {
         func();
     } catch (...) {
         std::fflush(stdout);
+        std::fflush(stderr);
         dup2(stdout_fd, fileno(stdout));
+        dup2(stderr_fd, fileno(stderr));
         close(stdout_fd);
+        close(stderr_fd);
         throw; // Rethrow the exception after restoring stdout
     }
 
     std::fflush(stdout);
+    std::fflush(stderr);
     dup2(stdout_fd, fileno(stdout));
+    dup2(stderr_fd, fileno(stderr));
     close(stdout_fd);
+    close(stderr_fd);
 
     std::vector<char> buffer(buffer_size);
-    ssize_t n = read(pipefd[0], buffer.data(), buffer.size());
-    close(pipefd[0]);
-    return std::string(buffer.data(), n > 0 ? n : 0);
+    ssize_t n = read(out_pipefd[0], buffer.data(), buffer.size());
+    close(out_pipefd[0]);
+    std::string out = std::string(buffer.data(), n > 0 ? n : 0);
+    ssize_t m = read(err_pipefd[0], buffer.data(), buffer.size());
+    std::string err = std::string(buffer.data(), m > 0 ? m : 0);
+    close(err_pipefd[0]);
+    return {out, err};
 #else
     // Fallback: just call the function
     func();

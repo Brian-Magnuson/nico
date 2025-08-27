@@ -45,16 +45,16 @@ void run_compile_test(
     auto output = codegen.eject();
     // llvm::outs() << "===========================================================\n";
     // output.module->print(llvm::outs(), nullptr);
-    auto err = jit->add_module(std::move(output.module), std::move(output.context));
+    auto error = jit->add_module(std::move(output.module), std::move(output.context));
 
     std::optional<llvm::Expected<int>> return_code;
 
-    auto printout = capture_stdout([&]() {
+    auto [out, err] = capture_stdout([&]() {
         return_code = jit->run_main(0, nullptr);
     });
 
     if (expected_output) {
-        CHECK(printout == *expected_output);
+        CHECK(out == *expected_output);
     }
     if (expected_return_code) {
         REQUIRE(return_code.has_value());

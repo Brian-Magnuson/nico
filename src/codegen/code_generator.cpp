@@ -10,6 +10,18 @@
 #include "../logger/logger.h"
 
 void CodeGenerator::add_c_functions() {
+    // stderr
+    if (!ir_module->getGlobalVariable("stderr")) {
+        llvm::PointerType* file_ptr_type = llvm::PointerType::get(*context, 0);
+        new llvm::GlobalVariable(
+            *ir_module,
+            file_ptr_type,
+            true, // isConstant
+            llvm::GlobalValue::ExternalLinkage,
+            nullptr,
+            "stderr"
+        );
+    }
     // printf
     if (!ir_module->getFunction("printf")) {
         llvm::FunctionType* printf_type = llvm::FunctionType::get(
@@ -21,6 +33,20 @@ void CodeGenerator::add_c_functions() {
             printf_type,
             llvm::Function::ExternalLinkage,
             "printf",
+            *ir_module
+        );
+    }
+    // fprintf
+    if (!ir_module->getFunction("fprintf")) {
+        llvm::FunctionType* fprintf_type = llvm::FunctionType::get(
+            llvm::Type::getInt32Ty(*context),
+            {llvm::PointerType::get(*context, 0), llvm::PointerType::get(*context, 0)},
+            true // true = variadic
+        );
+        llvm::Function::Create(
+            fprintf_type,
+            llvm::Function::ExternalLinkage,
+            "fprintf",
             *ir_module
         );
     }
@@ -125,7 +151,7 @@ void CodeGenerator::add_c_functions() {
     }
 }
 
-void CodeGenerator::add_div_zero_check(llvm::Value* divisor) {
+void CodeGenerator::add_div_zero_check(llvm::Value* divisor, const Location* location) {
     llvm::BasicBlock* current_block = builder->GetInsertBlock();
     llvm::Function* current_function = current_block->getParent();
 
@@ -140,29 +166,37 @@ void CodeGenerator::add_div_zero_check(llvm::Value* divisor) {
 
     // div_by_zero_block
     builder->SetInsertPoint(div_by_zero_block);
-    add_panic("Panic: Division by zero.");
+    add_panic("Division by zero.", location);
     builder->CreateUnreachable();
 
     // div_ok_block
     builder->SetInsertPoint(div_ok_block);
 }
 
-void CodeGenerator::add_panic(std::string_view message) {
+void CodeGenerator::add_panic(std::string_view message, const Location* location) {
+    llvm::Value* jmp_buf_ptr;
     if (panic_recoverable) {
         llvm::GlobalVariable* jmp_buf_global = ir_module->getGlobalVariable("jmp_buf", true);
-        llvm::Value* jmp_buf_ptr = builder->CreateBitCast(jmp_buf_global, llvm::PointerType::get(*context, 0));
+        jmp_buf_ptr = builder->CreateBitCast(jmp_buf_global, llvm::PointerType::get(*context, 0));
+    }
+    auto fprintf_fn = ir_module->getFunction("fprintf");
+    llvm::Value* stderr_stream = builder->CreateLoad(
+        llvm::PointerType::get(*context, 0),
+        ir_module->getGlobalVariable("stderr")
+    );
+    llvm::Value* format_string = builder->CreateGlobalStringPtr("Panic: %s: %s\n%s:%d:%d\n");
+    llvm::Value* func_name = builder->CreateGlobalStringPtr(block_list->get_function_name());
+    llvm::Value* msg = builder->CreateGlobalStringPtr(message);
+    auto location_tuple = location->to_tuple();
+    llvm::Value* file_name = builder->CreateGlobalStringPtr(std::get<0>(location_tuple));
+    llvm::Value* line_number = llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), std::get<1>(location_tuple));
+    llvm::Value* column_number = llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), std::get<2>(location_tuple));
+    builder->CreateCall(fprintf_fn, {stderr_stream, format_string, func_name, msg, file_name, line_number, column_number});
 
-        auto printf_fn = ir_module->getFunction("printf");
-        llvm::Value* msg = builder->CreateGlobalStringPtr(message);
-        builder->CreateCall(printf_fn, {builder->CreateGlobalStringPtr("%s"), msg});
-
+    if (panic_recoverable) {
         auto longjmp_fn = ir_module->getFunction("longjmp");
         builder->CreateCall(longjmp_fn, {jmp_buf_ptr, llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 1)});
     } else {
-        auto printf_fn = ir_module->getFunction("printf");
-        llvm::Value* format_str = builder->CreateGlobalStringPtr(message);
-        builder->CreateCall(printf_fn, {format_str});
-
         auto abort_fn = ir_module->getFunction("abort");
         builder->CreateCall(abort_fn);
     }
@@ -283,7 +317,7 @@ std::any CodeGenerator::visit(Expr::Binary* expr, bool as_lvalue) {
             result = builder->CreateMul(left, right);
             break;
         case Tok::Slash:
-            add_div_zero_check(right);
+            add_div_zero_check(right, &expr->op->location);
             result = builder->CreateSDiv(left, right);
             break;
         default:

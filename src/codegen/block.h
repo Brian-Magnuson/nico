@@ -33,6 +33,14 @@ public:
         : prev(prev), yield_value(yield_value) {}
 
     virtual ~Block() = default;
+
+    virtual std::string get_function_name() const {
+        if (prev) {
+            return prev->get_function_name();
+        } else {
+            return "<unknown>";
+        }
+    }
 };
 
 /**
@@ -45,15 +53,22 @@ class Block::Function : public Block {
 public:
     // This function's exit block where the yield value is returned.
     llvm::BasicBlock* exit_block;
+    // The name of this function.
+    std::string function_name;
 
     Function(
         std::shared_ptr<Block> prev,
         llvm::Value* yield_value,
-        llvm::BasicBlock* exit_block
+        llvm::BasicBlock* exit_block,
+        std::string_view function_name
     )
-        : Block(prev, yield_value), exit_block(exit_block) {}
+        : Block(prev, yield_value), exit_block(exit_block), function_name(function_name) {}
 
     virtual ~Function() = default;
+
+    virtual std::string get_function_name() const override {
+        return function_name;
+    }
 };
 
 /**
@@ -72,7 +87,7 @@ public:
         llvm::Value* yield_value,
         llvm::BasicBlock* exit_block
     )
-        : Block::Function(prev, yield_value, exit_block) {}
+        : Block::Function(prev, yield_value, exit_block, "script") {}
 
     virtual ~Script() = default;
 };

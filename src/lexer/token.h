@@ -4,6 +4,7 @@
 #include <any>
 #include <string>
 #include <string_view>
+#include <utility>
 
 #include "../common/code_file.h"
 
@@ -141,6 +142,14 @@ struct Location {
      */
     Location(std::shared_ptr<CodeFile> file, size_t start, size_t length, size_t line)
         : file(file), start(start), length(length), line(line) {}
+
+    std::tuple<std::string, size_t, size_t> to_tuple() const {
+        size_t line_start = file->src_code.rfind('\n', start);
+        if (line_start == std::string::npos) {
+            line_start = 0;
+        }
+        return {file->path.string(), line, start - line_start + 1};
+    }
 };
 
 /**
