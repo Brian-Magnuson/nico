@@ -44,10 +44,10 @@ View existing header files for more examples.
 For `#include` directives, include files in the following order.
 
 1. If the current file is an implementation file, include the corresponding header file first.
-2. C system headers, including platform-specific headers
-3. C++ standard library headers (e.g., `<vector>`, `<string>`).
-4. Third-party library headers (e.g., `<llvm/IR/Function.h>`).
-5. Project-specific headers (e.g., `"code_generator.h"`).
+2. C++ standard library headers (e.g., `<vector>`, `<string>`).
+3. Third-party library headers (e.g., `<llvm/IR/Function.h>`).
+4. Project-specific headers (e.g., `"code_generator.h"`).
+5. Platform-specific headers (e.g., `<unistd.h>`, `<io.h>`)
 
 Example:
 ```cpp
@@ -66,6 +66,12 @@ Example:
 For C standard library headers with a C++ counterpart, prefer using the C++ counterpart.
 - E.g., use `<cmath>` instead of `<math.h>`, `<cstdlib>` instead of `<stdlib.h>`, etc.
 - Prefix names from these headers with `std::`.
+
+For platform specific headers:
+- Use conditional preprocessor directives to include the correct headers for each platform.
+  - For Windows, use `#if defined(_WIN32) || defined(_WIN64)`
+  - For Unix-like systems, use `#if defined(__unix__) || defined(__unix) || (defined(__APPLE__) && defined(__MACH__))`
+- Always have a fallback option in case of unsupported platforms.
 
 Include what you use in a file.
 - E.g., if the file uses `std::any`, it should include `<any>`. If it does not use `std::any`, it should not include `<any>`

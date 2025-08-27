@@ -1,12 +1,5 @@
 #include "test_utils.h"
 
-#if defined(_WIN32) || defined(_WIN64)
-#include <fcntl.h> // For _O_BINARY
-#include <io.h>
-#elif defined(__unix__) || defined(__unix) || (defined(__APPLE__) && defined(__MACH__))
-#include <unistd.h>
-#endif
-
 #include <algorithm>
 #include <cstdio>
 #include <cstring>
@@ -14,6 +7,13 @@
 #include <iterator>
 #include <utility>
 #include <vector>
+
+#if defined(_WIN32) || defined(_WIN64)
+#include <fcntl.h> // For _O_BINARY
+#include <io.h>
+#elif defined(__unix__) || defined(__unix) || (defined(__APPLE__) && defined(__MACH__))
+#include <unistd.h>
+#endif
 
 std::shared_ptr<CodeFile> make_test_code_file(const char* src_code) {
     auto file = std::make_shared<CodeFile>(
