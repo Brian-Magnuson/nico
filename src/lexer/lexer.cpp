@@ -217,15 +217,17 @@ void Lexer::numeric_literal() {
     std::string numeric_string;
 
     if (peek() == '0') {
-        advance();
-        if (peek() == 'b' && is_digit(peek(1), 2)) {
+        if (peek(1) == 'b' && is_digit(peek(2), 2)) {
             base = 2;
             advance();
-        } else if (peek() == 'o' && is_digit(peek(1), 8)) {
+            advance();
+        } else if (peek(1) == 'o' && is_digit(peek(2), 8)) {
             base = 8;
             advance();
-        } else if (peek() == 'x' && is_digit(peek(1), 16)) {
+            advance();
+        } else if (peek(1) == 'x' && is_digit(peek(2), 16)) {
             base = 16;
+            advance();
             advance();
         }
     }

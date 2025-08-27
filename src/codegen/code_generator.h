@@ -30,6 +30,9 @@ class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
     std::unique_ptr<llvm::IRBuilder<>> builder;
     // A linked list of blocks for tracking control flow.
     std::shared_ptr<Block> block_list = nullptr;
+    // A flag to indicate whether panic is recoverable.
+    // Can be set to true when testing panics.
+    bool panic_recoverable = false;
 
     std::any visit(Stmt::Expression* stmt) override;
     std::any visit(Stmt::Let* stmt) override;
@@ -41,6 +44,43 @@ class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
     std::any visit(Expr::Unary* expr, bool as_lvalue) override;
     std::any visit(Expr::NameRef* expr, bool as_lvalue) override;
     std::any visit(Expr::Literal* expr, bool as_lvalue) override;
+
+    /**
+     * @brief Adds C standard library functions to the module that are useful for code generation.
+     *
+     * Includes the following functions:
+     * `printf`,
+     * `abort`,
+     * `exit`,
+     * `malloc`,
+     * `free`
+     *
+     * If panic recoverable is enabled, the following are also included:
+     * `setjmp`,
+     * `longjmp`
+     */
+    void add_c_functions();
+
+    /**
+     * @brief Adds a runtime check for division by zero.
+     *
+     * This check generates code to compare the divisor against zero. If the divisor is zero,
+     * the program will abort with an error message.
+     *
+     * @param divisor The divisor value to check.
+     */
+    void add_div_zero_check(llvm::Value* divisor);
+
+    /**
+     * @brief Adds a panic call to the generated code.
+     *
+     * During a panic, the program will print the error message and immediately terminate.
+     *
+     * The implementation of this may vary.
+     *
+     * @param message The error message to pass to the `panic` function.
+     */
+    void add_panic(std::string_view message);
 
 public:
     /**
@@ -66,7 +106,7 @@ public:
      * @brief Constructs a code generator with a new LLVM context and module.
      */
     CodeGenerator() {
-        this->reset();
+        reset();
     }
 
     /**
@@ -121,12 +161,20 @@ public:
      *
      * Effectively equivalent to constructing a new CodeGenerator object.
      */
-    void reset() {
-        context = std::make_unique<llvm::LLVMContext>();
-        ir_module = std::make_unique<llvm::Module>("main", *context);
-        builder = std::make_unique<llvm::IRBuilder<>>(*context);
-        block_list = nullptr;
-    }
+    void reset();
+
+    /**
+     * @brief Sets whether the code generator should use panic recovery.
+     *
+     * If setting panic recoverable, make sure to call this function before any code is generated.
+     *
+     * Normally, panics cause the program to terminate. But this makes the program difficult to test. So we provide a means to make a panic "recoverable".
+     *
+     * When panic recoverable is true, the program will generate instructions to call setjmp and longjmp. These behave similar to throw and catch in C++.
+     *
+     * @param value True to enable panic recovery, false to disable it.
+     */
+    void set_panic_recoverable(bool value) { panic_recoverable = value; }
 };
 
 #endif // CODE_GENERATOR_H

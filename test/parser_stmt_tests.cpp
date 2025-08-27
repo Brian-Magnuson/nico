@@ -150,11 +150,23 @@ TEST_CASE("Parser print statements", "[parser]") {
     }
 
     SECTION("Print statements 4") {
-        auto file = make_test_code_file("printout \"Hello, World!\"");
+        auto file = make_test_code_file("printout 1 / 2");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(stmt:print (binary / (lit 1) (lit 2)))",
+            "(stmt:eof)"
+        };
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
+    SECTION("Print statements 5") {
+        auto file = make_test_code_file("printout \"Hello, World!\" printout \"Goodbye, World!\"");
         auto tokens = lexer.scan(file);
         auto ast = parser.parse(std::move(tokens));
         std::vector<std::string> expected = {
             "(stmt:print (lit \"Hello, World!\"))",
+            "(stmt:print (lit \"Goodbye, World!\"))",
             "(stmt:eof)"
         };
         CHECK(printer.stmts_to_strings(ast) == expected);
