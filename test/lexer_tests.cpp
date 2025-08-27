@@ -1,7 +1,7 @@
-#include <catch2/catch_test_macros.hpp>
-
 #include <memory>
 #include <vector>
+
+#include <catch2/catch_test_macros.hpp>
 
 #include "../src/common/code_file.h"
 #include "../src/debug/test_utils.h"

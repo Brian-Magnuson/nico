@@ -26,7 +26,7 @@ When creating new files, please follow these naming conventions:
 - Implementation files should have the same base name as their corresponding header files
   - E.g., `code_generator.h` -> `code_generator.cpp`
 
-## Include Guards
+## Includes and Include Guards
 
 For all header files, use the following include guard pattern:
 
@@ -40,6 +40,37 @@ For all header files, use the following include guard pattern:
 ```
 
 View existing header files for more examples.
+
+For `#include` directives, include files in the following order.
+
+1. If the current file is an implementation file, include the corresponding header file first.
+2. C system headers, including platform-specific headers
+3. C++ standard library headers (e.g., `<vector>`, `<string>`).
+4. Third-party library headers (e.g., `<llvm/IR/Function.h>`).
+5. Project-specific headers (e.g., `"code_generator.h"`).
+
+Example:
+```cpp
+#include "code_generator.h"
+
+#include <string_view>
+
+#include <llvm/IR/BasicBlock.h>
+#include <llvm/IR/Function.h>
+#include <llvm/IR/Verifier.h>
+
+#include "../common/utils.h"
+#include "../logger/logger.h"
+```
+
+For C standard library headers with a C++ counterpart, prefer using the C++ counterpart.
+- E.g., use `<cmath>` instead of `<math.h>`, `<cstdlib>` instead of `<stdlib.h>`, etc.
+- Prefix names from these headers with `std::`.
+
+Include what you use in a file.
+- E.g., if the file uses `std::any`, it should include `<any>`. If it does not use `std::any`, it should not include `<any>`
+- Avoid relying on transitive includes.
+  - An exception to this is with header-source file pairs; if an include is in the header file, it does not need to be re-included in the implementation file.
 
 ## Names and Identifiers
 
@@ -179,6 +210,7 @@ For documentation comments:
   - Use `@brief` to provide a brief description. Provide a longer description unless the usage is very obvious.
 - All public member functions should have a documentation comment describing their purpose, parameters, and return value.
   - Use `@brief` to provide a brief description. Provide a longer description unless the usage is very obvious.
+  - Use `@tparam` followed by the template parameter name and description for each template parameter.
   - Use `@param` followed by the parameter name and description for each parameter.
   - Use `@return` to describe the return value.
   - Make it clear when a function may not behave as expected for when it needs specific inputs.

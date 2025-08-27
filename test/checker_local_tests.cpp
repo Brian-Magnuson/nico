@@ -1,8 +1,8 @@
-#include <catch2/catch_test_macros.hpp>
-
 #include <memory>
 #include <utility>
 #include <vector>
+
+#include <catch2/catch_test_macros.hpp>
 
 #include "../src/checker/global_checker.h"
 #include "../src/checker/local_checker.h"
