@@ -15,18 +15,10 @@
 #include <unistd.h>
 #endif
 
-std::shared_ptr<CodeFile> make_test_code_file(const char* src_code) {
+std::shared_ptr<CodeFile> make_test_code_file(std::string_view src_code) {
     auto file = std::make_shared<CodeFile>(
         std::filesystem::current_path() / "test.nico",
         std::string(src_code)
-    );
-    return file;
-}
-
-std::shared_ptr<CodeFile> make_test_code_file(std::string&& src_code) {
-    auto file = std::make_shared<CodeFile>(
-        std::filesystem::current_path() / "test.nico",
-        std::move(src_code)
     );
     return file;
 }

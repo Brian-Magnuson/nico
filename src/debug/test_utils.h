@@ -4,6 +4,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "../common/code_file.h"
@@ -17,17 +18,7 @@
  * @param src_code The source code for the code file.
  * @return A shared pointer to the new code file.
  */
-std::shared_ptr<CodeFile> make_test_code_file(const char* src_code);
-
-/**
- * @brief Creates a test code file with the provided source code.
- *
- * The test code file path is set to CWD with the name "test.nico".
- *
- * @param src_code The source code for the code file. Will be moved into the code file.
- * @return A shared pointer to the new code file.
- */
-std::shared_ptr<CodeFile> make_test_code_file(std::string&& src_code);
+std::shared_ptr<CodeFile> make_test_code_file(std::string_view src_code);
 
 /**
  * @brief Creates a vector of token types from a vector of tokens.

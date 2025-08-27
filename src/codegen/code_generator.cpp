@@ -110,8 +110,21 @@ std::any CodeGenerator::visit(Expr::Binary* expr, bool as_lvalue) {
 }
 
 std::any CodeGenerator::visit(Expr::Unary* expr, bool as_lvalue) {
-    // Generate code for the unary expression
-    return std::any();
+    llvm::Value* result = nullptr;
+    auto value = std::any_cast<llvm::Value*>(expr->right->accept(this, false));
+    if (expr->op->tok_type == Tok::Minus) {
+        if (PTR_INSTANCEOF(expr->type, Type::Int)) {
+            result = builder->CreateNeg(value);
+        } else if (PTR_INSTANCEOF(expr->type, Type::Float)) {
+            result = builder->CreateFNeg(value);
+        } else {
+            panic("CodeGenerator::visit(Expr::Unary*): Cannot negate value of this type.");
+        }
+    } else {
+        panic("CodeGenerator::visit(Expr::Unary*): Unknown unary operator.");
+    }
+
+    return result;
 }
 
 std::any CodeGenerator::visit(Expr::NameRef* expr, bool as_lvalue) {
@@ -165,7 +178,7 @@ std::any CodeGenerator::visit(Expr::Literal* expr, bool as_lvalue) {
         result = builder->CreateGlobalStringPtr(std::any_cast<std::string>(expr->token->literal));
         break;
     default:
-        panic("CodeGenerator::visit(Expr::Literal): Unknown literal type.");
+        panic("CodeGenerator::visit(Expr::Literal*): Unknown literal type.");
     }
 
     // Generate code for the literal expression
