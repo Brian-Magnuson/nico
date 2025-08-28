@@ -109,7 +109,7 @@ std::any LocalChecker::visit(Expr::Assign* expr, bool as_lvalue) {
 }
 
 std::any LocalChecker::visit(Expr::Binary* expr, bool as_lvalue) {
-    expr->left->accept(this, true);
+    expr->left->accept(this, false);
     auto l_type = expr->left->type;
     if (!l_type)
         return std::any();

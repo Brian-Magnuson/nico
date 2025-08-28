@@ -162,7 +162,7 @@ TEST_CASE("JIT let statements", "[jit]") {
     jit->reset();
 }
 
-TEST_CASE("JIT operators", "[jit]") {
+TEST_CASE("JIT integer operators", "[jit]") {
     Lexer lexer;
     Parser parser;
     std::shared_ptr<SymbolTree> symbol_tree = std::make_shared<SymbolTree>();
@@ -185,6 +185,71 @@ TEST_CASE("JIT operators", "[jit]") {
         );
     }
 
+    SECTION("Integer addition") {
+        run_compile_test(
+            lexer,
+            parser,
+            global_checker,
+            local_checker,
+            codegen,
+            jit,
+            R"(let x = 5 let y = 10 printout x + y)",
+            "15"
+        );
+    }
+
+    SECTION("Integer subtraction") {
+        run_compile_test(
+            lexer,
+            parser,
+            global_checker,
+            local_checker,
+            codegen,
+            jit,
+            R"(let x = 5 let y = 10 printout y - x)",
+            "5"
+        );
+    }
+
+    SECTION("Integer add and subtract negatives") {
+        run_compile_test(
+            lexer,
+            parser,
+            global_checker,
+            local_checker,
+            codegen,
+            jit,
+            R"(printout -5 + 10, ",", 10 + -5, ",", -5 - 10, ",", 10 - -5)",
+            "5,5,-15,15"
+        );
+    }
+
+    SECTION("Integer multiplication") {
+        run_compile_test(
+            lexer,
+            parser,
+            global_checker,
+            local_checker,
+            codegen,
+            jit,
+            R"(printout 5 * 10, ",", 2 * -3, ",", 7 * 0, ",", -1 * 1)",
+            "50,-6,0,-1"
+        );
+    }
+
+    SECTION("Integer division") {
+        run_compile_test(
+            lexer,
+            parser,
+            global_checker,
+            local_checker,
+            codegen,
+            jit,
+            R"(printout 10 / 5, ",", 7 / 2, ",", -9 / 3, ",", 1 / -1)",
+            "2,3,-3,-1"
+        );
+    }
+
     SECTION("Divide by zero") {
         codegen.set_panic_recoverable(true);
         run_compile_test(
@@ -197,6 +262,75 @@ TEST_CASE("JIT operators", "[jit]") {
             R"(printout 1 / 0)",
             std::nullopt,
             101
+        );
+    }
+
+    lexer.reset();
+    parser.reset();
+    symbol_tree->reset();
+    codegen.reset();
+    jit->reset();
+}
+
+TEST_CASE("JIT float operators", "[jit]") {
+    Lexer lexer;
+    Parser parser;
+    std::shared_ptr<SymbolTree> symbol_tree = std::make_shared<SymbolTree>();
+    GlobalChecker global_checker(symbol_tree);
+    LocalChecker local_checker(symbol_tree);
+    CodeGenerator codegen;
+    std::unique_ptr<IJit> jit = std::make_unique<SimpleJit>();
+    Logger::inst().set_printing_enabled(true);
+
+    SECTION("Unary minus") {
+        run_compile_test(
+            lexer,
+            parser,
+            global_checker,
+            local_checker,
+            codegen,
+            jit,
+            R"(let x = -5.5 printout x, ",", -x)",
+            "-5.5,5.5"
+        );
+    }
+
+    SECTION("Float addition") {
+        run_compile_test(
+            lexer,
+            parser,
+            global_checker,
+            local_checker,
+            codegen,
+            jit,
+            R"(let x = 5.5 let y = 10.2 printout x + y)",
+            "15.7"
+        );
+    }
+
+    SECTION("Float subtraction") {
+        run_compile_test(
+            lexer,
+            parser,
+            global_checker,
+            local_checker,
+            codegen,
+            jit,
+            R"(let x = 5.5 let y = 10.2 printout y - x)",
+            "4.7"
+        );
+    }
+
+    SECTION("Float multiplication") {
+        run_compile_test(
+            lexer,
+            parser,
+            global_checker,
+            local_checker,
+            codegen,
+            jit,
+            R"(printout 2.0 * 4.0, ",", 0.5 * 0.25, ",", -8.0 * 0.125, ",", -1.5 * -2.0)",
+            "8,0.125,-1,3"
         );
     }
 

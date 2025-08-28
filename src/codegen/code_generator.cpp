@@ -256,7 +256,7 @@ std::any CodeGenerator::visit(Stmt::Print* stmt) {
             format_str = builder->CreateGlobalStringPtr("%d");
             builder->CreateCall(printf_fn, {format_str, value});
         } else if (PTR_INSTANCEOF(expr->type, Type::Float)) {
-            format_str = builder->CreateGlobalStringPtr("%f");
+            format_str = builder->CreateGlobalStringPtr("%g");
             builder->CreateCall(printf_fn, {format_str, value});
         } else if (PTR_INSTANCEOF(expr->type, Type::Bool)) {
             format_str = builder->CreateGlobalStringPtr("%s");
