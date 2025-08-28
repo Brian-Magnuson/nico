@@ -466,12 +466,93 @@ TEST_CASE("Lexer numbers", "[lexer]") {
             Tok::Float,
             Tok::Eof
         };
-        CHECK(extract_token_types(tokens) == expected);
+        REQUIRE(extract_token_types(tokens) == expected);
         CHECK(std::any_cast<double>(tokens[0]->literal) == 1.23e10);
         CHECK(std::any_cast<double>(tokens[1]->literal) == 1.23e-10);
         CHECK(std::any_cast<double>(tokens[2]->literal) == 1.23E10);
         CHECK(std::any_cast<double>(tokens[3]->literal) == 1.23E-10);
         CHECK(std::any_cast<double>(tokens[4]->literal) == 123E+10);
+    }
+
+    SECTION("Numbers 5") {
+        auto file = make_test_code_file("0 0.0 0.0 0 0");
+        auto tokens = lexer.scan(file);
+        std::vector<Tok> expected = {
+            Tok::Int,
+            Tok::Float,
+            Tok::Float,
+            Tok::Int,
+            Tok::Int,
+            Tok::Eof
+        };
+        REQUIRE(extract_token_types(tokens) == expected);
+        CHECK(std::any_cast<int32_t>(tokens[0]->literal) == 0);
+        CHECK(std::any_cast<double>(tokens[1]->literal) == 0.0);
+        CHECK(std::any_cast<double>(tokens[2]->literal) == 0.0);
+        CHECK(std::any_cast<int32_t>(tokens[3]->literal) == 0);
+        CHECK(std::any_cast<int32_t>(tokens[4]->literal) == 0);
+    }
+
+    SECTION("Numbers 6") {
+        auto file = make_test_code_file("0xAbCdEf 0x0 0x00");
+        auto tokens = lexer.scan(file);
+        std::vector<Tok> expected = {
+            Tok::Int,
+            Tok::Int,
+            Tok::Int,
+            Tok::Eof
+        };
+        REQUIRE(extract_token_types(tokens) == expected);
+        CHECK(std::any_cast<int32_t>(tokens[0]->literal) == 0xabcdef);
+        CHECK(std::any_cast<int32_t>(tokens[1]->literal) == 0);
+        CHECK(std::any_cast<int32_t>(tokens[2]->literal) == 0);
+    }
+
+    SECTION("Numbers 7") {
+        auto file = make_test_code_file("0o123 0123 0o0");
+        auto tokens = lexer.scan(file);
+        std::vector<Tok> expected = {
+            Tok::Int,
+            Tok::Int,
+            Tok::Int,
+            Tok::Eof
+        };
+        REQUIRE(extract_token_types(tokens) == expected);
+        CHECK(std::any_cast<int32_t>(tokens[0]->literal) == 0123);
+        CHECK(std::any_cast<int32_t>(tokens[1]->literal) == 123);
+        CHECK(std::any_cast<int32_t>(tokens[2]->literal) == 0);
+    }
+
+    SECTION("Numbers with underscores 1") {
+        auto file = make_test_code_file("1_000 0b1010_1010 0o_755 0xFF_FF");
+        auto tokens = lexer.scan(file);
+        std::vector<Tok> expected = {
+            Tok::Int,
+            Tok::Int,
+            Tok::Int,
+            Tok::Int,
+            Tok::Eof
+        };
+        REQUIRE(extract_token_types(tokens) == expected);
+        CHECK(std::any_cast<int32_t>(tokens[0]->literal) == 1000);
+        CHECK(std::any_cast<int32_t>(tokens[1]->literal) == 0b10101010);
+        CHECK(std::any_cast<int32_t>(tokens[2]->literal) == 0755);
+        CHECK(std::any_cast<int32_t>(tokens[3]->literal) == 0xFFFF);
+    }
+
+    SECTION("Numbers with underscores 2") {
+        auto file = make_test_code_file("1_00_00 1__0 1_0_");
+        auto tokens = lexer.scan(file);
+        std::vector<Tok> expected = {
+            Tok::Int,
+            Tok::Int,
+            Tok::Int,
+            Tok::Eof
+        };
+        REQUIRE(extract_token_types(tokens) == expected);
+        CHECK(std::any_cast<int32_t>(tokens[0]->literal) == 10000);
+        CHECK(std::any_cast<int32_t>(tokens[1]->literal) == 10);
+        CHECK(std::any_cast<int32_t>(tokens[2]->literal) == 10);
     }
 
     lexer.reset();
@@ -488,7 +569,8 @@ TEST_CASE("Lexer str literals", "[lexer]") {
             Tok::Str,
             Tok::Eof
         };
-        CHECK(extract_token_types(tokens) == expected);
+        REQUIRE(extract_token_types(tokens) == expected);
+        CHECK(std::any_cast<std::string>(tokens[0]->literal) == "abc");
     }
 
     SECTION("String literals 2") {
@@ -499,7 +581,20 @@ TEST_CASE("Lexer str literals", "[lexer]") {
             Tok::Str,
             Tok::Eof
         };
-        CHECK(extract_token_types(tokens) == expected);
+        REQUIRE(extract_token_types(tokens) == expected);
+        CHECK(std::any_cast<std::string>(tokens[0]->literal) == "abc");
+        CHECK(std::any_cast<std::string>(tokens[1]->literal) == "def");
+    }
+
+    SECTION("String literals 3") {
+        auto file = make_test_code_file(R"("")");
+        auto tokens = lexer.scan(file);
+        std::vector<Tok> expected = {
+            Tok::Str,
+            Tok::Eof
+        };
+        REQUIRE(extract_token_types(tokens) == expected);
+        CHECK(std::any_cast<std::string>(tokens[0]->literal) == "");
     }
 
     SECTION("String literal esc sequences") {
@@ -509,7 +604,8 @@ TEST_CASE("Lexer str literals", "[lexer]") {
             Tok::Str,
             Tok::Eof
         };
-        CHECK(extract_token_types(tokens) == expected);
+        REQUIRE(extract_token_types(tokens) == expected);
+        CHECK(std::any_cast<std::string>(tokens[0]->literal) == "\n\t\r\\\"");
     }
 
     lexer.reset();
@@ -664,8 +760,47 @@ TEST_CASE("Lexer number scanning errors", "[lexer]") {
         CHECK(errors.at(0) == Err::UnexpectedExpInNumber);
     }
 
-    SECTION("Invalid character after number") {
+    SECTION("Digit in wrong base 1") {
         auto file = make_test_code_file("123abc");
+        auto tokens = lexer.scan(file);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::DigitInWrongBase);
+    }
+
+    SECTION("Digit in wrong base 2") {
+        // Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file("0b2");
+        auto tokens = lexer.scan(file);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::DigitInWrongBase);
+    }
+
+    SECTION("Unexpected end of number 1") {
+        // Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file("0b");
+        auto tokens = lexer.scan(file);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::UnexpectedEndOfNumber);
+    }
+
+    SECTION("Unexpected end of number 2") {
+        // Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file("0o_");
+        auto tokens = lexer.scan(file);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::UnexpectedEndOfNumber);
+    }
+
+    SECTION("Invalid character after number") {
+        auto file = make_test_code_file("123gg");
         auto tokens = lexer.scan(file);
         auto& errors = Logger::inst().get_errors();
 

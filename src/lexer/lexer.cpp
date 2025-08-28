@@ -217,15 +217,15 @@ void Lexer::numeric_literal() {
     std::string numeric_string;
 
     if (peek() == '0') {
-        if (peek(1) == 'b' && is_digit(peek(2), 2)) {
+        if (peek(1) == 'b') {
             base = 2;
             advance();
             advance();
-        } else if (peek(1) == 'o' && is_digit(peek(2), 8)) {
+        } else if (peek(1) == 'o') {
             base = 8;
             advance();
             advance();
-        } else if (peek(1) == 'x' && is_digit(peek(2), 16)) {
+        } else if (peek(1) == 'x') {
             base = 16;
             advance();
             advance();
@@ -233,6 +233,10 @@ void Lexer::numeric_literal() {
     }
 
     while (is_digit(peek(), base, true)) {
+        if (peek() == '_') {
+            advance();
+            continue;
+        }
         numeric_string += advance();
 
         if (peek() == '.') {
@@ -274,6 +278,29 @@ void Lexer::numeric_literal() {
         has_dot = true; // Saving an extra byte.
     }
 
+    // Numbers cannot be followed by alphanumeric characters.
+    if (is_digit(peek(), 16)) {
+        auto prev_start = start;
+        start = current;
+        Logger::inst().log_error(Err::DigitInWrongBase, make_token(Tok::Unknown)->location, "Digit not allowed in numbers of base " + std::to_string(base) + ".");
+        start = prev_start;
+        return;
+    } else if (is_alpha(peek())) {
+        auto prev_start = start;
+        start = current;
+        Logger::inst().log_error(Err::InvalidCharAfterNumber, make_token(Tok::Unknown)->location, "Number cannot be followed by an alphabetic character.");
+        Logger::inst().log_note("Consider adding a space here.");
+        start = prev_start;
+        return;
+    } else if (numeric_string.empty()) {
+        // This can only happen if the first part of the number is a base prefix.
+        auto prev_start = start;
+        start = current;
+        Logger::inst().log_error(Err::UnexpectedEndOfNumber, make_token(Tok::Unknown)->location, "Expected digits in number after base prefix.");
+        start = prev_start;
+        return;
+    }
+
     if (has_dot || has_exp) {
         double value;
         try {
@@ -290,15 +317,6 @@ void Lexer::numeric_literal() {
             panic(std::string("Lexer::numeric_literal: std::stoll failed to parse `") + numeric_string + "`");
         }
         add_token(Tok::Int, value);
-    }
-
-    // Numbers cannot be followed by alphanumeric characters.
-    if (is_alpha_numeric(peek())) {
-        auto prev_start = start;
-        start = current;
-        Logger::inst().log_error(Err::InvalidCharAfterNumber, make_token(Tok::Unknown)->location, "Number cannot be followed by an alphanumeric character.");
-        Logger::inst().log_note("Consider adding a space here.");
-        start = prev_start;
     }
 }
 

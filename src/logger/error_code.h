@@ -35,6 +35,10 @@ enum class Err {
     UnexpectedDotInNumber,
     // An unexpected exponent was found in a numeric literal.
     UnexpectedExpInNumber,
+    // A digit was found in a number that did not allow digits of this base.
+    DigitInWrongBase,
+    // The end of a number literal was reached unexpectedly.
+    UnexpectedEndOfNumber,
     // A number token is followed by an alphanumeric character.
     InvalidCharAfterNumber,
     // A string literal was not closed at the end of the line or file.
