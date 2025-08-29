@@ -62,6 +62,7 @@ public:
     class Unary;
     class NameRef;
     class Literal;
+    class Tuple;
 
     virtual ~Expr() {}
 
@@ -75,6 +76,7 @@ public:
         virtual std::any visit(Unary* expr, bool as_lvalue) = 0;
         virtual std::any visit(NameRef* expr, bool as_lvalue) = 0;
         virtual std::any visit(Literal* expr, bool as_lvalue) = 0;
+        virtual std::any visit(Tuple* expr, bool as_lvalue) = 0;
     };
 
     // The type of the expression.
@@ -345,6 +347,30 @@ public:
     Literal(std::shared_ptr<Token> token)
         : token(token) {
         location = &token->location;
+    }
+
+    std::any accept(Visitor* visitor, bool as_lvalue) override {
+        return visitor->visit(this, as_lvalue);
+    }
+};
+
+/**
+ * @brief A tuple expression.
+ *
+ * Tuple expressions are expressions that represent a fixed-size collection of values.
+ * The values may be of different types.
+ * A tuple must either have at least one comma or be an empty pair of parentheses (also known as the unit tuple).
+ */
+class Expr::Tuple : public Expr {
+public:
+    // The opening parenthesis of the tuple.
+    std::shared_ptr<Token> lparen;
+    // The elements of the tuple.
+    std::vector<std::shared_ptr<Expr>> elements;
+
+    Tuple(std::shared_ptr<Token> lparen, std::vector<std::shared_ptr<Expr>> elements)
+        : lparen(lparen), elements(std::move(elements)) {
+        location = &lparen->location;
     }
 
     std::any accept(Visitor* visitor, bool as_lvalue) override {

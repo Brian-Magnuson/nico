@@ -57,6 +57,15 @@ std::any AstPrinter::visit(Expr::Literal* expr, bool as_lvalue) {
     return std::string("(lit " + std::string(expr->token->lexeme) + ")");
 }
 
+std::any AstPrinter::visit(Expr::Tuple* expr, bool as_lvalue) {
+    std::string str = "(tuple";
+    for (const auto& element : expr->elements) {
+        str += " " + std::any_cast<std::string>(element->accept(this, false));
+    }
+    str += ")";
+    return str;
+}
+
 std::string AstPrinter::stmt_to_string(std::shared_ptr<Stmt> stmt) {
     return std::any_cast<std::string>(stmt->accept(this));
 }

@@ -334,6 +334,19 @@ TEST_CASE("JIT float operators", "[jit]") {
         );
     }
 
+    SECTION("Float division") {
+        run_compile_test(
+            lexer,
+            parser,
+            global_checker,
+            local_checker,
+            codegen,
+            jit,
+            R"(printout 8.0 / 4.0, ",", 0.5 / 0.25, ",", -8.0 / 0.125, ",", -1.5 / -2.0)",
+            "2,2,-64,0.75"
+        );
+    }
+
     lexer.reset();
     parser.reset();
     symbol_tree->reset();

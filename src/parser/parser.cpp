@@ -64,6 +64,39 @@ std::optional<std::shared_ptr<Expr>> Parser::primary() {
     if (match({Tok::Identifier})) {
         return std::make_shared<Expr::NameRef>(previous());
     }
+    if (match({Tok::LParen})) {
+        // Grouping or tuple expression.
+        auto lparen = previous();
+        std::vector<std::shared_ptr<Expr>> elements;
+        if (match({Tok::RParen})) {
+            // Empty tuple
+            return std::make_shared<Expr::Tuple>(lparen, elements);
+        }
+        bool comma_matched = false;
+        do {
+            if (peek()->tok_type == Tok::RParen) {
+                // We allow trailing commas.
+                break;
+            }
+            auto expr = expression();
+            if (!expr)
+                return std::nullopt;
+            elements.push_back(*expr);
+            comma_matched = match({Tok::Comma});
+        } while (comma_matched);
+
+        if (!match({Tok::RParen})) {
+            // This error should already be caught in the lexer.
+            panic("Parser::primary: Missing ')' while parsing grouping.");
+        }
+
+        if (elements.size() == 1 && !comma_matched) {
+            // Just a parenthesized expression
+            return elements[0];
+        } else {
+            return std::make_shared<Expr::Tuple>(lparen, elements);
+        }
+    }
 
     Logger::inst().log_error(Err::NotAnExpression, peek()->location, "Expected expression.");
     return std::nullopt;

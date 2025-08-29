@@ -27,6 +27,7 @@ class LocalChecker : public Stmt::Visitor, public Expr::Visitor, public Annotati
     std::any visit(Expr::Unary* expr, bool as_lvalue) override;
     std::any visit(Expr::NameRef* expr, bool as_lvalue) override;
     std::any visit(Expr::Literal* expr, bool as_lvalue) override;
+    std::any visit(Expr::Tuple* expr, bool as_lvalue) override;
 
     std::any visit(Annotation::NameRef* annotation) override;
     std::any visit(Annotation::Pointer* annotation) override;

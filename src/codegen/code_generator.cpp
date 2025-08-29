@@ -9,6 +9,8 @@
 #include "../common/utils.h"
 #include "../logger/logger.h"
 
+// MARK: Helpers
+
 void CodeGenerator::add_c_functions() {
     // stderr
     if (!ir_module->getGlobalVariable("stderr")) {
@@ -202,6 +204,8 @@ void CodeGenerator::add_panic(std::string_view message, const Location* location
     }
 }
 
+// MARK: Statements
+
 std::any CodeGenerator::visit(Stmt::Expression* stmt) {
     stmt->expression->accept(this, false);
     return std::any();
@@ -277,6 +281,8 @@ std::any CodeGenerator::visit(Stmt::Print* stmt) {
     // Generate code for the print statement
     return std::any();
 }
+
+// MARK: Expressions
 
 std::any CodeGenerator::visit(Expr::Assign* expr, bool as_lvalue) {
     // Generate code for the assignment expression
@@ -413,6 +419,12 @@ std::any CodeGenerator::visit(Expr::Literal* expr, bool as_lvalue) {
     // Generate code for the literal expression
     return result;
 }
+
+std::any CodeGenerator::visit(Expr::Tuple* expr, bool as_lvalue) {
+    return std::any();
+}
+
+// MARK: Interface
 
 bool CodeGenerator::generate(const std::vector<std::shared_ptr<Stmt>>& stmts, bool require_verification) {
     // Normally, we would traverse the AST and generate LLVM IR here.

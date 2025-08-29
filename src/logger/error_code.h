@@ -56,6 +56,10 @@ enum class Err {
     NotAType,
     // A let statement was found without a type or value.
     LetWithoutTypeOrValue,
+    // A grouping was found without a matching closing parenthesis.
+    UnmatchedParen,
+    // A closing parenthesis was found without a matching opening parenthesis.
+    UnexpectedClosingParen,
 
     // Global type check error.
     GlobalType = 4000,
