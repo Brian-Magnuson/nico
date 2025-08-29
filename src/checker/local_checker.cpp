@@ -51,13 +51,16 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
             Logger::inst().log_note(locatable->location_token->location, "Previous declaration here.");
         }
         return std::any();
-    } else if (err == Err::NameIsReserved) {
+    }
+    else if (err == Err::NameIsReserved) {
         Logger::inst().log_error(err, stmt->identifier->location, "Name `" + std::string(stmt->identifier->lexeme) + "` is reserved.");
         return std::any();
-    } else if (auto field_node = std::dynamic_pointer_cast<Node::FieldEntry>(node)) {
+    }
+    else if (auto field_node = std::dynamic_pointer_cast<Node::FieldEntry>(node)) {
         stmt->field_entry = field_node;
         return std::any();
-    } else {
+    }
+    else {
         panic("LocalChecker::visit(Stmt::Let*): Symbol tree returned a non-field entry for a field entry.");
     }
 
@@ -222,11 +225,14 @@ std::any LocalChecker::visit(Annotation::NameRef* annotation) {
     // Temporary solution: only allow primitive types.
     if (annotation->name.to_string() == "i32") {
         type = std::make_shared<Type::Int>(true, 32);
-    } else if (annotation->name.to_string() == "f64") {
+    }
+    else if (annotation->name.to_string() == "f64") {
         type = std::make_shared<Type::Float>(64);
-    } else if (annotation->name.to_string() == "bool") {
+    }
+    else if (annotation->name.to_string() == "bool") {
         type = std::make_shared<Type::Bool>();
-    } else if (annotation->name.to_string() == "str") {
+    }
+    else if (annotation->name.to_string() == "str") {
         type = std::make_shared<Type::Str>();
     }
     return type;

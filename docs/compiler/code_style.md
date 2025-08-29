@@ -233,19 +233,10 @@ Class member variables may not need documentation comments if their purpose can 
   - Use proper indentation for readability.
 - For `switch` cases, use braces for the case body only if necessary (when declaring variables).
 - Prefer putting the opening brace on the same line (see example below).
-- For `else` and `catch` blocks, write the keyword either on the same line as the closing brace of the preceding block or on a new line (see example below).
+- For `else` and `catch` blocks, put the keyword on a new line (see example below).
   - Be consistent for the entire group of blocks.
 
 ```cpp
-if (condition) {
-    // then block
-} else if (other_condition) {
-    // else if block
-} else {
-    // else block
-}
-
-// This is also okay
 if (condition) {
     // then block
 }
@@ -284,5 +275,21 @@ foo(
     y,
     z
 );
+```
+
+### Pointer and Reference Alignment Style
+
+For pointer alignment:
+- Keep the star aligned to the left
+
+For reference alignment:
+- Keep the ampersand aligned to the left, same as with pointers.
+
+```cpp
+int* ptr = nullptr;
+Expr::Assign* expr = nullptr;
+
+int& ref = variable;
+const std::string& str = another_variable;
 ```
 

@@ -33,11 +33,13 @@ std::optional<std::shared_ptr<Node>> SymbolTree::search_name_from_scope(const Na
                     auto child_it = scope_node->children.at(std::string(parts[i].token->lexeme));
                     if (child_it) {
                         node = child_it.value();
-                    } else {
+                    }
+                    else {
                         found = false;
                         break;
                     }
-                } else {
+                }
+                else {
                     found = false;
                     break;
                 }
@@ -75,11 +77,13 @@ std::pair<std::shared_ptr<Node>, Err> SymbolTree::add_namespace(std::shared_ptr<
             // If existing name is a namespace...
             current_scope = ns_node;
             return std::make_pair(ns_node, Err::Null);
-        } else {
+        }
+        else {
             // If existing name is not a namespace...
             return std::make_pair(node.value(), Err::NameAlreadyExists);
         }
-    } else {
+    }
+    else {
         // If name does not exist...
         auto new_namespace = std::make_shared<Node::Namespace>(current_scope, token);
         new_namespace->initialize_node(); // Add the namespace to its parent scope's children

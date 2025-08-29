@@ -54,7 +54,8 @@ void Logger::print_code_at_location(const Location& location, Color underline_co
     size_t line_start = src_code.rfind('\n', start);
     if (line_start == std::string::npos) {
         line_start = 0;
-    } else {
+    }
+    else {
         line_start += 1; // Move past the newline character.
     }
 

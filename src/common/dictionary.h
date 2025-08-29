@@ -63,7 +63,8 @@ public:
         if (it == map.end()) {
             map[key] = keys.size();
             keys.push_back({key, value});
-        } else {
+        }
+        else {
             keys.at(it->second).second = value;
         }
     }
@@ -84,7 +85,8 @@ public:
             map[key] = keys.size();
             keys.push_back({key, V()});
             return keys.back().second;
-        } else {
+        }
+        else {
             return keys.at(it->second).second;
         }
     }
@@ -139,7 +141,8 @@ public:
         auto it = map.find(key);
         if (it == map.end()) {
             return -1;
-        } else {
+        }
+        else {
             return (int)(it->second);
         }
     }

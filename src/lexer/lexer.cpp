@@ -110,17 +110,21 @@ void Lexer::consume_whitespace() {
         char c = peek();
         if (c == ' ') {
             current_spaces++;
-        } else if (c == '\t') {
+        }
+        else if (c == '\t') {
             current_tabs++;
-        } else if (c == '\r') {
+        }
+        else if (c == '\r') {
             // Ignore.
-        } else if (c == '\n') {
+        }
+        else if (c == '\n') {
             current_spaces = 0;
             current_tabs = 0;
             newline = true;
             line++;
             start = current + 1;
-        } else {
+        }
+        else {
             break;
         }
         advance();
@@ -137,7 +141,8 @@ void Lexer::consume_whitespace() {
         auto token = make_token(Tok::Unknown);
         Logger::inst().log_error(Err::MixedLeftSpacing, token->location, "Line contains both tabs and spaces.");
         return;
-    } else if (current_spaces && left_spacing_type == '\t') {
+    }
+    else if (current_spaces && left_spacing_type == '\t') {
         auto token = make_token(Tok::Unknown);
         Logger::inst().log_error(
             Err::InconsistentLeftSpacing,
@@ -145,7 +150,8 @@ void Lexer::consume_whitespace() {
             "Left spacing uses spaces when previous lines used tabs."
         );
         return;
-    } else if (current_tabs && left_spacing_type == ' ') {
+    }
+    else if (current_tabs && left_spacing_type == ' ') {
         auto token = make_token(Tok::Unknown);
         Logger::inst().log_error(
             Err::InconsistentLeftSpacing,
@@ -161,7 +167,8 @@ void Lexer::consume_whitespace() {
     // Update left_spacing_type.
     if (spacing_amount == 0) {
         left_spacing_type = '\0';
-    } else {
+    }
+    else {
         left_spacing_type = current_spaces ? ' ' : '\t';
     }
 
@@ -221,11 +228,13 @@ void Lexer::numeric_literal() {
             base = 2;
             advance();
             advance();
-        } else if (peek(1) == 'o') {
+        }
+        else if (peek(1) == 'o') {
             base = 8;
             advance();
             advance();
-        } else if (peek(1) == 'x') {
+        }
+        else if (peek(1) == 'x') {
             base = 16;
             advance();
             advance();
@@ -285,14 +294,16 @@ void Lexer::numeric_literal() {
         Logger::inst().log_error(Err::DigitInWrongBase, make_token(Tok::Unknown)->location, "Digit not allowed in numbers of base " + std::to_string(base) + ".");
         start = prev_start;
         return;
-    } else if (is_alpha(peek())) {
+    }
+    else if (is_alpha(peek())) {
         auto prev_start = start;
         start = current;
         Logger::inst().log_error(Err::InvalidCharAfterNumber, make_token(Tok::Unknown)->location, "Number cannot be followed by an alphabetic character.");
         Logger::inst().log_note("Consider adding a space here.");
         start = prev_start;
         return;
-    } else if (numeric_string.empty()) {
+    }
+    else if (numeric_string.empty()) {
         // This can only happen if the first part of the number is a base prefix.
         auto prev_start = start;
         start = current;
@@ -305,15 +316,18 @@ void Lexer::numeric_literal() {
         double value;
         try {
             value = std::stod(numeric_string);
-        } catch (...) {
+        }
+        catch (...) {
             panic("Lexer::numeric_literal: std::stod failed to parse `" + numeric_string + "`");
         }
         add_token(Tok::Float, value);
-    } else {
+    }
+    else {
         int32_t value;
         try {
             value = static_cast<int32_t>(std::stoll(numeric_string, nullptr, base));
-        } catch (...) {
+        }
+        catch (...) {
             panic("Lexer::numeric_literal: std::stoll failed to parse `" + numeric_string + "`");
         }
         add_token(Tok::Int, value);
@@ -374,7 +388,8 @@ void Lexer::str_literal() {
                 start = prev_start;
             }
             }
-        } else {
+        }
+        else {
             str_content += advance();
         }
     }
@@ -410,7 +425,8 @@ void Lexer::multi_line_comment() {
         if (peek() == '/' && peek(1) == '*') {
             open_count++;
             advance();
-        } else if (peek() == '*' && peek(1) == '/') {
+        }
+        else if (peek() == '*' && peek(1) == '/') {
             open_count--;
             advance();
         }
@@ -452,7 +468,8 @@ void Lexer::scan_token() {
                 t->location,
                 "Expected '" + std::string(1, grouping_token_stack.back()) + "' before ')'."
             );
-        } else {
+        }
+        else {
             grouping_token_stack.pop_back();
             tokens.push_back(t);
         }
@@ -466,7 +483,8 @@ void Lexer::scan_token() {
                 t->location,
                 "Expected '" + std::string(1, grouping_token_stack.back()) + "' before '}'."
             );
-        } else {
+        }
+        else {
             grouping_token_stack.pop_back();
             tokens.push_back(t);
         }
@@ -480,7 +498,8 @@ void Lexer::scan_token() {
                 t->location,
                 "Expected '" + std::string(1, grouping_token_stack.back()) + "' before ']'."
             );
-        } else {
+        }
+        else {
             grouping_token_stack.pop_back();
             tokens.push_back(t);
         }
@@ -563,9 +582,11 @@ void Lexer::scan_token() {
     default:
         if (is_alpha(c)) {
             identifier();
-        } else if (is_digit(c)) {
+        }
+        else if (is_digit(c)) {
             numeric_literal();
-        } else {
+        }
+        else {
             auto token = make_token(Tok::Unknown);
             Logger::inst().log_error(Err::UnexpectedChar, token->location, "Unexpected character.");
         }

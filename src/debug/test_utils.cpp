@@ -49,7 +49,8 @@ std::pair<std::string, std::string> capture_stdout(std::function<void()> func, i
 
     try {
         func();
-    } catch (...) {
+    }
+    catch (...) {
         std::fflush(stdout);
         std::fflush(stderr);
         _dup2(stdout_fd, _fileno(stdout));
@@ -89,7 +90,8 @@ std::pair<std::string, std::string> capture_stdout(std::function<void()> func, i
 
     try {
         func();
-    } catch (...) {
+    }
+    catch (...) {
         std::fflush(stdout);
         std::fflush(stderr);
         dup2(stdout_fd, fileno(stdout));

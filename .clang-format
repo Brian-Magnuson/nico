@@ -1,0 +1,37 @@
+BasedOnStyle: LLVM
+
+# 4 spaces indentation.
+UseTab: Never
+IndentWidth: 4
+TabWidth: 4
+
+# Keep access modifiers left.
+AccessModifierOffset: -4
+# Keep case labels (for switch blocks) left.
+IndentCaseLabels: false
+
+# Always indent in namespaces.
+NamespaceIndentation: All
+# Do not modify namespace end comments.
+# Namespace end comments restate the namespace name at the end of a namespace.
+FixNamespaceComments: false
+
+# Do not break before braces.
+# Do break before catch or else.
+BreakBeforeBraces: Custom
+BraceWrapping:
+  BeforeCatch: true
+  BeforeElse: true
+
+# If bracket elements (function params, function args, lists) do not fit on
+# a single line, break after opening and before closing bracket (like a block).
+AlignAfterOpenBracket: BlockIndent
+
+# If-statements without braces must have a line break and never be on one line.
+AllowShortIfStatementsOnASingleLine: Never
+
+# Keep the star next to the type; `T* t`, never `T *t` or `T * t`.
+PointerAlignment: Left
+
+# Do not restrict column limits (line length limits).
+ColumnLimit: 0

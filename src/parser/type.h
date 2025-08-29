@@ -662,7 +662,8 @@ public:
     virtual llvm::Type* get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
         if (size) {
             return llvm::ArrayType::get(base->get_llvm_type(builder), *size);
-        } else {
+        }
+        else {
             return llvm::PointerType::get(builder->getContext(), 0);
         }
     }

@@ -93,7 +93,8 @@ std::optional<std::shared_ptr<Expr>> Parser::primary() {
         if (elements.size() == 1 && !comma_matched) {
             // Just a parenthesized expression
             return elements[0];
-        } else {
+        }
+        else {
             return std::make_shared<Expr::Tuple>(lparen, elements);
         }
     }
@@ -276,9 +277,11 @@ std::optional<std::shared_ptr<Stmt>> Parser::statement() {
 
     if (match({Tok::KwLet})) {
         return let_statement();
-    } else if (match({Tok::Eof})) {
+    }
+    else if (match({Tok::Eof})) {
         return eof_statement();
-    } else if (match({Tok::KwPrintout})) {
+    }
+    else if (match({Tok::KwPrintout})) {
         return print_statement();
     }
     return expression_statement();
@@ -312,7 +315,8 @@ std::vector<std::shared_ptr<Stmt>> Parser::parse(const std::vector<std::shared_p
         auto stmt = statement();
         if (stmt) {
             statements.push_back(*stmt);
-        } else {
+        }
+        else {
             synchronize();
         }
     }

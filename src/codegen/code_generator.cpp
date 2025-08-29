@@ -198,7 +198,8 @@ void CodeGenerator::add_panic(std::string_view message, const Location* location
     if (panic_recoverable) {
         auto longjmp_fn = ir_module->getFunction("longjmp");
         builder->CreateCall(longjmp_fn, {jmp_buf_ptr, llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 1)});
-    } else {
+    }
+    else {
         auto abort_fn = ir_module->getFunction("abort");
         builder->CreateCall(abort_fn);
     }
@@ -225,7 +226,8 @@ std::any CodeGenerator::visit(Stmt::Let* stmt) {
             llvm::Constant::getNullValue(llvm_type), // We cannot assign non-constants here, so we use this instead
             stmt->identifier->lexeme
         );
-    } else {
+    }
+    else {
         allocation = builder->CreateAlloca(
             llvm_type,
             nullptr,
@@ -259,10 +261,12 @@ std::any CodeGenerator::visit(Stmt::Print* stmt) {
         if (PTR_INSTANCEOF(expr->type, Type::Int)) {
             format_str = builder->CreateGlobalStringPtr("%d");
             builder->CreateCall(printf_fn, {format_str, value});
-        } else if (PTR_INSTANCEOF(expr->type, Type::Float)) {
+        }
+        else if (PTR_INSTANCEOF(expr->type, Type::Float)) {
             format_str = builder->CreateGlobalStringPtr("%g");
             builder->CreateCall(printf_fn, {format_str, value});
-        } else if (PTR_INSTANCEOF(expr->type, Type::Bool)) {
+        }
+        else if (PTR_INSTANCEOF(expr->type, Type::Bool)) {
             format_str = builder->CreateGlobalStringPtr("%s");
             llvm::Value* bool_str = builder->CreateSelect(
                 value,
@@ -270,10 +274,12 @@ std::any CodeGenerator::visit(Stmt::Print* stmt) {
                 builder->CreateGlobalStringPtr("false")
             );
             builder->CreateCall(printf_fn, {format_str, bool_str});
-        } else if (PTR_INSTANCEOF(expr->type, Type::Str)) {
+        }
+        else if (PTR_INSTANCEOF(expr->type, Type::Str)) {
             format_str = builder->CreateGlobalStringPtr("%s");
             builder->CreateCall(printf_fn, {format_str, value});
-        } else {
+        }
+        else {
             panic("CodeGenerator::visit(Stmt::Print*): Cannot print expression of this type.");
         }
     }
@@ -311,7 +317,8 @@ std::any CodeGenerator::visit(Expr::Binary* expr, bool as_lvalue) {
         default:
             panic("CodeGenerator::visit(Expr::Binary*): Unknown binary operator for floating-point number.");
         }
-    } else if (PTR_INSTANCEOF(expr->type, Type::Int)) {
+    }
+    else if (PTR_INSTANCEOF(expr->type, Type::Int)) {
         switch (expr->op->tok_type) {
         case Tok::Plus:
             result = builder->CreateAdd(left, right);
@@ -329,7 +336,8 @@ std::any CodeGenerator::visit(Expr::Binary* expr, bool as_lvalue) {
         default:
             panic("CodeGenerator::visit(Expr::Binary*): Unknown binary operator for integer.");
         }
-    } else {
+    }
+    else {
         panic("CodeGenerator::visit(Expr::Binary*): Unsupported type for binary operation.");
     }
 
@@ -347,7 +355,8 @@ std::any CodeGenerator::visit(Expr::Unary* expr, bool as_lvalue) {
         default:
             panic("CodeGenerator::visit(Expr::Unary*): Unknown unary operator for floating-point number.");
         }
-    } else if (PTR_INSTANCEOF(expr->type, Type::Int)) {
+    }
+    else if (PTR_INSTANCEOF(expr->type, Type::Int)) {
         switch (expr->op->tok_type) {
         case Tok::Minus:
             result = builder->CreateNeg(right);
@@ -355,7 +364,8 @@ std::any CodeGenerator::visit(Expr::Unary* expr, bool as_lvalue) {
         default:
             panic("CodeGenerator::visit(Expr::Unary*): Unknown unary operator for integer.");
         }
-    } else {
+    }
+    else {
         panic("CodeGenerator::visit(Expr::Unary*): Unsupported type for unary operation.");
     }
 
@@ -368,7 +378,8 @@ std::any CodeGenerator::visit(Expr::NameRef* expr, bool as_lvalue) {
     if (as_lvalue) {
         // We use the pointer to the variable (its alloca inst or global ptr)
         result = expr->field_entry.lock()->llvm_ptr;
-    } else {
+    }
+    else {
         // We load the value from the variable's memory location
         result = builder->CreateLoad(expr->type->get_llvm_type(builder), expr->field_entry.lock()->llvm_ptr);
     }
@@ -392,11 +403,13 @@ std::any CodeGenerator::visit(Expr::Literal* expr, bool as_lvalue) {
             result = llvm::ConstantFP::getInfinity(
                 llvm::Type::getDoubleTy(*context)
             );
-        } else if (expr->token->lexeme == "NaN") {
+        }
+        else if (expr->token->lexeme == "NaN") {
             result = llvm::ConstantFP::getNaN(
                 llvm::Type::getDoubleTy(*context)
             );
-        } else {
+        }
+        else {
             result = llvm::ConstantFP::get(
                 llvm::Type::getDoubleTy(*context),
                 std::any_cast<double>(expr->token->literal)

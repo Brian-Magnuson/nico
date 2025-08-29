@@ -37,7 +37,8 @@ public:
     virtual std::string get_function_name() const {
         if (prev) {
             return prev->get_function_name();
-        } else {
+        }
+        else {
             return "<unknown>";
         }
     }
