@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "../lexer/token.h"
@@ -99,7 +100,7 @@ public:
      * @param location The location of the error in the source code.
      * @param message The message to log with the error.
      */
-    void log_error(Err ec, const Location& location, const std::string& message);
+    void log_error(Err ec, const Location& location, std::string_view message);
 
     /**
      * @brief Logs an error message without a location.
@@ -110,7 +111,7 @@ public:
      * @param ec The error code to log.
      * @param message The message to log with the error.
      */
-    void log_error(Err ec, const std::string& message);
+    void log_error(Err ec, std::string_view message);
 
     /**
      * @brief Logs a note message with a location.
@@ -121,7 +122,7 @@ public:
      * @param location The location of the note in the source code.
      * @param message The message to log with the note.
      */
-    void log_note(const Location& location, const std::string& message);
+    void log_note(const Location& location, std::string_view message);
 
     /**
      * @brief Logs a note message without a location.
@@ -131,7 +132,7 @@ public:
      *
      * @param message The message to log with the note.
      */
-    void log_note(const std::string& message);
+    void log_note(std::string_view message);
 
     /**
      * @brief Gets the errors that have been logged.

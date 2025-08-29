@@ -43,7 +43,7 @@ llvm::Error SimpleJit::add_module(llvm::orc::ThreadSafeModule tsm) {
     return jit->addIRModule(std::move(tsm));
 }
 
-llvm::Expected<llvm::orc::ExecutorAddr> SimpleJit::lookup(const std::string& name) {
+llvm::Expected<llvm::orc::ExecutorAddr> SimpleJit::lookup(std::string_view name) {
     return jit->lookup(name);
 }
 

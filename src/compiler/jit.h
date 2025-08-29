@@ -2,7 +2,7 @@
 #define NICO_JIT_H
 
 #include <memory>
-#include <string>
+#include <string_view>
 
 #include <llvm/ExecutionEngine/Orc/LLJIT.h>
 #include <llvm/ExecutionEngine/Orc/ThreadSafeModule.h>
@@ -49,7 +49,7 @@ public:
      * @param name The name of the symbol to look up.
      * @return An Expected containing the address of the symbol if found, or an error if not found.
      */
-    virtual llvm::Expected<llvm::orc::ExecutorAddr> lookup(const std::string& name) = 0;
+    virtual llvm::Expected<llvm::orc::ExecutorAddr> lookup(std::string_view name) = 0;
 
     /**
      * @brief Runs the main function of the JIT-compiled module.
@@ -79,7 +79,7 @@ public:
 
     llvm::Error add_module(llvm::orc::ThreadSafeModule tsm) override;
 
-    llvm::Expected<llvm::orc::ExecutorAddr> lookup(const std::string& name) override;
+    llvm::Expected<llvm::orc::ExecutorAddr> lookup(std::string_view name) override;
 
     void reset() override;
 };

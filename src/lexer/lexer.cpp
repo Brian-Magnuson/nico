@@ -306,7 +306,7 @@ void Lexer::numeric_literal() {
         try {
             value = std::stod(numeric_string);
         } catch (...) {
-            panic(std::string("Lexer::numeric_literal: std::stod failed to parse `") + numeric_string + "`");
+            panic("Lexer::numeric_literal: std::stod failed to parse `" + numeric_string + "`");
         }
         add_token(Tok::Float, value);
     } else {
@@ -314,7 +314,7 @@ void Lexer::numeric_literal() {
         try {
             value = static_cast<int32_t>(std::stoll(numeric_string, nullptr, base));
         } catch (...) {
-            panic(std::string("Lexer::numeric_literal: std::stoll failed to parse `") + numeric_string + "`");
+            panic("Lexer::numeric_literal: std::stoll failed to parse `" + numeric_string + "`");
         }
         add_token(Tok::Int, value);
     }

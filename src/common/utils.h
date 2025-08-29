@@ -4,7 +4,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <memory>
-#include <string>
+#include <string_view>
 
 // Checks if the provided std::shared_ptr points to an instance of the specified type.
 #define PTR_INSTANCEOF(ptr, type) \
@@ -19,7 +19,7 @@
  * @param message The message to print out before aborting.
  * @return This function never returns; it calls std::abort().
  */
-[[noreturn]] inline void panic(const std::string& message) {
+[[noreturn]] inline void panic(std::string_view message) {
     std::cerr << "Panic: " << message << std::endl;
     std::abort();
 }

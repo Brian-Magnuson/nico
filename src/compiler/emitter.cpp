@@ -14,7 +14,7 @@
 
 #include "../logger/logger.h"
 
-void Emitter::emit(const std::unique_ptr<llvm::Module>& ir_module, const std::string& target_destination) {
+void Emitter::emit(const std::unique_ptr<llvm::Module>& ir_module, std::string_view target_destination) {
     auto target_triple = llvm::sys::getDefaultTargetTriple();
     llvm::InitializeNativeTarget();
     llvm::InitializeNativeTargetAsmParser();

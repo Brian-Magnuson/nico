@@ -2,7 +2,7 @@
 #define NICO_EMITTER_H
 
 #include <memory>
-#include <string>
+#include <string_view>
 
 #include <llvm/IR/Module.h>
 
@@ -20,7 +20,7 @@ public:
      * @param target_destination A string specifying the target destination for the object file. E.g. "./bin/output.o".
      * Paths are relative to CWD.
      */
-    void emit(const std::unique_ptr<llvm::Module>& ir_module, const std::string& target_destination = "output.o");
+    void emit(const std::unique_ptr<llvm::Module>& ir_module, std::string_view target_destination = "output.o");
 };
 
 #endif // NICO_EMITTER_H

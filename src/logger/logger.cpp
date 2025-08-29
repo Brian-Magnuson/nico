@@ -93,7 +93,7 @@ void Logger::reset() {
     printing_enabled = true;
 }
 
-void Logger::log_error(Err ec, const Location& location, const std::string& message) {
+void Logger::log_error(Err ec, const Location& location, std::string_view message) {
     errors.push_back(ec);
     if (printing_enabled) {
         *out << colorize(Color::Red) << "Error " << errors.size() << ": " << colorize(Color::Reset) << (int)ec << " " << message << "\n";
@@ -101,21 +101,21 @@ void Logger::log_error(Err ec, const Location& location, const std::string& mess
     }
 }
 
-void Logger::log_error(Err ec, const std::string& message) {
+void Logger::log_error(Err ec, std::string_view message) {
     errors.push_back(ec);
     if (printing_enabled) {
         *out << colorize(Color::Red) << "Error " << errors.size() << ": " << colorize(Color::Reset) << (int)ec << " " << message << "\n";
     }
 }
 
-void Logger::log_note(const Location& location, const std::string& message) {
+void Logger::log_note(const Location& location, std::string_view message) {
     if (printing_enabled) {
         *out << colorize(Color::Cyan) << "⤷ Note: " << colorize(Color::Reset) << message << "\n  ";
         print_code_at_location(location, Color::Cyan);
     }
 }
 
-void Logger::log_note(const std::string& message) {
+void Logger::log_note(std::string_view message) {
     if (printing_enabled) {
         *out << colorize(Color::Cyan) << "⤷ Note: " << colorize(Color::Reset) << message << "\n";
     }
