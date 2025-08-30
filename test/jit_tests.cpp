@@ -350,3 +350,59 @@ TEST_CASE("JIT float operators", "[jit]") {
     codegen.reset();
     jit->reset();
 }
+
+TEST_CASE("JIT grouped expressions", "[jit]") {
+    Lexer lexer;
+    Parser parser;
+    std::shared_ptr<SymbolTree> symbol_tree = std::make_shared<SymbolTree>();
+    GlobalChecker global_checker(symbol_tree);
+    LocalChecker local_checker(symbol_tree);
+    CodeGenerator codegen;
+    std::unique_ptr<IJit> jit = std::make_unique<SimpleJit>();
+    Logger::inst().set_printing_enabled(true);
+
+    SECTION("Order of operations 1") {
+        run_compile_test(
+            lexer,
+            parser,
+            global_checker,
+            local_checker,
+            codegen,
+            jit,
+            R"(printout (2 + 3) * (4 - 1))",
+            "15"
+        );
+    }
+
+    SECTION("Order of operations 2") {
+        run_compile_test(
+            lexer,
+            parser,
+            global_checker,
+            local_checker,
+            codegen,
+            jit,
+            R"(printout 2 + 3 * 4)",
+            "14"
+        );
+    }
+
+    SECTION("Order of operations 3") {
+        run_compile_test(
+            lexer,
+            parser,
+            global_checker,
+            local_checker,
+            codegen,
+            jit,
+            R"(printout 4 * (2 + 3))",
+            "20"
+        );
+    }
+
+    lexer.reset();
+    parser.reset();
+    symbol_tree->reset();
+    codegen.reset();
+    jit->reset();
+}
