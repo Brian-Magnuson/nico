@@ -14,7 +14,32 @@ If this project becomes more widely used in the future, these guidelines may be 
 
 Use C++ features up to and including `C++20`. This may change in the future.
 
-## File Naming
+## Comments
+
+For comments:
+- Use `//` for comments 1-2 lines long.
+- `//` may be used to comment out blocks of code. Some IDEs have a keyboard shortcut for this.
+  - Avoid keeping commented-out code in the project.
+- Use `/* */` for longer comments.
+
+For documentation comments:
+- Use `/** */` for documentation comments. Each line within the comment should begin with a `*` and be indented to align with the `/**`.
+- All classes/structs should have a documentation comment describing their purpose and general structure.
+  - Use `@brief` to provide a brief description. Provide a longer description unless the usage is very obvious.
+- All public member functions should have a documentation comment describing their purpose, parameters, and return value.
+  - Use `@brief` to provide a brief description. Provide a longer description unless the usage is very obvious.
+  - Use `@tparam` followed by the template parameter name and description for each template parameter.
+  - Use `@param` followed by the parameter name and description for each parameter.
+  - Use `@return` to describe the return value.
+  - Make it clear when a function may not behave as expected for when it needs specific inputs.
+  - Use `@warning` if the function has potential pitfalls or important considerations.
+- Some functions such as the visit functions of the visitor pattern may not require extensive documentation.
+
+Class member variables may not need documentation comments if their purpose can be expressed in 1 or 2 lines.
+
+## Code Structure
+
+### File Naming
 
 When creating new files, please follow these naming conventions:
 
@@ -26,7 +51,7 @@ When creating new files, please follow these naming conventions:
 - Implementation files should have the same base name as their corresponding header files
   - E.g., `code_generator.h` -> `code_generator.cpp`
 
-## Includes and Include Guards
+### Includes and Include Guards
 
 For all header files, use the following include guard pattern:
 
@@ -78,7 +103,7 @@ Include what you use in a file.
 - Avoid relying on transitive includes.
   - An exception to this is with header-source file pairs; if an include is in the header file, it does not need to be re-included in the implementation file.
 
-## Names and Identifiers
+### Names and Identifiers
 
 For names in the `std` namespace, `llvm` namespace, or other external namespaces:
 - Use the fully qualified name (e.g., `std::cout`, `std::string`, `llvm::Function`).
@@ -105,7 +130,7 @@ For interface-like types:
   - E.g., `ILocatable`, `INumeric`
 - Use this pattern for types that are not designed to be instantiated directly.
 
-## Error Handling and Exceptions
+### Error Handling and Exceptions
 
 General rules regarding exceptions:
 - Do not use exceptions, except when handling exceptions thrown by standard library functions.
@@ -137,8 +162,6 @@ For errors in the user's source code:
 - For suggestions or extra guidance, use the logger to log a note.
 - Avoid panicking or otherwise aborting the program immediately.
 - Messages logged should use proper sentence case and end with a period.
-
-## Code Structure
 
 ### Inner Classes
 
@@ -202,94 +225,105 @@ Regarding the use of `const`:
 - For constant pointers, `const T*` is sufficient.
   - `const T const *`, while technically safer, should generally be avoided for simplicity.
 
-## Comments
-
-For comments:
-- Use `//` for comments 1-2 lines long.
-- `//` may be used to comment out blocks of code. Some IDEs have a keyboard shortcut for this.
-  - Avoid keeping commented-out code in the project.
-- Use `/* */` for longer comments.
-
-For documentation comments:
-- Use `/** */` for documentation comments. Each line within the comment should begin with a `*` and be indented to align with the `/**`.
-- All classes/structs should have a documentation comment describing their purpose and general structure.
-  - Use `@brief` to provide a brief description. Provide a longer description unless the usage is very obvious.
-- All public member functions should have a documentation comment describing their purpose, parameters, and return value.
-  - Use `@brief` to provide a brief description. Provide a longer description unless the usage is very obvious.
-  - Use `@tparam` followed by the template parameter name and description for each template parameter.
-  - Use `@param` followed by the parameter name and description for each parameter.
-  - Use `@return` to describe the return value.
-  - Make it clear when a function may not behave as expected for when it needs specific inputs.
-  - Use `@warning` if the function has potential pitfalls or important considerations.
-- Some functions such as the visit functions of the visitor pattern may not require extensive documentation.
-
-Class member variables may not need documentation comments if their purpose can be expressed in 1 or 2 lines.
-
 ## Code Formatting
+
+This project uses a [`.clang-format`](../../.clang-format) file to enforce the following coding style guidelines. 
+We recommend setting your IDE to format code automatically on save in accordance with this file.
+
+### Indentation and Tabs
+
+- **Indentation:** Always use **4 spaces** for indentation.
+- **Tabs:** Never use tabs; always spaces.
+- **Consistency:** This ensures the code looks the same in all editors and platforms.
+
+### Access Modifiers and Case Labels
+
+- **Access modifiers (`public`, `protected`, `private`)** are aligned with the `class` keyword (indented **-4** from the class body).
+
+  ```cpp
+  class Foo {
+  public:
+      void bar();
+  };
+  ```
+- **Case labels** inside `switch` statements align with the `switch` keyword rather than being indented.
+
+  ```cpp
+  switch (x) {
+  case 1:
+      break;
+  default:
+      break;
+  }
+  ```
 
 ### Braces
 
-- Omitting braces for control structures with a single statement is okay in most cases.
-  - Use proper indentation for readability.
-- For `switch` cases, use braces for the case body only if necessary (when declaring variables).
-- Prefer putting the opening brace on the same line (see example below).
-- For `else` and `catch` blocks, put the keyword on a new line (see example below).
-  - Be consistent for the entire group of blocks.
+- **Braces style:** We generally keep opening braces on the same line as the declaration.
+- `else` and `catch` always start on a new line.
 
-```cpp
-if (condition) {
-    // then block
-}
-else {
-    // else block
-}
-```
+  ```cpp
+  if (x) {
+      doSomething();
+  }
+  else {
+      doSomethingElse();
+  }
+  ```
 
-### Parentheses and Function Parameters
+### Line Breaking for Brackets and Arguments
 
-For function parameters,
-- Write the parameters on the same line as the function name if the line can fit within 80 characters.
-- Use a single space after the comma in parameter lists.
-- For default parameters, using spacing as you normally would for any other assignment.
-  - E.g. `void foo(int x = 42, float y = 3.14f) { ... }`
-- For long parameter lists, add a new line after the opening parenthesis and before the closing parenthesis, putting each parameter on its own line with indentation.
+For function parameters, arguments, and list initializations:
+- If they fit on one line, keep them on one line.
+- If they don’t, break after the opening bracket and before the closing bracket, indenting like a block.
+- Do not pack multiple arguments per line if they don’t fit—each gets its own line.
 
-```cpp
-void foo(
-    int x,
-    float y,
-    std::string z
-) {
-    // function body
-}
-```
+  ```cpp
+  myFunction(
+      longArgumentName,
+      anotherArgument,
+      moreArguments
+  );
+  ```
 
-For function calls,
-- Write the arguments on the same line as the function name if the line can fit within 80 characters.
-- Use a single space after the comma in argument lists.
-- For long argument lists, add a new line after the opening parenthesis and before the closing parenthesis, putting each argument on its own line with indentation.
+### If Statements
 
-```cpp
-foo(
-    x,
-    y,
-    z
-);
-```
+- Do not keep short if-statements on one line.
+- If braces are omitted, the statement must be on a new line.
 
-### Pointer and Reference Alignment Style
+  ```cpp
+  if (condition)
+      doSomething();
+  ```
 
-For pointer alignment:
-- Keep the star aligned to the left
+### Short Functions
 
-For reference alignment:
-- Keep the ampersand aligned to the left, same as with pointers.
+- **One-line functions** are only allowed inside **class definitions** (e.g., trivial getters/setters).
+- Outside classes, function bodies must break onto a new line after the opening brace.
 
-```cpp
-int* ptr = nullptr;
-Expr::Assign* expr = nullptr;
+  ```cpp
+  // Allowed inside class
+  class Foo {
+      int getValue() { return value; }
+  };
 
-int& ref = variable;
-const std::string& str = another_variable;
-```
+  // Required outside class
+  int Foo::getValue() {
+      return value;
+  }
+  ```
 
+### Pointers and References
+
+- Pointer and reference symbols stick to the type, not the variable.
+
+  ```cpp
+  int* ptr;   // Correct
+  int *ptr;   // Please don't
+  int * ptr;  // Please don't
+  ```
+
+### Line Length
+
+- **Maximum line length is 80 characters.**
+- This improves readability in side-by-side diffs, terminals, and small displays.

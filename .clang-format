@@ -26,6 +26,7 @@ BraceWrapping:
 # If bracket elements (function params, function args, lists) do not fit on
 # a single line, break after opening and before closing bracket (like a block).
 AlignAfterOpenBracket: BlockIndent
+# If elements still cannot fit on one line, give each element a new line.
 BinPackArguments: false
 
 # If-statements without braces must have a line break and never be on one line.
