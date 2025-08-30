@@ -18,11 +18,13 @@ llvm::Expected<int> IJit::run_main(int argc, char** argv) {
     auto addr = symbol->getValue();
     if (!addr) {
         Logger::inst().log_error(
-            Err::JitBadMainPointer, "Cannot cast 'main' function address to a "
-                                    "function pointer because it is null."
+            Err::JitBadMainPointer,
+            "Cannot cast 'main' function address to a "
+            "function pointer because it is null."
         );
         return llvm::make_error<llvm::StringError>(
-            "Null function pointer", llvm::inconvertibleErrorCode()
+            "Null function pointer",
+            llvm::inconvertibleErrorCode()
         );
     }
     using FuncPtr = int (*)(int, char**);
@@ -33,7 +35,8 @@ llvm::Expected<int> IJit::run_main(int argc, char** argv) {
             "Failed to cast 'main' function address to a function pointer."
         );
         return llvm::make_error<llvm::StringError>(
-            "Failed to cast function pointer", llvm::inconvertibleErrorCode()
+            "Failed to cast function pointer",
+            llvm::inconvertibleErrorCode()
         );
     }
 

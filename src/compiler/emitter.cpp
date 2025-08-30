@@ -27,7 +27,8 @@ void Emitter::emit(
     auto target = llvm::TargetRegistry::lookupTarget(target_triple, error);
     if (!target) {
         Logger::inst().log_error(
-            Err::EmitterCannotLookupTarget, "Failed to lookup target: " + error
+            Err::EmitterCannotLookupTarget,
+            "Failed to lookup target: " + error
         );
         return;
     }
@@ -36,7 +37,11 @@ void Emitter::emit(
     auto features = "";
     llvm::TargetOptions options;
     auto target_machine = target->createTargetMachine(
-        target_triple, cpu, features, options, llvm::Reloc::PIC_
+        target_triple,
+        cpu,
+        features,
+        options,
+        llvm::Reloc::PIC_
     );
 
     if (!target_machine) {
@@ -54,7 +59,8 @@ void Emitter::emit(
     llvm::raw_fd_ostream dest(target_destination, err, llvm::sys::fs::OF_None);
     if (err) {
         Logger::inst().log_error(
-            Err::FileIO, "Error opening output file: " + err.message()
+            Err::FileIO,
+            "Error opening output file: " + err.message()
         );
         return;
     }

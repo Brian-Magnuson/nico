@@ -1,20 +1,12 @@
 BasedOnStyle: LLVM
 
+# Restrict column limits (line length limits) to 80 characters max.
+ColumnLimit: 80
+
 # 4 spaces indentation.
 UseTab: Never
 IndentWidth: 4
 TabWidth: 4
-
-# Keep access modifiers left, aligned with `class`.
-AccessModifierOffset: -4
-# Keep case labels (for switch blocks) left, aligned with `switch`.
-IndentCaseLabels: false
-
-# Always indent in namespaces.
-NamespaceIndentation: All
-# Do not modify namespace end comments.
-# Namespace end comments restate the namespace name at the end of a namespace.
-FixNamespaceComments: false
 
 # Do not break before braces.
 # Do break before catch or else.
@@ -24,9 +16,9 @@ BraceWrapping:
   BeforeElse: true
 
 # If bracket elements (function params, function args, lists) do not fit on
-# a single line, break after opening and before closing bracket (like a block).
+# a single line, put each element on a new line with block indentation.
 AlignAfterOpenBracket: BlockIndent
-# If elements still cannot fit on one line, give each element a new line.
+AllowAllArgumentsOnNextLine: false
 BinPackArguments: false
 
 # If-statements without braces must have a line break and never be on one line.
@@ -36,8 +28,16 @@ AllowShortIfStatementsOnASingleLine: Never
 # All other functions must have a line break after the opening brace.
 AllowShortFunctionsOnASingleLine: Inline
 
+# Keep access modifiers left, aligned with `class`.
+AccessModifierOffset: -4
+# Keep case labels (for switch blocks) left, aligned with `switch`.
+IndentCaseLabels: false
+# Always indent in namespaces.
+NamespaceIndentation: All
+
 # Keep the star next to the type; use `T* t`, never `T *t` or `T * t`.
 PointerAlignment: Left
 
-# Restrict column limits (line length limits) to 80 characters max.
-ColumnLimit: 80
+# Do not modify namespace end comments.
+# Namespace end comments restate the namespace name at the end of a namespace.
+FixNamespaceComments: false

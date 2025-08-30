@@ -6,17 +6,23 @@ void SymbolTree::install_primitive_types() {
     std::shared_ptr<Node> new_node;
 
     new_node = std::make_shared<Node::PrimitiveType>(
-        reserved_scope, "i32", std::make_shared<Type::Int>(true, 32)
+        reserved_scope,
+        "i32",
+        std::make_shared<Type::Int>(true, 32)
     );
     new_node->initialize_node();
 
     new_node = std::make_shared<Node::PrimitiveType>(
-        reserved_scope, "f64", std::make_shared<Type::Float>(64)
+        reserved_scope,
+        "f64",
+        std::make_shared<Type::Float>(64)
     );
     new_node->initialize_node();
 
     new_node = std::make_shared<Node::PrimitiveType>(
-        reserved_scope, "bool", std::make_shared<Type::Bool>()
+        reserved_scope,
+        "bool",
+        std::make_shared<Type::Bool>()
     );
     new_node->initialize_node();
 }

@@ -230,32 +230,16 @@ Regarding the use of `const`:
 This project uses a [`.clang-format`](../../.clang-format) file to enforce the following coding style guidelines. 
 We recommend setting your IDE to format code automatically on save in accordance with this file.
 
+### Line Length
+
+- **Maximum line length is 80 characters.**
+- This improves readability in side-by-side diffs, terminals, and small displays.
+
 ### Indentation and Tabs
 
 - **Indentation:** Always use **4 spaces** for indentation.
 - **Tabs:** Never use tabs; always spaces.
 - **Consistency:** This ensures the code looks the same in all editors and platforms.
-
-### Access Modifiers and Case Labels
-
-- **Access modifiers (`public`, `protected`, `private`)** are aligned with the `class` keyword (indented **-4** from the class body).
-
-  ```cpp
-  class Foo {
-  public:
-      void bar();
-  };
-  ```
-- **Case labels** inside `switch` statements align with the `switch` keyword rather than being indented.
-
-  ```cpp
-  switch (x) {
-  case 1:
-      break;
-  default:
-      break;
-  }
-  ```
 
 ### Braces
 
@@ -275,8 +259,7 @@ We recommend setting your IDE to format code automatically on save in accordance
 
 For function parameters, arguments, and list initializations:
 - If they fit on one line, keep them on one line.
-- If they don’t, break after the opening bracket and before the closing bracket, indenting like a block.
-- Do not pack multiple arguments per line if they don’t fit—each gets its own line.
+- If they don’t, put each element on its own line, indenting like a block.
 
   ```cpp
   myFunction(
@@ -313,6 +296,27 @@ For function parameters, arguments, and list initializations:
   }
   ```
 
+### Access Modifiers and Case Labels
+
+- **Access modifiers (`public`, `protected`, `private`)** are aligned with the `class` keyword (indented **-4** from the class body).
+
+  ```cpp
+  class Foo {
+  public:
+      void bar();
+  };
+  ```
+- **Case labels** inside `switch` statements align with the `switch` keyword rather than being indented.
+
+  ```cpp
+  switch (x) {
+  case 1:
+      break;
+  default:
+      break;
+  }
+  ```
+
 ### Pointers and References
 
 - Pointer and reference symbols stick to the type, not the variable.
@@ -322,8 +326,3 @@ For function parameters, arguments, and list initializations:
   int *ptr;   // Please don't
   int * ptr;  // Please don't
   ```
-
-### Line Length
-
-- **Maximum line length is 80 characters.**
-- This improves readability in side-by-side diffs, terminals, and small displays.

@@ -858,11 +858,13 @@ public:
     get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
         if (auto node_ptr = node.lock()) {
             llvm::StructType* struct_ty = llvm::StructType::getTypeByName(
-                builder->getContext(), node_ptr->symbol
+                builder->getContext(),
+                node_ptr->symbol
             );
             if (!struct_ty) {
                 struct_ty = llvm::StructType::create(
-                    builder->getContext(), node_ptr->symbol
+                    builder->getContext(),
+                    node_ptr->symbol
                 );
             }
             return struct_ty;

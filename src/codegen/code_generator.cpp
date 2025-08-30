@@ -16,9 +16,12 @@ void CodeGenerator::add_c_functions() {
     if (!ir_module->getGlobalVariable("stderr")) {
         llvm::PointerType* file_ptr_type = llvm::PointerType::get(*context, 0);
         new llvm::GlobalVariable(
-            *ir_module, file_ptr_type,
+            *ir_module,
+            file_ptr_type,
             true, // isConstant
-            llvm::GlobalValue::ExternalLinkage, nullptr, "stderr"
+            llvm::GlobalValue::ExternalLinkage,
+            nullptr,
+            "stderr"
         );
     }
     // printf
@@ -29,7 +32,10 @@ void CodeGenerator::add_c_functions() {
             true // true = variadic
         );
         llvm::Function::Create(
-            printf_type, llvm::Function::ExternalLinkage, "printf", *ir_module
+            printf_type,
+            llvm::Function::ExternalLinkage,
+            "printf",
+            *ir_module
         );
     }
     // fprintf
@@ -41,7 +47,10 @@ void CodeGenerator::add_c_functions() {
             true // true = variadic
         );
         llvm::Function::Create(
-            fprintf_type, llvm::Function::ExternalLinkage, "fprintf", *ir_module
+            fprintf_type,
+            llvm::Function::ExternalLinkage,
+            "fprintf",
+            *ir_module
         );
     }
     // abort
@@ -49,37 +58,52 @@ void CodeGenerator::add_c_functions() {
         llvm::FunctionType* abort_type =
             llvm::FunctionType::get(llvm::Type::getVoidTy(*context), {}, false);
         llvm::Function::Create(
-            abort_type, llvm::Function::ExternalLinkage, "abort", *ir_module
+            abort_type,
+            llvm::Function::ExternalLinkage,
+            "abort",
+            *ir_module
         );
     }
     // exit
     if (!ir_module->getFunction("exit")) {
         llvm::FunctionType* exit_type = llvm::FunctionType::get(
-            llvm::Type::getVoidTy(*context), {llvm::Type::getInt32Ty(*context)},
+            llvm::Type::getVoidTy(*context),
+            {llvm::Type::getInt32Ty(*context)},
             false
         );
         llvm::Function::Create(
-            exit_type, llvm::Function::ExternalLinkage, "exit", *ir_module
+            exit_type,
+            llvm::Function::ExternalLinkage,
+            "exit",
+            *ir_module
         );
     }
     // malloc
     if (!ir_module->getFunction("malloc")) {
         llvm::FunctionType* malloc_type = llvm::FunctionType::get(
             llvm::PointerType::get(*context, 0),
-            {llvm::Type::getIntNTy(*context, sizeof(size_t) * 8)}, false
+            {llvm::Type::getIntNTy(*context, sizeof(size_t) * 8)},
+            false
         );
         llvm::Function::Create(
-            malloc_type, llvm::Function::ExternalLinkage, "malloc", *ir_module
+            malloc_type,
+            llvm::Function::ExternalLinkage,
+            "malloc",
+            *ir_module
         );
     }
     // free
     if (!ir_module->getFunction("free")) {
         llvm::FunctionType* free_type = llvm::FunctionType::get(
             llvm::Type::getVoidTy(*context),
-            {llvm::PointerType::get(*context, 0)}, false
+            {llvm::PointerType::get(*context, 0)},
+            false
         );
         llvm::Function::Create(
-            free_type, llvm::Function::ExternalLinkage, "free", *ir_module
+            free_type,
+            llvm::Function::ExternalLinkage,
+            "free",
+            *ir_module
         );
     }
     if (panic_recoverable) {
@@ -88,9 +112,12 @@ void CodeGenerator::add_c_functions() {
             llvm::ArrayType* jmp_buf_type =
                 llvm::ArrayType::get(llvm::Type::getInt8Ty(*context), 256);
             new llvm::GlobalVariable(
-                *ir_module, jmp_buf_type, false,
+                *ir_module,
+                jmp_buf_type,
+                false,
                 llvm::GlobalValue::InternalLinkage,
-                llvm::Constant::getNullValue(jmp_buf_type), "jmp_buf"
+                llvm::Constant::getNullValue(jmp_buf_type),
+                "jmp_buf"
             );
         }
 
@@ -98,10 +125,13 @@ void CodeGenerator::add_c_functions() {
         if (!ir_module->getFunction("setjmp")) {
             llvm::FunctionType* setjmp_type = llvm::FunctionType::get(
                 llvm::Type::getInt32Ty(*context),
-                {llvm::PointerType::get(*context, 0)}, false
+                {llvm::PointerType::get(*context, 0)},
+                false
             );
             llvm::Function::Create(
-                setjmp_type, llvm::Function::ExternalLinkage, "setjmp",
+                setjmp_type,
+                llvm::Function::ExternalLinkage,
+                "setjmp",
                 *ir_module
             );
         }
@@ -114,7 +144,9 @@ void CodeGenerator::add_c_functions() {
                 false
             );
             llvm::Function::Create(
-                longjmp_type, llvm::Function::ExternalLinkage, "longjmp",
+                longjmp_type,
+                llvm::Function::ExternalLinkage,
+                "longjmp",
                 *ir_module
             );
         }
@@ -133,7 +165,8 @@ void CodeGenerator::add_div_zero_check(
         llvm::BasicBlock::Create(*context, "div_ok", current_function);
 
     llvm::Value* is_zero = builder->CreateICmpEQ(
-        divisor, llvm::ConstantInt::get(divisor->getType(), 0)
+        divisor,
+        llvm::ConstantInt::get(divisor->getType(), 0)
     );
     builder->CreateCondBr(is_zero, div_by_zero_block, div_ok_block);
 
@@ -154,7 +187,8 @@ void CodeGenerator::add_panic(
         llvm::GlobalVariable* jmp_buf_global =
             ir_module->getGlobalVariable("jmp_buf", true);
         jmp_buf_ptr = builder->CreateBitCast(
-            jmp_buf_global, llvm::PointerType::get(*context, 0)
+            jmp_buf_global,
+            llvm::PointerType::get(*context, 0)
         );
     }
     auto fprintf_fn = ir_module->getFunction("fprintf");
@@ -171,14 +205,22 @@ void CodeGenerator::add_panic(
     llvm::Value* file_name =
         builder->CreateGlobalStringPtr(std::get<0>(location_tuple));
     llvm::Value* line_number = llvm::ConstantInt::get(
-        llvm::Type::getInt32Ty(*context), std::get<1>(location_tuple)
+        llvm::Type::getInt32Ty(*context),
+        std::get<1>(location_tuple)
     );
     llvm::Value* column_number = llvm::ConstantInt::get(
-        llvm::Type::getInt32Ty(*context), std::get<2>(location_tuple)
+        llvm::Type::getInt32Ty(*context),
+        std::get<2>(location_tuple)
     );
     builder->CreateCall(
-        fprintf_fn, {stderr_stream, format_string, func_name, msg, file_name,
-                     line_number, column_number}
+        fprintf_fn,
+        {stderr_stream,
+         format_string,
+         func_name,
+         msg,
+         file_name,
+         line_number,
+         column_number}
     );
 
     if (panic_recoverable) {
@@ -210,7 +252,10 @@ std::any CodeGenerator::visit(Stmt::Let* stmt) {
     if (PTR_INSTANCEOF(block_list, Block::Script)) {
         // If we are in a script, create a global variable instead of a local
         allocation = new llvm::GlobalVariable(
-            *ir_module, llvm_type, false, llvm::GlobalValue::InternalLinkage,
+            *ir_module,
+            llvm_type,
+            false,
+            llvm::GlobalValue::InternalLinkage,
             llvm::Constant::getNullValue(
                 llvm_type
             ), // We cannot assign non-constants here, so we use this instead
@@ -258,7 +303,8 @@ std::any CodeGenerator::visit(Stmt::Print* stmt) {
         else if (PTR_INSTANCEOF(expr->type, Type::Bool)) {
             format_str = builder->CreateGlobalStringPtr("%s");
             llvm::Value* bool_str = builder->CreateSelect(
-                value, builder->CreateGlobalStringPtr("true"),
+                value,
+                builder->CreateGlobalStringPtr("true"),
                 builder->CreateGlobalStringPtr("false")
             );
             builder->CreateCall(printf_fn, {format_str, bool_str});
@@ -429,7 +475,8 @@ std::any CodeGenerator::visit(Expr::Literal* expr, bool as_lvalue) {
         break;
     case Tok::Bool:
         result = llvm::ConstantInt::get(
-            llvm::Type::getInt1Ty(*context), expr->token->lexeme == "true"
+            llvm::Type::getInt1Ty(*context),
+            expr->token->lexeme == "true"
         );
         break;
     case Tok::Str:
@@ -462,7 +509,9 @@ bool CodeGenerator::generate(
     llvm::FunctionType* script_fn_type =
         llvm::FunctionType::get(builder->getInt32Ty(), false);
     llvm::Function* script_fn = llvm::Function::Create(
-        script_fn_type, llvm::Function::ExternalLinkage, "script",
+        script_fn_type,
+        llvm::Function::ExternalLinkage,
+        "script",
         ir_module.get()
     );
 
@@ -489,7 +538,8 @@ bool CodeGenerator::generate(
         llvm::GlobalVariable* jmp_buf_global =
             ir_module->getGlobalVariable("jmp_buf", true);
         llvm::Value* jmp_buf_ptr = builder->CreateBitCast(
-            jmp_buf_global, llvm::PointerType::get(*context, 0)
+            jmp_buf_global,
+            llvm::PointerType::get(*context, 0)
         );
 
         // Call setjmp
@@ -550,12 +600,16 @@ bool CodeGenerator::generate(
 bool CodeGenerator::generate_main(bool require_verification) {
     // Generate the main function that calls $script
     llvm::FunctionType* main_fn_type = llvm::FunctionType::get(
-        builder->getInt32Ty(), {builder->getInt32Ty(), builder->getPtrTy()},
+        builder->getInt32Ty(),
+        {builder->getInt32Ty(), builder->getPtrTy()},
         false
     );
 
     llvm::Function* main_fn = llvm::Function::Create(
-        main_fn_type, llvm::Function::ExternalLinkage, "main", ir_module.get()
+        main_fn_type,
+        llvm::Function::ExternalLinkage,
+        "main",
+        ir_module.get()
     );
 
     // Create a basic block for the main function

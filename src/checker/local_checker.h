@@ -11,9 +11,12 @@
 /**
  * @brief A local type checker.
  *
- * The local type checker checks statements and expressions at the local level, i.e., within functions, blocks, and the main script.
+ * The local type checker checks statements and expressions at the local level,
+ * i.e., within functions, blocks, and the main script.
  */
-class LocalChecker : public Stmt::Visitor, public Expr::Visitor, public Annotation::Visitor {
+class LocalChecker : public Stmt::Visitor,
+                     public Expr::Visitor,
+                     public Annotation::Visitor {
     // The symbol tree used for type checking.
     std::shared_ptr<SymbolTree> symbol_tree;
 

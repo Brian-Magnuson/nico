@@ -34,7 +34,8 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
         auto annotation_type = std::any_cast<std::shared_ptr<Type>>(anno_any);
         if (*expr_type != *annotation_type) {
             Logger::inst().log_error(
-                Err::LetTypeMismatch, *stmt->expression.value()->location,
+                Err::LetTypeMismatch,
+                *stmt->expression.value()->location,
                 std::string("Type `") + expr_type->to_string() +
                     "` is not compatible with type `" +
                     annotation_type->to_string() + "`."
@@ -49,7 +50,8 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
     auto [node, err] = symbol_tree->add_field_entry(field);
     if (err == Err::NameAlreadyExists) {
         Logger::inst().log_error(
-            err, stmt->identifier->location,
+            err,
+            stmt->identifier->location,
             "Name `" + std::string(stmt->identifier->lexeme) +
                 "` already exists in this scope."
         );
@@ -64,7 +66,8 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
     }
     else if (err == Err::NameIsReserved) {
         Logger::inst().log_error(
-            err, stmt->identifier->location,
+            err,
+            stmt->identifier->location,
             "Name `" + std::string(stmt->identifier->lexeme) + "` is reserved."
         );
         return std::any();
@@ -102,7 +105,8 @@ std::any LocalChecker::visit(Expr::Assign* expr, bool as_lvalue) {
     // An assignment expression should never be an lvalue.
     if (as_lvalue) {
         Logger::inst().log_error(
-            Err::NotAnLValue, expr->op->location,
+            Err::NotAnLValue,
+            expr->op->location,
             "Assignment expression cannot be an lvalue."
         );
     }
@@ -120,7 +124,8 @@ std::any LocalChecker::visit(Expr::Assign* expr, bool as_lvalue) {
     // The types of the left and right sides must match.
     if (*l_type != *r_type) {
         Logger::inst().log_error(
-            Err::AssignmentTypeMismatch, expr->op->location,
+            Err::AssignmentTypeMismatch,
+            expr->op->location,
             std::string("Type `") + r_type->to_string() +
                 "` is not compatible with type `" + l_type->to_string() + "`."
         );
@@ -150,7 +155,8 @@ std::any LocalChecker::visit(Expr::Binary* expr, bool as_lvalue) {
         // Both operands must be of the same type.
         if (*l_type != *r_type) {
             Logger::inst().log_error(
-                Err::NoOperatorOverload, expr->op->location,
+                Err::NoOperatorOverload,
+                expr->op->location,
                 std::string("Type `") + r_type->to_string() +
                     "` is not compatible with type `" + l_type->to_string() +
                     "`."
@@ -160,7 +166,8 @@ std::any LocalChecker::visit(Expr::Binary* expr, bool as_lvalue) {
         // Types must inherit from `Type::INumeric`.
         if (!PTR_INSTANCEOF(l_type, Type::INumeric)) {
             Logger::inst().log_error(
-                Err::NoOperatorOverload, expr->op->location,
+                Err::NoOperatorOverload,
+                expr->op->location,
                 "Operands must be of a numeric type."
             );
             return std::any();
@@ -188,7 +195,8 @@ std::any LocalChecker::visit(Expr::Unary* expr, bool as_lvalue) {
         // Types must inherit from `Type::INumeric`.
         if (!PTR_INSTANCEOF(r_type, Type::INumeric)) {
             Logger::inst().log_error(
-                Err::NoOperatorOverload, expr->op->location,
+                Err::NoOperatorOverload,
+                expr->op->location,
                 "Operand must be of a numeric type."
             );
             return std::any();
@@ -210,14 +218,16 @@ std::any LocalChecker::visit(Expr::NameRef* expr, bool as_lvalue) {
 
     if (!node) {
         Logger::inst().log_error(
-            Err::UndeclaredName, expr->name.parts.back().token->location,
+            Err::UndeclaredName,
+            expr->name.parts.back().token->location,
             "Name `" + expr->name.to_string() + "` was not declared."
         );
         return std::any();
     }
     if (!PTR_INSTANCEOF(*node, Node::FieldEntry)) {
         Logger::inst().log_error(
-            Err::NotAVariable, expr->name.parts.back().token->location,
+            Err::NotAVariable,
+            expr->name.parts.back().token->location,
             "Name reference `" + expr->name.to_string() + "` is not a variable."
         );
         return std::any();
@@ -225,12 +235,14 @@ std::any LocalChecker::visit(Expr::NameRef* expr, bool as_lvalue) {
     auto field_entry = std::dynamic_pointer_cast<Node::FieldEntry>(*node);
     if (!field_entry->field.is_var && as_lvalue) {
         Logger::inst().log_error(
-            Err::AssignToImmutable, expr->name.parts.back().token->location,
+            Err::AssignToImmutable,
+            expr->name.parts.back().token->location,
             "Cannot assign to immutable binding `" + expr->name.to_string() +
                 "`."
         );
         Logger::inst().log_note(
-            field_entry->field.token->location, "Binding introduced here."
+            field_entry->field.token->location,
+            "Binding introduced here."
         );
         return std::any();
     }

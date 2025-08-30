@@ -139,7 +139,8 @@ void Lexer::consume_whitespace() {
     if (current_spaces > 0 && current_tabs > 0) {
         auto token = make_token(Tok::Unknown);
         Logger::inst().log_error(
-            Err::MixedLeftSpacing, token->location,
+            Err::MixedLeftSpacing,
+            token->location,
             "Line contains both tabs and spaces."
         );
         return;
@@ -147,7 +148,8 @@ void Lexer::consume_whitespace() {
     else if (current_spaces && left_spacing_type == '\t') {
         auto token = make_token(Tok::Unknown);
         Logger::inst().log_error(
-            Err::InconsistentLeftSpacing, token->location,
+            Err::InconsistentLeftSpacing,
+            token->location,
             "Left spacing uses spaces when previous lines used tabs."
         );
         return;
@@ -155,7 +157,8 @@ void Lexer::consume_whitespace() {
     else if (current_tabs && left_spacing_type == ' ') {
         auto token = make_token(Tok::Unknown);
         Logger::inst().log_error(
-            Err::InconsistentLeftSpacing, token->location,
+            Err::InconsistentLeftSpacing,
+            token->location,
             "Left spacing uses tabs when previous lines used spaces."
         );
         return;
@@ -177,7 +180,8 @@ void Lexer::consume_whitespace() {
         // Left spacing must be greater than previous indent.
         if (spacing_amount <= current_left_spacing) {
             Logger::inst().log_error(
-                Err::MalformedIndent, tokens.back()->location,
+                Err::MalformedIndent,
+                tokens.back()->location,
                 "Expected indent with left-spacing greater than " +
                     std::to_string(current_left_spacing) + "."
 
@@ -305,7 +309,8 @@ void Lexer::numeric_literal() {
         auto prev_start = start;
         start = current;
         Logger::inst().log_error(
-            Err::DigitInWrongBase, make_token(Tok::Unknown)->location,
+            Err::DigitInWrongBase,
+            make_token(Tok::Unknown)->location,
             "Digit not allowed in numbers of base " + std::to_string(base) + "."
         );
         start = prev_start;
@@ -315,7 +320,8 @@ void Lexer::numeric_literal() {
         auto prev_start = start;
         start = current;
         Logger::inst().log_error(
-            Err::InvalidCharAfterNumber, make_token(Tok::Unknown)->location,
+            Err::InvalidCharAfterNumber,
+            make_token(Tok::Unknown)->location,
             "Number cannot be followed by an alphabetic character."
         );
         Logger::inst().log_note("Consider adding a space here.");
@@ -328,7 +334,8 @@ void Lexer::numeric_literal() {
         auto prev_start = start;
         start = current;
         Logger::inst().log_error(
-            Err::UnexpectedEndOfNumber, make_token(Tok::Unknown)->location,
+            Err::UnexpectedEndOfNumber,
+            make_token(Tok::Unknown)->location,
             "Expected digits in number after base prefix."
         );
         start = prev_start;
@@ -370,7 +377,8 @@ void Lexer::str_literal() {
         // A normal str literal cannot span multiple lines
         if (peek() == '\n') {
             Logger::inst().log_error(
-                Err::UnterminatedStr, make_token(Tok::Unknown)->location,
+                Err::UnterminatedStr,
+                make_token(Tok::Unknown)->location,
                 "Unterminated string."
             );
             add_token(Tok::Str);
@@ -418,7 +426,8 @@ void Lexer::str_literal() {
                 auto prev_start = start;
                 start = current - 1;
                 Logger::inst().log_error(
-                    Err::InvalidEscSeq, make_token(Tok::Unknown)->location,
+                    Err::InvalidEscSeq,
+                    make_token(Tok::Unknown)->location,
                     "Invalid escape sequence."
                 );
                 start = prev_start;
@@ -432,7 +441,8 @@ void Lexer::str_literal() {
 
     if (is_at_end()) {
         Logger::inst().log_error(
-            Err::UnterminatedStr, make_token(Tok::Unknown)->location,
+            Err::UnterminatedStr,
+            make_token(Tok::Unknown)->location,
             "Unterminated string."
         );
         return;
@@ -449,7 +459,8 @@ void Lexer::multi_line_comment() {
     while (open_count) {
         if (is_at_end()) {
             Logger::inst().log_error(
-                Err::UnclosedComment, opening_token->location,
+                Err::UnclosedComment,
+                opening_token->location,
                 "Unclosed multi-line comment."
             );
 
@@ -506,7 +517,8 @@ void Lexer::scan_token() {
         auto t = make_token(Tok::RParen);
         if (grouping_token_stack.empty() || grouping_token_stack.back() != c) {
             Logger::inst().log_error(
-                Err::UnclosedGrouping, t->location,
+                Err::UnclosedGrouping,
+                t->location,
                 "Expected '" + std::string(1, grouping_token_stack.back()) +
                     "' before ')'."
             );
@@ -521,7 +533,8 @@ void Lexer::scan_token() {
         auto t = make_token(Tok::RBrace);
         if (grouping_token_stack.empty() || grouping_token_stack.back() != c) {
             Logger::inst().log_error(
-                Err::UnclosedGrouping, t->location,
+                Err::UnclosedGrouping,
+                t->location,
                 "Expected '" + std::string(1, grouping_token_stack.back()) +
                     "' before '}'."
             );
@@ -536,7 +549,8 @@ void Lexer::scan_token() {
         auto t = make_token(Tok::RSquare);
         if (grouping_token_stack.empty() || grouping_token_stack.back() != c) {
             Logger::inst().log_error(
-                Err::UnclosedGrouping, t->location,
+                Err::UnclosedGrouping,
+                t->location,
                 "Expected '" + std::string(1, grouping_token_stack.back()) +
                     "' before ']'."
             );
@@ -572,7 +586,8 @@ void Lexer::scan_token() {
             add_token(Tok::StarEq);
         else if (match('/'))
             Logger::inst().log_error(
-                Err::ClosingUnopenedComment, make_token(Tok::Unknown)->location,
+                Err::ClosingUnopenedComment,
+                make_token(Tok::Unknown)->location,
                 "Found '*/' without '/*'."
             );
         else
@@ -634,7 +649,9 @@ void Lexer::scan_token() {
         else {
             auto token = make_token(Tok::Unknown);
             Logger::inst().log_error(
-                Err::UnexpectedChar, token->location, "Unexpected character."
+                Err::UnexpectedChar,
+                token->location,
+                "Unexpected character."
             );
         }
     }
@@ -661,7 +678,8 @@ Lexer::scan(const std::shared_ptr<CodeFile>& file) {
 
     if (!grouping_token_stack.empty()) {
         Logger::inst().log_error(
-            Err::UnclosedGrouping, eof_token->location,
+            Err::UnclosedGrouping,
+            eof_token->location,
             "Expected '" + std::string(1, grouping_token_stack.back()) +
                 "' before end of file."
         );
