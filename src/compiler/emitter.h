@@ -17,10 +17,13 @@ public:
      * @brief Emit the IR module to an object file.
      *
      * @param ir_module The IR module containing the IR to emit.
-     * @param target_destination A string specifying the target destination for the object file. E.g. "./bin/output.o".
-     * Paths are relative to CWD.
+     * @param target_destination A string specifying the target destination for
+     * the object file. E.g. "./bin/output.o". Paths are relative to CWD.
      */
-    void emit(const std::unique_ptr<llvm::Module>& ir_module, std::string_view target_destination = "output.o");
+    void emit(
+        const std::unique_ptr<llvm::Module>& ir_module,
+        std::string_view target_destination = "output.o"
+    );
 };
 
 #endif // NICO_EMITTER_H

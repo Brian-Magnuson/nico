@@ -140,7 +140,9 @@ struct Location {
      * @param start The start index of the token.
      * @param length The length of the token.
      */
-    Location(std::shared_ptr<CodeFile> file, size_t start, size_t length, size_t line)
+    Location(
+        std::shared_ptr<CodeFile> file, size_t start, size_t length, size_t line
+    )
         : file(file), start(start), length(length), line(line) {}
 
     std::tuple<std::string, size_t, size_t> to_tuple() const {
@@ -163,7 +165,8 @@ public:
     const Location location;
     // A string view of the lexeme of this token.
     const std::string_view lexeme;
-    // The literal value of this token, if any; primarily used for string literals
+    // The literal value of this token, if any; primarily used for string
+    // literals
     const std::any literal;
 
     /**
@@ -171,13 +174,14 @@ public:
      *
      * @param tok_type The type of the token.
      * @param location The location of the token.
-     * @param literal The literal value of the token, if any. Default is an empty std::any value.
+     * @param literal The literal value of the token, if any. Default is an
+     * empty std::any value.
      */
     Token(Tok tok_type, const Location& location, std::any literal = std::any())
-        : tok_type(tok_type),
-          location(location),
+        : tok_type(tok_type), location(location),
           lexeme(
-              std::string_view(location.file->src_code).substr(location.start, location.length)
+              std::string_view(location.file->src_code)
+                  .substr(location.start, location.length)
           ),
           literal(literal) {}
 };

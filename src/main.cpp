@@ -21,9 +21,9 @@
  * @brief Checks if there are any errors logged in the Logger singleton and
  * exits the program if there are.
  *
- * This function is used to ensure that the compilation process does not continue
- * if there are any errors logged. If there are errors, it prints a message to
- * std::cerr and exits with a non-zero status code.
+ * This function is used to ensure that the compilation process does not
+ * continue if there are any errors logged. If there are errors, it prints a
+ * message to std::cerr and exits with a non-zero status code.
  */
 void exit_if_errors() {
     const auto& errors = Logger::inst().get_errors();
@@ -92,7 +92,8 @@ int main(int argc, char** argv) {
     auto output = codegen.eject();
 
     std::unique_ptr<IJit> jit = std::make_unique<SimpleJit>();
-    auto err = jit->add_module(std::move(output.module), std::move(output.context));
+    auto err =
+        jit->add_module(std::move(output.module), std::move(output.context));
     exit_if_errors();
 
     auto result = jit->run_main(0, nullptr);

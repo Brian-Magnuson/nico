@@ -3,7 +3,9 @@
 #include <llvm/IR/PassManager.h>
 #include <llvm/Passes/PassBuilder.h>
 
-void Optimizer::optimize(std::unique_ptr<llvm::Module>& ir_module, llvm::OptimizationLevel opt_level) {
+void Optimizer::optimize(
+    std::unique_ptr<llvm::Module>& ir_module, llvm::OptimizationLevel opt_level
+) {
     llvm::LoopAnalysisManager lam;
     llvm::FunctionAnalysisManager fam;
     llvm::CGSCCAnalysisManager cgam;
@@ -17,7 +19,8 @@ void Optimizer::optimize(std::unique_ptr<llvm::Module>& ir_module, llvm::Optimiz
     pass_builder.registerLoopAnalyses(lam);
     pass_builder.crossRegisterProxies(lam, fam, cgam, mam);
 
-    llvm::ModulePassManager mpm = pass_builder.buildPerModuleDefaultPipeline(opt_level);
+    llvm::ModulePassManager mpm =
+        pass_builder.buildPerModuleDefaultPipeline(opt_level);
 
     mpm.run(*ir_module, mam);
 }

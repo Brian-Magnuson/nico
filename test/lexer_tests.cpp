@@ -21,11 +21,7 @@ TEST_CASE("Lexer single characters", "[lexer]") {
     SECTION("Grouping characters 1") {
         auto file = make_test_code_file("()");
         auto tokens = lexer.scan(file);
-        std::vector<Tok> expected = {
-            Tok::LParen,
-            Tok::RParen,
-            Tok::Eof
-        };
+        std::vector<Tok> expected = {Tok::LParen, Tok::RParen, Tok::Eof};
         CHECK(extract_token_types(tokens) == expected);
     }
 
@@ -47,11 +43,7 @@ TEST_CASE("Lexer single characters", "[lexer]") {
     SECTION("Other single character tokens") {
         auto file = make_test_code_file(",;");
         auto tokens = lexer.scan(file);
-        std::vector<Tok> expected = {
-            Tok::Comma,
-            Tok::Semicolon,
-            Tok::Eof
-        };
+        std::vector<Tok> expected = {Tok::Comma, Tok::Semicolon, Tok::Eof};
         CHECK(extract_token_types(tokens) == expected);
     }
 
@@ -66,12 +58,7 @@ TEST_CASE("Lexer short tokens", "[lexer]") {
         auto file = make_test_code_file("/+-*%");
         auto tokens = lexer.scan(file);
         std::vector<Tok> expected = {
-            Tok::Slash,
-            Tok::Plus,
-            Tok::Minus,
-            Tok::Star,
-            Tok::Percent,
-            Tok::Eof
+            Tok::Slash, Tok::Plus, Tok::Minus, Tok::Star, Tok::Percent, Tok::Eof
         };
         CHECK(extract_token_types(tokens) == expected);
     }
@@ -112,11 +99,7 @@ TEST_CASE("Lexer short tokens", "[lexer]") {
         auto file = make_test_code_file(": :: :::");
         auto tokens = lexer.scan(file);
         std::vector<Tok> expected = {
-            Tok::Colon,
-            Tok::ColonColon,
-            Tok::ColonColon,
-            Tok::Colon,
-            Tok::Eof
+            Tok::Colon, Tok::ColonColon, Tok::ColonColon, Tok::Colon, Tok::Eof
         };
         CHECK(extract_token_types(tokens) == expected);
     }
@@ -137,11 +120,7 @@ a:
         );
         auto tokens = lexer.scan(file);
         std::vector<Tok> expected = {
-            Tok::Identifier,
-            Tok::Indent,
-            Tok::Identifier,
-            Tok::Dedent,
-            Tok::Eof
+            Tok::Identifier, Tok::Indent, Tok::Identifier, Tok::Dedent, Tok::Eof
         };
         CHECK(extract_token_types(tokens) == expected);
     }
@@ -307,10 +286,7 @@ d
         auto file = make_test_code_file("a:   b");
         auto tokens = lexer.scan(file);
         std::vector<Tok> expected = {
-            Tok::Identifier,
-            Tok::Colon,
-            Tok::Identifier,
-            Tok::Eof
+            Tok::Identifier, Tok::Colon, Tok::Identifier, Tok::Eof
         };
         CHECK(extract_token_types(tokens) == expected);
     }
@@ -384,10 +360,7 @@ TEST_CASE("Lexer basic keywords", "[lexer]") {
         auto file = make_test_code_file("let var x");
         auto tokens = lexer.scan(file);
         std::vector<Tok> expected = {
-            Tok::KwLet,
-            Tok::KwVar,
-            Tok::Identifier,
-            Tok::Eof
+            Tok::KwLet, Tok::KwVar, Tok::Identifier, Tok::Eof
         };
         CHECK(extract_token_types(tokens) == expected);
     }
@@ -417,11 +390,7 @@ TEST_CASE("Lexer numbers", "[lexer]") {
     SECTION("Numbers 1") {
         auto file = make_test_code_file("123 123f");
         auto tokens = lexer.scan(file);
-        std::vector<Tok> expected = {
-            Tok::Int,
-            Tok::Float,
-            Tok::Eof
-        };
+        std::vector<Tok> expected = {Tok::Int, Tok::Float, Tok::Eof};
         REQUIRE(extract_token_types(tokens) == expected);
         CHECK(std::any_cast<int32_t>(tokens[0]->literal) == 123);
         CHECK(std::any_cast<double>(tokens[1]->literal) == 123.0);
@@ -430,12 +399,7 @@ TEST_CASE("Lexer numbers", "[lexer]") {
     SECTION("Numbers 2") {
         auto file = make_test_code_file("0x1A 0o17 0b101");
         auto tokens = lexer.scan(file);
-        std::vector<Tok> expected = {
-            Tok::Int,
-            Tok::Int,
-            Tok::Int,
-            Tok::Eof
-        };
+        std::vector<Tok> expected = {Tok::Int, Tok::Int, Tok::Int, Tok::Eof};
         REQUIRE(extract_token_types(tokens) == expected);
         CHECK(std::any_cast<int32_t>(tokens[0]->literal) == 0x1A);
         CHECK(std::any_cast<int32_t>(tokens[1]->literal) == 017);
@@ -445,26 +409,18 @@ TEST_CASE("Lexer numbers", "[lexer]") {
     SECTION("Numbers 3") {
         auto file = make_test_code_file("1.23 1.23f");
         auto tokens = lexer.scan(file);
-        std::vector<Tok> expected = {
-            Tok::Float,
-            Tok::Float,
-            Tok::Eof
-        };
+        std::vector<Tok> expected = {Tok::Float, Tok::Float, Tok::Eof};
         REQUIRE(extract_token_types(tokens) == expected);
         CHECK(std::any_cast<double>(tokens[0]->literal) == 1.23);
         CHECK(std::any_cast<double>(tokens[1]->literal) == 1.23);
     }
 
     SECTION("Numbers 4") {
-        auto file = make_test_code_file("1.23e10 1.23e-10 1.23E10 1.23E-10 123E+10");
+        auto file =
+            make_test_code_file("1.23e10 1.23e-10 1.23E10 1.23E-10 123E+10");
         auto tokens = lexer.scan(file);
         std::vector<Tok> expected = {
-            Tok::Float,
-            Tok::Float,
-            Tok::Float,
-            Tok::Float,
-            Tok::Float,
-            Tok::Eof
+            Tok::Float, Tok::Float, Tok::Float, Tok::Float, Tok::Float, Tok::Eof
         };
         REQUIRE(extract_token_types(tokens) == expected);
         CHECK(std::any_cast<double>(tokens[0]->literal) == 1.23e10);
@@ -478,12 +434,7 @@ TEST_CASE("Lexer numbers", "[lexer]") {
         auto file = make_test_code_file("0 0.0 0.0 0 0");
         auto tokens = lexer.scan(file);
         std::vector<Tok> expected = {
-            Tok::Int,
-            Tok::Float,
-            Tok::Float,
-            Tok::Int,
-            Tok::Int,
-            Tok::Eof
+            Tok::Int, Tok::Float, Tok::Float, Tok::Int, Tok::Int, Tok::Eof
         };
         REQUIRE(extract_token_types(tokens) == expected);
         CHECK(std::any_cast<int32_t>(tokens[0]->literal) == 0);
@@ -496,12 +447,7 @@ TEST_CASE("Lexer numbers", "[lexer]") {
     SECTION("Numbers 6") {
         auto file = make_test_code_file("0xAbCdEf 0x0 0x00");
         auto tokens = lexer.scan(file);
-        std::vector<Tok> expected = {
-            Tok::Int,
-            Tok::Int,
-            Tok::Int,
-            Tok::Eof
-        };
+        std::vector<Tok> expected = {Tok::Int, Tok::Int, Tok::Int, Tok::Eof};
         REQUIRE(extract_token_types(tokens) == expected);
         CHECK(std::any_cast<int32_t>(tokens[0]->literal) == 0xabcdef);
         CHECK(std::any_cast<int32_t>(tokens[1]->literal) == 0);
@@ -511,12 +457,7 @@ TEST_CASE("Lexer numbers", "[lexer]") {
     SECTION("Numbers 7") {
         auto file = make_test_code_file("0o123 0123 0o0");
         auto tokens = lexer.scan(file);
-        std::vector<Tok> expected = {
-            Tok::Int,
-            Tok::Int,
-            Tok::Int,
-            Tok::Eof
-        };
+        std::vector<Tok> expected = {Tok::Int, Tok::Int, Tok::Int, Tok::Eof};
         REQUIRE(extract_token_types(tokens) == expected);
         CHECK(std::any_cast<int32_t>(tokens[0]->literal) == 0123);
         CHECK(std::any_cast<int32_t>(tokens[1]->literal) == 123);
@@ -527,11 +468,7 @@ TEST_CASE("Lexer numbers", "[lexer]") {
         auto file = make_test_code_file("1_000 0b1010_1010 0o_755 0xFF_FF");
         auto tokens = lexer.scan(file);
         std::vector<Tok> expected = {
-            Tok::Int,
-            Tok::Int,
-            Tok::Int,
-            Tok::Int,
-            Tok::Eof
+            Tok::Int, Tok::Int, Tok::Int, Tok::Int, Tok::Eof
         };
         REQUIRE(extract_token_types(tokens) == expected);
         CHECK(std::any_cast<int32_t>(tokens[0]->literal) == 1000);
@@ -543,12 +480,7 @@ TEST_CASE("Lexer numbers", "[lexer]") {
     SECTION("Numbers with underscores 2") {
         auto file = make_test_code_file("1_00_00 1__0 1_0_");
         auto tokens = lexer.scan(file);
-        std::vector<Tok> expected = {
-            Tok::Int,
-            Tok::Int,
-            Tok::Int,
-            Tok::Eof
-        };
+        std::vector<Tok> expected = {Tok::Int, Tok::Int, Tok::Int, Tok::Eof};
         REQUIRE(extract_token_types(tokens) == expected);
         CHECK(std::any_cast<int32_t>(tokens[0]->literal) == 10000);
         CHECK(std::any_cast<int32_t>(tokens[1]->literal) == 10);
@@ -565,10 +497,7 @@ TEST_CASE("Lexer str literals", "[lexer]") {
     SECTION("String literals 1") {
         auto file = make_test_code_file(R"("abc")");
         auto tokens = lexer.scan(file);
-        std::vector<Tok> expected = {
-            Tok::Str,
-            Tok::Eof
-        };
+        std::vector<Tok> expected = {Tok::Str, Tok::Eof};
         REQUIRE(extract_token_types(tokens) == expected);
         CHECK(std::any_cast<std::string>(tokens[0]->literal) == "abc");
     }
@@ -576,11 +505,7 @@ TEST_CASE("Lexer str literals", "[lexer]") {
     SECTION("String literals 2") {
         auto file = make_test_code_file(R"("abc" "def")");
         auto tokens = lexer.scan(file);
-        std::vector<Tok> expected = {
-            Tok::Str,
-            Tok::Str,
-            Tok::Eof
-        };
+        std::vector<Tok> expected = {Tok::Str, Tok::Str, Tok::Eof};
         REQUIRE(extract_token_types(tokens) == expected);
         CHECK(std::any_cast<std::string>(tokens[0]->literal) == "abc");
         CHECK(std::any_cast<std::string>(tokens[1]->literal) == "def");
@@ -589,10 +514,7 @@ TEST_CASE("Lexer str literals", "[lexer]") {
     SECTION("String literals 3") {
         auto file = make_test_code_file(R"("")");
         auto tokens = lexer.scan(file);
-        std::vector<Tok> expected = {
-            Tok::Str,
-            Tok::Eof
-        };
+        std::vector<Tok> expected = {Tok::Str, Tok::Eof};
         REQUIRE(extract_token_types(tokens) == expected);
         CHECK(std::any_cast<std::string>(tokens[0]->literal) == "");
     }
@@ -600,10 +522,7 @@ TEST_CASE("Lexer str literals", "[lexer]") {
     SECTION("String literal esc sequences") {
         auto file = make_test_code_file(R"("\n\t\r\\\"")");
         auto tokens = lexer.scan(file);
-        std::vector<Tok> expected = {
-            Tok::Str,
-            Tok::Eof
-        };
+        std::vector<Tok> expected = {Tok::Str, Tok::Eof};
         REQUIRE(extract_token_types(tokens) == expected);
         CHECK(std::any_cast<std::string>(tokens[0]->literal) == "\n\t\r\\\"");
     }
@@ -626,9 +545,7 @@ c
 
         auto tokens = lexer.scan(file);
         std::vector<Tok> expected = {
-            Tok::Identifier,
-            Tok::Identifier,
-            Tok::Eof
+            Tok::Identifier, Tok::Identifier, Tok::Eof
         };
         CHECK(extract_token_types(tokens) == expected);
         REQUIRE(tokens.size() == 3);
@@ -650,9 +567,7 @@ e
         );
         auto tokens = lexer.scan(file);
         std::vector<Tok> expected = {
-            Tok::Identifier,
-            Tok::Identifier,
-            Tok::Eof
+            Tok::Identifier, Tok::Identifier, Tok::Eof
         };
         CHECK(extract_token_types(tokens) == expected);
         REQUIRE(tokens.size() == 3);

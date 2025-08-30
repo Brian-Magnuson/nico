@@ -5,9 +5,9 @@ UseTab: Never
 IndentWidth: 4
 TabWidth: 4
 
-# Keep access modifiers left.
+# Keep access modifiers left, aligned with `class`.
 AccessModifierOffset: -4
-# Keep case labels (for switch blocks) left.
+# Keep case labels (for switch blocks) left, aligned with `switch`.
 IndentCaseLabels: false
 
 # Always indent in namespaces.
@@ -26,12 +26,17 @@ BraceWrapping:
 # If bracket elements (function params, function args, lists) do not fit on
 # a single line, break after opening and before closing bracket (like a block).
 AlignAfterOpenBracket: BlockIndent
+BinPackArguments: false
 
 # If-statements without braces must have a line break and never be on one line.
 AllowShortIfStatementsOnASingleLine: Never
 
-# Keep the star next to the type; `T* t`, never `T *t` or `T * t`.
+# Functions that can fit on one line may only do so within class definitions.
+# All other functions must have a line break after the opening brace.
+AllowShortFunctionsOnASingleLine: Inline
+
+# Keep the star next to the type; use `T* t`, never `T *t` or `T * t`.
 PointerAlignment: Left
 
-# Do not restrict column limits (line length limits).
-ColumnLimit: 0
+# Restrict column limits (line length limits) to 80 characters max.
+ColumnLimit: 80

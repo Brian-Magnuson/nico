@@ -16,12 +16,9 @@ void CodeGenerator::add_c_functions() {
     if (!ir_module->getGlobalVariable("stderr")) {
         llvm::PointerType* file_ptr_type = llvm::PointerType::get(*context, 0);
         new llvm::GlobalVariable(
-            *ir_module,
-            file_ptr_type,
+            *ir_module, file_ptr_type,
             true, // isConstant
-            llvm::GlobalValue::ExternalLinkage,
-            nullptr,
-            "stderr"
+            llvm::GlobalValue::ExternalLinkage, nullptr, "stderr"
         );
     }
     // printf
@@ -32,93 +29,68 @@ void CodeGenerator::add_c_functions() {
             true // true = variadic
         );
         llvm::Function::Create(
-            printf_type,
-            llvm::Function::ExternalLinkage,
-            "printf",
-            *ir_module
+            printf_type, llvm::Function::ExternalLinkage, "printf", *ir_module
         );
     }
     // fprintf
     if (!ir_module->getFunction("fprintf")) {
         llvm::FunctionType* fprintf_type = llvm::FunctionType::get(
             llvm::Type::getInt32Ty(*context),
-            {llvm::PointerType::get(*context, 0), llvm::PointerType::get(*context, 0)},
+            {llvm::PointerType::get(*context, 0),
+             llvm::PointerType::get(*context, 0)},
             true // true = variadic
         );
         llvm::Function::Create(
-            fprintf_type,
-            llvm::Function::ExternalLinkage,
-            "fprintf",
-            *ir_module
+            fprintf_type, llvm::Function::ExternalLinkage, "fprintf", *ir_module
         );
     }
     // abort
     if (!ir_module->getFunction("abort")) {
-        llvm::FunctionType* abort_type = llvm::FunctionType::get(
-            llvm::Type::getVoidTy(*context),
-            {},
-            false
-        );
+        llvm::FunctionType* abort_type =
+            llvm::FunctionType::get(llvm::Type::getVoidTy(*context), {}, false);
         llvm::Function::Create(
-            abort_type,
-            llvm::Function::ExternalLinkage,
-            "abort",
-            *ir_module
+            abort_type, llvm::Function::ExternalLinkage, "abort", *ir_module
         );
     }
     // exit
     if (!ir_module->getFunction("exit")) {
         llvm::FunctionType* exit_type = llvm::FunctionType::get(
-            llvm::Type::getVoidTy(*context),
-            {llvm::Type::getInt32Ty(*context)},
+            llvm::Type::getVoidTy(*context), {llvm::Type::getInt32Ty(*context)},
             false
         );
         llvm::Function::Create(
-            exit_type,
-            llvm::Function::ExternalLinkage,
-            "exit",
-            *ir_module
+            exit_type, llvm::Function::ExternalLinkage, "exit", *ir_module
         );
     }
     // malloc
     if (!ir_module->getFunction("malloc")) {
         llvm::FunctionType* malloc_type = llvm::FunctionType::get(
             llvm::PointerType::get(*context, 0),
-            {llvm::Type::getIntNTy(*context, sizeof(size_t) * 8)},
-            false
+            {llvm::Type::getIntNTy(*context, sizeof(size_t) * 8)}, false
         );
         llvm::Function::Create(
-            malloc_type,
-            llvm::Function::ExternalLinkage,
-            "malloc",
-            *ir_module
+            malloc_type, llvm::Function::ExternalLinkage, "malloc", *ir_module
         );
     }
     // free
     if (!ir_module->getFunction("free")) {
         llvm::FunctionType* free_type = llvm::FunctionType::get(
             llvm::Type::getVoidTy(*context),
-            {llvm::PointerType::get(*context, 0)},
-            false
+            {llvm::PointerType::get(*context, 0)}, false
         );
         llvm::Function::Create(
-            free_type,
-            llvm::Function::ExternalLinkage,
-            "free",
-            *ir_module
+            free_type, llvm::Function::ExternalLinkage, "free", *ir_module
         );
     }
     if (panic_recoverable) {
         // jmp_buf
         if (!ir_module->getGlobalVariable("jmp_buf", true)) {
-            llvm::ArrayType* jmp_buf_type = llvm::ArrayType::get(llvm::Type::getInt8Ty(*context), 256);
+            llvm::ArrayType* jmp_buf_type =
+                llvm::ArrayType::get(llvm::Type::getInt8Ty(*context), 256);
             new llvm::GlobalVariable(
-                *ir_module,
-                jmp_buf_type,
-                false,
+                *ir_module, jmp_buf_type, false,
                 llvm::GlobalValue::InternalLinkage,
-                llvm::Constant::getNullValue(jmp_buf_type),
-                "jmp_buf"
+                llvm::Constant::getNullValue(jmp_buf_type), "jmp_buf"
             );
         }
 
@@ -126,13 +98,10 @@ void CodeGenerator::add_c_functions() {
         if (!ir_module->getFunction("setjmp")) {
             llvm::FunctionType* setjmp_type = llvm::FunctionType::get(
                 llvm::Type::getInt32Ty(*context),
-                {llvm::PointerType::get(*context, 0)},
-                false
+                {llvm::PointerType::get(*context, 0)}, false
             );
             llvm::Function::Create(
-                setjmp_type,
-                llvm::Function::ExternalLinkage,
-                "setjmp",
+                setjmp_type, llvm::Function::ExternalLinkage, "setjmp",
                 *ir_module
             );
         }
@@ -140,29 +109,31 @@ void CodeGenerator::add_c_functions() {
         if (!ir_module->getFunction("longjmp")) {
             llvm::FunctionType* longjmp_type = llvm::FunctionType::get(
                 llvm::Type::getVoidTy(*context),
-                {llvm::PointerType::get(*context, 0), llvm::Type::getInt32Ty(*context)},
+                {llvm::PointerType::get(*context, 0),
+                 llvm::Type::getInt32Ty(*context)},
                 false
             );
             llvm::Function::Create(
-                longjmp_type,
-                llvm::Function::ExternalLinkage,
-                "longjmp",
+                longjmp_type, llvm::Function::ExternalLinkage, "longjmp",
                 *ir_module
             );
         }
     }
 }
 
-void CodeGenerator::add_div_zero_check(llvm::Value* divisor, const Location* location) {
+void CodeGenerator::add_div_zero_check(
+    llvm::Value* divisor, const Location* location
+) {
     llvm::BasicBlock* current_block = builder->GetInsertBlock();
     llvm::Function* current_function = current_block->getParent();
 
-    llvm::BasicBlock* div_by_zero_block = llvm::BasicBlock::Create(*context, "div_by_zero", current_function);
-    llvm::BasicBlock* div_ok_block = llvm::BasicBlock::Create(*context, "div_ok", current_function);
+    llvm::BasicBlock* div_by_zero_block =
+        llvm::BasicBlock::Create(*context, "div_by_zero", current_function);
+    llvm::BasicBlock* div_ok_block =
+        llvm::BasicBlock::Create(*context, "div_ok", current_function);
 
     llvm::Value* is_zero = builder->CreateICmpEQ(
-        divisor,
-        llvm::ConstantInt::get(divisor->getType(), 0)
+        divisor, llvm::ConstantInt::get(divisor->getType(), 0)
     );
     builder->CreateCondBr(is_zero, div_by_zero_block, div_ok_block);
 
@@ -175,29 +146,48 @@ void CodeGenerator::add_div_zero_check(llvm::Value* divisor, const Location* loc
     builder->SetInsertPoint(div_ok_block);
 }
 
-void CodeGenerator::add_panic(std::string_view message, const Location* location) {
+void CodeGenerator::add_panic(
+    std::string_view message, const Location* location
+) {
     llvm::Value* jmp_buf_ptr;
     if (panic_recoverable) {
-        llvm::GlobalVariable* jmp_buf_global = ir_module->getGlobalVariable("jmp_buf", true);
-        jmp_buf_ptr = builder->CreateBitCast(jmp_buf_global, llvm::PointerType::get(*context, 0));
+        llvm::GlobalVariable* jmp_buf_global =
+            ir_module->getGlobalVariable("jmp_buf", true);
+        jmp_buf_ptr = builder->CreateBitCast(
+            jmp_buf_global, llvm::PointerType::get(*context, 0)
+        );
     }
     auto fprintf_fn = ir_module->getFunction("fprintf");
     llvm::Value* stderr_stream = builder->CreateLoad(
         llvm::PointerType::get(*context, 0),
         ir_module->getGlobalVariable("stderr")
     );
-    llvm::Value* format_string = builder->CreateGlobalStringPtr("Panic: %s: %s\n%s:%d:%d\n");
-    llvm::Value* func_name = builder->CreateGlobalStringPtr(block_list->get_function_name());
+    llvm::Value* format_string =
+        builder->CreateGlobalStringPtr("Panic: %s: %s\n%s:%d:%d\n");
+    llvm::Value* func_name =
+        builder->CreateGlobalStringPtr(block_list->get_function_name());
     llvm::Value* msg = builder->CreateGlobalStringPtr(message);
     auto location_tuple = location->to_tuple();
-    llvm::Value* file_name = builder->CreateGlobalStringPtr(std::get<0>(location_tuple));
-    llvm::Value* line_number = llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), std::get<1>(location_tuple));
-    llvm::Value* column_number = llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), std::get<2>(location_tuple));
-    builder->CreateCall(fprintf_fn, {stderr_stream, format_string, func_name, msg, file_name, line_number, column_number});
+    llvm::Value* file_name =
+        builder->CreateGlobalStringPtr(std::get<0>(location_tuple));
+    llvm::Value* line_number = llvm::ConstantInt::get(
+        llvm::Type::getInt32Ty(*context), std::get<1>(location_tuple)
+    );
+    llvm::Value* column_number = llvm::ConstantInt::get(
+        llvm::Type::getInt32Ty(*context), std::get<2>(location_tuple)
+    );
+    builder->CreateCall(
+        fprintf_fn, {stderr_stream, format_string, func_name, msg, file_name,
+                     line_number, column_number}
+    );
 
     if (panic_recoverable) {
         auto longjmp_fn = ir_module->getFunction("longjmp");
-        builder->CreateCall(longjmp_fn, {jmp_buf_ptr, llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 1)});
+        builder->CreateCall(
+            longjmp_fn,
+            {jmp_buf_ptr,
+             llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 1)}
+        );
     }
     else {
         auto abort_fn = ir_module->getFunction("abort");
@@ -213,26 +203,23 @@ std::any CodeGenerator::visit(Stmt::Expression* stmt) {
 }
 
 std::any CodeGenerator::visit(Stmt::Let* stmt) {
-    auto llvm_type = stmt->field_entry.lock()->field.type->get_llvm_type(builder);
+    auto llvm_type =
+        stmt->field_entry.lock()->field.type->get_llvm_type(builder);
     llvm::Value* allocation = nullptr;
 
     if (PTR_INSTANCEOF(block_list, Block::Script)) {
         // If we are in a script, create a global variable instead of a local
         allocation = new llvm::GlobalVariable(
-            *ir_module,
-            llvm_type,
-            false,
-            llvm::GlobalValue::InternalLinkage,
-            llvm::Constant::getNullValue(llvm_type), // We cannot assign non-constants here, so we use this instead
+            *ir_module, llvm_type, false, llvm::GlobalValue::InternalLinkage,
+            llvm::Constant::getNullValue(
+                llvm_type
+            ), // We cannot assign non-constants here, so we use this instead
             stmt->identifier->lexeme
         );
     }
     else {
-        allocation = builder->CreateAlloca(
-            llvm_type,
-            nullptr,
-            stmt->identifier->lexeme
-        );
+        allocation =
+            builder->CreateAlloca(llvm_type, nullptr, stmt->identifier->lexeme);
     }
 
     stmt->field_entry.lock()->llvm_ptr = allocation;
@@ -240,7 +227,9 @@ std::any CodeGenerator::visit(Stmt::Let* stmt) {
     if (stmt->expression.has_value()) {
         // Here, storing a non-constant is okay.
         builder->CreateStore(
-            std::any_cast<llvm::Value*>(stmt->expression.value()->accept(this, false)),
+            std::any_cast<llvm::Value*>(
+                stmt->expression.value()->accept(this, false)
+            ),
             allocation
         );
     }
@@ -269,8 +258,7 @@ std::any CodeGenerator::visit(Stmt::Print* stmt) {
         else if (PTR_INSTANCEOF(expr->type, Type::Bool)) {
             format_str = builder->CreateGlobalStringPtr("%s");
             llvm::Value* bool_str = builder->CreateSelect(
-                value,
-                builder->CreateGlobalStringPtr("true"),
+                value, builder->CreateGlobalStringPtr("true"),
                 builder->CreateGlobalStringPtr("false")
             );
             builder->CreateCall(printf_fn, {format_str, bool_str});
@@ -280,7 +268,10 @@ std::any CodeGenerator::visit(Stmt::Print* stmt) {
             builder->CreateCall(printf_fn, {format_str, value});
         }
         else {
-            panic("CodeGenerator::visit(Stmt::Print*): Cannot print expression of this type.");
+            panic(
+                "CodeGenerator::visit(Stmt::Print*): Cannot print expression "
+                "of this type."
+            );
         }
     }
 
@@ -315,7 +306,10 @@ std::any CodeGenerator::visit(Expr::Binary* expr, bool as_lvalue) {
             result = builder->CreateFDiv(left, right);
             break;
         default:
-            panic("CodeGenerator::visit(Expr::Binary*): Unknown binary operator for floating-point number.");
+            panic(
+                "CodeGenerator::visit(Expr::Binary*): Unknown binary operator "
+                "for floating-point number."
+            );
         }
     }
     else if (PTR_INSTANCEOF(expr->type, Type::Int)) {
@@ -334,11 +328,17 @@ std::any CodeGenerator::visit(Expr::Binary* expr, bool as_lvalue) {
             result = builder->CreateSDiv(left, right);
             break;
         default:
-            panic("CodeGenerator::visit(Expr::Binary*): Unknown binary operator for integer.");
+            panic(
+                "CodeGenerator::visit(Expr::Binary*): Unknown binary operator "
+                "for integer."
+            );
         }
     }
     else {
-        panic("CodeGenerator::visit(Expr::Binary*): Unsupported type for binary operation.");
+        panic(
+            "CodeGenerator::visit(Expr::Binary*): Unsupported type for binary "
+            "operation."
+        );
     }
 
     return result;
@@ -353,7 +353,10 @@ std::any CodeGenerator::visit(Expr::Unary* expr, bool as_lvalue) {
             result = builder->CreateFNeg(right);
             break;
         default:
-            panic("CodeGenerator::visit(Expr::Unary*): Unknown unary operator for floating-point number.");
+            panic(
+                "CodeGenerator::visit(Expr::Unary*): Unknown unary operator "
+                "for floating-point number."
+            );
         }
     }
     else if (PTR_INSTANCEOF(expr->type, Type::Int)) {
@@ -362,11 +365,17 @@ std::any CodeGenerator::visit(Expr::Unary* expr, bool as_lvalue) {
             result = builder->CreateNeg(right);
             break;
         default:
-            panic("CodeGenerator::visit(Expr::Unary*): Unknown unary operator for integer.");
+            panic(
+                "CodeGenerator::visit(Expr::Unary*): Unknown unary operator "
+                "for integer."
+            );
         }
     }
     else {
-        panic("CodeGenerator::visit(Expr::Unary*): Unsupported type for unary operation.");
+        panic(
+            "CodeGenerator::visit(Expr::Unary*): Unsupported type for unary "
+            "operation."
+        );
     }
 
     return result;
@@ -381,7 +390,10 @@ std::any CodeGenerator::visit(Expr::NameRef* expr, bool as_lvalue) {
     }
     else {
         // We load the value from the variable's memory location
-        result = builder->CreateLoad(expr->type->get_llvm_type(builder), expr->field_entry.lock()->llvm_ptr);
+        result = builder->CreateLoad(
+            expr->type->get_llvm_type(builder),
+            expr->field_entry.lock()->llvm_ptr
+        );
     }
 
     return result;
@@ -405,9 +417,8 @@ std::any CodeGenerator::visit(Expr::Literal* expr, bool as_lvalue) {
             );
         }
         else if (expr->token->lexeme == "NaN") {
-            result = llvm::ConstantFP::getNaN(
-                llvm::Type::getDoubleTy(*context)
-            );
+            result =
+                llvm::ConstantFP::getNaN(llvm::Type::getDoubleTy(*context));
         }
         else {
             result = llvm::ConstantFP::get(
@@ -418,12 +429,13 @@ std::any CodeGenerator::visit(Expr::Literal* expr, bool as_lvalue) {
         break;
     case Tok::Bool:
         result = llvm::ConstantInt::get(
-            llvm::Type::getInt1Ty(*context),
-            expr->token->lexeme == "true"
+            llvm::Type::getInt1Ty(*context), expr->token->lexeme == "true"
         );
         break;
     case Tok::Str:
-        result = builder->CreateGlobalStringPtr(std::any_cast<std::string>(expr->token->literal));
+        result = builder->CreateGlobalStringPtr(
+            std::any_cast<std::string>(expr->token->literal)
+        );
         break;
     default:
         panic("CodeGenerator::visit(Expr::Literal*): Unknown literal type.");
@@ -439,46 +451,60 @@ std::any CodeGenerator::visit(Expr::Tuple* expr, bool as_lvalue) {
 
 // MARK: Interface
 
-bool CodeGenerator::generate(const std::vector<std::shared_ptr<Stmt>>& stmts, bool require_verification) {
+bool CodeGenerator::generate(
+    const std::vector<std::shared_ptr<Stmt>>& stmts, bool require_verification
+) {
     // Normally, we would traverse the AST and generate LLVM IR here.
     // For now, we will generate a simple script that prints "Hello, World!".
 
     add_c_functions();
 
-    llvm::FunctionType* script_fn_type = llvm::FunctionType::get(
-        builder->getInt32Ty(), false
-    );
+    llvm::FunctionType* script_fn_type =
+        llvm::FunctionType::get(builder->getInt32Ty(), false);
     llvm::Function* script_fn = llvm::Function::Create(
-        script_fn_type, llvm::Function::ExternalLinkage, "script", ir_module.get()
+        script_fn_type, llvm::Function::ExternalLinkage, "script",
+        ir_module.get()
     );
 
     // Create a basic block for the script function
-    llvm::BasicBlock* entry_block = llvm::BasicBlock::Create(*context, "entry", script_fn);
-    llvm::BasicBlock* exit_block = llvm::BasicBlock::Create(*context, "exit", script_fn);
+    llvm::BasicBlock* entry_block =
+        llvm::BasicBlock::Create(*context, "entry", script_fn);
+    llvm::BasicBlock* exit_block =
+        llvm::BasicBlock::Create(*context, "exit", script_fn);
 
     // Start inserting instructions into the entry block.
     builder->SetInsertPoint(entry_block);
 
     // Allocate space for the return value.
-    llvm::AllocaInst* ret_val = builder->CreateAlloca(builder->getInt32Ty(), nullptr, "$retval");
+    llvm::AllocaInst* ret_val =
+        builder->CreateAlloca(builder->getInt32Ty(), nullptr, "$retval");
 
     // Append the exit block to the block list.
-    block_list = std::make_shared<Block::Script>(block_list, ret_val, exit_block);
+    block_list =
+        std::make_shared<Block::Script>(block_list, ret_val, exit_block);
 
     // Set panic recoverable code.
     if (panic_recoverable) {
         // Get jmp_buf
-        llvm::GlobalVariable* jmp_buf_global = ir_module->getGlobalVariable("jmp_buf", true);
-        llvm::Value* jmp_buf_ptr = builder->CreateBitCast(jmp_buf_global, llvm::PointerType::get(*context, 0));
+        llvm::GlobalVariable* jmp_buf_global =
+            ir_module->getGlobalVariable("jmp_buf", true);
+        llvm::Value* jmp_buf_ptr = builder->CreateBitCast(
+            jmp_buf_global, llvm::PointerType::get(*context, 0)
+        );
 
         // Call setjmp
         llvm::Function* setjmp_fn = ir_module->getFunction("setjmp");
         llvm::Value* setjmp_ret = builder->CreateCall(setjmp_fn, {jmp_buf_ptr});
-        llvm::Value* is_setjmp = builder->CreateICmpNE(setjmp_ret, llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 0));
+        llvm::Value* is_setjmp = builder->CreateICmpNE(
+            setjmp_ret,
+            llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), 0)
+        );
 
         // Create panic and normal blocks
-        llvm::BasicBlock* panic_block = llvm::BasicBlock::Create(*context, "panic", script_fn);
-        llvm::BasicBlock* normal_block = llvm::BasicBlock::Create(*context, "normal", script_fn);
+        llvm::BasicBlock* panic_block =
+            llvm::BasicBlock::Create(*context, "panic", script_fn);
+        llvm::BasicBlock* normal_block =
+            llvm::BasicBlock::Create(*context, "normal", script_fn);
 
         builder->CreateCondBr(is_setjmp, panic_block, normal_block);
 
@@ -524,8 +550,7 @@ bool CodeGenerator::generate(const std::vector<std::shared_ptr<Stmt>>& stmts, bo
 bool CodeGenerator::generate_main(bool require_verification) {
     // Generate the main function that calls $script
     llvm::FunctionType* main_fn_type = llvm::FunctionType::get(
-        builder->getInt32Ty(),
-        {builder->getInt32Ty(), builder->getPtrTy()},
+        builder->getInt32Ty(), {builder->getInt32Ty(), builder->getPtrTy()},
         false
     );
 
@@ -534,7 +559,8 @@ bool CodeGenerator::generate_main(bool require_verification) {
     );
 
     // Create a basic block for the main function
-    llvm::BasicBlock* main_entry = llvm::BasicBlock::Create(*context, "entry", main_fn);
+    llvm::BasicBlock* main_entry =
+        llvm::BasicBlock::Create(*context, "entry", main_fn);
     builder->SetInsertPoint(main_entry);
 
     // Call the script function

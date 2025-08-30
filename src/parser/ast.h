@@ -18,7 +18,8 @@
  * @brief A statement AST node.
  *
  * Statements are pieces of code that do not evaluate to a value.
- * Includes the expression statement, declarations, and non-declaring statements.
+ * Includes the expression statement, declarations, and non-declaring
+ * statements.
  */
 class Stmt {
 public:
@@ -88,7 +89,8 @@ public:
      * @brief Accept a visitor.
      *
      * @param visitor The visitor to accept.
-     * @param as_lvalue Whether or not the expression should be treated as an lvalue.
+     * @param as_lvalue Whether or not the expression should be treated as an
+     * lvalue.
      * @return The return value from the visitor.
      */
     virtual std::any accept(Visitor* visitor, bool as_lvalue) = 0;
@@ -97,11 +99,14 @@ public:
 /**
  * @brief An annotation AST node.
  *
- * An annotation object is used in the AST to organize parts of the type annotation.
- * Annotations are effectively unresolved types, which can be resolved to proper type objects in the type checker.
- * It should not be confused with a type object, which represents the resolved type of an expression.
+ * An annotation object is used in the AST to organize parts of the type
+ * annotation. Annotations are effectively unresolved types, which can be
+ * resolved to proper type objects in the type checker. It should not be
+ * confused with a type object, which represents the resolved type of an
+ * expression.
  *
- * Type annotations are not designed to be compared with each other; comparing types should only be done after resolution.
+ * Type annotations are not designed to be compared with each other; comparing
+ * types should only be done after resolution.
  */
 class Annotation {
 public:
@@ -141,12 +146,12 @@ public:
      * @brief Convert the annotation to a string representation.
      *
      * This method is used for debugging and logging purposes.
-     * The string representation is not unique and should not be used to compare types.
+     * The string representation is not unique and should not be used to compare
+     * types.
      *
      * @return A string representation of the annotation.
      */
-    virtual std::string
-    to_string() const = 0;
+    virtual std::string to_string() const = 0;
 };
 
 // MARK: Statements
@@ -163,9 +168,7 @@ public:
 
     Expression(std::shared_ptr<Expr> expression) : expression(expression) {}
 
-    std::any accept(Visitor* visitor) override {
-        return visitor->visit(this);
-    }
+    std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };
 
 /**
@@ -186,19 +189,13 @@ public:
     // A weak pointer to the field entry in the symbol table.
     std::weak_ptr<Node::FieldEntry> field_entry;
 
-    Let(
-        std::shared_ptr<Token> identifier,
-        std::optional<std::shared_ptr<Expr>> expression,
-        bool has_var,
-        std::optional<std::shared_ptr<Annotation>> annotation
-    ) : identifier(identifier),
-        expression(expression),
-        has_var(has_var),
-        annotation(annotation) {}
+    Let(std::shared_ptr<Token> identifier,
+        std::optional<std::shared_ptr<Expr>> expression, bool has_var,
+        std::optional<std::shared_ptr<Annotation>> annotation)
+        : identifier(identifier), expression(expression), has_var(has_var),
+          annotation(annotation) {}
 
-    std::any accept(Visitor* visitor) override {
-        return visitor->visit(this);
-    }
+    std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };
 
 /**
@@ -208,26 +205,24 @@ public:
  */
 class Stmt::Eof : public Stmt {
 public:
-    std::any accept(Visitor* visitor) override {
-        return visitor->visit(this);
-    }
+    std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };
 
 /**
  * @brief A print statement.
  *
- * Since a proper print function is not yet implemented, this is a temporary statement for development and will be removed in the future.
+ * Since a proper print function is not yet implemented, this is a temporary
+ * statement for development and will be removed in the future.
  */
 class Stmt::Print : public Stmt {
 public:
     // The expressions to print.
     std::vector<std::shared_ptr<Expr>> expressions;
 
-    Print(std::vector<std::shared_ptr<Expr>> expressions) : expressions(expressions) {}
+    Print(std::vector<std::shared_ptr<Expr>> expressions)
+        : expressions(expressions) {}
 
-    std::any accept(Visitor* visitor) override {
-        return visitor->visit(this);
-    }
+    std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };
 
 // MARK: Expressions
@@ -236,7 +231,8 @@ public:
  * @brief An assignment expression.
  *
  * Assignment expressions assign an rvalue to an lvalue.
- * Although structurally similar to binary expressions, a separate class is used for organization.
+ * Although structurally similar to binary expressions, a separate class is used
+ * for organization.
  */
 class Expr::Assign : public Expr {
 public:
@@ -247,7 +243,10 @@ public:
     // The right operand expression.
     std::shared_ptr<Expr> right;
 
-    Assign(std::shared_ptr<Expr> left, std::shared_ptr<Token> op, std::shared_ptr<Expr> right)
+    Assign(
+        std::shared_ptr<Expr> left, std::shared_ptr<Token> op,
+        std::shared_ptr<Expr> right
+    )
         : left(left), op(op), right(right) {
         location = &op->location;
     }
@@ -272,7 +271,10 @@ public:
     // The right operand expression.
     std::shared_ptr<Expr> right;
 
-    Binary(std::shared_ptr<Expr> left, std::shared_ptr<Token> op, std::shared_ptr<Expr> right)
+    Binary(
+        std::shared_ptr<Expr> left, std::shared_ptr<Token> op,
+        std::shared_ptr<Expr> right
+    )
         : left(left), op(op), right(right) {
         location = &op->location;
     }
@@ -319,13 +321,11 @@ public:
     // The field entry associated with the identifier.
     std::weak_ptr<Node::FieldEntry> field_entry;
 
-    NameRef(std::shared_ptr<Token> token)
-        : name(token) {
+    NameRef(std::shared_ptr<Token> token) : name(token) {
         location = &token->location;
     }
 
-    NameRef(Name name)
-        : name(name) {
+    NameRef(Name name) : name(name) {
         location = &name.parts[0].token->location;
     }
 
@@ -337,15 +337,15 @@ public:
 /**
  * @brief A literal expression.
  *
- * Literal expressions are expressions that represent a literal value like a number or string.
+ * Literal expressions are expressions that represent a literal value like a
+ * number or string.
  */
 class Expr::Literal : public Expr {
 public:
     // The token representing the literal value.
     std::shared_ptr<Token> token;
 
-    Literal(std::shared_ptr<Token> token)
-        : token(token) {
+    Literal(std::shared_ptr<Token> token) : token(token) {
         location = &token->location;
     }
 
@@ -357,9 +357,10 @@ public:
 /**
  * @brief A tuple expression.
  *
- * Tuple expressions are expressions that represent a fixed-size collection of values.
- * The values may be of different types.
- * A tuple must either have at least one comma or be an empty pair of parentheses (also known as the unit tuple).
+ * Tuple expressions are expressions that represent a fixed-size collection of
+ * values. The values may be of different types. A tuple must either have at
+ * least one comma or be an empty pair of parentheses (also known as the unit
+ * tuple).
  */
 class Expr::Tuple : public Expr {
 public:
@@ -368,7 +369,10 @@ public:
     // The elements of the tuple.
     std::vector<std::shared_ptr<Expr>> elements;
 
-    Tuple(std::shared_ptr<Token> lparen, std::vector<std::shared_ptr<Expr>> elements)
+    Tuple(
+        std::shared_ptr<Token> lparen,
+        std::vector<std::shared_ptr<Expr>> elements
+    )
         : lparen(lparen), elements(std::move(elements)) {
         location = &lparen->location;
     }
@@ -383,7 +387,8 @@ public:
 /**
  * @brief An annotation consisting of a name.
  *
- * This annotation is used to represent named types, such as classes or interfaces.
+ * This annotation is used to represent named types, such as classes or
+ * interfaces.
  */
 class Annotation::NameRef : public Annotation {
 public:
@@ -392,19 +397,16 @@ public:
 
     NameRef(Name name) : name(std::move(name)) {}
 
-    std::any accept(Visitor* visitor) override {
-        return visitor->visit(this);
-    }
+    std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 
-    std::string to_string() const override {
-        return name.to_string();
-    }
+    std::string to_string() const override { return name.to_string(); }
 };
 
 /**
  * @brief An annotation representing a pointer type.
  *
- * This annotation is used to represent pointer types, which can be either mutable or immutable.
+ * This annotation is used to represent pointer types, which can be either
+ * mutable or immutable.
  */
 class Annotation::Pointer : public Annotation {
 public:
@@ -416,9 +418,7 @@ public:
     Pointer(std::shared_ptr<Annotation> base, bool is_mutable = false)
         : base(std::move(base)), is_mutable(is_mutable) {}
 
-    std::any accept(Visitor* visitor) override {
-        return visitor->visit(this);
-    }
+    std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 
     std::string to_string() const override {
         return (is_mutable ? "var" : "") + std::string("*") + base->to_string();
@@ -428,7 +428,8 @@ public:
 /**
  * @brief An annotation representing a reference type.
  *
- * This annotation is used to represent reference types, which can be either mutable or immutable.
+ * This annotation is used to represent reference types, which can be either
+ * mutable or immutable.
  */
 class Annotation::Reference : public Annotation {
 public:
@@ -440,9 +441,7 @@ public:
     Reference(std::shared_ptr<Annotation> base, bool is_mutable = false)
         : base(std::move(base)), is_mutable(is_mutable) {}
 
-    std::any accept(Visitor* visitor) override {
-        return visitor->visit(this);
-    }
+    std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 
     std::string to_string() const override {
         return (is_mutable ? "var" : "") + std::string("&") + base->to_string();
@@ -452,7 +451,8 @@ public:
 /**
  * @brief An annotation representing an array type.
  *
- * This annotation is used to represent array types, which can be either sized or unsized.
+ * This annotation is used to represent array types, which can be either sized
+ * or unsized.
  */
 class Annotation::Array : public Annotation {
 public:
@@ -461,34 +461,36 @@ public:
     // The number of elements in the array, if known.
     const std::optional<size_t> size;
 
-    Array(std::shared_ptr<Annotation> base, std::optional<size_t> size = std::nullopt)
+    Array(
+        std::shared_ptr<Annotation> base,
+        std::optional<size_t> size = std::nullopt
+    )
         : base(std::move(base)), size(size) {}
 
-    std::any accept(Visitor* visitor) override {
-        return visitor->visit(this);
-    }
+    std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 
     std::string to_string() const override {
-        return "[" + base->to_string() + (size ? "; " + std::to_string(*size) : "") + "]";
+        return "[" + base->to_string() +
+               (size ? "; " + std::to_string(*size) : "") + "]";
     }
 };
 
 /**
  * @brief An annotation representing an object type.
  *
- * This annotation is used to represent objects with properties, similar to dictionaries.
+ * This annotation is used to represent objects with properties, similar to
+ * dictionaries.
  */
 class Annotation::Object : public Annotation {
 public:
-    // A dictionary of properties, where keys are property names and values are annotations.
+    // A dictionary of properties, where keys are property names and values are
+    // annotations.
     const Dictionary<std::string, std::shared_ptr<Annotation>> properties;
 
     Object(Dictionary<std::string, std::shared_ptr<Annotation>> properties)
         : properties(std::move(properties)) {}
 
-    std::any accept(Visitor* visitor) override {
-        return visitor->visit(this);
-    }
+    std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 
     std::string to_string() const override {
         std::string result = "{";
@@ -518,9 +520,7 @@ public:
     Tuple(std::vector<std::shared_ptr<Annotation>> elements)
         : elements(std::move(elements)) {}
 
-    std::any accept(Visitor* visitor) override {
-        return visitor->visit(this);
-    }
+    std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 
     std::string to_string() const override {
         std::string result = "(";

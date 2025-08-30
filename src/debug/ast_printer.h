@@ -12,7 +12,8 @@
  * @brief A class for printing the AST for debugging purposes.
  *
  * All visit functions should return an std::string representing the AST node.
- * This class does not need to be reset after use as it does not store any state.
+ * This class does not need to be reset after use as it does not store any
+ * state.
  */
 class AstPrinter : public Stmt::Visitor, public Expr::Visitor {
     std::any visit(Stmt::Expression* stmt) override;
@@ -46,7 +47,8 @@ public:
      * @param stmts The list of statements to convert.
      * @return A list of strings representing the statements.
      */
-    std::vector<std::string> stmts_to_strings(const std::vector<std::shared_ptr<Stmt>>& stmts);
+    std::vector<std::string>
+    stmts_to_strings(const std::vector<std::shared_ptr<Stmt>>& stmts);
 };
 
 #endif // NICO_AST_PRINTER_H

@@ -22,7 +22,10 @@ public:
      * @param ir_module The IR module to optimize.
      * @param opt_level The optimization level to use. Defaults to O2.
      */
-    void optimize(std::unique_ptr<llvm::Module>& ir_module, llvm::OptimizationLevel opt_level = llvm::OptimizationLevel::O2);
+    void optimize(
+        std::unique_ptr<llvm::Module>& ir_module,
+        llvm::OptimizationLevel opt_level = llvm::OptimizationLevel::O2
+    );
 };
 
 #endif // NICO_OPTIMIZER_H

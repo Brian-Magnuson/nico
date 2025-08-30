@@ -24,13 +24,9 @@
 #include "../src/debug/ast_printer.h"
 
 void run_compile_test(
-    Lexer& lexer,
-    Parser& parser,
-    GlobalChecker& global_checker,
-    LocalChecker& local_checker,
-    CodeGenerator& codegen,
-    std::unique_ptr<IJit>& jit,
-    std::string_view source,
+    Lexer& lexer, Parser& parser, GlobalChecker& global_checker,
+    LocalChecker& local_checker, CodeGenerator& codegen,
+    std::unique_ptr<IJit>& jit, std::string_view source,
     std::optional<std::string_view> expected_output = std::nullopt,
     std::optional<int> expected_return_code = std::nullopt
 ) {
@@ -43,15 +39,16 @@ void run_compile_test(
     codegen.generate(ast, false);
     REQUIRE(codegen.generate_main());
     auto output = codegen.eject();
-    // llvm::outs() << "===========================================================\n";
+    // llvm::outs() <<
+    // "===========================================================\n";
     // output.module->print(llvm::outs(), nullptr);
-    auto error = jit->add_module(std::move(output.module), std::move(output.context));
+    auto error =
+        jit->add_module(std::move(output.module), std::move(output.context));
 
     std::optional<llvm::Expected<int>> return_code;
 
-    auto [out, err] = capture_stdout([&]() {
-        return_code = jit->run_main(0, nullptr);
-    });
+    auto [out, err] =
+        capture_stdout([&]() { return_code = jit->run_main(0, nullptr); });
 
     if (expected_output) {
         CHECK(out == *expected_output);
@@ -75,25 +72,14 @@ TEST_CASE("JIT print statements", "[jit]") {
 
     SECTION("Print hello world 1") {
         run_compile_test(
-            lexer,
-            parser,
-            global_checker,
-            local_checker,
-            codegen,
-            jit,
-            R"(printout "Hello, World!")",
-            "Hello, World!"
+            lexer, parser, global_checker, local_checker, codegen, jit,
+            R"(printout "Hello, World!")", "Hello, World!"
         );
     }
 
     SECTION("Print hello world 2") {
         run_compile_test(
-            lexer,
-            parser,
-            global_checker,
-            local_checker,
-            codegen,
-            jit,
+            lexer, parser, global_checker, local_checker, codegen, jit,
             R"(printout "Hello, World!" printout "Goodbye, World!")",
             "Hello, World!Goodbye, World!"
         );
@@ -101,12 +87,7 @@ TEST_CASE("JIT print statements", "[jit]") {
 
     SECTION("Print hello world 3") {
         run_compile_test(
-            lexer,
-            parser,
-            global_checker,
-            local_checker,
-            codegen,
-            jit,
+            lexer, parser, global_checker, local_checker, codegen, jit,
             R"(printout "Hello, World!\n" printout "Goodbye, World!")",
             "Hello, World!\nGoodbye, World!"
         );
@@ -114,14 +95,8 @@ TEST_CASE("JIT print statements", "[jit]") {
 
     SECTION("Print hello world 4") {
         run_compile_test(
-            lexer,
-            parser,
-            global_checker,
-            local_checker,
-            codegen,
-            jit,
-            R"(printout "Hello", ", World!")",
-            "Hello, World!"
+            lexer, parser, global_checker, local_checker, codegen, jit,
+            R"(printout "Hello", ", World!")", "Hello, World!"
         );
     }
 
@@ -144,14 +119,8 @@ TEST_CASE("JIT let statements", "[jit]") {
 
     SECTION("Basic variable reference") {
         run_compile_test(
-            lexer,
-            parser,
-            global_checker,
-            local_checker,
-            codegen,
-            jit,
-            R"(let x = 5 printout x)",
-            "5"
+            lexer, parser, global_checker, local_checker, codegen, jit,
+            R"(let x = 5 printout x)", "5"
         );
     }
 
@@ -174,51 +143,28 @@ TEST_CASE("JIT integer operators", "[jit]") {
 
     SECTION("Unary minus") {
         run_compile_test(
-            lexer,
-            parser,
-            global_checker,
-            local_checker,
-            codegen,
-            jit,
-            R"(let x = -5 printout x, ",", -x)",
-            "-5,5"
+            lexer, parser, global_checker, local_checker, codegen, jit,
+            R"(let x = -5 printout x, ",", -x)", "-5,5"
         );
     }
 
     SECTION("Integer addition") {
         run_compile_test(
-            lexer,
-            parser,
-            global_checker,
-            local_checker,
-            codegen,
-            jit,
-            R"(let x = 5 let y = 10 printout x + y)",
-            "15"
+            lexer, parser, global_checker, local_checker, codegen, jit,
+            R"(let x = 5 let y = 10 printout x + y)", "15"
         );
     }
 
     SECTION("Integer subtraction") {
         run_compile_test(
-            lexer,
-            parser,
-            global_checker,
-            local_checker,
-            codegen,
-            jit,
-            R"(let x = 5 let y = 10 printout y - x)",
-            "5"
+            lexer, parser, global_checker, local_checker, codegen, jit,
+            R"(let x = 5 let y = 10 printout y - x)", "5"
         );
     }
 
     SECTION("Integer add and subtract negatives") {
         run_compile_test(
-            lexer,
-            parser,
-            global_checker,
-            local_checker,
-            codegen,
-            jit,
+            lexer, parser, global_checker, local_checker, codegen, jit,
             R"(printout -5 + 10, ",", 10 + -5, ",", -5 - 10, ",", 10 - -5)",
             "5,5,-15,15"
         );
@@ -226,12 +172,7 @@ TEST_CASE("JIT integer operators", "[jit]") {
 
     SECTION("Integer multiplication") {
         run_compile_test(
-            lexer,
-            parser,
-            global_checker,
-            local_checker,
-            codegen,
-            jit,
+            lexer, parser, global_checker, local_checker, codegen, jit,
             R"(printout 5 * 10, ",", 2 * -3, ",", 7 * 0, ",", -1 * 1)",
             "50,-6,0,-1"
         );
@@ -239,12 +180,7 @@ TEST_CASE("JIT integer operators", "[jit]") {
 
     SECTION("Integer division") {
         run_compile_test(
-            lexer,
-            parser,
-            global_checker,
-            local_checker,
-            codegen,
-            jit,
+            lexer, parser, global_checker, local_checker, codegen, jit,
             R"(printout 10 / 5, ",", 7 / 2, ",", -9 / 3, ",", 1 / -1)",
             "2,3,-3,-1"
         );
@@ -253,15 +189,8 @@ TEST_CASE("JIT integer operators", "[jit]") {
     SECTION("Divide by zero") {
         codegen.set_panic_recoverable(true);
         run_compile_test(
-            lexer,
-            parser,
-            global_checker,
-            local_checker,
-            codegen,
-            jit,
-            R"(printout 1 / 0)",
-            std::nullopt,
-            101
+            lexer, parser, global_checker, local_checker, codegen, jit,
+            R"(printout 1 / 0)", std::nullopt, 101
         );
     }
 
@@ -284,51 +213,28 @@ TEST_CASE("JIT float operators", "[jit]") {
 
     SECTION("Unary minus") {
         run_compile_test(
-            lexer,
-            parser,
-            global_checker,
-            local_checker,
-            codegen,
-            jit,
-            R"(let x = -5.5 printout x, ",", -x)",
-            "-5.5,5.5"
+            lexer, parser, global_checker, local_checker, codegen, jit,
+            R"(let x = -5.5 printout x, ",", -x)", "-5.5,5.5"
         );
     }
 
     SECTION("Float addition") {
         run_compile_test(
-            lexer,
-            parser,
-            global_checker,
-            local_checker,
-            codegen,
-            jit,
-            R"(let x = 5.5 let y = 10.2 printout x + y)",
-            "15.7"
+            lexer, parser, global_checker, local_checker, codegen, jit,
+            R"(let x = 5.5 let y = 10.2 printout x + y)", "15.7"
         );
     }
 
     SECTION("Float subtraction") {
         run_compile_test(
-            lexer,
-            parser,
-            global_checker,
-            local_checker,
-            codegen,
-            jit,
-            R"(let x = 5.5 let y = 10.2 printout y - x)",
-            "4.7"
+            lexer, parser, global_checker, local_checker, codegen, jit,
+            R"(let x = 5.5 let y = 10.2 printout y - x)", "4.7"
         );
     }
 
     SECTION("Float multiplication") {
         run_compile_test(
-            lexer,
-            parser,
-            global_checker,
-            local_checker,
-            codegen,
-            jit,
+            lexer, parser, global_checker, local_checker, codegen, jit,
             R"(printout 2.0 * 4.0, ",", 0.5 * 0.25, ",", -8.0 * 0.125, ",", -1.5 * -2.0)",
             "8,0.125,-1,3"
         );
@@ -336,12 +242,7 @@ TEST_CASE("JIT float operators", "[jit]") {
 
     SECTION("Float division") {
         run_compile_test(
-            lexer,
-            parser,
-            global_checker,
-            local_checker,
-            codegen,
-            jit,
+            lexer, parser, global_checker, local_checker, codegen, jit,
             R"(printout 8.0 / 4.0, ",", 0.5 / 0.25, ",", -8.0 / 0.125, ",", -1.5 / -2.0)",
             "2,2,-64,0.75"
         );

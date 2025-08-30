@@ -20,14 +20,16 @@
  * @brief A class to perform LLVM code generation.
  *
  * This class assumes that the AST has been type-checked.
- * It does not perform type-checking, it does not check for memory safety, and it does not check for undefined behavior.
+ * It does not perform type-checking, it does not check for memory safety, and
+ * it does not check for undefined behavior.
  */
 class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
     // The LLVM context.
     std::unique_ptr<llvm::LLVMContext> context;
     // The LLVM Module that will be generated.
     std::unique_ptr<llvm::Module> ir_module;
-    // The IR builder used to generate the IR; always set the insertion point before using it.
+    // The IR builder used to generate the IR; always set the insertion point
+    // before using it.
     std::unique_ptr<llvm::IRBuilder<>> builder;
     // A linked list of blocks for tracking control flow.
     std::shared_ptr<Block> block_list = nullptr;
@@ -48,7 +50,8 @@ class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
     std::any visit(Expr::Tuple* expr, bool as_lvalue) override;
 
     /**
-     * @brief Adds C standard library functions to the module that are useful for code generation.
+     * @brief Adds C standard library functions to the module that are useful
+     * for code generation.
      *
      * Includes the following functions:
      * `printf`,
@@ -66,29 +69,33 @@ class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
     /**
      * @brief Adds a runtime check for division by zero.
      *
-     * This check generates code to compare the divisor against zero. If the divisor is zero,
-     * the program will abort with an error message.
+     * This check generates code to compare the divisor against zero. If the
+     * divisor is zero, the program will abort with an error message.
      *
      * @param divisor The divisor value to check.
-     * @param location The location in the source code where the division occurs, used for the panic message.
+     * @param location The location in the source code where the division
+     * occurs, used for the panic message.
      */
     void add_div_zero_check(llvm::Value* divisor, const Location* location);
 
     /**
      * @brief Adds a panic call to the generated code.
      *
-     * During a panic, the program will print the error message and immediately terminate.
+     * During a panic, the program will print the error message and immediately
+     * terminate.
      *
      * The implementation of this may vary.
      *
      * @param message The error message to pass to the `panic` function.
-     * @param location The location in the source code where the panic occurs, used for the panic message.
+     * @param location The location in the source code where the panic occurs,
+     * used for the panic message.
      */
     void add_panic(std::string_view message, const Location* location);
 
 public:
     /**
-     * @brief The output of the code generator, containing the generated LLVM module and context.
+     * @brief The output of the code generator, containing the generated LLVM
+     * module and context.
      *
      * This struct has no additional functions; it is simply a wrapper for both
      * the module and context.
@@ -102,16 +109,17 @@ public:
         // The LLVM context used to generate the module.
         std::unique_ptr<llvm::LLVMContext> context;
 
-        Output(std::unique_ptr<llvm::Module> mod, std::unique_ptr<llvm::LLVMContext> ctx)
+        Output(
+            std::unique_ptr<llvm::Module> mod,
+            std::unique_ptr<llvm::LLVMContext> ctx
+        )
             : module(std::move(mod)), context(std::move(ctx)) {}
     };
 
     /**
      * @brief Constructs a code generator with a new LLVM context and module.
      */
-    CodeGenerator() {
-        reset();
-    }
+    CodeGenerator() { reset(); }
 
     /**
      * @brief Generate the LLVM IR for the given AST statements.
@@ -121,7 +129,8 @@ public:
      * correctness and return false if verification fails.
      *
      * @param stmts The statements to generate IR for.
-     * @param require_verification Whether to verify the generated IR. Defaults to true.
+     * @param require_verification Whether to verify the generated IR. Defaults
+     * to true.
      * @return true if the IR was generated successfully, false otherwise.
      */
     bool generate(
@@ -139,8 +148,10 @@ public:
      * If `require_verification` is true, it will verify the generated IR for
      * correctness and return false if verification fails.
      *
-     * @param require_verification Whether to verify the generated IR. Defaults to true.
-     * @return true if the main function was generated successfully, false otherwise.
+     * @param require_verification Whether to verify the generated IR. Defaults
+     * to true.
+     * @return true if the main function was generated successfully, false
+     * otherwise.
      */
     bool generate_main(bool require_verification = true);
 
@@ -152,11 +163,10 @@ public:
      * After calling this method, the CodeGenerator object is in an invalid
      * state and should not be used.
      *
-     * @return An Output object containing the generated LLVM module and context.
+     * @return An Output object containing the generated LLVM module and
+     * context.
      */
-    Output eject() {
-        return Output(std::move(ir_module), std::move(context));
-    }
+    Output eject() { return Output(std::move(ir_module), std::move(context)); }
 
     /**
      * @brief Reset the code generator to its initial state.
@@ -170,11 +180,15 @@ public:
     /**
      * @brief Sets whether the code generator should use panic recovery.
      *
-     * If setting panic recoverable, make sure to call this function before any code is generated.
+     * If setting panic recoverable, make sure to call this function before any
+     * code is generated.
      *
-     * Normally, panics cause the program to terminate. But this makes the program difficult to test. So we provide a means to make a panic "recoverable".
+     * Normally, panics cause the program to terminate. But this makes the
+     * program difficult to test. So we provide a means to make a panic
+     * "recoverable".
      *
-     * When panic recoverable is true, the program will generate instructions to call setjmp and longjmp. These behave similar to throw and catch in C++.
+     * When panic recoverable is true, the program will generate instructions to
+     * call setjmp and longjmp. These behave similar to throw and catch in C++.
      *
      * @param value True to enable panic recovery, false to disable it.
      */

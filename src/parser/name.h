@@ -12,10 +12,12 @@
  * @brief A name class used to represent names with multiple parts.
  *
  * Name should only be used where multi-part names are allowed.
- * Multi-part names are not allowed in declarations, but are in name expressions and annotations.
+ * Multi-part names are not allowed in declarations, but are in name expressions
+ * and annotations.
  *
- * Names should not be compared directly as different names may refer to the same thing and similar names may refer to different things.
- * Instead, search for the name in the symbol tree and resolve it to a node.
+ * Names should not be compared directly as different names may refer to the
+ * same thing and similar names may refer to different things. Instead, search
+ * for the name in the symbol tree and resolve it to a node.
  */
 class Name {
 public:
@@ -26,7 +28,8 @@ public:
      *
      * E.g. `example::object<with, args>` would have two parts:
      * - The first part would be `example` with no arguments.
-     * - The second part would be `object` with two arguments: `with` and `args`.
+     * - The second part would be `object` with two arguments: `with` and
+     * `args`.
      */
     struct Part {
         // The token representing this part of the name.
@@ -38,11 +41,9 @@ public:
     // The parts of the name.
     std::vector<Part> parts;
 
-    Name(std::shared_ptr<Token> token)
-        : parts({{token, {}}}) {}
+    Name(std::shared_ptr<Token> token) : parts({{token, {}}}) {}
 
-    Name(std::vector<Part> elements)
-        : parts(elements) {
+    Name(std::vector<Part> elements) : parts(elements) {
         if (parts.empty()) {
             panic("Name::Name: parts cannot be empty");
         }

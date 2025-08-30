@@ -2,9 +2,14 @@
 
 int Node::LocalScope::next_scope_id = 0;
 
-Node::Node(std::weak_ptr<Node::IScope> parent_scope, const std::string& identifier)
+Node::Node(
+    std::weak_ptr<Node::IScope> parent_scope, const std::string& identifier
+)
     : parent(parent_scope),
-      symbol(parent_scope.lock() ? parent_scope.lock()->symbol + "::" + identifier : identifier),
+      symbol(
+          parent_scope.lock() ? parent_scope.lock()->symbol + "::" + identifier
+                              : identifier
+      ),
       short_name(identifier) {}
 
 void Node::initialize_node() {
@@ -13,7 +18,8 @@ void Node::initialize_node() {
         // Root scope does not have a parent, so we do nothing.
         return;
     }
-    if (auto type_node = std::dynamic_pointer_cast<Node::StructDef>(shared_this)) {
+    if (auto type_node =
+            std::dynamic_pointer_cast<Node::StructDef>(shared_this)) {
         type_node->type = std::make_shared<Type::Named>(type_node);
     }
     if (parent.expired()) {

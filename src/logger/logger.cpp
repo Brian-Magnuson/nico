@@ -6,14 +6,15 @@
 #include <io.h>
 #define ISATTY _isatty
 #define FILENO _fileno
-#elif defined(__unix__) || defined(__unix) || (defined(__APPLE__) && defined(__MACH__))
+#elif defined(__unix__) || defined(__unix) ||                                  \
+    (defined(__APPLE__) && defined(__MACH__))
 // Unix-like systems.
 #include <unistd.h>
 #define ISATTY isatty
 #define FILENO fileno
 #else
 // Fallback if neither header is available.
-#define ISATTY(x) (0)          // Always return false, indicating not a terminal.
+#define ISATTY(x) (0) // Always return false, indicating not a terminal.
 #define FILENO(x) ((void)0, 0) // Dummy to avoid unused variable warning.
 #endif
 
@@ -45,7 +46,9 @@ std::string colorize(Color color) {
     }
 }
 
-void Logger::print_code_at_location(const Location& location, Color underline_color) {
+void Logger::print_code_at_location(
+    const Location& location, Color underline_color
+) {
     const std::string& src_code = location.file->src_code;
     size_t start = location.start;
     size_t length = location.length;
@@ -67,15 +70,13 @@ void Logger::print_code_at_location(const Location& location, Color underline_co
 
     std::string line = src_code.substr(line_start, line_end - line_start);
 
-    *out << location.file->path.string()
-         << ":" << location.line
-         << ":" << (start - line_start + 1) << "\n";
+    *out << location.file->path.string() << ":" << location.line << ":"
+         << (start - line_start + 1) << "\n";
 
-    *out << std::setw(5) << location.line << " | "
-         << line << "\n";
+    *out << std::setw(5) << location.line << " | " << line << "\n";
 
-    *out << std::string(start - line_start + 8, ' ') << colorize(underline_color)
-         << "^";
+    *out << std::string(start - line_start + 8, ' ')
+         << colorize(underline_color) << "^";
     if (location.length > 1)
         *out << std::string(location.length - 1, '~');
 
@@ -94,10 +95,13 @@ void Logger::reset() {
     printing_enabled = true;
 }
 
-void Logger::log_error(Err ec, const Location& location, std::string_view message) {
+void Logger::log_error(
+    Err ec, const Location& location, std::string_view message
+) {
     errors.push_back(ec);
     if (printing_enabled) {
-        *out << colorize(Color::Red) << "Error " << errors.size() << ": " << colorize(Color::Reset) << (int)ec << " " << message << "\n";
+        *out << colorize(Color::Red) << "Error " << errors.size() << ": "
+             << colorize(Color::Reset) << (int)ec << " " << message << "\n";
         print_code_at_location(location);
     }
 }
@@ -105,19 +109,22 @@ void Logger::log_error(Err ec, const Location& location, std::string_view messag
 void Logger::log_error(Err ec, std::string_view message) {
     errors.push_back(ec);
     if (printing_enabled) {
-        *out << colorize(Color::Red) << "Error " << errors.size() << ": " << colorize(Color::Reset) << (int)ec << " " << message << "\n";
+        *out << colorize(Color::Red) << "Error " << errors.size() << ": "
+             << colorize(Color::Reset) << (int)ec << " " << message << "\n";
     }
 }
 
 void Logger::log_note(const Location& location, std::string_view message) {
     if (printing_enabled) {
-        *out << colorize(Color::Cyan) << "⤷ Note: " << colorize(Color::Reset) << message << "\n  ";
+        *out << colorize(Color::Cyan) << "⤷ Note: " << colorize(Color::Reset)
+             << message << "\n  ";
         print_code_at_location(location, Color::Cyan);
     }
 }
 
 void Logger::log_note(std::string_view message) {
     if (printing_enabled) {
-        *out << colorize(Color::Cyan) << "⤷ Note: " << colorize(Color::Reset) << message << "\n";
+        *out << colorize(Color::Cyan) << "⤷ Note: " << colorize(Color::Reset)
+             << message << "\n";
     }
 }

@@ -27,14 +27,16 @@ class Parser {
      *
      * The end of the tokens list is reached when `current >= tokens.size()`.
      *
-     * @return True if the parser has reached the end of the tokens list. False otherwise.
+     * @return True if the parser has reached the end of the tokens list. False
+     * otherwise.
      */
     bool is_at_end() const;
 
     /**
      * @brief Peeks at the current token.
      *
-     * @return A pointer to the current token. If the parser has reached the end of the tokens list, the last token will be returned instead.
+     * @return A pointer to the current token. If the parser has reached the end
+     * of the tokens list, the last token will be returned instead.
      */
     const std::shared_ptr<Token>& peek() const;
 
@@ -47,24 +49,31 @@ class Parser {
     const std::shared_ptr<Token>& previous() const;
 
     /**
-     * @brief Advances the parser to the next token, returning the token that was consumed.
+     * @brief Advances the parser to the next token, returning the token that
+     * was consumed.
      *
-     * E.g. if the current token is a `let` token, calling advance() will advance the parser to the next token and return the `let` token.
+     * E.g. if the current token is a `let` token, calling advance() will
+     * advance the parser to the next token and return the `let` token.
      *
-     * @return A pointer to the token that was consumed. If the parser has reached the end of the tokens list, the last token will be returned instead.
+     * @return A pointer to the token that was consumed. If the parser has
+     * reached the end of the tokens list, the last token will be returned
+     * instead.
      */
     const std::shared_ptr<Token>& advance();
 
     /**
-     * @brief Checks if the current token's type matches any of the provided types, and advances the parser if it does.
+     * @brief Checks if the current token's type matches any of the provided
+     * types, and advances the parser if it does.
      *
      * @param types The types to match.
-     * @return True if the current token's type matches any of the provided types. False otherwise.
+     * @return True if the current token's type matches any of the provided
+     * types. False otherwise.
      */
     bool match(const std::vector<Tok>& types);
 
     /**
-     * @brief Consumes tokens until a safe token is reached. Used to recover from errors.
+     * @brief Consumes tokens until a safe token is reached. Used to recover
+     * from errors.
      */
     void synchronize();
 
@@ -73,7 +82,8 @@ class Parser {
     /**
      * @brief Parses a primary expression.
      *
-     * Primary expressions include literals, identifiers, and grouping expressions.
+     * Primary expressions include literals, identifiers, and grouping
+     * expressions.
      *
      * @return
      */
@@ -86,7 +96,8 @@ class Parser {
      *
      * Includes `-a`
      *
-     * @return A shared pointer to the parsed expression, or nullopt if the expression could not be parsed.
+     * @return A shared pointer to the parsed expression, or nullopt if the
+     * expression could not be parsed.
      */
     std::optional<std::shared_ptr<Expr>> unary();
 
@@ -95,7 +106,8 @@ class Parser {
      *
      * Includes `a * b`, `a / b`, `a % b`
      *
-     * @return A shared pointer to the parsed expression, or nullopt if the expression could not be parsed.
+     * @return A shared pointer to the parsed expression, or nullopt if the
+     * expression could not be parsed.
      */
     std::optional<std::shared_ptr<Expr>> factor();
 
@@ -104,7 +116,8 @@ class Parser {
      *
      * Includes `a + b`, `a - b`
      *
-     * @return A shared pointer to the parsed expression, or nullopt if the expression could not be parsed.
+     * @return A shared pointer to the parsed expression, or nullopt if the
+     * expression could not be parsed.
      */
     std::optional<std::shared_ptr<Expr>> term();
 
@@ -117,7 +130,8 @@ class Parser {
      *
      * Logical and expressions include `a && b`.
      *
-     * @return A shared pointer to the parsed expression, or nullopt if the expression could not be parsed.
+     * @return A shared pointer to the parsed expression, or nullopt if the
+     * expression could not be parsed.
      */
     std::optional<std::shared_ptr<Expr>> logical_and();
 
@@ -126,7 +140,8 @@ class Parser {
      *
      * Logical or expressions include `a || b`.
      *
-     * @return A shared pointer to the parsed expression, or nullopt if the expression could not be parsed.
+     * @return A shared pointer to the parsed expression, or nullopt if the
+     * expression could not be parsed.
      */
     std::optional<std::shared_ptr<Expr>> logical_or();
 
@@ -134,9 +149,11 @@ class Parser {
      * @brief Parses an assignment expression.
      *
      * Assignment expressions assign an rvalue to an lvalue.
-     * Unlike other binary expressions, assignment expressions are right-associative and have their own class.
+     * Unlike other binary expressions, assignment expressions are
+     * right-associative and have their own class.
      *
-     * @return A shared pointer to the parsed expression, or nullopt if the expression could not be parsed.
+     * @return A shared pointer to the parsed expression, or nullopt if the
+     * expression could not be parsed.
      */
     std::optional<std::shared_ptr<Expr>> assignment();
 
@@ -145,7 +162,8 @@ class Parser {
      *
      * An expression is a construct that evaluates to a value.
      *
-     * @return A shared pointer to the parsed expression, or nullopt if the expression could not be parsed.
+     * @return A shared pointer to the parsed expression, or nullopt if the
+     * expression could not be parsed.
      */
     std::optional<std::shared_ptr<Expr>> expression();
 
@@ -156,7 +174,8 @@ class Parser {
      *
      * A let statement introduces a new variable into the current scope.
      *
-     * @return A shared pointer to the parsed statement, or nullopt if the statement could not be parsed.
+     * @return A shared pointer to the parsed statement, or nullopt if the
+     * statement could not be parsed.
      */
     std::optional<std::shared_ptr<Stmt>> let_statement();
 
@@ -175,7 +194,8 @@ class Parser {
      * Print statements print a series of expressions to the console.
      * Print statements are temporary and will be removed in the future.
      *
-     * @return A shared pointer to the parsed statement, or nullopt if the statement could not be parsed.
+     * @return A shared pointer to the parsed statement, or nullopt if the
+     * statement could not be parsed.
      */
     std::optional<std::shared_ptr<Stmt>> print_statement();
 
@@ -184,16 +204,19 @@ class Parser {
      *
      * An expression statement is a statement that consists of an expression.
      *
-     * @return A shared pointer to the parsed statement, or nullopt if the statement could not be parsed.
+     * @return A shared pointer to the parsed statement, or nullopt if the
+     * statement could not be parsed.
      */
     std::optional<std::shared_ptr<Stmt>> expression_statement();
 
     /**
      * @brief Parses a statement.
      *
-     * A statement is the most basic construct in the language. Includes all declarations, expressions, and control flow.
+     * A statement is the most basic construct in the language. Includes all
+     * declarations, expressions, and control flow.
      *
-     * @return A shared pointer to the parsed statement, or nullopt if the statement could not be parsed.
+     * @return A shared pointer to the parsed statement, or nullopt if the
+     * statement could not be parsed.
      */
     std::optional<std::shared_ptr<Stmt>> statement();
 
@@ -217,7 +240,8 @@ public:
      * @param tokens (Requires move) The vector of tokens to parse.
      * @return std::vector<std::shared_ptr<Stmt>> A vector of AST statements.
      */
-    std::vector<std::shared_ptr<Stmt>> parse(const std::vector<std::shared_ptr<Token>>&& tokens);
+    std::vector<std::shared_ptr<Stmt>>
+    parse(const std::vector<std::shared_ptr<Token>>&& tokens);
 };
 
 #endif // NICO_PARSER_H

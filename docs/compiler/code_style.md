@@ -225,7 +225,7 @@ For documentation comments:
 
 Class member variables may not need documentation comments if their purpose can be expressed in 1 or 2 lines.
 
-## Other Code Style Preferences
+## Code Formatting
 
 ### Braces
 

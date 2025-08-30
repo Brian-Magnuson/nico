@@ -4,7 +4,8 @@
 /**
  * @brief An error code that can be issued by the compiler.
  *
- * Error codes are named based on what the compiler *observes*, not what is disallowed.
+ * Error codes are named based on what the compiler *observes*, not what is
+ * disallowed.
  */
 enum class Err {
     // Null error; may be issued if there is no error.
@@ -27,7 +28,8 @@ enum class Err {
     ClosingUnopenedComment,
     // A line was found with left spacing consisting of both tabs and spaces.
     MixedLeftSpacing,
-    // A line was found with left spacing that is inconsistent with previous lines.
+    // A line was found with left spacing that is inconsistent with previous
+    // lines.
     InconsistentLeftSpacing,
     // An indent was detected with an improper number of spaces.
     MalformedIndent,
@@ -69,7 +71,8 @@ enum class Err {
     NamespaceInStructDef,
     // An attempt was made to declare a struct in a local scope.
     StructInLocalScope,
-    // An attempt was made to introduce a new name in a scope where the same name already exists.
+    // An attempt was made to introduce a new name in a scope where the same
+    // name already exists.
     NameAlreadyExists,
     // An attempt was made to shadow a reserved name.
     NameIsReserved,
@@ -113,9 +116,11 @@ enum class Err {
     Malfunction = 9000,
     // An unknown error occurred.
     Unknown,
-    // Statement was reached that should be unreachable. Typically used when a series of conditional checks do not catch every case.
+    // Statement was reached that should be unreachable. Typically used when a
+    // series of conditional checks do not catch every case.
     Unreachable,
-    // Statement was reached that should be impossible. Typically used when a function does not behave as expected.
+    // Statement was reached that should be impossible. Typically used when a
+    // function does not behave as expected.
     Impossible,
     // Statement was reached that should be unimplemented.
     Unimplemented,
@@ -127,7 +132,8 @@ enum class Err {
     ModuleVerificationFailed,
     // SimpleJit could not create an LLJIT instance.
     JitCannotInstantiate,
-    // The JIT compiler found a symbol for `main`, but could not cast it to a function pointer.
+    // The JIT compiler found a symbol for `main`, but could not cast it to a
+    // function pointer.
     JitBadMainPointer,
 };
 

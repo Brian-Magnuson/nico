@@ -99,7 +99,9 @@ std::optional<std::shared_ptr<Expr>> Parser::primary() {
         }
     }
 
-    Logger::inst().log_error(Err::NotAnExpression, peek()->location, "Expected expression.");
+    Logger::inst().log_error(
+        Err::NotAnExpression, peek()->location, "Expected expression."
+    );
     return std::nullopt;
 }
 
@@ -208,7 +210,10 @@ std::optional<std::shared_ptr<Stmt>> Parser::let_statement() {
 
     // Get identifier
     if (!match({Tok::Identifier})) {
-        Logger::inst().log_error(Err::NotAnIdentifier, peek()->location, "Expected identifier in let statement.");
+        Logger::inst().log_error(
+            Err::NotAnIdentifier, peek()->location,
+            "Expected identifier in let statement."
+        );
         return std::nullopt;
     }
     auto identifier = previous();
@@ -235,7 +240,10 @@ std::optional<std::shared_ptr<Stmt>> Parser::let_statement() {
 
     // If expr and annotation are both nullopt, we have an error.
     if (!expr && !anno) {
-        Logger::inst().log_error(Err::LetWithoutTypeOrValue, peek()->location, "Let statement must have a type annotation or value.");
+        Logger::inst().log_error(
+            Err::LetWithoutTypeOrValue, peek()->location,
+            "Let statement must have a type annotation or value."
+        );
         return std::nullopt;
     }
 
@@ -294,7 +302,9 @@ std::optional<std::shared_ptr<Annotation>> Parser::annotation() {
         auto token = previous();
         return std::make_shared<Annotation::NameRef>(Name(token));
     }
-    Logger::inst().log_error(Err::NotAType, peek()->location, "Not a valid type.");
+    Logger::inst().log_error(
+        Err::NotAType, peek()->location, "Not a valid type."
+    );
     return std::nullopt;
 }
 
@@ -305,7 +315,8 @@ void Parser::reset() {
     current = 0;
 }
 
-std::vector<std::shared_ptr<Stmt>> Parser::parse(const std::vector<std::shared_ptr<Token>>&& tokens) {
+std::vector<std::shared_ptr<Stmt>>
+Parser::parse(const std::vector<std::shared_ptr<Token>>&& tokens) {
     reset();
     this->tokens = std::move(tokens);
 

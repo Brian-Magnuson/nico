@@ -25,8 +25,7 @@ TEST_CASE("Parser let statements", "[parser]") {
         auto tokens = lexer.scan(file);
         auto ast = parser.parse(std::move(tokens));
         std::vector<std::string> expected = {
-            "(stmt:let a (lit 1))",
-            "(stmt:eof)"
+            "(stmt:let a (lit 1))", "(stmt:eof)"
         };
         CHECK(printer.stmts_to_strings(ast) == expected);
     }
@@ -36,8 +35,7 @@ TEST_CASE("Parser let statements", "[parser]") {
         auto tokens = lexer.scan(file);
         auto ast = parser.parse(std::move(tokens));
         std::vector<std::string> expected = {
-            "(stmt:let var a (lit 1))",
-            "(stmt:eof)"
+            "(stmt:let var a (lit 1))", "(stmt:eof)"
         };
         CHECK(printer.stmts_to_strings(ast) == expected);
     }
@@ -47,8 +45,7 @@ TEST_CASE("Parser let statements", "[parser]") {
         auto tokens = lexer.scan(file);
         auto ast = parser.parse(std::move(tokens));
         std::vector<std::string> expected = {
-            "(stmt:let a i32 (lit 1))",
-            "(stmt:eof)"
+            "(stmt:let a i32 (lit 1))", "(stmt:eof)"
         };
         CHECK(printer.stmts_to_strings(ast) == expected);
 
@@ -64,9 +61,7 @@ TEST_CASE("Parser let statements", "[parser]") {
         auto tokens = lexer.scan(file);
         auto ast = parser.parse(std::move(tokens));
         std::vector<std::string> expected = {
-            "(stmt:let a i32)",
-            "(stmt:let b f64)",
-            "(stmt:eof)"
+            "(stmt:let a i32)", "(stmt:let b f64)", "(stmt:eof)"
         };
         CHECK(printer.stmts_to_strings(ast) == expected);
 
@@ -82,8 +77,7 @@ TEST_CASE("Parser let statements", "[parser]") {
         auto tokens = lexer.scan(file);
         auto ast = parser.parse(std::move(tokens));
         std::vector<std::string> expected = {
-            "(stmt:let a Vector2D)",
-            "(stmt:eof)"
+            "(stmt:let a Vector2D)", "(stmt:eof)"
         };
         CHECK(printer.stmts_to_strings(ast) == expected);
 
@@ -99,9 +93,7 @@ TEST_CASE("Parser let statements", "[parser]") {
         auto tokens = lexer.scan(file);
         auto ast = parser.parse(std::move(tokens));
         std::vector<std::string> expected = {
-            "(stmt:let a i32)",
-            "(stmt:let b (lit 2))",
-            "(stmt:eof)"
+            "(stmt:let a i32)", "(stmt:let b (lit 2))", "(stmt:eof)"
         };
         CHECK(printer.stmts_to_strings(ast) == expected);
     }
@@ -121,8 +113,7 @@ TEST_CASE("Parser print statements", "[parser]") {
         auto tokens = lexer.scan(file);
         auto ast = parser.parse(std::move(tokens));
         std::vector<std::string> expected = {
-            "(stmt:print (lit 1))",
-            "(stmt:eof)"
+            "(stmt:print (lit 1))", "(stmt:eof)"
         };
         CHECK(printer.stmts_to_strings(ast) == expected);
     }
@@ -132,8 +123,7 @@ TEST_CASE("Parser print statements", "[parser]") {
         auto tokens = lexer.scan(file);
         auto ast = parser.parse(std::move(tokens));
         std::vector<std::string> expected = {
-            "(stmt:print (lit 1) (lit 2))",
-            "(stmt:eof)"
+            "(stmt:print (lit 1) (lit 2))", "(stmt:eof)"
         };
         CHECK(printer.stmts_to_strings(ast) == expected);
     }
@@ -143,8 +133,7 @@ TEST_CASE("Parser print statements", "[parser]") {
         auto tokens = lexer.scan(file);
         auto ast = parser.parse(std::move(tokens));
         std::vector<std::string> expected = {
-            "(stmt:print (lit 1) (lit 2) (lit 3))",
-            "(stmt:eof)"
+            "(stmt:print (lit 1) (lit 2) (lit 3))", "(stmt:eof)"
         };
         CHECK(printer.stmts_to_strings(ast) == expected);
     }
@@ -154,14 +143,15 @@ TEST_CASE("Parser print statements", "[parser]") {
         auto tokens = lexer.scan(file);
         auto ast = parser.parse(std::move(tokens));
         std::vector<std::string> expected = {
-            "(stmt:print (binary / (lit 1) (lit 2)))",
-            "(stmt:eof)"
+            "(stmt:print (binary / (lit 1) (lit 2)))", "(stmt:eof)"
         };
         CHECK(printer.stmts_to_strings(ast) == expected);
     }
 
     SECTION("Print statements 5") {
-        auto file = make_test_code_file("printout \"Hello, World!\" printout \"Goodbye, World!\"");
+        auto file = make_test_code_file(
+            "printout \"Hello, World!\" printout \"Goodbye, World!\""
+        );
         auto tokens = lexer.scan(file);
         auto ast = parser.parse(std::move(tokens));
         std::vector<std::string> expected = {
@@ -187,8 +177,7 @@ TEST_CASE("Parser statement separation", "[parser]") {
         auto tokens = lexer.scan(file);
         auto ast = parser.parse(std::move(tokens));
         std::vector<std::string> expected = {
-            "(expr (binary - (lit 1) (lit 2)))",
-            "(stmt:eof)"
+            "(expr (binary - (lit 1) (lit 2)))", "(stmt:eof)"
         };
         CHECK(printer.stmts_to_strings(ast) == expected);
     }
@@ -198,9 +187,7 @@ TEST_CASE("Parser statement separation", "[parser]") {
         auto tokens = lexer.scan(file);
         auto ast = parser.parse(std::move(tokens));
         std::vector<std::string> expected = {
-            "(expr (lit 1))",
-            "(expr (unary - (lit 2)))",
-            "(stmt:eof)"
+            "(expr (lit 1))", "(expr (unary - (lit 2)))", "(stmt:eof)"
         };
         CHECK(printer.stmts_to_strings(ast) == expected);
     }

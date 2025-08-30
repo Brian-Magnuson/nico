@@ -11,27 +11,30 @@
 #if defined(_WIN32) || defined(_WIN64)
 #include <fcntl.h> // For _O_BINARY
 #include <io.h>
-#elif defined(__unix__) || defined(__unix) || (defined(__APPLE__) && defined(__MACH__))
+#elif defined(__unix__) || defined(__unix) ||                                  \
+    (defined(__APPLE__) && defined(__MACH__))
 #include <unistd.h>
 #endif
 
 std::shared_ptr<CodeFile> make_test_code_file(std::string_view src_code) {
     auto file = std::make_shared<CodeFile>(
-        std::filesystem::current_path() / "test.nico",
-        std::string(src_code)
+        std::filesystem::current_path() / "test.nico", std::string(src_code)
     );
     return file;
 }
 
-std::vector<Tok> extract_token_types(const std::vector<std::shared_ptr<Token>>& tokens) {
+std::vector<Tok>
+extract_token_types(const std::vector<std::shared_ptr<Token>>& tokens) {
     std::vector<Tok> token_types;
-    std::transform(tokens.begin(), tokens.end(), std::back_inserter(token_types), [](const auto& token) {
-        return token->tok_type;
-    });
+    std::transform(
+        tokens.begin(), tokens.end(), std::back_inserter(token_types),
+        [](const auto& token) { return token->tok_type; }
+    );
     return token_types;
 }
 
-std::pair<std::string, std::string> capture_stdout(std::function<void()> func, int buffer_size) {
+std::pair<std::string, std::string>
+capture_stdout(std::function<void()> func, int buffer_size) {
     int out_pipefd[2];
     int err_pipefd[2];
 #if defined(_WIN32) || defined(_WIN64)
@@ -75,7 +78,8 @@ std::pair<std::string, std::string> capture_stdout(std::function<void()> func, i
     std::string err = std::string(buffer.data(), m > 0 ? m : 0);
     _close(err_pipefd[0]);
     return {out, err};
-#elif defined(__unix__) || defined(__unix) || (defined(__APPLE__) && defined(__MACH__))
+#elif defined(__unix__) || defined(__unix) ||                                  \
+    (defined(__APPLE__) && defined(__MACH__))
     pipe(out_pipefd);
     pipe(err_pipefd);
 
