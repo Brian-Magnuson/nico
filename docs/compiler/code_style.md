@@ -296,6 +296,17 @@ For function parameters, arguments, and list initializations:
   }
   ```
 
+### Template Declarations
+
+- **Template declarations** should always be on their own line.
+
+  ```cpp
+  template <typename K, typename V, typename Hash = std::hash<K>>
+  class Dictionary {
+      // ...
+  };
+  ```
+
 ### Access Modifiers and Case Labels
 
 - **Access modifiers (`public`, `protected`, `private`)** are aligned with the `class` keyword (indented **-4** from the class body).

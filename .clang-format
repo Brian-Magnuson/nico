@@ -28,6 +28,9 @@ AllowShortIfStatementsOnASingleLine: Never
 # All other functions must have a line break after the opening brace.
 AllowShortFunctionsOnASingleLine: Inline
 
+# Always break after template declarations.
+BreakTemplateDeclarations: Yes
+
 # Keep access modifiers left, aligned with `class`.
 AccessModifierOffset: -4
 # Keep case labels (for switch blocks) left, aligned with `switch`.
