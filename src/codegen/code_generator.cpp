@@ -328,8 +328,11 @@ std::any CodeGenerator::visit(Stmt::Print* stmt) {
 // MARK: Expressions
 
 std::any CodeGenerator::visit(Expr::Assign* expr, bool as_lvalue) {
-    // Generate code for the assignment expression
-    return std::any();
+    auto left_ptr = std::any_cast<llvm::Value*>(expr->left->accept(this, true));
+    auto right = std::any_cast<llvm::Value*>(expr->right->accept(this, false));
+
+    builder->CreateStore(right, left_ptr);
+    return right;
 }
 
 std::any CodeGenerator::visit(Expr::Binary* expr, bool as_lvalue) {
