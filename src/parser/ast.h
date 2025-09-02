@@ -24,10 +24,14 @@
 class Stmt {
 public:
     class Expression;
+
     class Let;
-    class Eof;
 
     class Print;
+
+    class Yield;
+
+    class Eof;
 
     virtual ~Stmt() {}
 
@@ -38,8 +42,9 @@ public:
     public:
         virtual std::any visit(Expression* stmt) = 0;
         virtual std::any visit(Let* stmt) = 0;
-        virtual std::any visit(Eof* stmt) = 0;
         virtual std::any visit(Print* stmt) = 0;
+        virtual std::any visit(Yield* stmt) = 0;
+        virtual std::any visit(Eof* stmt) = 0;
     };
 
     /**
@@ -203,16 +208,6 @@ public:
 };
 
 /**
- * @brief An EOF statement.
- *
- * The EOF statement represents the end of the file.
- */
-class Stmt::Eof : public Stmt {
-public:
-    std::any accept(Visitor* visitor) override { return visitor->visit(this); }
-};
-
-/**
  * @brief A print statement.
  *
  * Since a proper print function is not yet implemented, this is a temporary
@@ -226,6 +221,31 @@ public:
     Print(std::vector<std::shared_ptr<Expr>> expressions)
         : expressions(expressions) {}
 
+    std::any accept(Visitor* visitor) override { return visitor->visit(this); }
+};
+
+/**
+ * @brief A yield statement.
+ *
+ * Yield statements set the value to be yielded by a block expression.
+ */
+class Stmt::Yield : public Stmt {
+public:
+    // The expression to yield.
+    std::shared_ptr<Expr> expression;
+
+    Yield(std::shared_ptr<Expr> expression) : expression(expression) {}
+
+    std::any accept(Visitor* visitor) override { return visitor->visit(this); }
+};
+
+/**
+ * @brief An EOF statement.
+ *
+ * The EOF statement represents the end of the file.
+ */
+class Stmt::Eof : public Stmt {
+public:
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };
 

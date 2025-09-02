@@ -87,7 +87,9 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
     return std::any();
 }
 
-std::any LocalChecker::visit(Stmt::Eof* stmt) {
+std::any LocalChecker::visit(Stmt::Yield* stmt) {
+    // Visit the expression in the yield statement.
+    // stmt->expression->accept(this, false);
     return std::any();
 }
 
@@ -96,6 +98,10 @@ std::any LocalChecker::visit(Stmt::Print* stmt) {
     for (auto& expr : stmt->expressions) {
         expr->accept(this, false);
     }
+    return std::any();
+}
+
+std::any LocalChecker::visit(Stmt::Eof* stmt) {
     return std::any();
 }
 

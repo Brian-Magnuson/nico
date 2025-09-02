@@ -288,10 +288,6 @@ std::optional<std::shared_ptr<Stmt>> Parser::let_statement() {
     return std::make_shared<Stmt::Let>(identifier, expr, has_var, anno);
 }
 
-std::shared_ptr<Stmt> Parser::eof_statement() {
-    return std::make_shared<Stmt::Eof>();
-}
-
 std::optional<std::shared_ptr<Stmt>> Parser::print_statement() {
     std::vector<std::shared_ptr<Expr>> expressions;
     auto expr = expression();
@@ -307,6 +303,18 @@ std::optional<std::shared_ptr<Stmt>> Parser::print_statement() {
     }
 
     return std::make_shared<Stmt::Print>(expressions);
+}
+
+std::optional<std::shared_ptr<Stmt>> Parser::yield_statement() {
+    auto expr = expression();
+    if (!expr)
+        return std::nullopt;
+
+    return std::make_shared<Stmt::Yield>(*expr);
+}
+
+std::shared_ptr<Stmt> Parser::eof_statement() {
+    return std::make_shared<Stmt::Eof>();
 }
 
 std::optional<std::shared_ptr<Stmt>> Parser::expression_statement() {
@@ -329,6 +337,9 @@ std::optional<std::shared_ptr<Stmt>> Parser::statement() {
     }
     else if (match({Tok::KwPrintout})) {
         return print_statement();
+    }
+    else if (match({Tok::KwYield})) {
+        return yield_statement();
     }
     return expression_statement();
 }

@@ -25,10 +25,6 @@ std::any AstPrinter::visit(Stmt::Let* stmt) {
     return str;
 }
 
-std::any AstPrinter::visit(Stmt::Eof* /*stmt*/) {
-    return std::string("(stmt:eof)");
-}
-
 std::any AstPrinter::visit(Stmt::Print* stmt) {
     std::string str = "(stmt:print";
     for (const auto& expr : stmt->expressions) {
@@ -36,6 +32,17 @@ std::any AstPrinter::visit(Stmt::Print* stmt) {
     }
     str += ")";
     return str;
+}
+
+std::any AstPrinter::visit(Stmt::Yield* stmt) {
+    std::string str = "(stmt:yield ";
+    str += std::any_cast<std::string>(stmt->expression->accept(this, false));
+    str += ")";
+    return str;
+}
+
+std::any AstPrinter::visit(Stmt::Eof* /*stmt*/) {
+    return std::string("(stmt:eof)");
 }
 
 std::any AstPrinter::visit(Expr::Assign* expr, bool as_lvalue) {

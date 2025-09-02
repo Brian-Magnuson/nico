@@ -193,15 +193,6 @@ class Parser {
     std::optional<std::shared_ptr<Stmt>> let_statement();
 
     /**
-     * @brief Parses an EOF statement.
-     *
-     * An EOF statement represents the end of the file.
-     *
-     * @return A shared pointer to the parsed statement.
-     */
-    std::shared_ptr<Stmt> eof_statement();
-
-    /**
      * @brief Parses a print statement.
      *
      * Print statements print a series of expressions to the console.
@@ -211,6 +202,25 @@ class Parser {
      * statement could not be parsed.
      */
     std::optional<std::shared_ptr<Stmt>> print_statement();
+
+    /**
+     * @brief Parses a yield statement.
+     *
+     * Yield statements set the value to be yielded by a block expression.
+     *
+     * @return A shared pointer to the parsed statement, or nullopt if the
+     * statement could not be parsed.
+     */
+    std::optional<std::shared_ptr<Stmt>> yield_statement();
+
+    /**
+     * @brief Parses an EOF statement.
+     *
+     * An EOF statement represents the end of the file.
+     *
+     * @return A shared pointer to the parsed statement.
+     */
+    std::shared_ptr<Stmt> eof_statement();
 
     /**
      * @brief Parses an expression statement.

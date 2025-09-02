@@ -281,11 +281,6 @@ std::any CodeGenerator::visit(Stmt::Let* stmt) {
     return std::any();
 }
 
-std::any CodeGenerator::visit(Stmt::Eof* stmt) {
-    // Generate code for the end-of-file (EOF) statement
-    return std::any();
-}
-
 std::any CodeGenerator::visit(Stmt::Print* stmt) {
     llvm::Function* printf_fn = ir_module->getFunction("printf");
 
@@ -322,6 +317,16 @@ std::any CodeGenerator::visit(Stmt::Print* stmt) {
     }
 
     // Generate code for the print statement
+    return std::any();
+}
+
+std::any CodeGenerator::visit(Stmt::Yield* stmt) {
+    // return stmt->expression->accept(this, false);
+    return std::any();
+}
+
+std::any CodeGenerator::visit(Stmt::Eof* stmt) {
+    // Generate code for the end-of-file (EOF) statement
     return std::any();
 }
 
