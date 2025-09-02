@@ -77,6 +77,15 @@ std::any AstPrinter::visit(Expr::Tuple* expr, bool as_lvalue) {
     return str;
 }
 
+std::any AstPrinter::visit(Expr::Block* expr, bool as_lvalue) {
+    std::string str = "(block";
+    for (const auto& stmt : expr->statements) {
+        str += " " + std::any_cast<std::string>(stmt->accept(this));
+    }
+    str += ")";
+    return str;
+}
+
 std::string AstPrinter::stmt_to_string(std::shared_ptr<Stmt> stmt) {
     return std::any_cast<std::string>(stmt->accept(this));
 }

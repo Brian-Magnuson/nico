@@ -57,12 +57,46 @@ void Parser::synchronize() {
 
 // MARK: Expressions
 
+std::optional<std::shared_ptr<Expr>>
+Parser::block(std::shared_ptr<Token> opening_kw) {
+    Tok closing_token_type;
+
+    if (peek()->tok_type == Tok::Indent) {
+        closing_token_type = Tok::Dedent;
+    }
+    else if (peek()->tok_type == Tok::LBrace) {
+        closing_token_type = Tok::RBrace;
+    }
+    else {
+        Logger::inst().log_error(
+            Err::NotABlock,
+            peek()->location,
+            "Expected '{' or an indented block to start a block expression."
+        );
+        return std::nullopt;
+    }
+    advance();
+
+    std::vector<std::shared_ptr<Stmt>> statements;
+    while (!match({closing_token_type})) {
+        auto stmt = statement();
+        if (!stmt)
+            return std::nullopt;
+        statements.push_back(*stmt);
+    }
+
+    return std::make_shared<Expr::Block>(opening_kw, statements);
+}
+
 std::optional<std::shared_ptr<Expr>> Parser::primary() {
     if (match({Tok::Int, Tok::Float, Tok::Bool, Tok::Str})) {
         return std::make_shared<Expr::Literal>(previous());
     }
     if (match({Tok::Identifier})) {
         return std::make_shared<Expr::NameRef>(previous());
+    }
+    if (match({Tok::KwBlock})) {
+        return block(previous());
     }
     if (match({Tok::LParen})) {
         // Grouping or tuple expression.

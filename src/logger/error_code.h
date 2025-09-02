@@ -62,6 +62,8 @@ enum class Err {
     UnmatchedParen,
     // A closing parenthesis was found without a matching opening parenthesis.
     UnexpectedClosingParen,
+    // A block keyword was found without a proper opening token.
+    NotABlock,
 
     // Global type check error.
     GlobalType = 4000,

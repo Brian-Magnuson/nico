@@ -63,7 +63,10 @@ public:
     class Unary;
     class NameRef;
     class Literal;
+
     class Tuple;
+
+    class Block;
 
     virtual ~Expr() {}
 
@@ -78,6 +81,7 @@ public:
         virtual std::any visit(NameRef* expr, bool as_lvalue) = 0;
         virtual std::any visit(Literal* expr, bool as_lvalue) = 0;
         virtual std::any visit(Tuple* expr, bool as_lvalue) = 0;
+        virtual std::any visit(Block* expr, bool as_lvalue) = 0;
     };
 
     // The type of the expression.
@@ -375,6 +379,34 @@ public:
     )
         : lparen(lparen), elements(std::move(elements)) {
         location = &lparen->location;
+    }
+
+    std::any accept(Visitor* visitor, bool as_lvalue) override {
+        return visitor->visit(this, as_lvalue);
+    }
+};
+
+/**
+ * @brief A block expression.
+ *
+ * Block expressions are used to group statements together.
+ * They may or may not yield a value.
+ * Block expressions, in addition to being a valid expression on its own, can
+ * also be a part of conditional and loop constructs.
+ */
+class Expr::Block : public Expr {
+public:
+    // The keyword that opened this block.
+    std::shared_ptr<Token> opening_kw;
+    // The statements contained within the block.
+    std::vector<std::shared_ptr<Stmt>> statements;
+
+    Block(
+        std::shared_ptr<Token> opening_kw,
+        std::vector<std::shared_ptr<Stmt>> statements
+    )
+        : opening_kw(opening_kw), statements(std::move(statements)) {
+        location = &opening_kw->location;
     }
 
     std::any accept(Visitor* visitor, bool as_lvalue) override {

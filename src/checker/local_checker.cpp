@@ -281,6 +281,11 @@ std::any LocalChecker::visit(Expr::Tuple* expr, bool as_lvalue) {
     return std::any();
 }
 
+std::any LocalChecker::visit(Expr::Block* expr, bool as_lvalue) {
+
+    return std::any();
+}
+
 // MARK: Annotations
 
 std::any LocalChecker::visit(Annotation::NameRef* annotation) {

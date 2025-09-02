@@ -499,6 +499,10 @@ std::any CodeGenerator::visit(Expr::Tuple* expr, bool as_lvalue) {
     return std::any();
 }
 
+std::any CodeGenerator::visit(Expr::Block* expr, bool as_lvalue) {
+    return std::any();
+}
+
 // MARK: Interface
 
 bool CodeGenerator::generate(

@@ -80,12 +80,25 @@ class Parser {
     // MARK: Expressions
 
     /**
+     * @brief Parses a block expression.
+     *
+     * A block expression is a sequence of statements enclosed in braces.
+     *
+     * @param opening_kw The keyword that opened the block.
+     * @return A shared pointer to the parsed expression, or nullopt if the
+     * expression could not be parsed.
+     */
+    std::optional<std::shared_ptr<Expr>>
+    block(std::shared_ptr<Token> opening_kw);
+
+    /**
      * @brief Parses a primary expression.
      *
      * Primary expressions include literals, identifiers, and grouping
      * expressions.
      *
-     * @return
+     * @return A shared pointer to the parsed expression, or nullopt if the
+     * expression could not be parsed.
      */
     std::optional<std::shared_ptr<Expr>> primary();
 
