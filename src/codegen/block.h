@@ -124,7 +124,7 @@ public:
  * control flow.
  */
 class Block::Plain : public Block::Control {
-
+public:
     Plain(
         std::shared_ptr<Block> prev, llvm::Value* yield_value,
         llvm::BasicBlock* merge_block
@@ -169,7 +169,7 @@ public:
  * conditional.
  */
 class Block::Conditional : public Block::Control {
-
+public:
     Conditional(
         std::shared_ptr<Block> prev, llvm::Value* yield_value,
         llvm::BasicBlock* merge_block
