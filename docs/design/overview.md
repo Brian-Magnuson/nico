@@ -208,6 +208,7 @@ An `INDENT` token is inserted when there is a colon, a newline, and an increase 
 A `DEDENT` token is inserted when there is a newline followed by a decrease in spacing to a previous indentation level. If the end of the file is reached, `DEDENT` tokens are inserted to close all open blocks.
 
 Left spacing is not updated after a newline within a grouping token, such as parentheses or braces. As such, no `INDENT` or `DEDENT` tokens are inserted within these tokens.
+- This has the side effect of making it impossible for `INDENT` and missing `DEDENT` tokens to generate an "unclosed grouping" error. The grouping stack must always be empty when creating an `INDENT`, and `DEDENTS` cannot be created until all grouping tokens since the last `INDENT` are closed.
 
 In all other instances, whitespace is ignored. There is no dedicated token for whitespace other than the `INDENT` and `DEDENT` tokens.
 
