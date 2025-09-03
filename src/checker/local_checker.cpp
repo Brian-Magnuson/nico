@@ -89,7 +89,35 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
 
 std::any LocalChecker::visit(Stmt::Yield* stmt) {
     // Visit the expression in the yield statement.
-    // stmt->expression->accept(this, false);
+    stmt->expression->accept(this, false);
+    if (!stmt->expression->type)
+        return std::any();
+    if (auto local_scope = std::dynamic_pointer_cast<Node::LocalScope>(
+            symbol_tree->current_scope
+        )) {
+        if (!local_scope->yield_type) {
+            // If this local scope does not currently have a yield type...
+            local_scope->yield_type = stmt->expression->type;
+        }
+        else if (local_scope->yield_type.value() != stmt->expression->type) {
+            // If this local scope has a yield type, check that the new yield
+            // expression is compatible with it.
+            Logger::inst().log_error(
+                Err::TypeMismatch,
+                *stmt->expression->location,
+                std::string("Type `") + stmt->expression->type->to_string() +
+                    "` is not compatible with previously yielded type `" +
+                    local_scope->yield_type.value()->to_string() + "`."
+            );
+        }
+    }
+    else {
+        Logger::inst().log_error(
+            Err::YieldOutsideLocalScope,
+            *stmt->expression->location,
+            "Cannot yield value outside of a local scope."
+        );
+    }
     return std::any();
 }
 
@@ -288,6 +316,17 @@ std::any LocalChecker::visit(Expr::Tuple* expr, bool as_lvalue) {
 }
 
 std::any LocalChecker::visit(Expr::Block* expr, bool as_lvalue) {
+    auto [local_scope, err] = symbol_tree->add_local_scope();
+    if (err != Err::Null) {
+        panic("LocalChecker::visit(Expr::Block*): Could not add local scope.");
+    }
+    for (auto& stmt : expr->statements) {
+        stmt->accept(this);
+    }
+    auto yield_type =
+        local_scope->yield_type.value_or(std::make_shared<Type::Unit>());
+    expr->type = yield_type;
+    symbol_tree->exit_scope();
 
     return std::any();
 }

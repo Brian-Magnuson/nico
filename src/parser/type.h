@@ -46,6 +46,7 @@ public:
     class PrimitiveType;
     class StructDef;
     class LocalScope;
+    class FunctionScope;
     class FieldEntry;
 
     // This node's parent scope, if it exists.
@@ -114,6 +115,7 @@ public:
     // Aggregate types
     class Array;
     class Tuple;
+    class Unit;
     class Object;
 
     // Special types
@@ -255,6 +257,9 @@ class Node::IScope : public virtual Node::IBasicNode {
 public:
     // A dictionary of child nodes, indexed by their name parts.
     Dictionary<std::string, std::shared_ptr<Node>> children;
+    // A list of local scopes. Field entries cannot be accessed from outside
+    // local scopes, so this is kept separate from children.
+    std::vector<std::shared_ptr<Node::LocalScope>> local_scopes;
 
     virtual ~IScope() = default;
 
@@ -452,10 +457,46 @@ class Node::LocalScope : public virtual Node::IScope {
 public:
     // A static counter to generate unique identifiers for local scopes.
     static int next_scope_id;
+    // The type of the expressions yielded within this local scope.
+    // If this is the top local scope, this is the return type of the function.
+    std::optional<std::shared_ptr<Type>> yield_type;
+    // The top local scope in the parent chain. Can be this. The memory for this
+    // node is managed by its parent; do not manually delete it.
+    Node::LocalScope* top_local_scope;
+
+    virtual ~LocalScope() = default;
 
     LocalScope(std::weak_ptr<Node::IScope> parent_scope)
         : Node::IBasicNode(parent_scope, std::to_string(next_scope_id++)),
-          Node::IScope(parent_scope, std::to_string(next_scope_id++)) {}
+          Node::IScope(parent_scope, std::to_string(next_scope_id++)) {
+        if (auto parent_local_scope =
+                std::dynamic_pointer_cast<Node::LocalScope>(
+                    parent_scope.lock()
+                )) {
+            top_local_scope = parent_local_scope->top_local_scope;
+        }
+        else {
+            top_local_scope = this;
+        }
+    }
+};
+
+/**
+ * @brief A function scope node in the symbol tree.
+ *
+ * A function scope is a special local scope created when a function is
+ * declared. It stores the function's parameters and tracks the function's
+ * return type.
+ */
+class Node::FunctionScope : public virtual Node::LocalScope,
+                            public virtual Node::ILocatable {
+public:
+    FunctionScope(
+        std::weak_ptr<Node::IScope> parent_scope, std::shared_ptr<Token> token
+    )
+        : Node::IBasicNode(parent_scope, std::string(token->lexeme)),
+          Node::IScope(parent_scope, std::string(token->lexeme)),
+          Node::LocalScope(parent_scope), Node::ILocatable(token) {}
 };
 
 /**
@@ -476,6 +517,8 @@ public:
     // (AllocaInst if it is a local variable and GlobalVariable if it is a
     // global variable).
     llvm::Value* llvm_ptr = nullptr;
+
+    virtual ~FieldEntry() = default;
 
     FieldEntry(std::weak_ptr<Node::IScope> parent_scope, const Field& field)
         : Node::IBasicNode(parent_scope, std::string(field.token->lexeme)),
@@ -771,6 +814,31 @@ public:
             element_types.push_back(element->get_llvm_type(builder));
         }
         return llvm::StructType::get(builder->getContext(), element_types);
+    }
+};
+
+/**
+ * @brief A unit type.
+ *
+ * A unit type is a special tuple type that has no elements and is equivalent to
+ * a tuple type with no elements. It is written as `()` and named "unit" because
+ * it has only one possible value, which is `()`. It may be used to represent
+ * the absence of a type, like `void` in other languages.
+ *
+ * This class does not override `Type::Tuple::operator==` and, thus, will appear
+ * equal to other instances of `Type::Tuple` that have no elements. That is to
+ * say, `Type::Unit` may be used interchangably with `Type::Tuple` with no
+ * elements.
+ */
+class Type::Unit : public Type::Tuple {
+public:
+    Unit() : Tuple({}) {}
+
+    std::string to_string() const override { return "()"; }
+
+    llvm::Type*
+    get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
+        return llvm::StructType::get(builder->getContext());
     }
 };
 

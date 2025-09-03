@@ -27,6 +27,12 @@ void Node::initialize_node() {
     }
     auto parent_ptr = parent.lock();
     if (parent_ptr) {
-        parent_ptr->children[short_name] = shared_this;
+        if (auto local_scope =
+                std::dynamic_pointer_cast<Node::LocalScope>(shared_this)) {
+            parent_ptr->local_scopes.push_back(local_scope);
+        }
+        else {
+            parent_ptr->children[short_name] = shared_this;
+        }
     }
 }

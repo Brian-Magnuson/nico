@@ -141,6 +141,21 @@ SymbolTree::add_struct_def(std::shared_ptr<Token> token, bool is_class) {
     return std::make_pair(new_struct, Err::Null);
 }
 
+std::pair<std::shared_ptr<Node::FunctionScope>, Err>
+SymbolTree::add_function_scope(std::shared_ptr<Token> token) {
+    // Function scopes cannot be added in a local scope
+    if (PTR_INSTANCEOF(current_scope, Node::LocalScope)) {
+        return std::make_pair(nullptr, Err::FunctionScopeInLocalScope);
+    }
+
+    // Add the function scope to its parent scope's children.
+    auto new_function_scope =
+        std::make_shared<Node::FunctionScope>(current_scope, token);
+    new_function_scope->initialize_node();
+    current_scope = new_function_scope;
+    return std::make_pair(new_function_scope, Err::Null);
+}
+
 std::pair<std::shared_ptr<Node::LocalScope>, Err>
 SymbolTree::add_local_scope() {
     // Add the local scope to its parent scope's children.

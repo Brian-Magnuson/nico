@@ -21,17 +21,6 @@
  * searching upward and downward through different scopes.
  */
 class SymbolTree {
-    // The root scope of the symbol tree, which is the top-level scope that
-    // contains all other scopes.
-    std::shared_ptr<Node::RootScope> root_scope;
-    // The current scope in the symbol tree, which is the scope that is
-    // currently being modified or accessed.
-    std::shared_ptr<Node::IScope> current_scope;
-    // A special scope for reserved names. Reserved names cannot be shadowed in
-    // any scope. This scope is searched first, regardless of what scope is
-    // currently active.
-    std::shared_ptr<Node::RootScope> reserved_scope;
-
     /**
      * @brief Installs primitive types into the root scope of the symbol tree.
      */
@@ -60,6 +49,17 @@ class SymbolTree {
     ) const;
 
 public:
+    // The root scope of the symbol tree, which is the top-level scope that
+    // contains all other scopes.
+    std::shared_ptr<Node::RootScope> root_scope;
+    // The current scope in the symbol tree, which is the scope that is
+    // currently being modified or accessed.
+    std::shared_ptr<Node::IScope> current_scope;
+    // A special scope for reserved names. Reserved names cannot be shadowed in
+    // any scope. This scope is searched first, regardless of what scope is
+    // currently active.
+    std::shared_ptr<Node::RootScope> reserved_scope;
+
     /**
      * @brief Constructs a symbol tree with a root scope and installs primitive
      * types.
@@ -120,6 +120,21 @@ public:
      */
     std::pair<std::shared_ptr<Node>, Err>
     add_struct_def(std::shared_ptr<Token> token, bool is_class = false);
+
+    /**
+     * @brief Adds a new function scope to the symbol tree, then enters the
+     * function scope.
+     *
+     * Function scopes may not be added if the current scope is a local scope.
+     * This may change in the future if support for closures is added.
+     *
+     * @param token The token representing the function; should be the
+     * function's name.
+     * @return std::pair<std::shared_ptr<Node::FunctionScope>, Err> The
+     * function scope if added successfully (first), or nullptr and an error.
+     */
+    std::pair<std::shared_ptr<Node::FunctionScope>, Err>
+    add_function_scope(std::shared_ptr<Token> token);
 
     /**
      * @brief Adds a new local scope to the symbol tree, then enters the local

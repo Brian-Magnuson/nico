@@ -97,6 +97,10 @@ enum class Err {
     AssignToImmutable,
     // An operator was found that cannot be used with the given types.
     NoOperatorOverload,
+    // A yield statement was found outside of a local scope.
+    YieldOutsideLocalScope,
+    // An attempt was made to declare a function in a local scope.
+    FunctionScopeInLocalScope,
 
     // Code generation error.
     CodeGen = 6000,
