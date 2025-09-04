@@ -41,9 +41,11 @@ public:
     // The parts of the name.
     std::vector<Part> parts;
 
-    Name(std::shared_ptr<Token> token) : parts({{token, {}}}) {}
+    Name(std::shared_ptr<Token> token)
+        : parts({{token, {}}}) {}
 
-    Name(std::vector<Part> elements) : parts(elements) {
+    Name(std::vector<Part> elements)
+        : parts(elements) {
         if (parts.empty()) {
             panic("Name::Name: parts cannot be empty");
         }

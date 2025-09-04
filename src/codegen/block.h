@@ -62,7 +62,8 @@ public:
         std::shared_ptr<Block> prev, llvm::Value* yield_value,
         llvm::BasicBlock* exit_block, std::string_view function_name
     )
-        : Block(prev, yield_value), exit_block(exit_block),
+        : Block(prev, yield_value),
+          exit_block(exit_block),
           function_name(function_name) {}
 
     virtual ~Function() = default;

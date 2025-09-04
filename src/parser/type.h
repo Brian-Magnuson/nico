@@ -303,7 +303,8 @@ public:
     virtual ~ITypeNode() = default;
 
 protected:
-    ITypeNode() : Node::IBasicNode(std::weak_ptr<Node::IScope>(), "") {}
+    ITypeNode()
+        : Node::IBasicNode(std::weak_ptr<Node::IScope>(), "") {}
 };
 
 /**
@@ -369,7 +370,8 @@ public:
     )
         : Node::IBasicNode(parent_scope, std::string(token->lexeme)),
           Node::IScope(parent_scope, std::string(token->lexeme)),
-          Node::IGlobalScope(), Node::ILocatable(token) {}
+          Node::IGlobalScope(),
+          Node::ILocatable(token) {}
 };
 
 /**
@@ -436,7 +438,9 @@ public:
     )
         : Node::IBasicNode(parent_scope, std::string(token->lexeme)),
           Node::IScope(parent_scope, std::string(token->lexeme)),
-          Node::IGlobalScope(), Node::ITypeNode(), Node::ILocatable(token),
+          Node::IGlobalScope(),
+          Node::ITypeNode(),
+          Node::ILocatable(token),
           is_class(is_class) {}
 };
 
@@ -496,7 +500,8 @@ public:
     )
         : Node::IBasicNode(parent_scope, std::string(token->lexeme)),
           Node::IScope(parent_scope, std::string(token->lexeme)),
-          Node::LocalScope(parent_scope), Node::ILocatable(token) {}
+          Node::LocalScope(parent_scope),
+          Node::ILocatable(token) {}
 };
 
 /**
@@ -522,7 +527,8 @@ public:
 
     FieldEntry(std::weak_ptr<Node::IScope> parent_scope, const Field& field)
         : Node::IBasicNode(parent_scope, std::string(field.token->lexeme)),
-          Node::ILocatable(field.token), field(field) {}
+          Node::ILocatable(field.token),
+          field(field) {}
 };
 
 // MARK: Numeric types
@@ -549,7 +555,8 @@ public:
     // 32, or 64.
     const uint8_t width;
 
-    Int(bool is_signed, uint8_t width) : is_signed(is_signed), width(width) {}
+    Int(bool is_signed, uint8_t width)
+        : is_signed(is_signed), width(width) {}
 
     std::string to_string() const override {
         return (is_signed ? "i" : "u") + std::to_string(width);
@@ -579,7 +586,8 @@ public:
     // The width of the float in bits. Can be 32 or 64.
     const uint8_t width;
 
-    Float(uint8_t width) : width(width) {
+    Float(uint8_t width)
+        : width(width) {
         if (width != 32 && width != 64) {
             panic(
                 "Type::Float: Invalid width " + std::to_string(width) +
@@ -747,9 +755,11 @@ public:
     // The number of elements in the array.
     const std::optional<size_t> size;
 
-    Array(std::shared_ptr<Type> base) : base(base), size(std::nullopt) {}
+    Array(std::shared_ptr<Type> base)
+        : base(base), size(std::nullopt) {}
 
-    Array(std::shared_ptr<Type> base, size_t size) : base(base), size(size) {}
+    Array(std::shared_ptr<Type> base, size_t size)
+        : base(base), size(size) {}
 
     std::string to_string() const override {
         return "[" + base->to_string() + "; " +
@@ -832,7 +842,8 @@ public:
  */
 class Type::Unit : public Type::Tuple {
 public:
-    Unit() : Tuple({}) {}
+    Unit()
+        : Tuple({}) {}
 
     std::string to_string() const override { return "()"; }
 
@@ -902,7 +913,8 @@ public:
     // circular references.
     const std::weak_ptr<Node::ITypeNode> node;
 
-    Named(std::weak_ptr<Node::ITypeNode> node) : node(node) {
+    Named(std::weak_ptr<Node::ITypeNode> node)
+        : node(node) {
         if (node.expired()) {
             panic("Type::Named: Node cannot be null.");
         }

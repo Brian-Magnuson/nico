@@ -175,7 +175,8 @@ public:
     // The expression in the statement.
     std::shared_ptr<Expr> expression;
 
-    Expression(std::shared_ptr<Expr> expression) : expression(expression) {}
+    Expression(std::shared_ptr<Expr> expression)
+        : expression(expression) {}
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };
@@ -201,7 +202,9 @@ public:
     Let(std::shared_ptr<Token> identifier,
         std::optional<std::shared_ptr<Expr>> expression, bool has_var,
         std::optional<std::shared_ptr<Annotation>> annotation)
-        : identifier(identifier), expression(expression), has_var(has_var),
+        : identifier(identifier),
+          expression(expression),
+          has_var(has_var),
           annotation(annotation) {}
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
@@ -234,7 +237,8 @@ public:
     // The expression to yield.
     std::shared_ptr<Expr> expression;
 
-    Yield(std::shared_ptr<Expr> expression) : expression(expression) {}
+    Yield(std::shared_ptr<Expr> expression)
+        : expression(expression) {}
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };
@@ -345,11 +349,13 @@ public:
     // The field entry associated with the identifier.
     std::weak_ptr<Node::FieldEntry> field_entry;
 
-    NameRef(std::shared_ptr<Token> token) : name(token) {
+    NameRef(std::shared_ptr<Token> token)
+        : name(token) {
         location = &token->location;
     }
 
-    NameRef(Name name) : name(name) {
+    NameRef(Name name)
+        : name(name) {
         location = &name.parts[0].token->location;
     }
 
@@ -369,7 +375,8 @@ public:
     // The token representing the literal value.
     std::shared_ptr<Token> token;
 
-    Literal(std::shared_ptr<Token> token) : token(token) {
+    Literal(std::shared_ptr<Token> token)
+        : token(token) {
         location = &token->location;
     }
 
@@ -447,7 +454,8 @@ public:
     // The name in the name reference annotation.
     const Name name;
 
-    NameRef(Name name) : name(std::move(name)) {}
+    NameRef(Name name)
+        : name(std::move(name)) {}
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 

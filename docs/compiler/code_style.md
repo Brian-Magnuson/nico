@@ -269,6 +269,26 @@ For function parameters, arguments, and list initializations:
   );
   ```
 
+For constructor initializer lists:
+- Write constructor initializers starting on the next line.
+- If they fit on one line, keep them on one line.
+- If they don’t, put each initializer on its own line, aligned with the first initializer.
+
+  ```cpp
+  MyClass::MyClass() 
+      : memberA(1), memberB(2) {
+      // Constructor body
+  }
+
+  MyClass::MyClass()
+      : memberA(1),
+        memberB(2),
+        memberC(3),
+        memberD(4) {
+      // Constructor body
+  }
+  ```
+
 ### If Statements
 
 - Do not keep short if-statements on one line.
