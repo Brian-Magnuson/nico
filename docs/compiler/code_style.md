@@ -10,6 +10,19 @@ As this project was originally built for fun, many of the existing styles are a 
 This document represents my best attempt at formalizing those styles into a coherent set of guidelines.
 If this project becomes more widely used in the future, these guidelines may be revisited and updated for a higher level of strictness.
 
+Guiding principles:
+- Design for maintainability. Code that cannot be maintained cannot hope to be corrected.
+- Design for readability. Code is read more often than it is written.
+- Be consistent. Consistency is key to readability.
+- Design code for ease of testing. If you have to jump through hoops to test something, then rethink your design.
+- Keep it simple, but leave things open for future extension. Sometimes, the simplest solution can make things much harder to extend later.
+- Consider how your code can be misused. Bonus points if you make it impossible to misuse.
+- If it might fail, make it fail as quickly (and safely) as possible.
+- Just because something is obvious to you does not mean it is obvious to others. Explain yourself when necessary.
+- Do not write code that does too many things or has too many outputs. Functions should ideally do one thing and do it well.
+- Design a good interface, even if your code interfaces with only a few things. This makes it easier to change things later.
+- There are many ways to do things, but few that satisfy all of the above. Think critically about your choices, even if it means writing a paper about it.
+
 ## C++ Version
 
 Use C++ features up to and including `C++20`. This may change in the future.
@@ -201,11 +214,20 @@ if (auto derived = std::dynamic_pointer_cast<Derived>(ptr)) {
 - Prefer using `auto` for type inference when the type is obvious from the context or the type cannot be easily expressed.
 - For range-based for-loops, know how to use `auto` and `auto&` to avoid writing explicit types.
 
-The `std::any` type is relevant here since many visitor classes use to keep the return type flexible.
+The `std::any` type is relevant here since many visitor classes use `std::any` to keep the return type flexible.
 Normally, when working with `std::any`, one would use `std::any_cast` to retrieve the value of the expected type.
 However, `std::any_cast` requires the type to be exact, even when working with inheritance hierarchies.
 
-For example, `std::any_cast<llvm::Value*>(some_any)` will not work if `some_any` contains an `llvm::AllocaInst*`, despite `llvm::AllocaInst` being a derived type of `llvm::Value`.
+For example, this code will not work despite making intuitive sense:
+```cpp
+auto alloca = builder->CreateAlloca(...);
+std::any value = alloca; // Storing a llvm::AllocaInst in std::any
+auto retrieved = std::any_cast<llvm::Value*>(value); // This will throw std::bad_any_cast
+```
+Because `auto` is used here, the type of `alloca` is inferred to be `llvm::AllocaInst*`.
+When storing it in `std::any`, the exact type `llvm::AllocaInst*` is stored.
+When attempting to retrieve it using `std::any_cast<llvm::Value*>`, it fails, even though `llvm::AllocaInst` is a subclass of `llvm::Value`.
+
 Therefore, one must avoid using `auto` when storing values in `std::any` as this can lead to subtle bugs and runtime errors.
 
 In general, 
