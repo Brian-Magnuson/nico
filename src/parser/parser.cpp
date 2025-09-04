@@ -71,7 +71,7 @@ Parser::block(std::shared_ptr<Token> opening_kw) {
         Logger::inst().log_error(
             Err::NotABlock,
             peek()->location,
-            "Expected '{' or an indented block to start a block expression."
+            "Expected '{' or an indent to start a block expression."
         );
         return std::nullopt;
     }

@@ -246,3 +246,115 @@ TEST_CASE("Parser groupings and tuples", "[parser]") {
     parser.reset();
     Logger::inst().reset();
 }
+
+TEST_CASE("Parser blocks", "[parser]") {
+    Lexer lexer;
+    Parser parser;
+    AstPrinter printer;
+
+    SECTION("Braced block 1") {
+        auto file = make_test_code_file("block { 123 }");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(expr (block (expr (lit 123))))",
+            "(stmt:eof)"
+        };
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
+    SECTION("Braced block 2") {
+        auto file = make_test_code_file("block { let a = 1 printout a }");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(expr (block (stmt:let a (lit 1)) (stmt:print (nameref a))))",
+            "(stmt:eof)"
+        };
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
+    SECTION("Braced block 3") {
+        auto file = make_test_code_file("block { 123 } 456");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(expr (block (expr (lit 123))))",
+            "(expr (lit 456))",
+            "(stmt:eof)"
+        };
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
+    SECTION("Indented block 1") {
+        auto file = make_test_code_file(R"(
+block:
+    123
+)");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(expr (block (expr (lit 123))))",
+            "(stmt:eof)"
+        };
+
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
+    SECTION("Indented block 2") {
+        auto file = make_test_code_file(R"(
+block:
+    let a = 1
+    printout a
+)");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(expr (block (stmt:let a (lit 1)) (stmt:print (nameref a))))",
+            "(stmt:eof)"
+        };
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
+    SECTION("Indented block 3") {
+        auto file = make_test_code_file(R"(
+block:
+    123
+456
+)");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(expr (block (expr (lit 123))))",
+            "(expr (lit 456))",
+            "(stmt:eof)"
+        };
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
+    lexer.reset();
+    parser.reset();
+    Logger::inst().reset();
+}
+
+// MARK: Error tests
+
+TEST_CASE("Parser block errors", "[parser]") {
+    Lexer lexer;
+    Parser parser;
+    Logger::inst().set_printing_enabled(false);
+
+    SECTION("Not a block") {
+        auto file = make_test_code_file("block 123");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::NotABlock);
+    }
+
+    lexer.reset();
+    parser.reset();
+    Logger::inst().reset();
+}
