@@ -3,7 +3,7 @@
 #include "../common/utils.h"
 #include "../logger/error_code.h"
 #include "../logger/logger.h"
-#include "../parser/type.h"
+#include "../nodes/type_node.h"
 
 // MARK: Statements
 

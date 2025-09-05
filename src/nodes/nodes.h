@@ -1,0 +1,463 @@
+#ifndef NICO_NODES_H
+#define NICO_NODES_H
+
+#include <any>
+#include <memory>
+#include <string>
+#include <vector>
+
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/Type.h>
+
+#include "../common/utils.h"
+#include "../lexer/token.h"
+
+// MARK: Node
+
+/**
+ * @brief A node in the symbol tree.
+ *
+ * Symbol tree nodes are used to store information whenever a new symbol is
+ * introduced in the source code. Theoretically, every declaration should result
+ * in only one node in the symbol tree, so nodes may be compared directly for
+ * equality.
+ *
+ * All nodes in the symbol tree have a unique symbol to identify them.
+ * Most subclasses of Node inherit from Node::IScope, meaning they have other
+ * nodes as children.
+ *
+ * Do not extend this class directly; use Node::IBasicNode instead.
+ *
+ * Nodes may require additional initialization after construction to ensure
+ * parent references are set up correctly. Please use `initialize_node()`
+ * immediately after constructing nodes.
+ */
+class Node : public std::enable_shared_from_this<Node> {
+public:
+    class IBasicNode;
+
+    class IScope;
+    class IGlobalScope;
+    class ITypeNode;
+    class ILocatable;
+
+    class RootScope;
+    class Namespace;
+    class PrimitiveType;
+    class StructDef;
+    class LocalScope;
+    class FunctionScope;
+    class FieldEntry;
+
+    // This node's parent scope, if it exists.
+    std::weak_ptr<Node::IScope> parent;
+    // This node's unique symbol, assigned upon construction.
+    const std::string symbol;
+    // A short name for this node, used for adding this node to the parent
+    // node's children.
+    const std::string short_name;
+
+    virtual ~Node() = default;
+
+protected:
+    Node(
+        std::weak_ptr<Node::IScope> parent_scope, const std::string& identifier
+    );
+
+public:
+    /**
+     * @brief Adds this node to its parent scope's children.
+     *
+     * If this node is an instance of Node::RootScope, this function does
+     * nothing.
+     *
+     * If this node is an instance of Node::StructDef, it will also set the type
+     * of the node to a Named type that references this node.
+     *
+     * Should be called immediately after constructing a node that is part of a
+     * scope.
+     */
+    void initialize_node();
+};
+
+// MARK: Type
+
+/**
+ * @brief A type object.
+ *
+ * This class serves as the base class for all types in the symbol tree.
+ * Type objects are used to represent the resolved types of expressions and
+ * variables. They should not be confused with annotation objects, which are
+ * part of the AST and represent unresolved types. They should not be used in
+ * the parser, except when the expression is a literal value, such as an
+ * integer.
+ *
+ * Types can be compared for equality, converted to a unique string, and
+ * converted to an equivalent LLVM type.
+ *
+ * Note that LLVM types may not carry less information than the type object from
+ * which it was generated. Thus, care should be taken when converting between
+ * the two.
+ */
+class Type {
+public:
+    // Numeric types
+    class INumeric;
+    class Int;
+    class Float;
+
+    // Boolean type
+    class Bool;
+
+    // Pointer types
+    class Pointer;
+    class Reference;
+    class Str;
+
+    // Aggregate types
+    class Array;
+    class Tuple;
+    class Unit;
+    class Object;
+
+    // Special types
+    class Named;
+    class Function;
+
+    Type() = default;
+    virtual ~Type() = default;
+
+    /**
+     * @brief Converts this type to a string.
+     *
+     * In theory, the string representation should be unique for the type.
+     *
+     * @return A string representation of the type.
+     */
+    virtual std::string to_string() const = 0;
+
+    /**
+     * @brief Check if two types are equivalent.
+     *
+     * Note: The types must match exactly.
+     * This operator does not consider if one type can be implicitly converted
+     * to another.
+     *
+     * @param other The other type to compare.
+     * @return True if the types are equivalent. False otherwise.
+     */
+    virtual bool operator==(const Type& other) const = 0;
+
+    /**
+     * @brief Check if two types are not equivalent.
+     *
+     * Types must match exactly to be considered equivalent.
+     * Effectively the negation of the `==` operator.
+     *
+     * @param other The other type to compare.
+     * @return True if the types are not equivalent. False otherwise.
+     */
+    virtual bool operator!=(const Type& other) const {
+        return !(*this == other);
+    }
+
+    /**
+     * @brief Generates the corresponding LLVM type for this type object.
+     *
+     * If this type is a named type, only the name will be used to create the
+     * type. The type definition should be written elsewhere during code
+     * generation.
+     *
+     * @param builder The LLVM IR builder to use for generating the type.
+     * @return The corresponding LLVM type for this type object.
+     */
+    virtual llvm::Type*
+    get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const = 0;
+};
+
+// MARK: Stmt
+
+/**
+ * @brief A statement AST node.
+ *
+ * Statements are pieces of code that do not evaluate to a value.
+ * Includes the expression statement, declarations, and non-declaring
+ * statements.
+ */
+class Stmt {
+public:
+    class Expression;
+
+    class Let;
+
+    class Print;
+
+    class Yield;
+
+    class Eof;
+
+    virtual ~Stmt() {}
+
+    /**
+     * @brief A visitor class for statements.
+     */
+    class Visitor {
+    public:
+        virtual std::any visit(Expression* stmt) = 0;
+        virtual std::any visit(Let* stmt) = 0;
+        virtual std::any visit(Print* stmt) = 0;
+        virtual std::any visit(Yield* stmt) = 0;
+        virtual std::any visit(Eof* stmt) = 0;
+    };
+
+    /**
+     * @brief Accept a visitor.
+     *
+     * @param visitor The visitor to accept.
+     * @return The return value from the visitor.
+     */
+    virtual std::any accept(Visitor* visitor) = 0;
+};
+
+// MARK: Expr
+
+/**
+ * @brief An expression AST node.
+ *
+ * Expressions evaluate to a value.
+ */
+class Expr {
+public:
+    class Assign;
+    class Binary;
+    class Unary;
+    class NameRef;
+    class Literal;
+
+    class Tuple;
+
+    class Block;
+
+    virtual ~Expr() {}
+
+    /**
+     * @brief A visitor class for expressions.
+     */
+    class Visitor {
+    public:
+        virtual std::any visit(Assign* expr, bool as_lvalue) = 0;
+        virtual std::any visit(Binary* expr, bool as_lvalue) = 0;
+        virtual std::any visit(Unary* expr, bool as_lvalue) = 0;
+        virtual std::any visit(NameRef* expr, bool as_lvalue) = 0;
+        virtual std::any visit(Literal* expr, bool as_lvalue) = 0;
+        virtual std::any visit(Tuple* expr, bool as_lvalue) = 0;
+        virtual std::any visit(Block* expr, bool as_lvalue) = 0;
+    };
+
+    // The type of the expression.
+    std::shared_ptr<Type> type;
+    // The location of the expression.
+    const Location* location;
+
+    /**
+     * @brief Accept a visitor.
+     *
+     * @param visitor The visitor to accept.
+     * @param as_lvalue Whether or not the expression should be treated as an
+     * lvalue.
+     * @return The return value from the visitor.
+     */
+    virtual std::any accept(Visitor* visitor, bool as_lvalue) = 0;
+};
+
+// MARK: Annotation
+
+/**
+ * @brief An annotation AST node.
+ *
+ * An annotation object is used in the AST to organize parts of the type
+ * annotation. Annotations are effectively unresolved types, which can be
+ * resolved to proper type objects in the type checker. It should not be
+ * confused with a type object, which represents the resolved type of an
+ * expression.
+ *
+ * Type annotations are not designed to be compared with each other; comparing
+ * types should only be done after resolution.
+ */
+class Annotation {
+public:
+    class NameRef;
+
+    class Pointer;
+    class Reference;
+
+    class Array;
+    class Object;
+    class Tuple;
+
+    virtual ~Annotation() = default;
+
+    /**
+     * @brief A visitor class for annotations.
+     */
+    class Visitor {
+    public:
+        virtual std::any visit(NameRef* annotation) = 0;
+        virtual std::any visit(Pointer* annotation) = 0;
+        virtual std::any visit(Reference* annotation) = 0;
+        virtual std::any visit(Array* annotation) = 0;
+        virtual std::any visit(Object* annotation) = 0;
+        virtual std::any visit(Tuple* annotation) = 0;
+    };
+
+    /**
+     * @brief Accept a visitor.
+     *
+     * @param visitor The visitor to accept.
+     * @return The return value from the visitor.
+     */
+    virtual std::any accept(Visitor* visitor) = 0;
+
+    /**
+     * @brief Convert the annotation to a string representation.
+     *
+     * This method is used for debugging and logging purposes.
+     * The string representation is not unique and should not be used to compare
+     * types.
+     *
+     * @return A string representation of the annotation.
+     */
+    virtual std::string to_string() const = 0;
+};
+
+// MARK: Name
+
+/**
+ * @brief A name class used to represent names with multiple parts.
+ *
+ * Name should only be used where multi-part names are allowed.
+ * Multi-part names are not allowed in declarations, but are in name expressions
+ * and annotations.
+ *
+ * Names should not be compared directly as different names may refer to the
+ * same thing and similar names may refer to different things. Instead, search
+ * for the name in the symbol tree and resolve it to a node.
+ */
+class Name {
+public:
+    /**
+     * @brief A part of a name.
+     *
+     * Consists of the token representing the part and a vector of arguments.
+     *
+     * E.g. `example::object<with, args>` would have two parts:
+     * - The first part would be `example` with no arguments.
+     * - The second part would be `object` with two arguments: `with` and
+     * `args`.
+     */
+    struct Part {
+        // The token representing this part of the name.
+        std::shared_ptr<Token> token;
+        // The arguments for this part of the name, if any.
+        std::vector<std::shared_ptr<Name>> args;
+    };
+
+    // The parts of the name.
+    std::vector<Part> parts;
+
+    Name(std::shared_ptr<Token> token)
+        : parts({{token, {}}}) {}
+
+    Name(std::vector<Part> elements)
+        : parts(elements) {
+        if (parts.empty()) {
+            panic("Name::Name: parts cannot be empty");
+        }
+    }
+
+    /**
+     * @brief Converts this name to a string representation.
+     *
+     * @return std::string The string representation of the name.
+     */
+    std::string to_string() const {
+        std::string result = "";
+
+        // example::object<with, args>
+        for (size_t i = 0; i < parts.size(); ++i) {
+            const auto& part = parts[i];
+            result += part.token->lexeme;
+            if (!part.args.empty()) {
+                result += "<";
+                for (size_t j = 0; j < part.args.size(); ++j) {
+                    result += part.args[j]->to_string();
+                    if (j < part.args.size() - 1) {
+                        result += ", ";
+                    }
+                }
+                result += ">";
+            }
+            if (i < parts.size() - 1) {
+                result += "::";
+            }
+        }
+        return result;
+    }
+};
+
+// MARK: Field
+
+/**
+ * @brief A multi-purpose field class.
+ *
+ * Used to represent properties or shared variables in complex types,
+ * properties in objects, and parameters in functions.
+ *
+ * Fields use type objects, and thus, must have their types properly resolved
+ * before constructed.
+ */
+class Field {
+public:
+    // Whether the field is declared with `var` or not.
+    const bool is_var;
+    // The name of the field.
+    const std::shared_ptr<Token> token;
+    // The type of the field.
+    const std::shared_ptr<Type> type;
+
+    virtual ~Field() = default;
+
+    Field(bool is_var, std::shared_ptr<Token> token, std::shared_ptr<Type> type)
+        : is_var(is_var), token(token), type(type) {
+        if (type == nullptr) {
+            panic("Field::Field: Type cannot be null.");
+        }
+    }
+
+    /**
+     * @brief Returns a string representation of the field.
+     *
+     * @return std::string A string representation of the field.
+     */
+    virtual std::string to_string() const {
+        return (is_var ? "var " : "") + std::string(token->lexeme) + ": " +
+               type->to_string();
+    }
+
+    /**
+     * @brief Checks if this field is equivalent to another field.
+     *
+     * Fields are considered equivalent if they have the same `is_var` status,
+     * the same name, and the same type. The token does not necessarily have to
+     * be the same; just the lexeme.
+     *
+     * @param other The other field to compare.
+     * @return True if the fields are equivalent, false otherwise.
+     */
+    bool operator==(const Field& other) const {
+        return is_var == other.is_var && token->lexeme == other.token->lexeme &&
+               *type == *other.type;
+    }
+};
+
+#endif // NICO_NODES_H

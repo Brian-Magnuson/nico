@@ -36,12 +36,14 @@ endif()
 include(Catch)
 
 # Core files
+set(NODES_SRC
+    src/nodes/symbol_node.cpp
+)
 set(LEXER_SRC
     src/lexer/lexer.cpp
 )
 set(PARSER_SRC
     src/parser/parser.cpp
-    src/parser/type.cpp
 )
 set(CHECKER_SRC
     src/checker/global_checker.cpp
@@ -60,6 +62,7 @@ set(LOGGER_SRC
     src/logger/logger.cpp
 )
 set(CORE_SRC
+    ${NODES_SRC}
     ${LEXER_SRC}
     ${PARSER_SRC}
     ${CHECKER_SRC}

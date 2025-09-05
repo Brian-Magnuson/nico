@@ -10,7 +10,7 @@
 #include "../src/lexer/lexer.h"
 #include "../src/lexer/token.h"
 #include "../src/logger/logger.h"
-#include "../src/parser/ast.h"
+#include "../src/nodes/ast_node.h"
 #include "../src/parser/parser.h"
 
 // MARK: Expr tests

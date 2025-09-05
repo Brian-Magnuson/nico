@@ -13,7 +13,7 @@
 #include <llvm/IR/Module.h>
 
 #include "../lexer/token.h"
-#include "../parser/ast.h"
+#include "../nodes/ast_node.h"
 #include "block.h"
 
 /**

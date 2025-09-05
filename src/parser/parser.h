@@ -8,8 +8,8 @@
 #include <vector>
 
 #include "../lexer/token.h"
-#include "ast.h"
-#include "type.h"
+#include "../nodes/ast_node.h"
+#include "../nodes/type_node.h"
 
 /**
  * @brief A parser to parse a vector of tokens into an abstract syntax tree.

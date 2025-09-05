@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-#include "../parser/ast.h"
+#include "../nodes/ast_node.h"
 
 /**
  * @brief A class for printing the AST for debugging purposes.

@@ -1,4 +1,6 @@
-#include "type.h"
+#include "symbol_node.h"
+
+#include "type_node.h"
 
 int Node::LocalScope::next_scope_id = 0;
 

@@ -8,6 +8,8 @@
 
 #include "../common/utils.h"
 #include "../logger/logger.h"
+#include "../nodes/symbol_node.h"
+#include "../nodes/type_node.h"
 
 // MARK: Helpers
 

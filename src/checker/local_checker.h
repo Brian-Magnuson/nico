@@ -5,7 +5,7 @@
 #include <memory>
 #include <vector>
 
-#include "../parser/ast.h"
+#include "../nodes/ast_node.h"
 #include "symbol_tree.h"
 
 /**

@@ -8,8 +8,8 @@
 
 #include "../common/dictionary.h"
 #include "../logger/error_code.h"
-#include "../parser/name.h"
-#include "../parser/type.h"
+#include "../nodes/nodes.h"
+#include "../nodes/type_node.h"
 
 /**
  * @brief A symbol tree that represents the structure of the program's symbols.
