@@ -58,7 +58,6 @@ void run_compile_test(
 TEST_CASE("JIT print statements", "[jit]") {
     Lexer lexer;
     Parser parser;
-    std::shared_ptr<SymbolTree> symbol_tree = std::make_shared<SymbolTree>();
     GlobalChecker global_checker;
     LocalChecker local_checker;
     CodeGenerator codegen;
@@ -126,7 +125,6 @@ TEST_CASE("JIT print statements", "[jit]") {
 TEST_CASE("JIT let statements", "[jit]") {
     Lexer lexer;
     Parser parser;
-    std::shared_ptr<SymbolTree> symbol_tree = std::make_shared<SymbolTree>();
     GlobalChecker global_checker;
     LocalChecker local_checker;
     CodeGenerator codegen;
@@ -155,7 +153,6 @@ TEST_CASE("JIT let statements", "[jit]") {
 TEST_CASE("JIT integer operators", "[jit]") {
     Lexer lexer;
     Parser parser;
-    std::shared_ptr<SymbolTree> symbol_tree = std::make_shared<SymbolTree>();
     GlobalChecker global_checker;
     LocalChecker local_checker;
     CodeGenerator codegen;
@@ -264,7 +261,6 @@ TEST_CASE("JIT integer operators", "[jit]") {
 TEST_CASE("JIT float operators", "[jit]") {
     Lexer lexer;
     Parser parser;
-    std::shared_ptr<SymbolTree> symbol_tree = std::make_shared<SymbolTree>();
     GlobalChecker global_checker;
     LocalChecker local_checker;
     CodeGenerator codegen;
@@ -345,7 +341,6 @@ TEST_CASE("JIT float operators", "[jit]") {
 TEST_CASE("JIT grouped expressions", "[jit]") {
     Lexer lexer;
     Parser parser;
-    std::shared_ptr<SymbolTree> symbol_tree = std::make_shared<SymbolTree>();
     GlobalChecker global_checker;
     LocalChecker local_checker;
     CodeGenerator codegen;
@@ -400,7 +395,6 @@ TEST_CASE("JIT grouped expressions", "[jit]") {
 TEST_CASE("JIT assign expressions", "[jit]") {
     Lexer lexer;
     Parser parser;
-    std::shared_ptr<SymbolTree> symbol_tree = std::make_shared<SymbolTree>();
     GlobalChecker global_checker;
     LocalChecker local_checker;
     CodeGenerator codegen;

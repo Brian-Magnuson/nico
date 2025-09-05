@@ -130,7 +130,6 @@ TEST_CASE("Local variable declarations", "[checker]") {
 TEST_CASE("Local unary expressions", "[checker]") {
     Lexer lexer;
     Parser parser;
-    std::shared_ptr<SymbolTree> symbol_tree = std::make_shared<SymbolTree>();
     GlobalChecker global_checker;
     LocalChecker local_checker;
     Logger::inst().set_printing_enabled(false);
@@ -166,7 +165,6 @@ TEST_CASE("Local unary expressions", "[checker]") {
 TEST_CASE("Local binary expressions", "[checker]") {
     Lexer lexer;
     Parser parser;
-    std::shared_ptr<SymbolTree> symbol_tree = std::make_shared<SymbolTree>();
     GlobalChecker global_checker;
     LocalChecker local_checker;
     Logger::inst().set_printing_enabled(false);
@@ -240,7 +238,6 @@ TEST_CASE("Local binary expressions", "[checker]") {
 TEST_CASE("Local print statements", "[checker]") {
     Lexer lexer;
     Parser parser;
-    std::shared_ptr<SymbolTree> symbol_tree = std::make_shared<SymbolTree>();
     GlobalChecker global_checker;
     LocalChecker local_checker;
     Logger::inst().set_printing_enabled(false);

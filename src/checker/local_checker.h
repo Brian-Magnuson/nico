@@ -7,6 +7,7 @@
 
 #include "../nodes/ast_node.h"
 #include "../parser/ast.h"
+#include "../parser/symbol_tree.h"
 
 /**
  * @brief A local type checker.
