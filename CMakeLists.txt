@@ -74,14 +74,10 @@ set(CORE_SRC
 # Main file
 set(MAIN_SRC src/main.cpp)
 
-# Debug files
-set(DEBUG_SRC
-    src/debug/ast_printer.cpp
-    src/debug/test_utils.cpp
-)
-
 # Test files
 set(TEST_SRC
+    test/utils/ast_printer.cpp
+    test/utils/test_utils.cpp
     test/lexer_tests.cpp
     test/parser_expr_tests.cpp
     test/parser_stmt_tests.cpp
@@ -94,7 +90,7 @@ add_executable(nico ${MAIN_SRC} ${CORE_SRC})
 target_link_libraries(nico ${llvm_libs})
 
 # Test executable
-add_executable(tests ${TEST_SRC} ${CORE_SRC} ${DEBUG_SRC})
+add_executable(tests ${TEST_SRC} ${CORE_SRC})
 target_link_libraries(tests Catch2::Catch2WithMain ${llvm_libs})
 enable_testing()
 catch_discover_tests(tests)

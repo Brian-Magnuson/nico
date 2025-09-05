@@ -5,13 +5,13 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "../src/common/code_file.h"
-#include "../src/debug/ast_printer.h"
-#include "../src/debug/test_utils.h"
 #include "../src/lexer/lexer.h"
 #include "../src/lexer/token.h"
 #include "../src/logger/logger.h"
 #include "../src/nodes/ast_node.h"
 #include "../src/parser/parser.h"
+#include "utils/ast_printer.h"
+#include "utils/test_utils.h"
 
 // MARK: Stmt tests
 

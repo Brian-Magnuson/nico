@@ -7,8 +7,8 @@
 #include <string_view>
 #include <vector>
 
-#include "../common/code_file.h"
-#include "../lexer/token.h"
+#include "../../src/common/code_file.h"
+#include "../../src/lexer/token.h"
 
 /**
  * @brief Creates a test code file with the provided source code.

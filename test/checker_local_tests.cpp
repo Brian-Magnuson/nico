@@ -7,12 +7,12 @@
 #include "../src/checker/global_checker.h"
 #include "../src/checker/local_checker.h"
 #include "../src/common/code_file.h"
-#include "../src/debug/test_utils.h"
 #include "../src/lexer/lexer.h"
 #include "../src/lexer/token.h"
 #include "../src/logger/logger.h"
 #include "../src/nodes/ast_node.h"
 #include "../src/parser/parser.h"
+#include "utils/test_utils.h"
 
 TEST_CASE("Local variable declarations", "[checker]") {
     Lexer lexer;
