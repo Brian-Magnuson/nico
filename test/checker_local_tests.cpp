@@ -6,7 +6,6 @@
 
 #include "../src/checker/global_checker.h"
 #include "../src/checker/local_checker.h"
-#include "../src/checker/symbol_tree.h"
 #include "../src/common/code_file.h"
 #include "../src/debug/test_utils.h"
 #include "../src/lexer/lexer.h"
@@ -18,9 +17,8 @@
 TEST_CASE("Local variable declarations", "[checker]") {
     Lexer lexer;
     Parser parser;
-    std::shared_ptr<SymbolTree> symbol_tree = std::make_shared<SymbolTree>();
-    GlobalChecker global_checker(symbol_tree);
-    LocalChecker local_checker(symbol_tree);
+    GlobalChecker global_checker;
+    LocalChecker local_checker;
     Logger::inst().set_printing_enabled(false);
 
     SECTION("Valid local variable declarations") {
@@ -126,7 +124,6 @@ TEST_CASE("Local variable declarations", "[checker]") {
 
     lexer.reset();
     parser.reset();
-    symbol_tree->reset();
     Logger::inst().reset();
 }
 
@@ -134,8 +131,8 @@ TEST_CASE("Local unary expressions", "[checker]") {
     Lexer lexer;
     Parser parser;
     std::shared_ptr<SymbolTree> symbol_tree = std::make_shared<SymbolTree>();
-    GlobalChecker global_checker(symbol_tree);
-    LocalChecker local_checker(symbol_tree);
+    GlobalChecker global_checker;
+    LocalChecker local_checker;
     Logger::inst().set_printing_enabled(false);
 
     SECTION("Valid unary expressions") {
@@ -163,7 +160,6 @@ TEST_CASE("Local unary expressions", "[checker]") {
 
     lexer.reset();
     parser.reset();
-    symbol_tree->reset();
     Logger::inst().reset();
 }
 
@@ -171,8 +167,8 @@ TEST_CASE("Local binary expressions", "[checker]") {
     Lexer lexer;
     Parser parser;
     std::shared_ptr<SymbolTree> symbol_tree = std::make_shared<SymbolTree>();
-    GlobalChecker global_checker(symbol_tree);
-    LocalChecker local_checker(symbol_tree);
+    GlobalChecker global_checker;
+    LocalChecker local_checker;
     Logger::inst().set_printing_enabled(false);
 
     SECTION("Valid binary expressions 1") {
@@ -238,7 +234,6 @@ TEST_CASE("Local binary expressions", "[checker]") {
 
     lexer.reset();
     parser.reset();
-    symbol_tree->reset();
     Logger::inst().reset();
 }
 
@@ -246,8 +241,8 @@ TEST_CASE("Local print statements", "[checker]") {
     Lexer lexer;
     Parser parser;
     std::shared_ptr<SymbolTree> symbol_tree = std::make_shared<SymbolTree>();
-    GlobalChecker global_checker(symbol_tree);
-    LocalChecker local_checker(symbol_tree);
+    GlobalChecker global_checker;
+    LocalChecker local_checker;
     Logger::inst().set_printing_enabled(false);
 
     SECTION("Print hello world") {
@@ -262,6 +257,5 @@ TEST_CASE("Local print statements", "[checker]") {
 
     lexer.reset();
     parser.reset();
-    symbol_tree->reset();
     Logger::inst().reset();
 }

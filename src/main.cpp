@@ -73,13 +73,11 @@ int main(int argc, char** argv) {
     auto ast = parser.parse(std::move(tokens));
     exit_if_errors();
 
-    std::shared_ptr<SymbolTree> symbol_tree = std::make_shared<SymbolTree>();
-
-    GlobalChecker global_checker(symbol_tree);
+    GlobalChecker global_checker;
     global_checker.check(ast);
     exit_if_errors();
 
-    LocalChecker local_checker(symbol_tree);
+    LocalChecker local_checker;
     local_checker.check(ast);
     exit_if_errors();
 

@@ -512,9 +512,7 @@ std::any CodeGenerator::visit(Expr::Block* expr, bool as_lvalue) {
 
 // MARK: Interface
 
-void CodeGenerator::generate_script(
-    const std::vector<std::shared_ptr<Stmt>>& stmts
-) {
+void CodeGenerator::generate_script(const Ast& ast) {
     add_c_functions();
 
     llvm::FunctionType* script_fn_type =
@@ -580,7 +578,7 @@ void CodeGenerator::generate_script(
 
     // CODE STARTS HERE
 
-    for (auto& stmt : stmts) {
+    for (auto& stmt : ast.stmts) {
         stmt->accept(this);
     }
 
@@ -643,9 +641,9 @@ bool CodeGenerator::verify_ir() {
 }
 
 bool CodeGenerator::generate_executable_ir(
-    const std::vector<std::shared_ptr<Stmt>>& stmts, bool require_verification
+    const Ast& ast, bool require_verification
 ) {
-    generate_script(stmts);
+    generate_script(ast);
     generate_main();
     if (require_verification) {
         return verify_ir();

@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "../nodes/ast_node.h"
+#include "../parser/ast.h"
 
 /**
  * @brief A class for printing the AST for debugging purposes.
@@ -46,11 +47,10 @@ public:
      *
      * Used for debugging purposes.
      *
-     * @param stmts The list of statements to convert.
+     * @param ast The AST to convert.
      * @return A list of strings representing the statements.
      */
-    std::vector<std::string>
-    stmts_to_strings(const std::vector<std::shared_ptr<Stmt>>& stmts);
+    std::vector<std::string> stmts_to_strings(const Ast& ast);
 };
 
 #endif // NICO_AST_PRINTER_H

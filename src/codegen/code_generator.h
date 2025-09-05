@@ -14,6 +14,7 @@
 
 #include "../lexer/token.h"
 #include "../nodes/ast_node.h"
+#include "../parser/ast.h"
 #include "block.h"
 
 /**
@@ -136,9 +137,9 @@ public:
      * If the goal is to generate a complete executable module, use
      * `generate_executable_ir` instead.
      *
-     * @param stmts The statements to generate IR for.
+     * @param ast The AST to generate IR for.
      */
-    void generate_script(const std::vector<std::shared_ptr<Stmt>>& stmts);
+    void generate_script(const Ast& ast);
 
     /**
      * @brief Generates the LLVM IR for the main function.
@@ -180,16 +181,14 @@ public:
      * The resulting module will contain a `main` function, allowing it to be
      * executed as a standalone program.
      *
-     * @param stmts The statements to generate IR for.
+     * @param ast The AST to generate IR for.
      * @param require_verification Whether to verify the generated IR.
      Defaults
      * to true.
      * @return true if the IR was generated successfully, false otherwise.
      */
-    bool generate_executable_ir(
-        const std::vector<std::shared_ptr<Stmt>>& stmts,
-        bool require_verification = true
-    );
+    bool
+    generate_executable_ir(const Ast& ast, bool require_verification = true);
 
     /**
      * @brief Eject the generated LLVM module and context.

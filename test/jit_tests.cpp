@@ -10,7 +10,6 @@
 
 #include "../src/checker/global_checker.h"
 #include "../src/checker/local_checker.h"
-#include "../src/checker/symbol_tree.h"
 #include "../src/codegen/code_generator.h"
 #include "../src/common/code_file.h"
 #include "../src/compiler/jit.h"
@@ -18,7 +17,7 @@
 #include "../src/lexer/lexer.h"
 #include "../src/lexer/token.h"
 #include "../src/logger/logger.h"
-#include "../src/nodes/ast_node.h"
+#include "../src/parser/ast.h"
 #include "../src/parser/parser.h"
 
 #include "../src/debug/ast_printer.h"
@@ -60,8 +59,8 @@ TEST_CASE("JIT print statements", "[jit]") {
     Lexer lexer;
     Parser parser;
     std::shared_ptr<SymbolTree> symbol_tree = std::make_shared<SymbolTree>();
-    GlobalChecker global_checker(symbol_tree);
-    LocalChecker local_checker(symbol_tree);
+    GlobalChecker global_checker;
+    LocalChecker local_checker;
     CodeGenerator codegen;
     std::unique_ptr<IJit> jit = std::make_unique<SimpleJit>();
     Logger::inst().set_printing_enabled(true);
@@ -120,7 +119,6 @@ TEST_CASE("JIT print statements", "[jit]") {
 
     lexer.reset();
     parser.reset();
-    symbol_tree->reset();
     codegen.reset();
     jit->reset();
 }
@@ -129,8 +127,8 @@ TEST_CASE("JIT let statements", "[jit]") {
     Lexer lexer;
     Parser parser;
     std::shared_ptr<SymbolTree> symbol_tree = std::make_shared<SymbolTree>();
-    GlobalChecker global_checker(symbol_tree);
-    LocalChecker local_checker(symbol_tree);
+    GlobalChecker global_checker;
+    LocalChecker local_checker;
     CodeGenerator codegen;
     std::unique_ptr<IJit> jit = std::make_unique<SimpleJit>();
     Logger::inst().set_printing_enabled(true);
@@ -150,7 +148,6 @@ TEST_CASE("JIT let statements", "[jit]") {
 
     lexer.reset();
     parser.reset();
-    symbol_tree->reset();
     codegen.reset();
     jit->reset();
 }
@@ -159,8 +156,8 @@ TEST_CASE("JIT integer operators", "[jit]") {
     Lexer lexer;
     Parser parser;
     std::shared_ptr<SymbolTree> symbol_tree = std::make_shared<SymbolTree>();
-    GlobalChecker global_checker(symbol_tree);
-    LocalChecker local_checker(symbol_tree);
+    GlobalChecker global_checker;
+    LocalChecker local_checker;
     CodeGenerator codegen;
     std::unique_ptr<IJit> jit = std::make_unique<SimpleJit>();
     Logger::inst().set_printing_enabled(true);
@@ -260,7 +257,6 @@ TEST_CASE("JIT integer operators", "[jit]") {
 
     lexer.reset();
     parser.reset();
-    symbol_tree->reset();
     codegen.reset();
     jit->reset();
 }
@@ -269,8 +265,8 @@ TEST_CASE("JIT float operators", "[jit]") {
     Lexer lexer;
     Parser parser;
     std::shared_ptr<SymbolTree> symbol_tree = std::make_shared<SymbolTree>();
-    GlobalChecker global_checker(symbol_tree);
-    LocalChecker local_checker(symbol_tree);
+    GlobalChecker global_checker;
+    LocalChecker local_checker;
     CodeGenerator codegen;
     std::unique_ptr<IJit> jit = std::make_unique<SimpleJit>();
     Logger::inst().set_printing_enabled(true);
@@ -342,7 +338,6 @@ TEST_CASE("JIT float operators", "[jit]") {
 
     lexer.reset();
     parser.reset();
-    symbol_tree->reset();
     codegen.reset();
     jit->reset();
 }
@@ -351,8 +346,8 @@ TEST_CASE("JIT grouped expressions", "[jit]") {
     Lexer lexer;
     Parser parser;
     std::shared_ptr<SymbolTree> symbol_tree = std::make_shared<SymbolTree>();
-    GlobalChecker global_checker(symbol_tree);
-    LocalChecker local_checker(symbol_tree);
+    GlobalChecker global_checker;
+    LocalChecker local_checker;
     CodeGenerator codegen;
     std::unique_ptr<IJit> jit = std::make_unique<SimpleJit>();
     Logger::inst().set_printing_enabled(true);
@@ -398,7 +393,6 @@ TEST_CASE("JIT grouped expressions", "[jit]") {
 
     lexer.reset();
     parser.reset();
-    symbol_tree->reset();
     codegen.reset();
     jit->reset();
 }
@@ -407,8 +401,8 @@ TEST_CASE("JIT assign expressions", "[jit]") {
     Lexer lexer;
     Parser parser;
     std::shared_ptr<SymbolTree> symbol_tree = std::make_shared<SymbolTree>();
-    GlobalChecker global_checker(symbol_tree);
-    LocalChecker local_checker(symbol_tree);
+    GlobalChecker global_checker;
+    LocalChecker local_checker;
     CodeGenerator codegen;
     std::unique_ptr<IJit> jit = std::make_unique<SimpleJit>();
     Logger::inst().set_printing_enabled(true);
@@ -454,7 +448,6 @@ TEST_CASE("JIT assign expressions", "[jit]") {
 
     lexer.reset();
     parser.reset();
-    symbol_tree->reset();
     codegen.reset();
     jit->reset();
 }

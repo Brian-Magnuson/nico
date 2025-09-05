@@ -52,8 +52,8 @@ TEST_CASE("Parser let statements", "[parser]") {
         };
         CHECK(printer.stmts_to_strings(ast) == expected);
 
-        REQUIRE(ast.size() == 2);
-        auto let_stmt = std::dynamic_pointer_cast<Stmt::Let>(ast[0]);
+        REQUIRE(ast.stmts.size() == 2);
+        auto let_stmt = std::dynamic_pointer_cast<Stmt::Let>(ast.stmts[0]);
         REQUIRE(let_stmt != nullptr);
         REQUIRE(let_stmt->annotation.has_value());
         REQUIRE(let_stmt->annotation.value()->to_string() == "i32");
@@ -67,8 +67,8 @@ TEST_CASE("Parser let statements", "[parser]") {
             {"(stmt:let a i32)", "(stmt:let b f64)", "(stmt:eof)"};
         CHECK(printer.stmts_to_strings(ast) == expected);
 
-        REQUIRE(ast.size() == 3);
-        auto let_stmt = std::dynamic_pointer_cast<Stmt::Let>(ast[1]);
+        REQUIRE(ast.stmts.size() == 3);
+        auto let_stmt = std::dynamic_pointer_cast<Stmt::Let>(ast.stmts[1]);
         REQUIRE(let_stmt != nullptr);
         REQUIRE(let_stmt->annotation.has_value());
         REQUIRE(let_stmt->annotation.value()->to_string() == "f64");
@@ -84,8 +84,8 @@ TEST_CASE("Parser let statements", "[parser]") {
         };
         CHECK(printer.stmts_to_strings(ast) == expected);
 
-        REQUIRE(ast.size() == 2);
-        auto let_stmt = std::dynamic_pointer_cast<Stmt::Let>(ast[0]);
+        REQUIRE(ast.stmts.size() == 2);
+        auto let_stmt = std::dynamic_pointer_cast<Stmt::Let>(ast.stmts[0]);
         REQUIRE(let_stmt != nullptr);
         REQUIRE(let_stmt->annotation.has_value());
         REQUIRE(let_stmt->annotation.value()->to_string() == "Vector2D");

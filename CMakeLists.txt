@@ -44,11 +44,11 @@ set(LEXER_SRC
 )
 set(PARSER_SRC
     src/parser/parser.cpp
+    src/parser/symbol_tree.cpp
 )
 set(CHECKER_SRC
     src/checker/global_checker.cpp
     src/checker/local_checker.cpp
-    src/checker/symbol_tree.cpp
 )
 set(CODEGEN_SRC
     src/codegen/code_generator.cpp

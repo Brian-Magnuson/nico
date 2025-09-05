@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "../nodes/ast_node.h"
-#include "symbol_tree.h"
+#include "../parser/ast.h"
 
 /**
  * @brief A local type checker.
@@ -42,22 +42,16 @@ class LocalChecker : public Stmt::Visitor,
     std::any visit(Annotation::Tuple* annotation) override;
 
 public:
-    /**
-     * @brief Constructs a new LocalChecker.
-     *
-     * @param symbol_tree The symbol tree to use for type checking.
-     */
-    LocalChecker(std::shared_ptr<SymbolTree> symbol_tree)
-        : symbol_tree(symbol_tree) {}
+    LocalChecker() = default;
 
     /**
      * @brief Type checks the given AST at the local level.
      *
      * This function will modify the AST to add type information to the nodes.
      *
-     * @param ast The list of statements to type check.
+     * @param ast The AST to type check.
      */
-    void check(std::vector<std::shared_ptr<Stmt>>& ast);
+    void check(Ast& ast);
 };
 
 #endif // NICO_LOCAL_CHECKER_H

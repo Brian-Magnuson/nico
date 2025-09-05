@@ -9,7 +9,7 @@
 
 #include "../lexer/token.h"
 #include "../nodes/ast_node.h"
-#include "../nodes/type_node.h"
+#include "ast.h"
 
 /**
  * @brief A parser to parse a vector of tokens into an abstract syntax tree.
@@ -248,6 +248,8 @@ class Parser {
     std::optional<std::shared_ptr<Annotation>> annotation();
 
 public:
+    // MARK: Interface
+
     /**
      * Resets the parser.
      *
@@ -261,10 +263,9 @@ public:
      * The parser will be reset before parsing.
      *
      * @param tokens (Requires move) The vector of tokens to parse.
-     * @return std::vector<std::shared_ptr<Stmt>> A vector of AST statements.
+     * @return Ast The parsed abstract syntax tree.
      */
-    std::vector<std::shared_ptr<Stmt>>
-    parse(const std::vector<std::shared_ptr<Token>>&& tokens);
+    Ast parse(const std::vector<std::shared_ptr<Token>>&& tokens);
 };
 
 #endif // NICO_PARSER_H

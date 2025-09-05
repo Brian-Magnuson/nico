@@ -363,8 +363,7 @@ void Parser::reset() {
     current = 0;
 }
 
-std::vector<std::shared_ptr<Stmt>>
-Parser::parse(const std::vector<std::shared_ptr<Token>>&& tokens) {
+Ast Parser::parse(const std::vector<std::shared_ptr<Token>>&& tokens) {
     reset();
     this->tokens = std::move(tokens);
 
@@ -380,5 +379,5 @@ Parser::parse(const std::vector<std::shared_ptr<Token>>&& tokens) {
         }
     }
 
-    return statements;
+    return Ast(statements);
 }

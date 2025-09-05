@@ -383,8 +383,9 @@ std::any LocalChecker::visit(Annotation::Tuple* annotation) {
     return std::any();
 }
 
-void LocalChecker::check(std::vector<std::shared_ptr<Stmt>>& ast) {
-    for (auto& stmt : ast) {
+void LocalChecker::check(Ast& ast) {
+    symbol_tree = ast.symbol_tree;
+    for (auto& stmt : ast.stmts) {
         stmt->accept(this);
     }
 }
