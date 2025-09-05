@@ -510,12 +510,9 @@ std::any CodeGenerator::visit(Expr::Block* expr, bool as_lvalue) {
 
 // MARK: Interface
 
-bool CodeGenerator::generate(
-    const std::vector<std::shared_ptr<Stmt>>& stmts, bool require_verification
+void CodeGenerator::generate_script(
+    const std::vector<std::shared_ptr<Stmt>>& stmts
 ) {
-    // Normally, we would traverse the AST and generate LLVM IR here.
-    // For now, we will generate a simple script that prints "Hello, World!".
-
     add_c_functions();
 
     llvm::FunctionType* script_fn_type =
@@ -596,20 +593,9 @@ bool CodeGenerator::generate(
 
     // Return the value from ret_val
     builder->CreateRet(builder->CreateLoad(builder->getInt32Ty(), ret_val));
-
-    // If verification is required, verify the generated IR
-    if (require_verification && llvm::verifyModule(*ir_module, &llvm::errs())) {
-        Logger::inst().log_error(
-            Err::ModuleVerificationFailed,
-            "Generated LLVM IR failed verification."
-        );
-        return false;
-    }
-
-    return true;
 }
 
-bool CodeGenerator::generate_main(bool require_verification) {
+void CodeGenerator::generate_main() {
     // Generate the main function that calls $script
     llvm::FunctionType* main_fn_type = llvm::FunctionType::get(
         builder->getInt32Ty(),
@@ -638,16 +624,30 @@ bool CodeGenerator::generate_main(bool require_verification) {
 
     // Return the result
     builder->CreateRet(script_ret);
+}
 
-    // If verification is required, verify the generated IR
-    if (require_verification && llvm::verifyModule(*ir_module, &llvm::errs())) {
+bool CodeGenerator::verify_ir() {
+    if (ir_printing_enabled) {
+        ir_module->print(llvm::outs(), nullptr);
+    }
+    if (llvm::verifyModule(*ir_module, &llvm::errs())) {
         Logger::inst().log_error(
             Err::ModuleVerificationFailed,
             "Generated LLVM IR failed verification."
         );
         return false;
     }
+    return true;
+}
 
+bool CodeGenerator::generate_executable_ir(
+    const std::vector<std::shared_ptr<Stmt>>& stmts, bool require_verification
+) {
+    generate_script(stmts);
+    generate_main();
+    if (require_verification) {
+        return verify_ir();
+    }
     return true;
 }
 
@@ -657,4 +657,5 @@ void CodeGenerator::reset() {
     builder = std::make_unique<llvm::IRBuilder<>>(*context);
     block_list = nullptr;
     panic_recoverable = false;
+    ir_printing_enabled = false;
 }

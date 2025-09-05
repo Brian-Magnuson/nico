@@ -36,12 +36,8 @@ void run_compile_test(
     auto ast = parser.parse(std::move(tokens));
     global_checker.check(ast);
     local_checker.check(ast);
-    codegen.generate(ast, false);
-    REQUIRE(codegen.generate_main());
+    REQUIRE(codegen.generate_executable_ir(ast));
     auto output = codegen.eject();
-    // llvm::outs() <<
-    // "===========================================================\n";
-    // output.module->print(llvm::outs(), nullptr);
     auto error =
         jit->add_module(std::move(output.module), std::move(output.context));
 

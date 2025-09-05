@@ -84,8 +84,7 @@ int main(int argc, char** argv) {
     // exit_if_errors();
 
     CodeGenerator codegen;
-    codegen.generate({}, false);
-    codegen.generate_main();
+    codegen.generate_executable_ir({});
     exit_if_errors();
 
     // Eject the generated LLVM module and context.

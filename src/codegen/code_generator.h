@@ -36,6 +36,8 @@ class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
     // A flag to indicate whether panic is recoverable.
     // Can be set to true when testing panics.
     bool panic_recoverable = false;
+    // A flag to indicate whether IR should be printed just before verification.
+    bool ir_printing_enabled = false;
 
     std::any visit(Stmt::Expression* stmt) override;
     std::any visit(Stmt::Let* stmt) override;
@@ -127,18 +129,16 @@ public:
      * @brief Generate the LLVM IR for the given AST statements.
      *
      * This method traverses the AST and generates the corresponding LLVM IR.
-     * If `require_verification` is true, it will verify the generated IR for
-     * correctness and return false if verification fails.
+     * A `script` function will be generated, which can be called to "run" the
+     * code.
+     *
+     * This method does not verify the generated IR; use `verify_ir` to do so.
+     * If the goal is to generate a complete executable module, use
+     * `generate_executable_ir` instead.
      *
      * @param stmts The statements to generate IR for.
-     * @param require_verification Whether to verify the generated IR. Defaults
-     * to true.
-     * @return true if the IR was generated successfully, false otherwise.
      */
-    bool generate(
-        const std::vector<std::shared_ptr<Stmt>>& stmts,
-        bool require_verification = true
-    );
+    void generate_script(const std::vector<std::shared_ptr<Stmt>>& stmts);
 
     /**
      * @brief Generates the LLVM IR for the main function.
@@ -147,15 +147,49 @@ public:
      * It calls a function named `$script`, which begins executing code
      * generated from top-level statements.
      *
-     * If `require_verification` is true, it will verify the generated IR for
-     * correctness and return false if verification fails.
-     *
-     * @param require_verification Whether to verify the generated IR. Defaults
-     * to true.
-     * @return true if the main function was generated successfully, false
-     * otherwise.
+     * This method does not verify the generated IR; use `verify_ir` to do so.
+     * If the goal is to generate a complete executable module, use
+     * `generate_executable_ir` instead.
      */
-    bool generate_main(bool require_verification = true);
+    void generate_main();
+
+    /**
+     * @brief Verify the generated LLVM IR for correctness.
+     *
+     * This method uses LLVM's built-in verification to check the generated IR
+     * for correctness. If the IR is invalid, an error message will be logged
+     * and false will be returned.
+     *
+     * @return true if the IR is valid, false otherwise.
+     */
+    bool verify_ir();
+
+    /**
+     * @brief Generates the LLVM IR for the script and main functions.
+     *
+     * This method has the same effect as calling `generate_script`,
+     * `generate_main`, and `verify_ir` sequentially.
+     *
+     * If verification fails, an error message will be logged and false will
+     be
+     * returned.
+     * Verification may be skipped by setting `require_verification` to
+     false.
+     * In such case, this function always returns true.
+     *
+     * The resulting module will contain a `main` function, allowing it to be
+     * executed as a standalone program.
+     *
+     * @param stmts The statements to generate IR for.
+     * @param require_verification Whether to verify the generated IR.
+     Defaults
+     * to true.
+     * @return true if the IR was generated successfully, false otherwise.
+     */
+    bool generate_executable_ir(
+        const std::vector<std::shared_ptr<Stmt>>& stmts,
+        bool require_verification = true
+    );
 
     /**
      * @brief Eject the generated LLVM module and context.
@@ -195,6 +229,17 @@ public:
      * @param value True to enable panic recovery, false to disable it.
      */
     void set_panic_recoverable(bool value) { panic_recoverable = value; }
+
+    /**
+     * @brief Sets whether the code generator should print the generated IR just
+     * before verification.
+     *
+     * This is useful for debugging/testing purposes.
+     * Make sure to call this function before any code is generated.
+     *
+     * @param value True to enable IR printing, false to disable it.
+     */
+    void set_ir_printing_enabled(bool value) { ir_printing_enabled = value; }
 };
 
 #endif // CODE_GENERATOR_H
