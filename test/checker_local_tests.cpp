@@ -235,6 +235,106 @@ TEST_CASE("Local binary expressions", "[checker]") {
     Logger::inst().reset();
 }
 
+TEST_CASE("Local assignment expressions", "[checker]") {
+    Lexer lexer;
+    Parser parser;
+    GlobalChecker global_checker;
+    LocalChecker local_checker;
+    Logger::inst().set_printing_enabled(false);
+
+    SECTION("Valid assignment expressions") {
+        auto file = make_test_code_file("let var a = 1 a = 2");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+
+        CHECK(Logger::inst().get_errors().empty());
+    }
+
+    SECTION("Assignment type mismatch 1") {
+        // Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file("let var a: i32 = 1 a = true");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::AssignmentTypeMismatch);
+    }
+
+    SECTION("Assignment type mismatch 2") {
+        // Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file("let var a: i32 = 1 a = 1.0");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::AssignmentTypeMismatch);
+    }
+
+    SECTION("Assignment not an lvalue 1") {
+        Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file("1 = 2");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::NotAnLValue);
+    }
+
+    SECTION("Assignment not an lvalue 2") {
+        Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file("(1 + 1) = 2");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::NotAnLValue);
+    }
+
+    SECTION("Assignment not an lvalue 3") {
+        Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file("let var a = 1 (a = 1) = 2");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::NotAnLValue);
+    }
+
+    SECTION("Assignment not an lvalue 4") {
+        Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file("let var a = 1; -a = 2");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::NotAnLValue);
+    }
+
+    lexer.reset();
+    parser.reset();
+    Logger::inst().reset();
+}
+
 TEST_CASE("Local print statements", "[checker]") {
     Lexer lexer;
     Parser parser;
@@ -250,6 +350,105 @@ TEST_CASE("Local print statements", "[checker]") {
         local_checker.check(ast);
 
         CHECK(Logger::inst().get_errors().empty());
+    }
+
+    lexer.reset();
+    parser.reset();
+    Logger::inst().reset();
+}
+
+TEST_CASE("Local block expressions", "[checker]") {
+    Lexer lexer;
+    Parser parser;
+    GlobalChecker global_checker;
+    LocalChecker local_checker;
+    Logger::inst().set_printing_enabled(false);
+
+    SECTION("Valid block expression") {
+        Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file("block { let a = 1 printout a }");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+
+        CHECK(Logger::inst().get_errors().empty());
+    }
+
+    SECTION("Block expression yield 1") {
+        Logger::inst().set_printing_enabled(true);
+        auto file =
+            make_test_code_file("block { let a = 1 printout a yield a }");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+
+        CHECK(Logger::inst().get_errors().empty());
+    }
+
+    SECTION("Block expression yield 2") {
+        Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file("let var a = 1 a = block { yield 2 }");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+
+        CHECK(Logger::inst().get_errors().empty());
+    }
+
+    SECTION("Block expression nested yield") {
+        // Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file(
+            "let var a = 1 a = block { yield block { yield 2 } }"
+        );
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+
+        CHECK(Logger::inst().get_errors().empty());
+    }
+
+    SECTION("Yield outside local scope") {
+        // Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file("yield 1");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::YieldOutsideLocalScope);
+    }
+
+    SECTION("Incompatible yield types") {
+        // Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file("block { yield 1 yield true }");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::YieldTypeMismatch);
+    }
+
+    SECTION("Block without yield") {
+        // Logger::inst().set_printing_enabled(true);
+        auto file =
+            make_test_code_file("let var a = 1 a = block { let b = 1 }");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::AssignmentTypeMismatch);
     }
 
     lexer.reset();

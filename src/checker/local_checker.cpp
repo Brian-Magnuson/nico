@@ -103,7 +103,7 @@ std::any LocalChecker::visit(Stmt::Yield* stmt) {
             // If this local scope has a yield type, check that the new yield
             // expression is compatible with it.
             Logger::inst().log_error(
-                Err::TypeMismatch,
+                Err::YieldTypeMismatch,
                 *stmt->expression->location,
                 std::string("Type `") + stmt->expression->type->to_string() +
                     "` is not compatible with previously yielded type `" +
@@ -171,6 +171,15 @@ std::any LocalChecker::visit(Expr::Assign* expr, bool as_lvalue) {
 }
 
 std::any LocalChecker::visit(Expr::Binary* expr, bool as_lvalue) {
+    if (as_lvalue) {
+        Logger::inst().log_error(
+            Err::NotAnLValue,
+            expr->op->location,
+            "Binary expression cannot be an lvalue."
+        );
+        return std::any();
+    }
+
     expr->left->accept(this, false);
     auto l_type = expr->left->type;
     if (!l_type)
@@ -226,6 +235,14 @@ std::any LocalChecker::visit(Expr::Unary* expr, bool as_lvalue) {
 
     switch (expr->op->tok_type) {
     case Tok::Minus:
+        if (as_lvalue) {
+            Logger::inst().log_error(
+                Err::NotAnLValue,
+                expr->op->location,
+                "Unary minus expression cannot be an lvalue."
+            );
+            return std::any();
+        }
         // Types must inherit from `Type::INumeric`.
         if (!PTR_INSTANCEOF(r_type, Type::INumeric)) {
             Logger::inst().log_error(
@@ -276,8 +293,9 @@ std::any LocalChecker::visit(Expr::NameRef* expr, bool as_lvalue) {
         );
         Logger::inst().log_note(
             field_entry->field.token->location,
-            "Binding introduced here."
+            "Binding introduced here. Consider adding `var` to make it mutable."
         );
+
         return std::any();
     }
 
@@ -287,6 +305,14 @@ std::any LocalChecker::visit(Expr::NameRef* expr, bool as_lvalue) {
 }
 
 std::any LocalChecker::visit(Expr::Literal* expr, bool as_lvalue) {
+    if (as_lvalue) {
+        Logger::inst().log_error(
+            Err::NotAnLValue,
+            *expr->location,
+            "Literal expression cannot be an lvalue."
+        );
+        return std::any();
+    }
     switch (expr->token->tok_type) {
     case Tok::Int:
         expr->type = std::make_shared<Type::Int>(true, 32);
@@ -316,6 +342,14 @@ std::any LocalChecker::visit(Expr::Tuple* expr, bool as_lvalue) {
 }
 
 std::any LocalChecker::visit(Expr::Block* expr, bool as_lvalue) {
+    if (as_lvalue) {
+        Logger::inst().log_error(
+            Err::NotAnLValue,
+            *expr->location,
+            "Block expression cannot be an lvalue."
+        );
+        return std::any();
+    }
     auto [local_scope, err] = symbol_tree->add_local_scope();
     if (err != Err::Null) {
         panic("LocalChecker::visit(Expr::Block*): Could not add local scope.");

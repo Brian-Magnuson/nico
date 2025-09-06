@@ -84,7 +84,7 @@ enum class Err {
     // A non-lvalue was found where an lvalue was expected.
     NotAnLValue,
     // A type mismatch was found in an expression.
-    TypeMismatch,
+    YieldTypeMismatch,
     // A type mismatch was found in a variable declaration.
     LetTypeMismatch,
     // A type mismatch was found in an assignment expression.
