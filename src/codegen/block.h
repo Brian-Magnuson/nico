@@ -18,19 +18,20 @@ public:
     class Function;
     class Script;
 
-    class Control;
     class Plain;
+
+    class Control;
     class Loop;
     class Conditional;
 
     // A pointer to the previous block.
     std::shared_ptr<Block> prev;
-    // The value yielded by the block. If this is a function block,
-    // this will be the return value.
-    llvm::Value* yield_value;
+    // The allocation where the yield value is stored. If this is a function,
+    // this is where the return value is stored.
+    llvm::Value* yield_allocation;
 
-    Block(std::shared_ptr<Block> prev, llvm::Value* yield_value)
-        : prev(prev), yield_value(yield_value) {}
+    Block(std::shared_ptr<Block> prev, llvm::Value* yield_allocation)
+        : prev(prev), yield_allocation(yield_allocation) {}
 
     virtual ~Block() = default;
 
@@ -59,10 +60,10 @@ public:
     std::string function_name;
 
     Function(
-        std::shared_ptr<Block> prev, llvm::Value* yield_value,
+        std::shared_ptr<Block> prev, llvm::Value* yield_allocation,
         llvm::BasicBlock* exit_block, std::string_view function_name
     )
-        : Block(prev, yield_value),
+        : Block(prev, yield_allocation),
           exit_block(exit_block),
           function_name(function_name) {}
 
@@ -85,12 +86,23 @@ public:
 class Block::Script : public Block::Function {
 public:
     Script(
-        std::shared_ptr<Block> prev, llvm::Value* yield_value,
+        std::shared_ptr<Block> prev, llvm::Value* yield_allocation,
         llvm::BasicBlock* exit_block
     )
-        : Block::Function(prev, yield_value, exit_block, "script") {}
+        : Block::Function(prev, yield_allocation, exit_block, "script") {}
 
     virtual ~Script() = default;
+};
+
+/**
+ * @brief A plain block linked list node.
+ */
+class Block::Plain : public Block {
+public:
+    Plain(std::shared_ptr<Block> prev, llvm::Value* yield_allocation)
+        : Block(prev, yield_allocation) {}
+
+    virtual ~Plain() = default;
 };
 
 /**
@@ -106,33 +118,12 @@ public:
     llvm::BasicBlock* merge_block;
 
     Control(
-        std::shared_ptr<Block> prev, llvm::Value* yield_value,
+        std::shared_ptr<Block> prev, llvm::Value* yield_allocation,
         llvm::BasicBlock* merge_block
     )
-        : Block(prev, yield_value), merge_block(merge_block) {}
+        : Block(prev, yield_allocation), merge_block(merge_block) {}
 
     virtual ~Control() = default;
-};
-
-/**
- * @brief A plain block linked list node.
- *
- * This class is used to distinguish this block from other kinds of control
- * blocks like loops and conditionals. It adds no additional members to
- * `Block::Control`.
- *
- * Plain blocks, though considered control blocks, do not actually affect
- * control flow.
- */
-class Block::Plain : public Block::Control {
-public:
-    Plain(
-        std::shared_ptr<Block> prev, llvm::Value* yield_value,
-        llvm::BasicBlock* merge_block
-    )
-        : Control(prev, yield_value, merge_block) {}
-
-    virtual ~Plain() = default;
 };
 
 /**
@@ -149,10 +140,10 @@ public:
     llvm::BasicBlock* continue_block;
 
     Loop(
-        std::shared_ptr<Block> prev, llvm::Value* yield_value,
+        std::shared_ptr<Block> prev, llvm::Value* yield_allocation,
         llvm::BasicBlock* merge_block, llvm::BasicBlock* continue_block
     )
-        : Control(prev, yield_value, merge_block),
+        : Control(prev, yield_allocation, merge_block),
           continue_block(continue_block) {}
 
     virtual ~Loop() = default;
@@ -172,10 +163,10 @@ public:
 class Block::Conditional : public Block::Control {
 public:
     Conditional(
-        std::shared_ptr<Block> prev, llvm::Value* yield_value,
+        std::shared_ptr<Block> prev, llvm::Value* yield_allocation,
         llvm::BasicBlock* merge_block
     )
-        : Control(prev, yield_value, merge_block) {}
+        : Control(prev, yield_allocation, merge_block) {}
 
     virtual ~Conditional() = default;
 };

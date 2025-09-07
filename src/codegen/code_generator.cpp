@@ -324,6 +324,9 @@ std::any CodeGenerator::visit(Stmt::Print* stmt) {
 
 std::any CodeGenerator::visit(Stmt::Yield* stmt) {
     // return stmt->expression->accept(this, false);
+    auto value =
+        std::any_cast<llvm::Value*>(stmt->expression->accept(this, false));
+    builder->CreateStore(value, block_list->yield_allocation);
     return std::any();
 }
 
@@ -507,7 +510,24 @@ std::any CodeGenerator::visit(Expr::Tuple* expr, bool as_lvalue) {
 }
 
 std::any CodeGenerator::visit(Expr::Block* expr, bool as_lvalue) {
-    return std::any();
+    llvm::Value* yield_allocation = builder->CreateAlloca(
+        expr->type->get_llvm_type(builder),
+        nullptr,
+        "$yieldval"
+    );
+    block_list = std::make_shared<Block::Plain>(block_list, yield_allocation);
+
+    for (auto& stmt : expr->statements) {
+        stmt->accept(this);
+    }
+
+    block_list = block_list->prev;
+    llvm::Value* yield_value = builder->CreateLoad(
+        expr->type->get_llvm_type(builder),
+        yield_allocation
+    );
+
+    return yield_value;
 }
 
 // MARK: Interface

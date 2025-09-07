@@ -443,3 +443,76 @@ TEST_CASE("JIT assign expressions", "[jit]") {
     codegen.reset();
     jit->reset();
 }
+
+TEST_CASE("JIT block expressions", "[jit]") {
+    Lexer lexer;
+    Parser parser;
+    GlobalChecker global_checker;
+    LocalChecker local_checker;
+    CodeGenerator codegen;
+    std::unique_ptr<IJit> jit = std::make_unique<SimpleJit>();
+    Logger::inst().set_printing_enabled(true);
+
+    SECTION("Block expression 1") {
+        // codegen.set_ir_printing_enabled(true);
+        run_compile_test(
+            lexer,
+            parser,
+            global_checker,
+            local_checker,
+            codegen,
+            jit,
+            "let var x = 1 x = block { yield 2 } printout x",
+            "2"
+        );
+    }
+
+    SECTION("Block expression 2") {
+        // codegen.set_ir_printing_enabled(true);
+        run_compile_test(
+            lexer,
+            parser,
+            global_checker,
+            local_checker,
+            codegen,
+            jit,
+            "let var x = 1 x = block { yield x * 2 + 1 } printout x",
+            "3"
+        );
+    }
+
+    SECTION("Block expression 3") {
+        // codegen.set_ir_printing_enabled(true);
+        run_compile_test(
+            lexer,
+            parser,
+            global_checker,
+            local_checker,
+            codegen,
+            jit,
+            "let var x = 1 let var y = 2 x = block { let var y = x + 3 yield y "
+            "} printout x, \",\", y",
+            "4,2"
+        );
+    }
+
+    SECTION("Block expression 4") {
+        // codegen.set_ir_printing_enabled(true);
+        run_compile_test(
+            lexer,
+            parser,
+            global_checker,
+            local_checker,
+            codegen,
+            jit,
+            "let var x = 1 x = block { yield 2 * block { yield 3 } } printout "
+            "x",
+            "6"
+        );
+    }
+
+    lexer.reset();
+    parser.reset();
+    codegen.reset();
+    jit->reset();
+}

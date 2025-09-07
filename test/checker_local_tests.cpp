@@ -279,7 +279,7 @@ TEST_CASE("Local assignment expressions", "[checker]") {
     }
 
     SECTION("Assignment not an lvalue 1") {
-        Logger::inst().set_printing_enabled(true);
+        // Logger::inst().set_printing_enabled(true);
         auto file = make_test_code_file("1 = 2");
         auto tokens = lexer.scan(file);
         auto ast = parser.parse(std::move(tokens));
@@ -292,7 +292,7 @@ TEST_CASE("Local assignment expressions", "[checker]") {
     }
 
     SECTION("Assignment not an lvalue 2") {
-        Logger::inst().set_printing_enabled(true);
+        // Logger::inst().set_printing_enabled(true);
         auto file = make_test_code_file("(1 + 1) = 2");
         auto tokens = lexer.scan(file);
         auto ast = parser.parse(std::move(tokens));
@@ -305,7 +305,7 @@ TEST_CASE("Local assignment expressions", "[checker]") {
     }
 
     SECTION("Assignment not an lvalue 3") {
-        Logger::inst().set_printing_enabled(true);
+        // Logger::inst().set_printing_enabled(true);
         auto file = make_test_code_file("let var a = 1 (a = 1) = 2");
         auto tokens = lexer.scan(file);
         auto ast = parser.parse(std::move(tokens));
@@ -318,7 +318,7 @@ TEST_CASE("Local assignment expressions", "[checker]") {
     }
 
     SECTION("Assignment not an lvalue 4") {
-        Logger::inst().set_printing_enabled(true);
+        // Logger::inst().set_printing_enabled(true);
         auto file = make_test_code_file("let var a = 1; -a = 2");
         auto tokens = lexer.scan(file);
         auto ast = parser.parse(std::move(tokens));
