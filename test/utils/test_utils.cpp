@@ -74,10 +74,10 @@ capture_stdout(std::function<void()> func, int buffer_size) {
     _close(stderr_fd);
 
     std::vector<char> buffer(buffer_size);
-    ssize_t n = _read(out_pipefd[0], buffer.data(), buffer.size());
+    size_t n = _read(out_pipefd[0], buffer.data(), buffer.size());
     _close(out_pipefd[0]);
     std::string out = std::string(buffer.data(), n > 0 ? n : 0);
-    ssize_t m = _read(err_pipefd[0], buffer.data(), buffer.size());
+    size_t m = _read(err_pipefd[0], buffer.data(), buffer.size());
     std::string err = std::string(buffer.data(), m > 0 ? m : 0);
     _close(err_pipefd[0]);
     return {out, err};
