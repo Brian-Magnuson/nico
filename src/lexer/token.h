@@ -100,6 +100,7 @@ enum class Tok {
     KwContinue,
     KwReturn,
     KwYield,
+    KwPass,
 
     KwLet,
     KwVar,
@@ -178,7 +179,8 @@ public:
      * empty std::any value.
      */
     Token(Tok tok_type, const Location& location, std::any literal = std::any())
-        : tok_type(tok_type), location(location),
+        : tok_type(tok_type),
+          location(location),
           lexeme(
               std::string_view(location.file->src_code)
                   .substr(location.start, location.length)

@@ -34,6 +34,10 @@ std::any AstPrinter::visit(Stmt::Print* stmt) {
     return str;
 }
 
+std::any AstPrinter::visit(Stmt::Pass* /*stmt*/) {
+    return std::string("(stmt:pass)");
+}
+
 std::any AstPrinter::visit(Stmt::Yield* stmt) {
     std::string str = "(stmt:yield ";
     str += std::any_cast<std::string>(stmt->expression->accept(this, false));

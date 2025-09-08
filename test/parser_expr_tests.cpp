@@ -332,6 +332,28 @@ block:
         CHECK(printer.stmts_to_strings(ast) == expected);
     }
 
+    SECTION("Block with pass") {
+        auto file = make_test_code_file(R"(
+block:
+    pass
+)");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(expr (block (stmt:pass)))",
+            "(stmt:eof)"
+        };
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
+    SECTION("Empty block") {
+        auto file = make_test_code_file("block { }");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {"(expr (block))", "(stmt:eof)"};
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
     lexer.reset();
     parser.reset();
     Logger::inst().reset();

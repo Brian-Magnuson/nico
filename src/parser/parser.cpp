@@ -313,10 +313,6 @@ std::optional<std::shared_ptr<Stmt>> Parser::yield_statement() {
     return std::make_shared<Stmt::Yield>(*expr);
 }
 
-std::shared_ptr<Stmt> Parser::eof_statement() {
-    return std::make_shared<Stmt::Eof>();
-}
-
 std::optional<std::shared_ptr<Stmt>> Parser::expression_statement() {
     auto expr = expression();
     if (!expr)
@@ -333,10 +329,13 @@ std::optional<std::shared_ptr<Stmt>> Parser::statement() {
         return let_statement();
     }
     else if (match({Tok::Eof})) {
-        return eof_statement();
+        return std::make_shared<Stmt::Eof>();
     }
     else if (match({Tok::KwPrintout})) {
         return print_statement();
+    }
+    else if (match({Tok::KwPass})) {
+        return std::make_shared<Stmt::Pass>();
     }
     else if (match({Tok::KwYield})) {
         return yield_statement();

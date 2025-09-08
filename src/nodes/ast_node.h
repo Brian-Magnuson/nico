@@ -72,6 +72,20 @@ public:
 };
 
 /**
+ * @brief A pass statement.
+ *
+ * Pass statements do nothing and may be used in places where a statement is
+ * required but no action is desired.
+ *
+ * Even if `pass` is supposed to do nothing, we do treat it as a real statement
+ * to uphold the principles of consistency and extensibility in the compiler.
+ */
+class Stmt::Pass : public Stmt {
+public:
+    std::any accept(Visitor* visitor) override { return visitor->visit(this); }
+};
+
+/**
  * @brief A yield statement.
  *
  * Yield statements set the value to be yielded by a block expression.

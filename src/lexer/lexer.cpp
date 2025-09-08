@@ -26,6 +26,7 @@ std::unordered_map<std::string_view, Tok> Lexer::keywords = {
     {"let", Tok::KwLet},
     {"var", Tok::KwVar},
 
+    {"pass", Tok::KwPass},
     {"yield", Tok::KwYield},
 
     {"printout", Tok::KwPrintout},
@@ -191,7 +192,9 @@ void Lexer::consume_whitespace() {
             Logger::inst().log_note(
                 make_token(Tok::Unknown)->location,
                 "Next line only has left-spacing of " +
-                    std::to_string(spacing_amount) + "."
+                    std::to_string(spacing_amount) +
+                    ". If this is meant to be an empty block, add a `pass` "
+                    "statement."
             );
         }
         // Change the colon token to an indent token.

@@ -192,6 +192,7 @@ public:
 
     class Print;
 
+    class Pass;
     class Yield;
 
     class Eof;
@@ -206,6 +207,7 @@ public:
         virtual std::any visit(Expression* stmt) = 0;
         virtual std::any visit(Let* stmt) = 0;
         virtual std::any visit(Print* stmt) = 0;
+        virtual std::any visit(Pass* stmt) = 0;
         virtual std::any visit(Yield* stmt) = 0;
         virtual std::any visit(Eof* stmt) = 0;
     };

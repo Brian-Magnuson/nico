@@ -322,6 +322,11 @@ std::any CodeGenerator::visit(Stmt::Print* stmt) {
     return std::any();
 }
 
+std::any CodeGenerator::visit(Stmt::Pass* /*stmt*/) {
+    // A pass statement does nothing.
+    return std::any();
+}
+
 std::any CodeGenerator::visit(Stmt::Yield* stmt) {
     // return stmt->expression->accept(this, false);
     auto value =

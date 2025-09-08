@@ -214,15 +214,6 @@ class Parser {
     std::optional<std::shared_ptr<Stmt>> yield_statement();
 
     /**
-     * @brief Parses an EOF statement.
-     *
-     * An EOF statement represents the end of the file.
-     *
-     * @return A shared pointer to the parsed statement.
-     */
-    std::shared_ptr<Stmt> eof_statement();
-
-    /**
      * @brief Parses an expression statement.
      *
      * An expression statement is a statement that consists of an expression.

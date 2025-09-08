@@ -87,6 +87,11 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
     return std::any();
 }
 
+std::any LocalChecker::visit(Stmt::Pass* /*stmt*/) {
+    // A pass statement does nothing.
+    return std::any();
+}
+
 std::any LocalChecker::visit(Stmt::Yield* stmt) {
     // Visit the expression in the yield statement.
     stmt->expression->accept(this, false);

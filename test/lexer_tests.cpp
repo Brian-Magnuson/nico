@@ -652,8 +652,18 @@ TEST_CASE("Lexer spacing errors", "[lexer]") {
         CHECK(errors.at(0) == Err::InconsistentLeftSpacing);
     }
 
-    SECTION("Malformed indent") {
+    SECTION("Malformed indent 1") {
         auto file = make_test_code_file("  a:\n  b");
+        auto tokens = lexer.scan(file);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::MalformedIndent);
+    }
+
+    SECTION("Malformed indent 2") {
+        // Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file("    a:\n");
         auto tokens = lexer.scan(file);
         auto& errors = Logger::inst().get_errors();
 
