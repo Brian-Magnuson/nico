@@ -51,9 +51,6 @@ As explained in the following sections, the variables, scopes, and types in the 
 
 ## Identifier vs Name vs Symbol
 
-> [!CAUTION]
-> The design goals outlined in this section are *inconsistent* with the current implementation of the compiler. The compiler should be *updated* based on these goals.
-
 The terms "identifier", "name", and "symbol" are often used interchangeably in the context of programming languages and programming language concepts. 
 However, some programming languages make a distinction between these terms. For example, in Java, `x` is an identifier while `com.example.myproject.x` is a fully qualified name.
 The Nico programming language, like Java, has different name-like constructs used to refer to variables, types, and functions.
