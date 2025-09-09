@@ -290,7 +290,15 @@ public:
 
     bool operator==(const Type& other) const override {
         if (const auto* other_tuple = dynamic_cast<const Tuple*>(&other)) {
-            return elements == other_tuple->elements;
+            if (elements.size() != other_tuple->elements.size()) {
+                return false;
+            }
+            for (size_t i = 0; i < elements.size(); ++i) {
+                if (*(elements[i]) != *(other_tuple->elements[i])) {
+                    return false;
+                }
+            }
+            return true;
         }
         return false;
     }

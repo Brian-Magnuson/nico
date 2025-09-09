@@ -105,6 +105,97 @@ TEST_CASE("Parser let statements", "[parser]") {
     Logger::inst().reset();
 }
 
+TEST_CASE("Parser tuple annotations", "[parser]") {
+    Lexer lexer;
+    Parser parser;
+    AstPrinter printer;
+
+    SECTION("Tuple annotation 1") {
+        auto file = make_test_code_file("let a: (i32)");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(stmt:let a (i32))",
+            "(stmt:eof)"
+        };
+        REQUIRE(printer.stmts_to_strings(ast) == expected);
+
+        auto let_stmt = std::dynamic_pointer_cast<Stmt::Let>(ast.stmts[0]);
+        REQUIRE(let_stmt != nullptr);
+        REQUIRE(let_stmt->annotation.has_value());
+        REQUIRE(let_stmt->annotation.value()->to_string() == "(i32)");
+    }
+
+    SECTION("Tuple annotation 2") {
+        auto file = make_test_code_file("let a: (i32, f64, String)");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(stmt:let a (i32, f64, String))",
+            "(stmt:eof)"
+        };
+        REQUIRE(printer.stmts_to_strings(ast) == expected);
+
+        auto let_stmt = std::dynamic_pointer_cast<Stmt::Let>(ast.stmts[0]);
+        REQUIRE(let_stmt != nullptr);
+        REQUIRE(let_stmt->annotation.has_value());
+        REQUIRE(
+            let_stmt->annotation.value()->to_string() == "(i32, f64, String)"
+        );
+    }
+
+    SECTION("Tuple annotation 3") {
+        auto file = make_test_code_file("let a: (i32,)");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(stmt:let a (i32))",
+            "(stmt:eof)"
+        };
+        REQUIRE(printer.stmts_to_strings(ast) == expected);
+
+        auto let_stmt = std::dynamic_pointer_cast<Stmt::Let>(ast.stmts[0]);
+        REQUIRE(let_stmt != nullptr);
+        REQUIRE(let_stmt->annotation.has_value());
+        REQUIRE(let_stmt->annotation.value()->to_string() == "(i32)");
+    }
+
+    SECTION("Tuple annotation 4") {
+        auto file = make_test_code_file("let a: ((i32, f64), String)");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(stmt:let a ((i32, f64), String))",
+            "(stmt:eof)"
+        };
+        REQUIRE(printer.stmts_to_strings(ast) == expected);
+
+        auto let_stmt = std::dynamic_pointer_cast<Stmt::Let>(ast.stmts[0]);
+        REQUIRE(let_stmt != nullptr);
+        REQUIRE(let_stmt->annotation.has_value());
+        REQUIRE(
+            let_stmt->annotation.value()->to_string() == "((i32, f64), String)"
+        );
+    }
+
+    SECTION("Tuple annotation 5") {
+        auto file = make_test_code_file("let a: ()");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {"(stmt:let a ())", "(stmt:eof)"};
+        REQUIRE(printer.stmts_to_strings(ast) == expected);
+
+        auto let_stmt = std::dynamic_pointer_cast<Stmt::Let>(ast.stmts[0]);
+        REQUIRE(let_stmt != nullptr);
+        REQUIRE(let_stmt->annotation.has_value());
+        REQUIRE(let_stmt->annotation.value()->to_string() == "()");
+    }
+
+    lexer.reset();
+    parser.reset();
+    Logger::inst().reset();
+}
+
 TEST_CASE("Parser print statements", "[parser]") {
     Lexer lexer;
     Parser parser;

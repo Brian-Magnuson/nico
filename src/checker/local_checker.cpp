@@ -342,7 +342,22 @@ std::any LocalChecker::visit(Expr::Literal* expr, bool as_lvalue) {
 }
 
 std::any LocalChecker::visit(Expr::Tuple* expr, bool as_lvalue) {
-
+    if (as_lvalue) {
+        Logger::inst().log_error(
+            Err::NotAnLValue,
+            *expr->location,
+            "Tuple expression cannot be an lvalue."
+        );
+        return std::any();
+    }
+    std::vector<std::shared_ptr<Type>> element_types;
+    for (const auto& element : expr->elements) {
+        element->accept(this, false);
+        if (!element->type)
+            return std::any();
+        element_types.push_back(element->type);
+    }
+    expr->type = std::make_shared<Type::Tuple>(element_types);
     return std::any();
 }
 
@@ -419,7 +434,16 @@ std::any LocalChecker::visit(Annotation::Object* annotation) {
 }
 
 std::any LocalChecker::visit(Annotation::Tuple* annotation) {
-    return std::any();
+    std::shared_ptr<Type> type = nullptr;
+    std::vector<std::shared_ptr<Type>> element_types;
+    for (const auto& element : annotation->elements) {
+        auto elem_any = element->accept(this);
+        if (!elem_any.has_value())
+            return std::any();
+        element_types.push_back(std::any_cast<std::shared_ptr<Type>>(elem_any));
+    }
+    type = std::make_shared<Type::Tuple>(element_types);
+    return type;
 }
 
 void LocalChecker::check(Ast& ast) {

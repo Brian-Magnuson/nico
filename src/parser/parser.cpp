@@ -350,6 +350,27 @@ std::optional<std::shared_ptr<Annotation>> Parser::annotation() {
         auto token = previous();
         return std::make_shared<Annotation::NameRef>(Name(token));
     }
+    if (match({Tok::LParen})) {
+        // Tuple annotation
+        std::vector<std::shared_ptr<Annotation>> elements;
+        do {
+            if (peek()->tok_type == Tok::RParen) {
+                // We allow trailing commas.
+                break;
+            }
+            auto anno = annotation();
+            if (!anno)
+                return std::nullopt;
+            elements.push_back(*anno);
+        } while (match({Tok::Comma}));
+
+        if (!match({Tok::RParen})) {
+            // This error should already be caught in the lexer.
+            panic("Parser::annotation: Missing ')' while parsing tuple.");
+        }
+
+        return std::make_shared<Annotation::Tuple>(elements);
+    }
     Logger::inst()
         .log_error(Err::NotAType, peek()->location, "Not a valid type.");
     return std::nullopt;
