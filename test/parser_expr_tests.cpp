@@ -359,6 +359,65 @@ block:
     Logger::inst().reset();
 }
 
+TEST_CASE("Parser tuples", "[parser]") {
+    Lexer lexer;
+    Parser parser;
+    AstPrinter printer;
+
+    SECTION("Tuple 1") {
+        auto file = make_test_code_file("(1,)");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(expr (tuple (lit 1)))",
+            "(stmt:eof)"
+        };
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
+    SECTION("Tuple 2") {
+        auto file = make_test_code_file("(1, 2)");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(expr (tuple (lit 1) (lit 2)))",
+            "(stmt:eof)"
+        };
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
+    SECTION("Tuple 3") {
+        auto file = make_test_code_file("(1, 2, 3,)");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(expr (tuple (lit 1) (lit 2) (lit 3)))",
+            "(stmt:eof)"
+        };
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
+    SECTION("Not a tuple") {
+        auto file = make_test_code_file("(1)");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {"(expr (lit 1))", "(stmt:eof)"};
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
+    SECTION("Empty tuple") {
+        auto file = make_test_code_file("()");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {"(expr (tuple))", "(stmt:eof)"};
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
+    lexer.reset();
+    parser.reset();
+    Logger::inst().reset();
+}
+
 // MARK: Error tests
 
 TEST_CASE("Parser block errors", "[parser]") {
