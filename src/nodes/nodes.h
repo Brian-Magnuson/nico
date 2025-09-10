@@ -233,6 +233,7 @@ public:
     class Assign;
     class Binary;
     class Unary;
+    class Access;
     class NameRef;
     class Literal;
 
@@ -250,6 +251,7 @@ public:
         virtual std::any visit(Assign* expr, bool as_lvalue) = 0;
         virtual std::any visit(Binary* expr, bool as_lvalue) = 0;
         virtual std::any visit(Unary* expr, bool as_lvalue) = 0;
+        virtual std::any visit(Access* expr, bool as_lvalue) = 0;
         virtual std::any visit(NameRef* expr, bool as_lvalue) = 0;
         virtual std::any visit(Literal* expr, bool as_lvalue) = 0;
         virtual std::any visit(Tuple* expr, bool as_lvalue) = 0;

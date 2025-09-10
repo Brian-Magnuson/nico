@@ -445,6 +445,12 @@ std::any CodeGenerator::visit(Expr::Unary* expr, bool as_lvalue) {
     return result;
 }
 
+std::any CodeGenerator::visit(Expr::Access* expr, bool as_lvalue) {
+    // TODO: Implement access expressions.
+    panic("CodeGenerator::visit(Expr::Access*): Not implemented yet.");
+    return std::any();
+}
+
 std::any CodeGenerator::visit(Expr::NameRef* expr, bool as_lvalue) {
     llvm::Value* result = nullptr;
 

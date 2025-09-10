@@ -269,6 +269,12 @@ std::any LocalChecker::visit(Expr::Unary* expr, bool as_lvalue) {
     }
 }
 
+std::any LocalChecker::visit(Expr::Access* expr, bool as_lvalue) {
+    // TODO: Implement access expressions.
+    panic("LocalChecker::visit(Expr::Access*): Not implemented yet.");
+    return std::any();
+}
+
 std::any LocalChecker::visit(Expr::NameRef* expr, bool as_lvalue) {
     auto node = symbol_tree->search_name(expr->name);
 

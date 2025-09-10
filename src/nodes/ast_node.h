@@ -193,12 +193,46 @@ public:
 };
 
 /**
+ * @brief An access expression.
+ *
+ * Access expressions are used to access members of objects or elements of
+ * tuples.
+ *
+ * The right expression can only be an Expr::NameRef or Expr::Literal where
+ * the literal is an integer.
+ *
+ * Although structurally similar to binary expressions, a separate class is used
+ * for organization.
+ */
+class Expr::Access : public Expr {
+public:
+    // The base expression being accessed.
+    std::shared_ptr<Expr> left;
+    // The token representing the access operator (e.g., dot).
+    std::shared_ptr<Token> op;
+    // The expression representing the member being accessed. Can only be an
+    // Expr::NameRef or Expr::Literal where the literal is an integer.
+    std::shared_ptr<Expr> right;
+
+    Access(
+        std::shared_ptr<Expr> left, std::shared_ptr<Token> op,
+        std::shared_ptr<Expr> right
+    )
+        : left(left), op(op), right(right) {
+        location = &op->location;
+    }
+    std::any accept(Visitor* visitor, bool as_lvalue) override {
+        return visitor->visit(this, as_lvalue);
+    }
+};
+
+/**
  * @brief A name reference expression.
  *
  * Name reference expressions refer to variables or functions by name.
  *
- * Note: This class used to be called Expr::Identifier, but was changed to use
- * more consistent name terminology.
+ * Note: This class used to be called Expr::Identifier, but was changed to
+ * use more consistent name terminology.
  */
 class Expr::NameRef : public Expr {
 public:
@@ -246,10 +280,10 @@ public:
 /**
  * @brief A tuple expression.
  *
- * Tuple expressions are expressions that represent a fixed-size collection of
- * values. The values may be of different types. A tuple must either have at
- * least one comma or be an empty pair of parentheses (also known as the unit
- * tuple).
+ * Tuple expressions are expressions that represent a fixed-size collection
+ * of values. The values may be of different types. A tuple must either have
+ * at least one comma or be an empty pair of parentheses (also known as the
+ * unit tuple).
  */
 class Expr::Tuple : public Expr {
 public:
@@ -276,8 +310,8 @@ public:
  *
  * Block expressions are used to group statements together.
  * They may or may not yield a value.
- * Block expressions, in addition to being a valid expression on its own, can
- * also be a part of conditional and loop constructs.
+ * Block expressions, in addition to being a valid expression on its own,
+ * can also be a part of conditional and loop constructs.
  */
 class Expr::Block : public Expr {
 public:
@@ -369,8 +403,8 @@ public:
 /**
  * @brief An annotation representing an array type.
  *
- * This annotation is used to represent array types, which can be either sized
- * or unsized.
+ * This annotation is used to represent array types, which can be either
+ * sized or unsized.
  */
 class Annotation::Array : public Annotation {
 public:
@@ -401,8 +435,8 @@ public:
  */
 class Annotation::Object : public Annotation {
 public:
-    // A dictionary of properties, where keys are property names and values are
-    // annotations.
+    // A dictionary of properties, where keys are property names and values
+    // are annotations.
     const Dictionary<std::string, std::shared_ptr<Annotation>> properties;
 
     Object(Dictionary<std::string, std::shared_ptr<Annotation>> properties)
@@ -428,7 +462,8 @@ public:
 /**
  * @brief An annotation representing a tuple type.
  *
- * This annotation is used to represent a fixed-size collection of annotations.
+ * This annotation is used to represent a fixed-size collection of
+ * annotations.
  */
 class Annotation::Tuple : public Annotation {
 public:
