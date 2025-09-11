@@ -13,6 +13,17 @@ Nico philosophy:
 - Consistency is golden.
 - Safe by default.
 
+# Contributing
+
+At this time, this project is **not accepting issues, pull requests, or other contributions** from outside contributors.
+This may change in the future if the project gains popularity.
+
+You are still free to:
+- Use the code for any purpose in accordance with the LICENSE file.
+- Fork the repository, preserving a copy of the license and copyright notice.
+- Make contributions to forked versions as permitted by that fork's owner.
+- Discuss the project via GitHub Discussions.
+
 # License
 
 The Nico Programming Language is licensed under the MIT License.
