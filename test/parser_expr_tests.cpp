@@ -418,6 +418,84 @@ TEST_CASE("Parser tuples", "[parser]") {
     Logger::inst().reset();
 }
 
+TEST_CASE("Parser dot access", "[parser]") {
+    Lexer lexer;
+    Parser parser;
+    AstPrinter printer;
+
+    SECTION("Dot access 1") {
+        auto file = make_test_code_file("a.b");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(expr (access . (nameref a) (nameref b)))",
+            "(stmt:eof)"
+        };
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
+    SECTION("Dot access 2") {
+        auto file = make_test_code_file("a.b.c");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(expr (access . (access . (nameref a) (nameref b)) (nameref c)))",
+            "(stmt:eof)"
+        };
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
+    SECTION("Dot access 3") {
+        auto file = make_test_code_file("a.b.c.d");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(expr (access . (access . (access . (nameref a) (nameref b)) "
+            "(nameref c)) (nameref d)))",
+            "(stmt:eof)"
+        };
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
+    SECTION("Dot access with integer") {
+        auto file = make_test_code_file("a.b.0");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(expr (access . (access . (nameref a) (nameref b)) (lit 0)))",
+            "(stmt:eof)"
+        };
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
+    SECTION("Dot access with multiple integers") {
+        auto file = make_test_code_file("a.0.1");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(expr (access . (access . (nameref a) (lit 0)) (lit 1)))",
+            "(stmt:eof)"
+        };
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
+    SECTION("Dot access with many integers") {
+        auto file = make_test_code_file("a.0.1.2");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(expr (access . (access . (access . (nameref a) (lit 0)) (lit 1)) "
+            "(lit 2)))",
+            "(stmt:eof)"
+        };
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
+    lexer.reset();
+    parser.reset();
+    Logger::inst().reset();
+}
+
 // MARK: Error tests
 
 TEST_CASE("Parser block errors", "[parser]") {
@@ -433,6 +511,36 @@ TEST_CASE("Parser block errors", "[parser]") {
 
         REQUIRE(errors.size() >= 1);
         CHECK(errors.at(0) == Err::NotABlock);
+    }
+
+    lexer.reset();
+    parser.reset();
+    Logger::inst().reset();
+}
+
+TEST_CASE("Parser access errors", "[parser]") {
+    Lexer lexer;
+    Parser parser;
+    Logger::inst().set_printing_enabled(false);
+
+    SECTION("Unexpected token after dot 1") {
+        auto file = make_test_code_file("a.+b");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::UnexpectedTokenAfterDot);
+    }
+
+    SECTION("Unexpected token after dot 2") {
+        auto file = make_test_code_file("a.(b)");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::UnexpectedTokenAfterDot);
     }
 
     lexer.reset();

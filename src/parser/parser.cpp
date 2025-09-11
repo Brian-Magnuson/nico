@@ -142,7 +142,31 @@ std::optional<std::shared_ptr<Expr>> Parser::primary() {
 }
 
 std::optional<std::shared_ptr<Expr>> Parser::postfix() {
-    return primary();
+    auto left = primary();
+    if (!left)
+        return std::nullopt;
+    if (match({Tok::Dot})) {
+        do {
+            auto op = previous();
+            std::shared_ptr<Expr> right;
+            if (match({Tok::Identifier})) {
+                right = std::make_shared<Expr::NameRef>(previous());
+            }
+            else if (match({Tok::Int})) {
+                right = std::make_shared<Expr::Literal>(previous());
+            }
+            else {
+                Logger::inst().log_error(
+                    Err::UnexpectedTokenAfterDot,
+                    peek()->location,
+                    "Expected identifier or integer after `.`."
+                );
+                return std::nullopt;
+            }
+            left = std::make_shared<Expr::Access>(*left, op, right);
+        } while (match({Tok::Dot}));
+    }
+    return left;
 }
 
 std::optional<std::shared_ptr<Expr>> Parser::unary() {

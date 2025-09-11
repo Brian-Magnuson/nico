@@ -75,7 +75,7 @@ std::any AstPrinter::visit(Expr::Access* expr, bool as_lvalue) {
     auto left = std::any_cast<std::string>(expr->left->accept(this, false));
     auto right = std::any_cast<std::string>(expr->right->accept(this, false));
     return std::string(
-        "(access " + left + " " + std::string(expr->op->lexeme) + " " + right +
+        "(access " + std::string(expr->op->lexeme) + " " + left + " " + right +
         ")"
     );
 }

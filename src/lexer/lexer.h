@@ -212,15 +212,20 @@ class Lexer {
      * @brief Scans a number from the source code and adds it to the list of
      * tokens.
      *
-     * This function does not parse the number; it only checks if the number is
-     * in a valid format to be parsed.
-     *
      * Hex, octal, and binary integers must start with their respective
      * prefixes: `0x`, `0o`, and `0b`. Numbers that begin with a base prefix may
      * not have any dots or exponent parts. Any number that ends with an `f`
      * (except for base 16) will be added as a float.
+     *
+     * Optionally, the caller can specify to only parse an integer. When
+     * `integer_only` is true, dots, exponents, suffixes, underscores, and base
+     * prefixes will not be included in the token. It is fast and simple.
+     *
+     * @param integer_only If true, the number will be parsed as an integer
+     * only. If a dot is found, it will not be included in the token. Default is
+     * false.
      */
-    void numeric_literal();
+    void numeric_literal(bool integer_only = false);
 
     /**
      * @brief Scans an str literal from the source code and adds it to the list

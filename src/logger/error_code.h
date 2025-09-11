@@ -64,6 +64,8 @@ enum class Err {
     UnexpectedClosingParen,
     // A block keyword was found without a proper opening token.
     NotABlock,
+    // A dot was not followed by an identifier or integer.
+    UnexpectedTokenAfterDot,
 
     // Global type check error.
     GlobalType = 4000,

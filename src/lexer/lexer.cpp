@@ -227,12 +227,20 @@ void Lexer::identifier() {
     tokens.push_back(token);
 }
 
-void Lexer::numeric_literal() {
+void Lexer::numeric_literal(bool integer_only) {
     current--;
+    std::string numeric_string;
+
+    if (integer_only) {
+        while (is_digit(peek())) {
+            numeric_string += advance();
+        }
+        return add_token(Tok::Int, std::stoi(numeric_string));
+    }
+
     uint8_t base = 10;
     bool has_dot = false;
     bool has_exp = false;
-    std::string numeric_string;
 
     if (peek() == '0') {
         if (peek(1) == 'b') {
@@ -649,7 +657,11 @@ void Lexer::scan_token() {
             identifier();
         }
         else if (is_digit(c)) {
-            numeric_literal();
+            if (tokens.size() > 0 && tokens.back()->tok_type == Tok::Dot)
+                // If the previous token was a dot, scan integer only.
+                numeric_literal(true);
+            else
+                numeric_literal(false);
         }
         else {
             auto token = make_token(Tok::Unknown);
