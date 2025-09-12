@@ -499,6 +499,72 @@ TEST_CASE("Local tuple expressions", "[checker]") {
         CHECK(errors.at(0) == Err::LetTypeMismatch);
     }
 
+    SECTION("Tuple access valid") {
+        // Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file(
+            "let a = (1, 2.1, true) let b: i32 = a.0 let c: f64 = a.1 "
+            "let d: bool = a.2"
+        );
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+
+        CHECK(Logger::inst().get_errors().empty());
+    }
+
+    SECTION("Tuple access invalid index") {
+        // Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file("let a = (1, 2.1, true) let b = a.3");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::TupleIndexOutOfBounds);
+    }
+
+    SECTION("Tuple access invalid right side") {
+        // Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file("let a = (1, 2.1, true) let b = a.x");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::InvalidTupleAccess);
+    }
+
+    SECTION("Tuple access as valid lvalue") {
+        // Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file(
+            "let var a = (1, 2.1, true) a.0 = 2 a.1 = 3.5 a.2 = false"
+        );
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+
+        CHECK(Logger::inst().get_errors().empty());
+    }
+
+    SECTION("Tuple access assign to immutable") {
+        // Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file("let a = (1, 2.1, true) a.0 = 2");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::AssignToImmutable);
+    }
+
     lexer.reset();
     parser.reset();
     Logger::inst().reset();

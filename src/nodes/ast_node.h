@@ -210,15 +210,14 @@ public:
     std::shared_ptr<Expr> left;
     // The token representing the access operator (e.g., dot).
     std::shared_ptr<Token> op;
-    // The expression representing the member being accessed. Can only be an
-    // Expr::NameRef or Expr::Literal where the literal is an integer.
-    std::shared_ptr<Expr> right;
+    // The token representing the member or index being accessed.
+    std::shared_ptr<Token> right_token;
 
     Access(
         std::shared_ptr<Expr> left, std::shared_ptr<Token> op,
-        std::shared_ptr<Expr> right
+        std::shared_ptr<Token> right_token
     )
-        : left(left), op(op), right(right) {
+        : left(left), op(op), right_token(right_token) {
         location = &op->location;
     }
     std::any accept(Visitor* visitor, bool as_lvalue) override {

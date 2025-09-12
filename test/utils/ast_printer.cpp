@@ -73,10 +73,9 @@ std::any AstPrinter::visit(Expr::Unary* expr, bool as_lvalue) {
 
 std::any AstPrinter::visit(Expr::Access* expr, bool as_lvalue) {
     auto left = std::any_cast<std::string>(expr->left->accept(this, false));
-    auto right = std::any_cast<std::string>(expr->right->accept(this, false));
     return std::string(
-        "(access " + std::string(expr->op->lexeme) + " " + left + " " + right +
-        ")"
+        "(access " + std::string(expr->op->lexeme) + " " + left + " " +
+        std::string(expr->right_token->lexeme) + ")"
     );
 }
 

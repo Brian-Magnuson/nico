@@ -235,7 +235,8 @@ void Lexer::numeric_literal(bool integer_only) {
         while (is_digit(peek())) {
             numeric_string += advance();
         }
-        return add_token(Tok::Int, std::stoi(numeric_string));
+        size_t value = std::stoul(numeric_string);
+        return add_token(Tok::Int, value);
     }
 
     uint8_t base = 10;

@@ -148,12 +148,8 @@ std::optional<std::shared_ptr<Expr>> Parser::postfix() {
     if (match({Tok::Dot})) {
         do {
             auto op = previous();
-            std::shared_ptr<Expr> right;
-            if (match({Tok::Identifier})) {
-                right = std::make_shared<Expr::NameRef>(previous());
-            }
-            else if (match({Tok::Int})) {
-                right = std::make_shared<Expr::Literal>(previous());
+            if (match({Tok::Int, Tok::Identifier})) {
+                left = std::make_shared<Expr::Access>(*left, op, previous());
             }
             else {
                 Logger::inst().log_error(
@@ -163,7 +159,6 @@ std::optional<std::shared_ptr<Expr>> Parser::postfix() {
                 );
                 return std::nullopt;
             }
-            left = std::make_shared<Expr::Access>(*left, op, right);
         } while (match({Tok::Dot}));
     }
     return left;

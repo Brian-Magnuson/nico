@@ -270,9 +270,43 @@ std::any LocalChecker::visit(Expr::Unary* expr, bool as_lvalue) {
 }
 
 std::any LocalChecker::visit(Expr::Access* expr, bool as_lvalue) {
-    // TODO: Implement access expressions.
-    panic("LocalChecker::visit(Expr::Access*): Not implemented yet.");
-    return std::any();
+    expr->left->accept(this, as_lvalue);
+    auto l_type = expr->left->type;
+    if (!l_type)
+        return std::any();
+
+    if (auto tuple_l_type = std::dynamic_pointer_cast<Type::Tuple>(l_type)) {
+        if (expr->right_token->tok_type == Tok::Int) {
+            size_t index = std::any_cast<size_t>(expr->right_token->literal);
+            if (index >= tuple_l_type->elements.size()) {
+                Logger::inst().log_error(
+                    Err::TupleIndexOutOfBounds,
+                    expr->right_token->location,
+                    "Tuple index " + std::to_string(index) +
+                        " is out of bounds."
+                );
+                return std::any();
+            }
+            expr->type = tuple_l_type->elements[index];
+            return std::any();
+        }
+        else {
+            Logger::inst().log_error(
+                Err::InvalidTupleAccess,
+                expr->right_token->location,
+                "Tuple can only be accessed with an integer literal."
+            );
+            return std::any();
+        }
+    }
+    else {
+        Logger::inst().log_error(
+            Err::OperatorNotValidForExpr,
+            *expr->left->location,
+            "Dot operator is not valid for this kind of expression."
+        );
+        return std::any();
+    }
 }
 
 std::any LocalChecker::visit(Expr::NameRef* expr, bool as_lvalue) {

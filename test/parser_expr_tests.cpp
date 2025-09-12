@@ -428,7 +428,7 @@ TEST_CASE("Parser dot access", "[parser]") {
         auto tokens = lexer.scan(file);
         auto ast = parser.parse(std::move(tokens));
         std::vector<std::string> expected = {
-            "(expr (access . (nameref a) (nameref b)))",
+            "(expr (access . (nameref a) b))",
             "(stmt:eof)"
         };
         CHECK(printer.stmts_to_strings(ast) == expected);
@@ -439,7 +439,7 @@ TEST_CASE("Parser dot access", "[parser]") {
         auto tokens = lexer.scan(file);
         auto ast = parser.parse(std::move(tokens));
         std::vector<std::string> expected = {
-            "(expr (access . (access . (nameref a) (nameref b)) (nameref c)))",
+            "(expr (access . (access . (nameref a) b) c))",
             "(stmt:eof)"
         };
         CHECK(printer.stmts_to_strings(ast) == expected);
@@ -450,8 +450,7 @@ TEST_CASE("Parser dot access", "[parser]") {
         auto tokens = lexer.scan(file);
         auto ast = parser.parse(std::move(tokens));
         std::vector<std::string> expected = {
-            "(expr (access . (access . (access . (nameref a) (nameref b)) "
-            "(nameref c)) (nameref d)))",
+            "(expr (access . (access . (access . (nameref a) b) c) d))",
             "(stmt:eof)"
         };
         CHECK(printer.stmts_to_strings(ast) == expected);
@@ -462,7 +461,7 @@ TEST_CASE("Parser dot access", "[parser]") {
         auto tokens = lexer.scan(file);
         auto ast = parser.parse(std::move(tokens));
         std::vector<std::string> expected = {
-            "(expr (access . (access . (nameref a) (nameref b)) (lit 0)))",
+            "(expr (access . (access . (nameref a) b) 0))",
             "(stmt:eof)"
         };
         CHECK(printer.stmts_to_strings(ast) == expected);
@@ -473,7 +472,7 @@ TEST_CASE("Parser dot access", "[parser]") {
         auto tokens = lexer.scan(file);
         auto ast = parser.parse(std::move(tokens));
         std::vector<std::string> expected = {
-            "(expr (access . (access . (nameref a) (lit 0)) (lit 1)))",
+            "(expr (access . (access . (nameref a) 0) 1))",
             "(stmt:eof)"
         };
         CHECK(printer.stmts_to_strings(ast) == expected);
@@ -484,8 +483,7 @@ TEST_CASE("Parser dot access", "[parser]") {
         auto tokens = lexer.scan(file);
         auto ast = parser.parse(std::move(tokens));
         std::vector<std::string> expected = {
-            "(expr (access . (access . (access . (nameref a) (lit 0)) (lit 1)) "
-            "(lit 2)))",
+            "(expr (access . (access . (access . (nameref a) 0) 1) 2))",
             "(stmt:eof)"
         };
         CHECK(printer.stmts_to_strings(ast) == expected);

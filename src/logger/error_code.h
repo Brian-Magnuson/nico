@@ -97,12 +97,19 @@ enum class Err {
     NotAVariable,
     // An name was visited as an lvalue, but was not declared with `var`.
     AssignToImmutable,
+    // An operator was found that cannot be used with the given expression type.
+    OperatorNotValidForExpr,
     // An operator was found that cannot be used with the given types.
     NoOperatorOverload,
     // A yield statement was found outside of a local scope.
     YieldOutsideLocalScope,
     // An attempt was made to declare a function in a local scope.
     FunctionScopeInLocalScope,
+    // An access expression on a tuple had an index that was out of bounds.
+    TupleIndexOutOfBounds,
+    // An access expression was found where the right side was not an integer
+    // literal.
+    InvalidTupleAccess,
 
     // Code generation error.
     CodeGen = 6000,
