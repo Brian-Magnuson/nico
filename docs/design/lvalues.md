@@ -225,3 +225,60 @@ If we are reusing our lvalue-visiting mechanism to check for mutability, we will
 Ruling out an expression as a possible lvalue is an irreversible action since we report the error right away.
 
 What we need is a way to defer an expression's assignability check until we have all the information we need to determine whether it is assignable or not.
+
+## Mutability: Design Goals
+
+Let us define more clearly what internal mutability means in our language.
+
+**Internal mutability** is the concept of allowing certain members of an immutable object to be modified.
+
+There are two ways to achieve internal mutability:
+- Indirect internal mutability
+- Direct internal mutability
+
+**Indirect internal mutability** is when an immutable object contains a member that is a reference or pointer to a mutable object.
+It allows us to bypass immutability by modifying an object outside of the immutable object.
+
+This is actually possible in C++:
+```cpp
+int global = 0;
+
+struct Object {
+    int * const can_change = &global;  
+};
+
+int main() {
+    const Object cant_change = Object();
+    *cant_change.can_change = 1;
+    std::cout << global << std::endl; // Outputs: 1
+    return 0;
+}
+```
+
+In our language, we achieve this by using the `var*T` type, which is a pointer to a mutable `T`.
+```
+struct Object:
+  let can_change: var*i32
+```
+
+**Direct internal mutability** is when an immutable object contains a member that is explicitly marked as mutable, bypassing the immutability of the containing object.
+
+This is similar to the `mutable` keyword in C++.
+```cpp
+struct Object {
+    mutable int can_change = 0;
+};
+
+int main() {
+    const Object cant_change = Object();
+    cant_change.can_change = 1;
+    std::cout << cant_change.can_change << std::endl;
+    return 0;
+}
+```
+
+In our language, we achieve this by using `mut` in place of `var` for member declarations.
+```
+struct Object:
+  let mut can_change: i32 = 0
+```
