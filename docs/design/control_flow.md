@@ -4,7 +4,7 @@ The following is an explanation of how control flow is managed within the code g
 Understanding control flow is crucial for generating the correct IR for LLVM.
 
 > [!WARNING]
-> this document is a work in progress and is subject to change.
+> This document is a work in progress and is subject to change.
 
 ## Introduction
 
