@@ -303,6 +303,19 @@ d
         CHECK(extract_token_types(tokens) == expected);
     }
 
+    SECTION("Indents 9") {
+        auto file = make_test_code_file(
+            R"(
+a:
+    // comment
+    )"
+        );
+        auto tokens = lexer.scan(file);
+        std::vector<Tok> expected =
+            {Tok::Identifier, Tok::Indent, Tok::Dedent, Tok::Eof};
+        CHECK(extract_token_types(tokens) == expected);
+    }
+
     lexer.reset();
     Logger::inst().reset();
 }

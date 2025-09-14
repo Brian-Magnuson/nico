@@ -78,14 +78,14 @@ A tuple with no elements is called the unit type. It is used to represent the ab
 An object type is a custom data type representing a mapping of identifiers to values. They are similar to complex types, but with several differences:
 - They are not defined using a class or struct; they are usually used when needed.
 - They are not identified by a name (except when using a type alias).
-- They are use move semantics, regardless of the internal types, and are not directly copyable.
+- They use move semantics, regardless of the internal types, and are not directly copyable.
 - They can only contain properties; no shared variables or functions are allowed.
 
 Additionally, you cannot add more properties to an object after it is created.
 
 Object types offer a flexible way to define custom data types without the overhead of defining a full class or struct.
 
-An object type is written as `{ prop1: T1, prop2: T2, ... }`, where `prop1`, `prop2`, etc., are the names of the properties and `T1`, `T2`, etc., are the types of the properties. For example, an object with two properties, `x` and `y`, would be written as `{ x: i32, y: f64 }`.
+An object type is written as `{ prop1: T1, prop2: T2, ... }`, where `prop1`, `prop2`, etc., are the names of the properties and `T1`, `T2`, etc., are the types of the properties. For example, an object type with two properties, `x` and `y`, would be written as `{ x: i32, y: f64 }`.
 
 Object type properties are immutable unless explicitly marked as mutable. To declare a mutable property, use the `var` keyword:
 ```
@@ -197,20 +197,24 @@ All programs consist of statements. Statements fall into three categories:
 
 Whitespace is only significant in certain contexts. It is used to separate tokens and check for indentation levels.
 
-Indentation is based on "left spacing", which is the number of spaces or tabs at the beginning of a line up to the next non-whitespace character. If a line contains only whitespace, left spacing is ignored for that line.
+Indentation is based on "left spacing", which is the number of spaces or tabs at the beginning of a line up to the next non-whitespace character. 
+If a line contains only whitespace, left spacing is ignored for that line.
 
-The lexer tracks left spacing and inserts `INDENT` and `DEDENT` before the next token to indicate changes in indentation. Tabs and spaces may be used within the same file, but the left spacing of a single line may not contain a mix of both tabs and spaces.
+The lexer tracks left spacing and inserts `INDENT` and `DEDENT` before the next token to indicate changes in indentation. 
+Tabs and spaces may be used within the same file, but the left spacing of a single line may not contain a mix of both tabs and spaces.
 
 It is recommended to always use spaces for indentation and to choose a consistent number of spaces for each level of indentation.
 
-An `INDENT` token is inserted when there is a colon, a newline, and an increase in left spacing from the previous line. All indent-based blocks (including those used by control structures) require the colon for the `INDENT` token.
+An `INDENT` token is inserted when there is a colon, a newline, and an increase in left spacing from the previous line. 
+All indent-based blocks (including those used by control structures) require the colon for the `INDENT` token. 
+If there is a colon, a newline, but no increase in left spacing, the indent is considered malformed.
 
 A `DEDENT` token is inserted when there is a newline followed by a decrease in spacing to a previous indentation level. If the end of the file is reached, `DEDENT` tokens are inserted to close all open blocks.
 
 Left spacing is not updated after a newline within a grouping token, such as parentheses or braces. As such, no `INDENT` or `DEDENT` tokens are inserted within these tokens.
 - This has the side effect of making it impossible for `INDENT` and missing `DEDENT` tokens to generate an "unclosed grouping" error. The grouping stack must always be empty when creating an `INDENT`, and `DEDENTS` cannot be created until all grouping tokens since the last `INDENT` are closed.
 
-In all other instances, whitespace is ignored. There is no dedicated token for whitespace other than the `INDENT` and `DEDENT` tokens.
+In all other instances, whitespace is ignored. There is no dedicated token for whitespace other than the `INDENT` and `DEDENT` tokens. Not even for newlines.
 
 Here is an example of statements with different left spacing:
 ```
@@ -226,10 +230,13 @@ The `block` keyword is followed by a colon, a newline, and an increase in left s
 
 Here, `x`, `y`, and `z` are all part of the same block, despite having different left spacing. With the `u` declaration, left spacing decreases to 4, where the previous `INDENT` was made. Thus, a `DEDENT` is inserted.
 
-Since left spacing requires the line to contain a non-whitespace character, it follows that every block opened by an `INDENT` must contain at least one statement. If an empty block is desired, `pass` may be used:
+Since left spacing requires the line to contain a non-whitespace character, it follows that every block opened by an `INDENT` must contain at least one non-whitespace character. If an empty block is desired, you can use `pass` or a comment:
 ```
 block:
     pass
+
+block:
+    // yes, this works too
 ```
 
 These are not valid:

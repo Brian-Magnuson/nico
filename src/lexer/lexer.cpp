@@ -702,6 +702,12 @@ Lexer::scan(const std::shared_ptr<CodeFile>& file) {
                 "' before end of file."
         );
     }
+
+    while (!left_spacing_stack.empty()) {
+        left_spacing_stack.pop_back();
+        add_token(Tok::Dedent);
+    }
+
     tokens.push_back(eof_token);
 
     return tokens;
