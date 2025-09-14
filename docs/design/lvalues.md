@@ -207,7 +207,7 @@ Now, suppose we want to have an immutable struct, `s`, with an internal mutable 
 
 ```
 struct S:
-  let mut m: i32 = 0
+  prop mut m: i32 = 0
 
 let s = new S { m: 5 }
 s.m = 10
@@ -258,7 +258,7 @@ int main() {
 In our language, we achieve this by using the `var*T` type, which is a pointer to a mutable `T`.
 ```
 struct Object:
-  let can_change: var*i32
+  prop can_change: var*i32
 ```
 
 **Direct internal mutability** is when an immutable object contains a member that is explicitly marked as mutable, bypassing the immutability of the containing object.
@@ -280,5 +280,5 @@ int main() {
 In our language, we achieve this by using `mut` in place of `var` for member declarations.
 ```
 struct Object:
-  let mut can_change: i32 = 0
+  prop mut can_change: i32 = 0
 ```
