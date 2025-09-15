@@ -282,3 +282,54 @@ In our language, we achieve this by using `mut` in place of `var` for member dec
 struct Object:
   prop mut can_change: i32 = 0
 ```
+
+Only properties can be marked as `mut`. Globals, locals, shared variables, and parameters cannot be marked as `mut`.
+
+Indirect internal mutability is easy enough to implement since the pointer type is meant to be checked for mutability when the pointer is dereferenced. 
+It is the "level of indirection" that allows the type checker to work without additional complexity.
+- To put it another way, we don't need a keyword like `mut` to "override" immutability because the containing object is not actually being modified. It is an object outside of the immutable object that is being modified.
+  - For this reason, we don't need an extra type like `mut*i32` to represent a pointer to a mutable `i32`. A `var*i32` is sufficient.
+
+Direct internal mutability is a bit more complex, especially since an additional keyword is needed to achieve greater control over mutability.
+
+To best illustrate how to implement this feature, we'll use a few pseudocode examples.
+In this pseudocode, names consist of two characters, a letter and a number. The letter will correspond to the mutability of the object, and the number will help us distinguish between different objects.
+- `i` = immutable object (no mutability specifier)
+- `v` = `var` object
+- `m` = `mut` object
+
+Here are some examples:
+```
+v1.v2 // Assignable. v1 is mutable, so we can modify its member v2.
+v1.i2 // Not assignable. i2 is immutable, so we cannot modify it.
+i1.v2 // Not assignable. i1 is immutable, so we cannot modify its member v2.
+
+v1.v2.v3 // Assignable. v1 is mutable, so we can modify its member v2, which is mutable, so we can modify its member v3.
+```
+
+We do not use pointers in this example because pointers add an additional level of indirection that is not relevant to the problem at hand.
+- Once a pointer is dereferenced, the mutability of previous objects is no longer relevant.
+
+There is a trick to determine whether an access expression is assignable or not:
+1. Evaluate the expression from left to right, tracking its assignability as a boolean value as we go.
+   1. If we encounter an immutable object, we set the assignability to false.
+   2. If we encounter a `mut` object, we set the assignability to true.
+   3. If we encounter a `var` object, we leave the assignability unchanged.
+2. The assignability of the entire expression is determined by the final value of the assignability boolean.
+
+Here are some examples:
+```
+v1.v2.v3
+y->y->y => Assignable
+
+v1.i2.v3
+y->n->n => Not assignable
+
+v1.i2.v3.m4
+y->n->n->y => Assignable
+
+i1.m2.i3.m4
+n->y->n->y => Assignable
+```
+
+You can think of assignability as a switch. Immutable objects flip the switch off, and `mut` objects flip the switch on.
