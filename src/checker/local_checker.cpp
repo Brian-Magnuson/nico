@@ -3,7 +3,22 @@
 #include "../common/utils.h"
 #include "../logger/error_code.h"
 #include "../logger/logger.h"
-#include "../nodes/type_node.h"
+
+std::shared_ptr<Type>
+LocalChecker::expr_check(std::shared_ptr<Expr>& expr, bool as_lvalue) {
+    expr->accept(this, as_lvalue);
+    if (auto ref_type =
+            std::dynamic_pointer_cast<Type::Reference>(expr->type)) {
+        // If the expression is a reference type, modify the expression to be a
+        // dereference expression.
+        expr = std::make_shared<Expr::Deref>(
+            std::make_shared<Token>(Tok::Star, *expr->location),
+            expr
+        );
+        expr->type = ref_type->base;
+    }
+    return expr->type;
+}
 
 // MARK: Statements
 
@@ -18,8 +33,8 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
 
     // Visit the initializer (if present).
     if (stmt->expression.has_value()) {
-        stmt->expression.value()->accept(this, false);
-        expr_type = stmt->expression.value()->type;
+        // stmt->expression.value()->accept(this, false);
+        expr_type = expr_check(stmt->expression.value(), false);
         if (!expr_type)
             return std::any();
     }
@@ -94,17 +109,18 @@ std::any LocalChecker::visit(Stmt::Pass* /*stmt*/) {
 
 std::any LocalChecker::visit(Stmt::Yield* stmt) {
     // Visit the expression in the yield statement.
-    stmt->expression->accept(this, false);
-    if (!stmt->expression->type)
+    // stmt->expression->accept(this, false);
+    auto expr_type = expr_check(stmt->expression, false);
+    if (!expr_type)
         return std::any();
     if (auto local_scope = std::dynamic_pointer_cast<Node::LocalScope>(
             symbol_tree->current_scope
         )) {
         if (!local_scope->yield_type) {
             // If this local scope does not currently have a yield type...
-            local_scope->yield_type = stmt->expression->type;
+            local_scope->yield_type = expr_type;
         }
-        else if (local_scope->yield_type.value() != stmt->expression->type) {
+        else if (local_scope->yield_type.value() != expr_type) {
             // If this local scope has a yield type, check that the new yield
             // expression is compatible with it.
             Logger::inst().log_error(
@@ -129,7 +145,8 @@ std::any LocalChecker::visit(Stmt::Yield* stmt) {
 std::any LocalChecker::visit(Stmt::Print* stmt) {
     // Visit each expression in the print statement.
     for (auto& expr : stmt->expressions) {
-        expr->accept(this, false);
+        // expr->accept(this, false);
+        expr_check(expr, false);
     }
     return std::any();
 }
@@ -150,13 +167,13 @@ std::any LocalChecker::visit(Expr::Assign* expr, bool as_lvalue) {
         );
     }
 
-    expr->left->accept(this, true);
-    auto l_type = expr->left->type;
+    // expr->left->accept(this, true);
+    auto l_type = expr_check(expr->left, true);
     if (!l_type)
         return std::any();
 
-    expr->right->accept(this, false);
-    auto r_type = expr->right->type;
+    // expr->right->accept(this, false);
+    auto r_type = expr_check(expr->right, false);
     if (!r_type)
         return std::any();
 
@@ -185,13 +202,13 @@ std::any LocalChecker::visit(Expr::Binary* expr, bool as_lvalue) {
         return std::any();
     }
 
-    expr->left->accept(this, false);
-    auto l_type = expr->left->type;
+    // expr->left->accept(this, false);
+    auto l_type = expr_check(expr->left, false);
     if (!l_type)
         return std::any();
 
-    expr->right->accept(this, false);
-    auto r_type = expr->right->type;
+    // expr->right->accept(this, false);
+    auto r_type = expr_check(expr->right, false);
     if (!r_type)
         return std::any();
 
@@ -233,8 +250,8 @@ std::any LocalChecker::visit(Expr::Binary* expr, bool as_lvalue) {
 }
 
 std::any LocalChecker::visit(Expr::Unary* expr, bool as_lvalue) {
-    expr->right->accept(this, false);
-    auto r_type = expr->right->type;
+    // expr->right->accept(this, false);
+    auto r_type = expr_check(expr->right, false);
     if (!r_type)
         return std::any();
 
@@ -269,9 +286,15 @@ std::any LocalChecker::visit(Expr::Unary* expr, bool as_lvalue) {
     }
 }
 
+std::any LocalChecker::visit(Expr::Deref* expr, bool as_lvalue) {
+    // TODO: Implement dereference expressions.
+    panic("LocalChecker::visit(Expr::Deref*): Not implemented yet.");
+    return std::any();
+}
+
 std::any LocalChecker::visit(Expr::Access* expr, bool as_lvalue) {
-    expr->left->accept(this, as_lvalue);
-    auto l_type = expr->left->type;
+    // expr->left->accept(this, as_lvalue);
+    auto l_type = expr_check(expr->left, as_lvalue);
     if (!l_type)
         return std::any();
 
@@ -391,8 +414,9 @@ std::any LocalChecker::visit(Expr::Tuple* expr, bool as_lvalue) {
         return std::any();
     }
     std::vector<std::shared_ptr<Type>> element_types;
-    for (const auto& element : expr->elements) {
-        element->accept(this, false);
+    for (auto& element : expr->elements) {
+        // element->accept(this, false);
+        expr_check(element, false);
         if (!element->type)
             return std::any();
         element_types.push_back(element->type);

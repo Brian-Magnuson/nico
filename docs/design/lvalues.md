@@ -45,9 +45,7 @@ The following expressions are considered possible lvalues:
 - A name reference expression.
 - A member access expression.
 - A subscript (index) access expression.
-- A reference expression.
-- A pointer dereference expression.
-- A call expression that returns a reference.
+- A dereference expression.
 
 We say an expression is a possible lvalue if it is one of the above, regardless of whether it is actually used as an lvalue.
 
@@ -57,7 +55,8 @@ Note:
 - A pointer is not a possible lvalue; it is a value that holds a memory address. 
   - Dereferencing a pointer can yield a possible lvalue if the pointer points to a valid memory location.
   - Therefore, some possible lvalues can contain expressions that are not lvalues.
-- A call expression is not a possible lvalue unless it returns a reference.
+- A referenced (whether from a variable or a function return) value is not a possible lvalue.
+  - The reference is to be implicitly dereferenced, making it a possible lvalue.
   - This cannot be determined until the call expression is type-checked.
   - Therefore, the parser cannot catch all lvalue errors; some must be caught during type checking.
 - All possible lvalues are expressions, and can therefore be used as rvalues.

@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "../nodes/ast_node.h"
+#include "../nodes/type_node.h"
 #include "../parser/ast.h"
 #include "../parser/symbol_tree.h"
 
@@ -21,6 +22,22 @@ class LocalChecker : public Stmt::Visitor,
     // The symbol tree used for type checking.
     std::shared_ptr<SymbolTree> symbol_tree;
 
+    /**
+     * @brief Checks the type of the expression, dereferencing any references.
+     *
+     * If the type of the expression is a reference type, this function will
+     * modify the expression to be a dereference expression, and return the base
+     * type of the reference. Otherwise, it will leave the expression unchanged
+     * and return its type, even if it is nullptr.
+     *
+     * @param expr The expression to check. May be modified by this function.
+     * @param as_lvalue Whether the expression is being checked as an lvalue.
+     * @return The type of the expression, with references dereferenced. Can be
+     * nullptr.
+     */
+    std::shared_ptr<Type>
+    expr_check(std::shared_ptr<Expr>& expr, bool as_lvalue = false);
+
     std::any visit(Stmt::Expression* stmt) override;
     std::any visit(Stmt::Let* stmt) override;
     std::any visit(Stmt::Print* stmt) override;
@@ -31,6 +48,7 @@ class LocalChecker : public Stmt::Visitor,
     std::any visit(Expr::Assign* expr, bool as_lvalue) override;
     std::any visit(Expr::Binary* expr, bool as_lvalue) override;
     std::any visit(Expr::Unary* expr, bool as_lvalue) override;
+    std::any visit(Expr::Deref* expr, bool as_lvalue) override;
     std::any visit(Expr::Access* expr, bool as_lvalue) override;
     std::any visit(Expr::NameRef* expr, bool as_lvalue) override;
     std::any visit(Expr::Literal* expr, bool as_lvalue) override;

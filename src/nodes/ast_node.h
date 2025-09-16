@@ -114,6 +114,27 @@ public:
 // MARK: Expressions
 
 /**
+ * @brief An interface for possible lvalue expressions.
+ *
+ * A possible lvalue expression is an expression associated with a memory
+ * location and can, thus, be used as an lvalue. A possible lvalue is not an
+ * lvalue until it is used/visited as one.
+ *
+ * Only certain types of expressions may be possible lvalues, including
+ * NameRef, Access, and Deref expressions.
+ *
+ * Note: This class should not be used by the parser to catch lvalue errors as
+ * some lvalue errors can only be caught during type checking.
+ */
+class Expr::IPLValue : public Expr {
+public:
+    // Whether or not this expression is assignable.
+    bool assignable = false;
+
+    virtual ~IPLValue() = default;
+};
+
+/**
  * @brief An assignment expression.
  *
  * Assignment expressions assign an rvalue to an lvalue.
@@ -193,6 +214,28 @@ public:
 };
 
 /**
+ * @brief A dereference expression.
+ *
+ * Dereference expressions are used to dereference pointer and reference types.
+ */
+class Expr::Deref : public Expr::IPLValue {
+public:
+    // The operator token.
+    std::shared_ptr<Token> op;
+    // The operand expression.
+    std::shared_ptr<Expr> right;
+
+    Deref(std::shared_ptr<Token> op, std::shared_ptr<Expr> right)
+        : op(op), right(right) {
+        location = &op->location;
+    }
+
+    std::any accept(Visitor* visitor, bool as_lvalue) override {
+        return visitor->visit(this, as_lvalue);
+    }
+};
+
+/**
  * @brief An access expression.
  *
  * Access expressions are used to access members of objects or elements of
@@ -204,7 +247,7 @@ public:
  * Although structurally similar to binary expressions, a separate class is used
  * for organization.
  */
-class Expr::Access : public Expr {
+class Expr::Access : public Expr::IPLValue {
 public:
     // The base expression being accessed.
     std::shared_ptr<Expr> left;
@@ -233,7 +276,7 @@ public:
  * Note: This class used to be called Expr::Identifier, but was changed to
  * use more consistent name terminology.
  */
-class Expr::NameRef : public Expr {
+class Expr::NameRef : public Expr::IPLValue {
 public:
     // The token representing the identifier.
     Name name;
