@@ -288,7 +288,7 @@ TEST_CASE("Local assignment expressions", "[checker]") {
         auto& errors = Logger::inst().get_errors();
 
         REQUIRE(errors.size() >= 1);
-        CHECK(errors.at(0) == Err::NotAnLValue);
+        CHECK(errors.at(0) == Err::NotAPossibleLValue);
     }
 
     SECTION("Assignment not an lvalue 2") {
@@ -301,7 +301,7 @@ TEST_CASE("Local assignment expressions", "[checker]") {
         auto& errors = Logger::inst().get_errors();
 
         REQUIRE(errors.size() >= 1);
-        CHECK(errors.at(0) == Err::NotAnLValue);
+        CHECK(errors.at(0) == Err::NotAPossibleLValue);
     }
 
     SECTION("Assignment not an lvalue 3") {
@@ -314,7 +314,7 @@ TEST_CASE("Local assignment expressions", "[checker]") {
         auto& errors = Logger::inst().get_errors();
 
         REQUIRE(errors.size() >= 1);
-        CHECK(errors.at(0) == Err::NotAnLValue);
+        CHECK(errors.at(0) == Err::NotAPossibleLValue);
     }
 
     SECTION("Assignment not an lvalue 4") {
@@ -327,7 +327,7 @@ TEST_CASE("Local assignment expressions", "[checker]") {
         auto& errors = Logger::inst().get_errors();
 
         REQUIRE(errors.size() >= 1);
-        CHECK(errors.at(0) == Err::NotAnLValue);
+        CHECK(errors.at(0) == Err::NotAPossibleLValue);
     }
 
     lexer.reset();

@@ -83,8 +83,8 @@ enum class Err {
 
     // Local type check error.
     LocalType = 5000,
-    // A non-lvalue was found where an lvalue was expected.
-    NotAnLValue,
+    // An expression was visited as an lvalue, but cannot be an lvalue.
+    NotAPossibleLValue,
     // A type mismatch was found in an expression.
     YieldTypeMismatch,
     // A type mismatch was found in a variable declaration.

@@ -130,6 +130,8 @@ class Expr::IPLValue : public Expr {
 public:
     // Whether or not this expression is assignable.
     bool assignable = false;
+    // The location to report errors at if this is not assignable.
+    const Location* error_location = nullptr;
 
     virtual ~IPLValue() = default;
 };

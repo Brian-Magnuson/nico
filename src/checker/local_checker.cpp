@@ -11,11 +11,13 @@ LocalChecker::expr_check(std::shared_ptr<Expr>& expr, bool as_lvalue) {
             std::dynamic_pointer_cast<Type::Reference>(expr->type)) {
         // If the expression is a reference type, modify the expression to be a
         // dereference expression.
-        expr = std::make_shared<Expr::Deref>(
+        auto deref_expr = std::make_shared<Expr::Deref>(
             std::make_shared<Token>(Tok::Star, *expr->location),
             expr
         );
-        expr->type = ref_type->base;
+        deref_expr->type = ref_type->base;
+        deref_expr->assignable = ref_type->is_mutable;
+        expr = deref_expr;
     }
     return expr->type;
 }
@@ -33,7 +35,6 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
 
     // Visit the initializer (if present).
     if (stmt->expression.has_value()) {
-        // stmt->expression.value()->accept(this, false);
         expr_type = expr_check(stmt->expression.value(), false);
         if (!expr_type)
             return std::any();
@@ -109,7 +110,6 @@ std::any LocalChecker::visit(Stmt::Pass* /*stmt*/) {
 
 std::any LocalChecker::visit(Stmt::Yield* stmt) {
     // Visit the expression in the yield statement.
-    // stmt->expression->accept(this, false);
     auto expr_type = expr_check(stmt->expression, false);
     if (!expr_type)
         return std::any();
@@ -161,18 +161,33 @@ std::any LocalChecker::visit(Expr::Assign* expr, bool as_lvalue) {
     // An assignment expression should never be an lvalue.
     if (as_lvalue) {
         Logger::inst().log_error(
-            Err::NotAnLValue,
+            Err::NotAPossibleLValue,
             expr->op->location,
             "Assignment expression cannot be an lvalue."
         );
     }
 
-    // expr->left->accept(this, true);
     auto l_type = expr_check(expr->left, true);
-    if (!l_type)
+    auto l_lvalue = std::dynamic_pointer_cast<Expr::IPLValue>(expr->left);
+    if (!l_type || !l_lvalue)
         return std::any();
 
-    // expr->right->accept(this, false);
+    // The left side must be an assignable lvalue.
+    if (!l_lvalue->assignable) {
+        Logger::inst().log_error(
+            Err::AssignToImmutable,
+            *expr->left->location,
+            "Left side of assignment is not assignable."
+        );
+        if (l_lvalue->error_location) {
+            Logger::inst().log_note(
+                *l_lvalue->error_location,
+                "This is not mutable."
+            );
+        }
+        return std::any();
+    }
+
     auto r_type = expr_check(expr->right, false);
     if (!r_type)
         return std::any();
@@ -195,19 +210,17 @@ std::any LocalChecker::visit(Expr::Assign* expr, bool as_lvalue) {
 std::any LocalChecker::visit(Expr::Binary* expr, bool as_lvalue) {
     if (as_lvalue) {
         Logger::inst().log_error(
-            Err::NotAnLValue,
+            Err::NotAPossibleLValue,
             expr->op->location,
             "Binary expression cannot be an lvalue."
         );
         return std::any();
     }
 
-    // expr->left->accept(this, false);
     auto l_type = expr_check(expr->left, false);
     if (!l_type)
         return std::any();
 
-    // expr->right->accept(this, false);
     auto r_type = expr_check(expr->right, false);
     if (!r_type)
         return std::any();
@@ -250,21 +263,22 @@ std::any LocalChecker::visit(Expr::Binary* expr, bool as_lvalue) {
 }
 
 std::any LocalChecker::visit(Expr::Unary* expr, bool as_lvalue) {
-    // expr->right->accept(this, false);
+    // An unary expression should never be an lvalue.
+    if (as_lvalue) {
+        Logger::inst().log_error(
+            Err::NotAPossibleLValue,
+            expr->op->location,
+            "Unary expression cannot be an lvalue."
+        );
+        return std::any();
+    }
+
     auto r_type = expr_check(expr->right, false);
     if (!r_type)
         return std::any();
 
     switch (expr->op->tok_type) {
     case Tok::Minus:
-        if (as_lvalue) {
-            Logger::inst().log_error(
-                Err::NotAnLValue,
-                expr->op->location,
-                "Unary minus expression cannot be an lvalue."
-            );
-            return std::any();
-        }
         // Types must inherit from `Type::INumeric`.
         if (!PTR_INSTANCEOF(r_type, Type::INumeric)) {
             Logger::inst().log_error(
@@ -293,9 +307,9 @@ std::any LocalChecker::visit(Expr::Deref* expr, bool as_lvalue) {
 }
 
 std::any LocalChecker::visit(Expr::Access* expr, bool as_lvalue) {
-    // expr->left->accept(this, as_lvalue);
-    auto l_type = expr_check(expr->left, as_lvalue);
-    if (!l_type)
+    auto l_type = expr_check(expr->left, true);
+    auto l_lvalue = std::dynamic_pointer_cast<Expr::IPLValue>(expr->left);
+    if (!l_type || !l_lvalue)
         return std::any();
 
     if (auto tuple_l_type = std::dynamic_pointer_cast<Type::Tuple>(l_type)) {
@@ -311,6 +325,12 @@ std::any LocalChecker::visit(Expr::Access* expr, bool as_lvalue) {
                 return std::any();
             }
             expr->type = tuple_l_type->elements[index];
+
+            // For tuple access, the assignability and possible error location
+            // is carried over from the left side.
+            expr->assignable = l_lvalue->assignable;
+            expr->error_location = l_lvalue->error_location;
+
             return std::any();
         }
         else {
@@ -352,19 +372,14 @@ std::any LocalChecker::visit(Expr::NameRef* expr, bool as_lvalue) {
         return std::any();
     }
     auto field_entry = std::dynamic_pointer_cast<Node::FieldEntry>(*node);
-    if (!field_entry->field.is_var && as_lvalue) {
-        Logger::inst().log_error(
-            Err::AssignToImmutable,
-            expr->name.parts.back().token->location,
-            "Cannot assign to immutable binding `" + expr->name.to_string() +
-                "`."
-        );
-        Logger::inst().log_note(
-            field_entry->field.token->location,
-            "Binding introduced here. Consider adding `var` to make it mutable."
-        );
-
-        return std::any();
+    // Set assignability and possible error location based on whether the
+    // field is mutable.
+    if (field_entry->field.is_var) {
+        expr->assignable = true;
+    }
+    else {
+        expr->assignable = false;
+        expr->error_location = &field_entry->field.token->location;
     }
 
     expr->type = field_entry->field.type;
@@ -375,7 +390,7 @@ std::any LocalChecker::visit(Expr::NameRef* expr, bool as_lvalue) {
 std::any LocalChecker::visit(Expr::Literal* expr, bool as_lvalue) {
     if (as_lvalue) {
         Logger::inst().log_error(
-            Err::NotAnLValue,
+            Err::NotAPossibleLValue,
             *expr->location,
             "Literal expression cannot be an lvalue."
         );
@@ -396,7 +411,8 @@ std::any LocalChecker::visit(Expr::Literal* expr, bool as_lvalue) {
         break;
     default:
         panic(
-            "LocalChecker::visit(Expr::Literal*): Could not handle case for "
+            "LocalChecker::visit(Expr::Literal*): Could not handle case "
+            "for "
             "token type " +
             std::to_string(static_cast<int>(expr->token->tok_type))
         );
@@ -407,7 +423,7 @@ std::any LocalChecker::visit(Expr::Literal* expr, bool as_lvalue) {
 std::any LocalChecker::visit(Expr::Tuple* expr, bool as_lvalue) {
     if (as_lvalue) {
         Logger::inst().log_error(
-            Err::NotAnLValue,
+            Err::NotAPossibleLValue,
             *expr->location,
             "Tuple expression cannot be an lvalue."
         );
@@ -415,7 +431,6 @@ std::any LocalChecker::visit(Expr::Tuple* expr, bool as_lvalue) {
     }
     std::vector<std::shared_ptr<Type>> element_types;
     for (auto& element : expr->elements) {
-        // element->accept(this, false);
         expr_check(element, false);
         if (!element->type)
             return std::any();
@@ -428,7 +443,7 @@ std::any LocalChecker::visit(Expr::Tuple* expr, bool as_lvalue) {
 std::any LocalChecker::visit(Expr::Block* expr, bool as_lvalue) {
     if (as_lvalue) {
         Logger::inst().log_error(
-            Err::NotAnLValue,
+            Err::NotAPossibleLValue,
             *expr->location,
             "Block expression cannot be an lvalue."
         );
