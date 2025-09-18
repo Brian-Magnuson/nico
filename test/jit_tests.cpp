@@ -516,3 +516,45 @@ TEST_CASE("JIT block expressions", "[jit]") {
     codegen.reset();
     jit->reset();
 }
+
+TEST_CASE("JIT tuple expressions", "[jit]") {
+    Lexer lexer;
+    Parser parser;
+    GlobalChecker global_checker;
+    LocalChecker local_checker;
+    CodeGenerator codegen;
+    std::unique_ptr<IJit> jit = std::make_unique<SimpleJit>();
+    Logger::inst().set_printing_enabled(true);
+
+    SECTION("Tuple expression 1") {
+        // codegen.set_ir_printing_enabled(true);
+        run_compile_test(
+            lexer,
+            parser,
+            global_checker,
+            local_checker,
+            codegen,
+            jit,
+            R"(let x = (1, 2, 3) printout x.0, ",", x.1, ",", x.2)",
+            "1,2,3"
+        );
+    }
+
+    SECTION("Tuple expression 2") {
+        run_compile_test(
+            lexer,
+            parser,
+            global_checker,
+            local_checker,
+            codegen,
+            jit,
+            R"(let x = (1, (2, 3), 4) printout x.0, ",", x.1.0, ",", x.1.1, ",", x.2)",
+            "1,2,3,4"
+        );
+    }
+
+    lexer.reset();
+    parser.reset();
+    codegen.reset();
+    jit->reset();
+}

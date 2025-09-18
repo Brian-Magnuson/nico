@@ -452,9 +452,37 @@ std::any CodeGenerator::visit(Expr::Deref* expr, bool as_lvalue) {
 }
 
 std::any CodeGenerator::visit(Expr::Access* expr, bool as_lvalue) {
-    // TODO: Implement access expressions.
-    panic("CodeGenerator::visit(Expr::Access*): Not implemented yet.");
-    return std::any();
+    llvm::Value* result = nullptr;
+
+    auto left = std::any_cast<llvm::Value*>(expr->left->accept(this, true));
+    auto struct_type =
+        llvm::cast<llvm::StructType>(expr->left->type->get_llvm_type(builder));
+
+    if (PTR_INSTANCEOF(expr->left->type, Type::Tuple)) {
+        llvm::Value* element_ptr = builder->CreateStructGEP(
+            struct_type,
+            left,
+            std::any_cast<size_t>(expr->right_token->literal),
+            "tuple_element"
+        );
+
+        if (as_lvalue) {
+            result = element_ptr;
+        }
+        else {
+            result = builder->CreateLoad(
+                expr->type->get_llvm_type(builder),
+                element_ptr
+            );
+        }
+    }
+    else {
+        panic(
+            "CodeGenerator::visit(Expr::Access*): Accessing fields of this "
+            "type is not supported yet."
+        );
+    }
+    return result;
 }
 
 std::any CodeGenerator::visit(Expr::NameRef* expr, bool as_lvalue) {
@@ -523,7 +551,26 @@ std::any CodeGenerator::visit(Expr::Literal* expr, bool as_lvalue) {
 }
 
 std::any CodeGenerator::visit(Expr::Tuple* expr, bool as_lvalue) {
-    return std::any();
+    llvm::Value* result = nullptr;
+    std::vector<llvm::Value*> element_values;
+    for (const auto& element : expr->elements) {
+        element_values.push_back(
+            std::any_cast<llvm::Value*>(element->accept(this, false))
+        );
+    }
+    llvm::StructType* tuple_type =
+        llvm::cast<llvm::StructType>(expr->type->get_llvm_type(builder));
+    llvm::Value* tuple_alloc =
+        builder->CreateAlloca(tuple_type, nullptr, "tuple");
+
+    for (size_t i = 0; i < element_values.size(); ++i) {
+        llvm::Value* element_ptr =
+            builder->CreateStructGEP(tuple_type, tuple_alloc, i, "element");
+        builder->CreateStore(element_values[i], element_ptr);
+    }
+
+    result = builder->CreateLoad(tuple_type, tuple_alloc);
+    return result;
 }
 
 std::any CodeGenerator::visit(Expr::Block* expr, bool as_lvalue) {
