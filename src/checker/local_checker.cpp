@@ -320,7 +320,12 @@ std::any LocalChecker::visit(Expr::Access* expr, bool as_lvalue) {
                     Err::TupleIndexOutOfBounds,
                     expr->right_token->location,
                     "Tuple index " + std::to_string(index) +
-                        " is out of bounds."
+                        " is out of bounds for tuple of size " +
+                        std::to_string(tuple_l_type->elements.size()) + "."
+                );
+                Logger::inst().log_note(
+                    *expr->left->location,
+                    "Expression has type `" + l_type->to_string() + "`."
                 );
                 return std::any();
             }
