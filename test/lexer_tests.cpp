@@ -776,6 +776,26 @@ TEST_CASE("Lexer number scanning errors", "[lexer]") {
         CHECK(errors.at(0) == Err::UnexpectedDotInNumber);
     }
 
+    SECTION("Number out of range") {
+        // Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file("99999999999999999999999999");
+        auto tokens = lexer.scan(file);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::NumberOutOfRange);
+    }
+
+    SECTION("Float out of range") {
+        // Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file("1e9999999");
+        auto tokens = lexer.scan(file);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::NumberOutOfRange);
+    }
+
     lexer.reset();
     Logger::inst().reset();
 }

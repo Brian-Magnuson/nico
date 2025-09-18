@@ -235,8 +235,20 @@ void Lexer::numeric_literal(bool integer_only) {
         while (is_digit(peek())) {
             numeric_string += advance();
         }
-        size_t value = std::stoul(numeric_string);
-        return add_token(Tok::Int, value);
+        size_t value;
+        try {
+            value = std::stoul(numeric_string);
+        }
+        catch (...) {
+            Logger::inst().log_error(
+                Err::NumberOutOfRange,
+                make_token(Tok::Unknown)->location,
+                "Numeric literal is out of range."
+            );
+            return;
+        }
+        add_token(Tok::Int, value);
+        return;
     }
 
     uint8_t base = 10;
@@ -362,10 +374,12 @@ void Lexer::numeric_literal(bool integer_only) {
             value = std::stod(numeric_string);
         }
         catch (...) {
-            panic(
-                "Lexer::numeric_literal: std::stod failed to parse `" +
-                numeric_string + "`"
+            Logger::inst().log_error(
+                Err::NumberOutOfRange,
+                make_token(Tok::Unknown)->location,
+                "Numeric literal is out of range."
             );
+            return;
         }
         add_token(Tok::Float, value);
     }
@@ -376,10 +390,12 @@ void Lexer::numeric_literal(bool integer_only) {
                 static_cast<int32_t>(std::stoll(numeric_string, nullptr, base));
         }
         catch (...) {
-            panic(
-                "Lexer::numeric_literal: std::stoll failed to parse `" +
-                numeric_string + "`"
+            Logger::inst().log_error(
+                Err::NumberOutOfRange,
+                make_token(Tok::Unknown)->location,
+                "Numeric literal is out of range."
             );
+            return;
         }
         add_token(Tok::Int, value);
     }
