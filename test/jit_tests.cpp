@@ -553,6 +553,32 @@ TEST_CASE("JIT tuple expressions", "[jit]") {
         );
     }
 
+    SECTION("Tuple assignment 1") {
+        run_compile_test(
+            lexer,
+            parser,
+            global_checker,
+            local_checker,
+            codegen,
+            jit,
+            R"(let var x = (1, 2) x.0 = 3 x.1 = 4 printout x.0, ",", x.1)",
+            "3,4"
+        );
+    }
+
+    SECTION("Tuple assignment 2") {
+        run_compile_test(
+            lexer,
+            parser,
+            global_checker,
+            local_checker,
+            codegen,
+            jit,
+            R"(let var x = (1, (2, 3)) x.1.0 = 4 x.1.1 = 5 printout x.0, ",", x.1.0, ",", x.1.1)",
+            "1,4,5"
+        );
+    }
+
     lexer.reset();
     parser.reset();
     codegen.reset();
