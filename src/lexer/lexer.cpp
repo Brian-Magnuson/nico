@@ -22,6 +22,9 @@ std::unordered_map<std::string_view, Tok> Lexer::keywords = {
     {"not", Tok::KwNot},
 
     {"block", Tok::KwBlock},
+    {"if", Tok::KwIf},
+    {"then", Tok::KwThen},
+    {"else", Tok::KwElse},
 
     {"let", Tok::KwLet},
     {"var", Tok::KwVar},

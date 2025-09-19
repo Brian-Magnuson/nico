@@ -241,8 +241,10 @@ public:
     class Literal;
 
     class Tuple;
+    class Unit;
 
     class Block;
+    class Conditional;
 
     virtual ~Expr() {}
 
@@ -260,6 +262,7 @@ public:
         virtual std::any visit(Literal* expr, bool as_lvalue) = 0;
         virtual std::any visit(Tuple* expr, bool as_lvalue) = 0;
         virtual std::any visit(Block* expr, bool as_lvalue) = 0;
+        virtual std::any visit(Conditional* expr, bool as_lvalue) = 0;
     };
 
     // The type of the expression.

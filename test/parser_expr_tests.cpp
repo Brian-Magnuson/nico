@@ -505,6 +505,163 @@ TEST_CASE("Parser dot access", "[parser]") {
     Logger::inst().reset();
 }
 
+TEST_CASE("Parser if expressions", "[parser]") {
+    Lexer lexer;
+    Parser parser;
+    AstPrinter printer;
+
+    SECTION("If expression 1") {
+        auto file = make_test_code_file(R"(
+        if true then 123
+        )");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(expr (if (lit true) then (lit 123) else (tuple)))",
+            "(stmt:eof)"
+        };
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
+    SECTION("If expression 2") {
+        auto file = make_test_code_file(R"(
+        if true:
+            123
+        )");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(expr (if (lit true) then (block (expr (lit 123))) else (tuple)))",
+            "(stmt:eof)"
+        };
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
+    SECTION("If expression 3") {
+        auto file = make_test_code_file(R"(
+        if true { 123 }
+        )");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(expr (if (lit true) then (block (expr (lit 123))) else (tuple)))",
+            "(stmt:eof)"
+        };
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
+    SECTION("If else expression 1") {
+        auto file = make_test_code_file(R"(
+        if true then 123 else 456
+        )");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(expr (if (lit true) then (lit 123) else (lit 456)))",
+            "(stmt:eof)"
+        };
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
+    SECTION("If else expression 2") {
+        auto file = make_test_code_file(R"(
+        if true:
+            123
+        else:
+            456
+        )");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(expr (if (lit true) then (block (expr (lit 123))) else (block "
+            "(expr (lit 456)))))",
+            "(stmt:eof)"
+        };
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
+    SECTION("If else expression 3") {
+        auto file = make_test_code_file(R"(
+        if true { 123 } else { 456 }
+        )");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(expr (if (lit true) then (block (expr (lit 123))) else (block "
+            "(expr (lit 456)))))",
+            "(stmt:eof)"
+        };
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
+    SECTION("If else if expression 1") {
+        auto file = make_test_code_file(R"(
+        if true then 123 else if false then 456 else 789
+        )");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(expr (if (lit true) then (lit 123) else (if (lit false) then "
+            "(lit 456) else (lit 789))))",
+            "(stmt:eof)"
+        };
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
+    SECTION("If else if expression 2") {
+        auto file = make_test_code_file(R"(
+        if true:
+            123
+        else if false:
+            456
+        else:
+            789
+        )");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(expr (if (lit true) then (block (expr (lit 123))) else (if "
+            "(lit false) then (block (expr (lit 456))) else (block (expr "
+            "(lit 789))))))",
+            "(stmt:eof)"
+        };
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
+    SECTION("If else if expression 3") {
+        auto file = make_test_code_file(R"(
+        if true { 123 } else if false { 456 } else { 789 }
+        )");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(expr (if (lit true) then (block (expr (lit 123))) else (if "
+            "(lit false) then (block (expr (lit 456))) else (block (expr "
+            "(lit 789))))))",
+            "(stmt:eof)"
+        };
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
+    SECTION("Weird if expression") {
+        auto file = make_test_code_file(R"(
+        if if true then true else false then 123 else 456
+        )");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        std::vector<std::string> expected = {
+            "(expr (if (if (lit true) then (lit true) else (lit false)) then "
+            "(lit 123) else (lit 456)))",
+            "(stmt:eof)"
+        };
+        CHECK(printer.stmts_to_strings(ast) == expected);
+    }
+
+    lexer.reset();
+    parser.reset();
+    Logger::inst().reset();
+}
+
 // MARK: Error tests
 
 TEST_CASE("Parser block errors", "[parser]") {
@@ -520,6 +677,19 @@ TEST_CASE("Parser block errors", "[parser]") {
 
         REQUIRE(errors.size() >= 1);
         CHECK(errors.at(0) == Err::NotABlock);
+    }
+
+    SECTION("Conditional without then or block") {
+        // Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file(R"(
+        if true 123
+        )");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::ConditionalWithoutThenOrBlock);
     }
 
     lexer.reset();

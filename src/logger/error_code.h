@@ -69,6 +69,8 @@ enum class Err {
     NotABlock,
     // A dot was not followed by an identifier or integer.
     UnexpectedTokenAfterDot,
+    // A conditional expression was found without a `then` keyword or block.
+    ConditionalWithoutThenOrBlock,
 
     // Global type check error.
     GlobalType = 4000,

@@ -145,7 +145,7 @@ expression ::= block_expr
 block ::= (INDENT statement* DEDENT) | (L_BRACE statement* R_BRACE) ;
 
 block_expr ::= "block" block ;
-if_expr ::= "if" expression block ("elif" expression block)* ("else" block)? ;
+if_expr ::= "if" expression ( "then" expression | block ) ( "else" ( expression | block ))? ;
 loop_expr ::= "loop" block ;
 while_expr ::= "while" expression block ;
 

@@ -92,6 +92,7 @@ enum class Tok {
     KwNot,
     KwBlock,
     KwIf,
+    KwThen,
     KwElse,
     KwElif,
     KwLoop,

@@ -112,6 +112,18 @@ std::any AstPrinter::visit(Expr::Block* expr, bool as_lvalue) {
     return str;
 }
 
+std::any AstPrinter::visit(Expr::Conditional* expr, bool as_lvalue) {
+    std::string str = "(if ";
+    str += std::any_cast<std::string>(expr->condition->accept(this, false));
+    str += " then ";
+    str += std::any_cast<std::string>(expr->then_branch->accept(this, false));
+    str += " else ";
+    str += std::any_cast<std::string>(expr->else_branch->accept(this, false));
+
+    str += ")";
+    return str;
+}
+
 std::string AstPrinter::stmt_to_string(std::shared_ptr<Stmt> stmt) {
     return std::any_cast<std::string>(stmt->accept(this));
 }

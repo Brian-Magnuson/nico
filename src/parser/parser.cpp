@@ -88,6 +88,60 @@ Parser::block(std::shared_ptr<Token> opening_kw) {
     return std::make_shared<Expr::Block>(opening_kw, statements);
 }
 
+std::optional<std::shared_ptr<Expr>> Parser::conditional() {
+    auto if_kw = previous();
+
+    // Handle the condition.
+    auto condition = expression();
+    if (!condition)
+        return std::nullopt;
+
+    // Handle the 'then' branch.
+    std::optional<std::shared_ptr<Expr>> then_branch;
+    if (peek()->tok_type == Tok::Indent || peek()->tok_type == Tok::LBrace) {
+        then_branch = block(if_kw);
+    }
+    else if (match({Tok::KwThen})) {
+        then_branch = expression();
+    }
+    else {
+        Logger::inst().log_error(
+            Err::ConditionalWithoutThenOrBlock,
+            peek()->location,
+            "Conditional expression requires `then` keyword or a block."
+        );
+        return std::nullopt;
+    }
+
+    if (!then_branch)
+        return std::nullopt;
+
+    // Handle the optional 'else' branch.
+    std::optional<std::shared_ptr<Expr>> else_branch = std::nullopt;
+    if (match({Tok::KwElse})) {
+        if (peek()->tok_type == Tok::Indent ||
+            peek()->tok_type == Tok::LBrace) {
+            else_branch = block(previous());
+        }
+        else {
+            else_branch = expression();
+        }
+        if (!else_branch)
+            return std::nullopt;
+    }
+    else {
+        // If there is no `else` keyword, we inject a unit value.
+        else_branch = std::make_shared<Expr::Unit>(if_kw);
+    }
+
+    return std::make_shared<Expr::Conditional>(
+        if_kw,
+        *condition,
+        *then_branch,
+        *else_branch
+    );
+}
+
 std::optional<std::shared_ptr<Expr>> Parser::primary() {
     if (match({Tok::Int, Tok::Float, Tok::Bool, Tok::Str})) {
         return std::make_shared<Expr::Literal>(previous());
@@ -97,6 +151,9 @@ std::optional<std::shared_ptr<Expr>> Parser::primary() {
     }
     if (match({Tok::KwBlock})) {
         return block(previous());
+    }
+    if (match({Tok::KwIf})) {
+        return conditional();
     }
     if (match({Tok::LParen})) {
         // Grouping or tuple expression.

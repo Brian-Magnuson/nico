@@ -594,6 +594,12 @@ std::any CodeGenerator::visit(Expr::Block* expr, bool as_lvalue) {
     return yield_value;
 }
 
+std::any CodeGenerator::visit(Expr::Conditional* expr, bool as_lvalue) {
+    // TODO: Implement conditional expressions.
+    panic("CodeGenerator::visit(Expr::Conditional*): Not implemented yet.");
+    return std::any();
+}
+
 // MARK: Interface
 
 void CodeGenerator::generate_script(const Ast& ast) {

@@ -350,6 +350,20 @@ public:
 };
 
 /**
+ * @brief A unit value expression.
+ *
+ * Used to represent the unit value `()`.
+ *
+ * A subclass of `Expr::Tuple` with no elements. This class does not override
+ * `Expr::Tuple::accept` and can thus be visited as a `Tuple`.
+ */
+class Expr::Unit : public Expr::Tuple {
+public:
+    Unit(std::shared_ptr<Token> token)
+        : Tuple(token, {}) {}
+};
+
+/**
  * @brief A block expression.
  *
  * Block expressions are used to group statements together.
@@ -370,6 +384,38 @@ public:
     )
         : opening_kw(opening_kw), statements(std::move(statements)) {
         location = &opening_kw->location;
+    }
+
+    std::any accept(Visitor* visitor, bool as_lvalue) override {
+        return visitor->visit(this, as_lvalue);
+    }
+};
+
+/**
+ * @brief A conditional expression.
+ *
+ * Conditional expressions are used to represent if-else-if-else constructs.
+ */
+class Expr::Conditional : public Expr {
+public:
+    // The 'if' keyword token.
+    std::shared_ptr<Token> if_kw;
+    // The condition expression.
+    std::shared_ptr<Expr> condition;
+    // The 'then' branch expression.
+    std::shared_ptr<Expr> then_branch;
+    // The 'else' branch expression, if any.
+    std::shared_ptr<Expr> else_branch;
+
+    Conditional(
+        std::shared_ptr<Token> if_kw, std::shared_ptr<Expr> condition,
+        std::shared_ptr<Expr> then_branch, std::shared_ptr<Expr> else_branch
+    )
+        : if_kw(if_kw),
+          condition(condition),
+          then_branch(then_branch),
+          else_branch(else_branch) {
+        location = &if_kw->location;
     }
 
     std::any accept(Visitor* visitor, bool as_lvalue) override {

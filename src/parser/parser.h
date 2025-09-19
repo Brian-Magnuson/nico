@@ -92,6 +92,17 @@ class Parser {
     block(std::shared_ptr<Token> opening_kw);
 
     /**
+     * @brief Parses a conditional expression.
+     *
+     * A conditional expression is an expression that evaluates to one of two
+     * values based on a condition.
+     *
+     * @return A shared pointer to the parsed expression, or nullopt if the
+     * expression could not be parsed.
+     */
+    std::optional<std::shared_ptr<Expr>> conditional();
+
+    /**
      * @brief Parses a primary expression.
      *
      * Primary expressions include literals, identifiers, and grouping

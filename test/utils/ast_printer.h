@@ -33,6 +33,7 @@ class AstPrinter : public Stmt::Visitor, public Expr::Visitor {
     std::any visit(Expr::Literal* expr, bool as_lvalue) override;
     std::any visit(Expr::Tuple* expr, bool as_lvalue) override;
     std::any visit(Expr::Block* expr, bool as_lvalue) override;
+    std::any visit(Expr::Conditional* expr, bool as_lvalue) override;
 
 public:
     /**
