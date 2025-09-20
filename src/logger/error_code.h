@@ -115,6 +115,11 @@ enum class Err {
     // An access expression was found where the right side was not an integer
     // literal.
     InvalidTupleAccess,
+    // A control structure was found with a condition that does not have a
+    // boolean type.
+    ConditionNotBool,
+    // The branches of a conditional expression have mismatched types.
+    ConditionalBranchTypeMismatch,
 
     // Code generation error.
     CodeGen = 6000,

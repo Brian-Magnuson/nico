@@ -57,8 +57,7 @@ void Parser::synchronize() {
 
 // MARK: Expressions
 
-std::optional<std::shared_ptr<Expr>>
-Parser::block(std::shared_ptr<Token> opening_kw) {
+std::optional<std::shared_ptr<Expr>> Parser::block() {
     Tok closing_token_type;
 
     if (peek()->tok_type == Tok::Indent) {
@@ -75,7 +74,7 @@ Parser::block(std::shared_ptr<Token> opening_kw) {
         );
         return std::nullopt;
     }
-    advance();
+    auto opening_tok = advance();
 
     std::vector<std::shared_ptr<Stmt>> statements;
     while (!match({closing_token_type})) {
@@ -85,11 +84,12 @@ Parser::block(std::shared_ptr<Token> opening_kw) {
         statements.push_back(*stmt);
     }
 
-    return std::make_shared<Expr::Block>(opening_kw, statements);
+    return std::make_shared<Expr::Block>(opening_tok, statements);
 }
 
 std::optional<std::shared_ptr<Expr>> Parser::conditional() {
     auto if_kw = previous();
+    bool implicit_else = false;
 
     // Handle the condition.
     auto condition = expression();
@@ -99,7 +99,7 @@ std::optional<std::shared_ptr<Expr>> Parser::conditional() {
     // Handle the 'then' branch.
     std::optional<std::shared_ptr<Expr>> then_branch;
     if (peek()->tok_type == Tok::Indent || peek()->tok_type == Tok::LBrace) {
-        then_branch = block(if_kw);
+        then_branch = block();
     }
     else if (match({Tok::KwThen})) {
         then_branch = expression();
@@ -121,7 +121,7 @@ std::optional<std::shared_ptr<Expr>> Parser::conditional() {
     if (match({Tok::KwElse})) {
         if (peek()->tok_type == Tok::Indent ||
             peek()->tok_type == Tok::LBrace) {
-            else_branch = block(previous());
+            else_branch = block();
         }
         else {
             else_branch = expression();
@@ -132,13 +132,15 @@ std::optional<std::shared_ptr<Expr>> Parser::conditional() {
     else {
         // If there is no `else` keyword, we inject a unit value.
         else_branch = std::make_shared<Expr::Unit>(if_kw);
+        implicit_else = true;
     }
 
     return std::make_shared<Expr::Conditional>(
         if_kw,
         *condition,
         *then_branch,
-        *else_branch
+        *else_branch,
+        implicit_else
     );
 }
 
@@ -150,7 +152,7 @@ std::optional<std::shared_ptr<Expr>> Parser::primary() {
         return std::make_shared<Expr::NameRef>(previous());
     }
     if (match({Tok::KwBlock})) {
-        return block(previous());
+        return block();
     }
     if (match({Tok::KwIf})) {
         return conditional();

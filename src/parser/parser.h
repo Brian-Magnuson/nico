@@ -84,12 +84,10 @@ class Parser {
      *
      * A block expression is a sequence of statements enclosed in braces.
      *
-     * @param opening_kw The keyword that opened the block.
      * @return A shared pointer to the parsed expression, or nullopt if the
      * expression could not be parsed.
      */
-    std::optional<std::shared_ptr<Expr>>
-    block(std::shared_ptr<Token> opening_kw);
+    std::optional<std::shared_ptr<Expr>> block();
 
     /**
      * @brief Parses a conditional expression.

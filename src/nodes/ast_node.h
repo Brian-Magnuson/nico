@@ -373,17 +373,17 @@ public:
  */
 class Expr::Block : public Expr {
 public:
-    // The keyword that opened this block.
-    std::shared_ptr<Token> opening_kw;
+    // The token that opened this block.
+    std::shared_ptr<Token> opening_tok;
     // The statements contained within the block.
     std::vector<std::shared_ptr<Stmt>> statements;
 
     Block(
-        std::shared_ptr<Token> opening_kw,
+        std::shared_ptr<Token> opening_tok,
         std::vector<std::shared_ptr<Stmt>> statements
     )
-        : opening_kw(opening_kw), statements(std::move(statements)) {
-        location = &opening_kw->location;
+        : opening_tok(opening_tok), statements(std::move(statements)) {
+        location = &opening_tok->location;
     }
 
     std::any accept(Visitor* visitor, bool as_lvalue) override {
@@ -406,15 +406,19 @@ public:
     std::shared_ptr<Expr> then_branch;
     // The 'else' branch expression, if any.
     std::shared_ptr<Expr> else_branch;
+    // Whether the else branch was implicit (i.e., not explicitly provided).
+    bool implicit_else = false;
 
     Conditional(
         std::shared_ptr<Token> if_kw, std::shared_ptr<Expr> condition,
-        std::shared_ptr<Expr> then_branch, std::shared_ptr<Expr> else_branch
+        std::shared_ptr<Expr> then_branch, std::shared_ptr<Expr> else_branch,
+        bool implicit_else
     )
         : if_kw(if_kw),
           condition(condition),
           then_branch(then_branch),
-          else_branch(else_branch) {
+          else_branch(else_branch),
+          implicit_else(implicit_else) {
         location = &if_kw->location;
     }
 

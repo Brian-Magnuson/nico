@@ -595,3 +595,215 @@ TEST_CASE("Local tuple expressions", "[checker]") {
     parser.reset();
     Logger::inst().reset();
 }
+
+TEST_CASE("Local conditional expressions", "[checker]") {
+    Lexer lexer;
+    Parser parser;
+    GlobalChecker global_checker;
+    LocalChecker local_checker;
+    Logger::inst().set_printing_enabled(false);
+
+    SECTION("Valid conditional expression 1") {
+        Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file("if true { 1 } else { false }");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+
+        CHECK(Logger::inst().get_errors().empty());
+    }
+
+    SECTION("Valid conditional expression 2") {
+        Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file(R"(
+        if true:
+            1
+        else:
+            2
+        )");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+
+        CHECK(Logger::inst().get_errors().empty());
+    }
+
+    SECTION("Valid conditional expression 3") {
+        Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file("let a: i32 = if true then 1 else 2");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+
+        CHECK(Logger::inst().get_errors().empty());
+    }
+
+    SECTION("Valid conditional expression 4") {
+        Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file("if true {}");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+
+        CHECK(Logger::inst().get_errors().empty());
+    }
+
+    SECTION("Valid if else if expression 1") {
+        Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file(R"(
+        if false:
+            1
+        else if true:
+            2
+        else:
+            3
+        )");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+
+        CHECK(Logger::inst().get_errors().empty());
+    }
+
+    SECTION("Valid if else if expression 2") {
+        Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file(R"(
+        if false then 1 else if true then 2 else 3
+        )");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+
+        CHECK(Logger::inst().get_errors().empty());
+    }
+
+    SECTION("Conditional condition not bool") {
+        // Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file("if 1 { 1 } else { 2 }");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::ConditionNotBool);
+    }
+
+    SECTION("Conditional branch type mismatch 1") {
+        // Logger::inst().set_printing_enabled(true);
+        auto file =
+            make_test_code_file("if true { yield 1 } else { yield false }");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::ConditionalBranchTypeMismatch);
+    }
+
+    SECTION("Conditional branch type mismatch 2") {
+        // Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file(R"(
+        if true:
+            yield 1
+        else:
+            yield false
+        )");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::ConditionalBranchTypeMismatch);
+    }
+
+    SECTION("Conditional branch type mismatch 3") {
+        // Logger::inst().set_printing_enabled(true);
+        auto file =
+            make_test_code_file("let a: i32 = if true then 1 else false");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::ConditionalBranchTypeMismatch);
+    }
+
+    SECTION("Conditional branch type mismatch 4") {
+        // Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file("if true then 1");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::ConditionalBranchTypeMismatch);
+    }
+
+    SECTION("If else if branch type mismatch") {
+        Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file(R"(
+        if false:
+            1
+        else if true:
+            yield 2
+        else:
+            3
+        )");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::ConditionalBranchTypeMismatch);
+    }
+
+    SECTION("Let type mismatch with conditional") {
+        // Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file("let a: bool = if true then 1 else 2");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::LetTypeMismatch);
+    }
+
+    SECTION("Yield type mismatch with conditional") {
+        // Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file(
+            "if true { yield 1 yield 2.0 } else { yield 3 }"
+        );
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+        auto& errors = Logger::inst().get_errors();
+
+        REQUIRE(errors.size() >= 1);
+        CHECK(errors.at(0) == Err::YieldTypeMismatch);
+    }
+
+    lexer.reset();
+    parser.reset();
+    Logger::inst().reset();
+}

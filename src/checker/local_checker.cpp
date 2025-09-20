@@ -470,8 +470,54 @@ std::any LocalChecker::visit(Expr::Block* expr, bool as_lvalue) {
 }
 
 std::any LocalChecker::visit(Expr::Conditional* expr, bool as_lvalue) {
-    // TODO: Implement conditional expressions.
-    panic("LocalChecker::visit(Expr::Conditional*): Not implemented yet.");
+    auto cond_type = expr_check(expr->condition, false);
+    if (!cond_type)
+        return std::any();
+    auto then_type = expr_check(expr->then_branch, false);
+    if (!then_type)
+        return std::any();
+    auto else_type = expr_check(expr->else_branch, false);
+    if (!else_type)
+        return std::any();
+
+    if (!PTR_INSTANCEOF(cond_type, Type::Bool)) {
+        Logger::inst().log_error(
+            Err::ConditionNotBool,
+            *expr->condition->location,
+            "Condition expression must be of type `bool`, not `" +
+                cond_type->to_string() + "`."
+        );
+        return std::any();
+    }
+
+    // If all branches have the same type, use that type.
+    if (*then_type == *else_type) {
+        expr->type = then_type;
+    }
+    else {
+        Logger::inst().log_error(
+            Err::ConditionalBranchTypeMismatch,
+            *expr->location,
+            "Yielded expression types of conditional branches do not match."
+        );
+        Logger::inst().log_note(
+            *expr->then_branch->location,
+            "Then branch has type `" + then_type->to_string() + "`."
+        );
+        if (expr->implicit_else) {
+            Logger::inst().log_note(
+                "Implicit else branch yields a unit value with type `()`."
+            );
+        }
+        else {
+            Logger::inst().log_note(
+                *expr->else_branch->location,
+                "Else branch has type `" + else_type->to_string() + "`."
+            );
+        }
+        return std::any();
+    }
+
     return std::any();
 }
 
