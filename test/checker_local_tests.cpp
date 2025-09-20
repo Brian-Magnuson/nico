@@ -803,6 +803,24 @@ TEST_CASE("Local conditional expressions", "[checker]") {
         CHECK(errors.at(0) == Err::YieldTypeMismatch);
     }
 
+    SECTION("Conditional with many errors") {
+        // Logger::inst().set_printing_enabled(true);
+        auto file = make_test_code_file(R"(
+        if 42:
+            let a: bool = 1
+            1 + 2.0
+            yield a
+        else:
+            yield (true, a + b)
+        )");
+        auto tokens = lexer.scan(file);
+        auto ast = parser.parse(std::move(tokens));
+        global_checker.check(ast);
+        local_checker.check(ast);
+
+        CHECK(!Logger::inst().get_errors().empty());
+    }
+
     lexer.reset();
     parser.reset();
     Logger::inst().reset();

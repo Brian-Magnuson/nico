@@ -487,11 +487,26 @@ std::any LocalChecker::visit(Expr::Conditional* expr, bool as_lvalue) {
         );
         return std::any();
     }
+    // We use this flag to try and report as many errors as possible before
+    // returning.
     bool has_error = false;
-    // Check the condition, then branch, and else branch.
+
+    // Check the condition.
     auto cond_type = expr_check(expr->condition, false);
     if (!cond_type)
         has_error = true;
+    // The condition must be of type `bool`.
+    if (!has_error && !PTR_INSTANCEOF(cond_type, Type::Bool)) {
+        Logger::inst().log_error(
+            Err::ConditionNotBool,
+            *expr->condition->location,
+            "Condition expression must be of type `bool`, not `" +
+                cond_type->to_string() + "`."
+        );
+        has_error = true;
+    }
+
+    // Check the branches.
     auto then_type = expr_check(expr->then_branch, false);
     if (!then_type)
         has_error = true;
@@ -501,17 +516,6 @@ std::any LocalChecker::visit(Expr::Conditional* expr, bool as_lvalue) {
     // If there was an error in any of the branches, return early.
     if (has_error)
         return std::any();
-
-    // The condition must be of type `bool`.
-    if (!PTR_INSTANCEOF(cond_type, Type::Bool)) {
-        Logger::inst().log_error(
-            Err::ConditionNotBool,
-            *expr->condition->location,
-            "Condition expression must be of type `bool`, not `" +
-                cond_type->to_string() + "`."
-        );
-        has_error = true;
-    }
 
     // If all branches have the same type, use that type.
     if (*then_type != *else_type) {
