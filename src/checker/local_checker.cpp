@@ -217,12 +217,17 @@ std::any LocalChecker::visit(Expr::Binary* expr, bool as_lvalue) {
         return std::any();
     }
 
+    bool has_error = false;
+
     auto l_type = expr_check(expr->left, false);
     if (!l_type)
-        return std::any();
+        has_error = true;
 
     auto r_type = expr_check(expr->right, false);
     if (!r_type)
+        has_error = true;
+
+    if (has_error)
         return std::any();
 
     switch (expr->op->tok_type) {
@@ -435,12 +440,16 @@ std::any LocalChecker::visit(Expr::Tuple* expr, bool as_lvalue) {
         return std::any();
     }
     std::vector<std::shared_ptr<Type>> element_types;
+    bool has_error = false;
+
     for (auto& element : expr->elements) {
         expr_check(element, false);
         if (!element->type)
-            return std::any();
+            has_error = true;
         element_types.push_back(element->type);
     }
+    if (has_error)
+        return std::any();
     expr->type = std::make_shared<Type::Tuple>(element_types);
     return std::any();
 }
@@ -470,16 +479,30 @@ std::any LocalChecker::visit(Expr::Block* expr, bool as_lvalue) {
 }
 
 std::any LocalChecker::visit(Expr::Conditional* expr, bool as_lvalue) {
+    if (as_lvalue) {
+        Logger::inst().log_error(
+            Err::NotAPossibleLValue,
+            *expr->location,
+            "Conditional expression cannot be an lvalue."
+        );
+        return std::any();
+    }
+    bool has_error = false;
+    // Check the condition, then branch, and else branch.
     auto cond_type = expr_check(expr->condition, false);
     if (!cond_type)
-        return std::any();
+        has_error = true;
     auto then_type = expr_check(expr->then_branch, false);
     if (!then_type)
-        return std::any();
+        has_error = true;
     auto else_type = expr_check(expr->else_branch, false);
     if (!else_type)
+        has_error = true;
+    // If there was an error in any of the branches, return early.
+    if (has_error)
         return std::any();
 
+    // The condition must be of type `bool`.
     if (!PTR_INSTANCEOF(cond_type, Type::Bool)) {
         Logger::inst().log_error(
             Err::ConditionNotBool,
@@ -487,14 +510,11 @@ std::any LocalChecker::visit(Expr::Conditional* expr, bool as_lvalue) {
             "Condition expression must be of type `bool`, not `" +
                 cond_type->to_string() + "`."
         );
-        return std::any();
+        has_error = true;
     }
 
     // If all branches have the same type, use that type.
-    if (*then_type == *else_type) {
-        expr->type = then_type;
-    }
-    else {
+    if (*then_type != *else_type) {
         Logger::inst().log_error(
             Err::ConditionalBranchTypeMismatch,
             *expr->location,
@@ -515,7 +535,11 @@ std::any LocalChecker::visit(Expr::Conditional* expr, bool as_lvalue) {
                 "Else branch has type `" + else_type->to_string() + "`."
             );
         }
-        return std::any();
+        has_error = true;
+    }
+
+    if (!has_error) {
+        expr->type = then_type;
     }
 
     return std::any();

@@ -756,7 +756,7 @@ TEST_CASE("Local conditional expressions", "[checker]") {
     }
 
     SECTION("If else if branch type mismatch") {
-        Logger::inst().set_printing_enabled(true);
+        // Logger::inst().set_printing_enabled(true);
         auto file = make_test_code_file(R"(
         if false:
             1
