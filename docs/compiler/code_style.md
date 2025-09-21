@@ -34,6 +34,33 @@ For comments:
 - `//` may be used to comment out blocks of code. Some IDEs have a keyboard shortcut for this.
   - Avoid keeping commented-out code in the project.
 - Use `/* */` for longer comments.
+- Use `TODO` for things that need to be done in the future.
+- Use `FIXME` for things that need to be fixed.
+  - Try to address broken code as soon as possible rather than leaving it for later.
+
+Comments should be used:
+- When code is complex and the intent is unclear.
+- When using quirks/less-known features of the language.
+- When a more obvious implementation is not possible.
+  - E.g., "We can't do X because of Y, so we do Z instead."
+- When code appears to be missing, but is actually absent for a reason.
+  - E.g., "This check is not needed since X already does this."
+
+Comments should be professional and respectful. We generally **discourage** humorous or silly comments.
+If you choose to write humorous comments:
+- Keep it respectful; nothing offensive or inappropriate.
+- Write them only inside functions (function documentation comments do not count).
+- Keep it relevant to the code.
+- Keep it short; no more than 1 line.
+- Avoid sarcasm, as it can be easily misinterpreted.
+- Do not write negative comments, complaints, rants, or frustrations.
+  - Examples of inappropriate comments:
+    - "// This code is terrible!"
+    - "// I hate writing this code!"
+    - "// I have no idea what this code does!"
+    - "// Good luck understanding this code!"
+- Avoid anything that detracts from code quality or readability.
+- Do not overdo it. Too many humorous comments can be distracting.
 
 For documentation comments:
 - Use `/** */` for documentation comments. Each line within the comment should begin with a `*` and be indented to align with the `/**`.
