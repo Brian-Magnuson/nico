@@ -40,8 +40,10 @@ void run_compile_test(
 
     std::optional<llvm::Expected<int>> return_code;
 
-    auto [out, err] =
-        capture_stdout([&]() { return_code = jit->run_main(0, nullptr); });
+    auto [out, err] = capture_stdout(
+        [&]() { return_code = jit->run_main(0, nullptr); },
+        4096
+    );
 
     if (expected_output) {
         CHECK(out == *expected_output);
@@ -576,6 +578,175 @@ TEST_CASE("JIT tuple expressions", "[jit]") {
             jit,
             R"(let var x = (1, (2, 3)) x.1.0 = 4 x.1.1 = 5 printout x.0, ",", x.1.0, ",", x.1.1)",
             "1,4,5"
+        );
+    }
+
+    lexer.reset();
+    parser.reset();
+    codegen.reset();
+    jit->reset();
+}
+
+TEST_CASE("JIT if expressions", "[jit]") {
+    Lexer lexer;
+    Parser parser;
+    GlobalChecker global_checker;
+    LocalChecker local_checker;
+    CodeGenerator codegen;
+    std::unique_ptr<IJit> jit = std::make_unique<SimpleJit>();
+    Logger::inst().set_printing_enabled(true);
+
+    SECTION("If expression 1") {
+        // codegen.set_ir_printing_enabled(true);
+        run_compile_test(
+            lexer,
+            parser,
+            global_checker,
+            local_checker,
+            codegen,
+            jit,
+            R"(if true { printout "true" } else { printout "false" })",
+            "true"
+        );
+    }
+
+    SECTION("If expression 2") {
+        run_compile_test(
+            lexer,
+            parser,
+            global_checker,
+            local_checker,
+            codegen,
+            jit,
+            R"(if false { printout "true" } else { printout "false" })",
+            "false"
+        );
+    }
+
+    SECTION("If expression 3") {
+        run_compile_test(
+            lexer,
+            parser,
+            global_checker,
+            local_checker,
+            codegen,
+            jit,
+            R"(let var x = 1 if true { x = 2 } else { x = 3 } printout x)",
+            "2"
+        );
+    }
+
+    SECTION("If expression 4") {
+        run_compile_test(
+            lexer,
+            parser,
+            global_checker,
+            local_checker,
+            codegen,
+            jit,
+            R"(
+            if true:
+                printout "true"
+            else:
+                printout "false"
+            )",
+            "true"
+        );
+    }
+
+    SECTION("If expression 5") {
+        run_compile_test(
+            lexer,
+            parser,
+            global_checker,
+            local_checker,
+            codegen,
+            jit,
+            R"(
+            let x = if true then 1 else 2
+            printout x
+            )",
+            "1"
+        );
+    }
+
+    SECTION("If expression 6") {
+        run_compile_test(
+            lexer,
+            parser,
+            global_checker,
+            local_checker,
+            codegen,
+            jit,
+            R"(
+            let x = if false { yield 2 + 3 } else { yield 2 * 3 }
+            printout x
+            )",
+            "6"
+        );
+    }
+
+    SECTION("If expression 7") {
+        run_compile_test(
+            lexer,
+            parser,
+            global_checker,
+            local_checker,
+            codegen,
+            jit,
+            R"(
+            if true { printout "1" }
+            if false { printout "2" }
+            if true { printout "3" }
+            )",
+            "13"
+        );
+    }
+
+    SECTION("If else if expression 1") {
+        codegen.set_ir_printing_enabled(true);
+        run_compile_test(
+            lexer,
+            parser,
+            global_checker,
+            local_checker,
+            codegen,
+            jit,
+            R"(
+            let var x = 1
+            if false {
+                x = 2
+            } else if true {
+                x = 3
+            } else {
+                x = 4
+            }
+            printout x
+            )",
+            "3"
+        );
+    }
+
+    SECTION("If else if expression 2") {
+        run_compile_test(
+            lexer,
+            parser,
+            global_checker,
+            local_checker,
+            codegen,
+            jit,
+            R"(
+            let x =
+            if false {
+                yield 2
+            } else if false {
+                yield 3
+            } else {
+                yield 4
+            }
+            printout x
+            )",
+            "4"
         );
     }
 

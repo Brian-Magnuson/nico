@@ -595,9 +595,47 @@ std::any CodeGenerator::visit(Expr::Block* expr, bool as_lvalue) {
 }
 
 std::any CodeGenerator::visit(Expr::Conditional* expr, bool as_lvalue) {
-    // TODO: Implement conditional expressions.
-    panic("CodeGenerator::visit(Expr::Conditional*): Not implemented yet.");
-    return std::any();
+    llvm::Value* yield_allocation = builder->CreateAlloca(
+        expr->type->get_llvm_type(builder),
+        nullptr,
+        "$yieldval"
+    );
+    llvm::BasicBlock* current_block = builder->GetInsertBlock();
+    llvm::Function* current_function = current_block->getParent();
+
+    llvm::BasicBlock* then_block =
+        llvm::BasicBlock::Create(*context, "then", current_function);
+    llvm::BasicBlock* else_block =
+        llvm::BasicBlock::Create(*context, "else", current_function);
+    llvm::BasicBlock* merge_block =
+        llvm::BasicBlock::Create(*context, "endif", current_function);
+
+    auto condition =
+        std::any_cast<llvm::Value*>(expr->condition->accept(this, false));
+    builder->CreateCondBr(condition, then_block, else_block);
+
+    // Then block
+    builder->SetInsertPoint(then_block);
+    auto then_value =
+        std::any_cast<llvm::Value*>(expr->then_branch->accept(this, false));
+    builder->CreateStore(then_value, yield_allocation);
+    builder->CreateBr(merge_block);
+
+    // Else block
+    builder->SetInsertPoint(else_block);
+    auto else_value =
+        std::any_cast<llvm::Value*>(expr->else_branch->accept(this, false));
+    builder->CreateStore(else_value, yield_allocation);
+    builder->CreateBr(merge_block);
+
+    // Merge block
+    builder->SetInsertPoint(merge_block);
+    llvm::Value* yield_value = builder->CreateLoad(
+        expr->type->get_llvm_type(builder),
+        yield_allocation
+    );
+
+    return yield_value;
 }
 
 // MARK: Interface
