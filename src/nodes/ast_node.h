@@ -166,6 +166,37 @@ public:
 };
 
 /**
+ * @brief A logical expression.
+ *
+ * Logical expressions are expressions with two operands and a logical
+ * operator (and, or).
+ *
+ * Although structurally similar to binary expressions, a separate class is used
+ * due to the additional short-circuiting semantics required during codegen.
+ */
+class Expr::Logical : public Expr {
+public:
+    // The left operand expression.
+    std::shared_ptr<Expr> left;
+    // The operator token.
+    std::shared_ptr<Token> op;
+    // The right operand expression.
+    std::shared_ptr<Expr> right;
+
+    Logical(
+        std::shared_ptr<Expr> left, std::shared_ptr<Token> op,
+        std::shared_ptr<Expr> right
+    )
+        : left(left), op(op), right(right) {
+        location = &op->location;
+    }
+
+    std::any accept(Visitor* visitor, bool as_lvalue) override {
+        return visitor->visit(this, as_lvalue);
+    }
+};
+
+/**
  * @brief A binary expression.
  *
  * Binary expressions are expressions with two operands and an operator.

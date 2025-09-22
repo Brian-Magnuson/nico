@@ -207,6 +207,12 @@ std::any LocalChecker::visit(Expr::Assign* expr, bool as_lvalue) {
     return std::any();
 }
 
+std::any LocalChecker::visit(Expr::Logical* expr, bool as_lvalue) {
+    // TODO: Implement logical expressions.
+    panic("LocalChecker::visit(Expr::Logical*): Not implemented yet.");
+    return std::any();
+}
+
 std::any LocalChecker::visit(Expr::Binary* expr, bool as_lvalue) {
     if (as_lvalue) {
         Logger::inst().log_error(

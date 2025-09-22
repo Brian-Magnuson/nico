@@ -350,6 +350,13 @@ std::any CodeGenerator::visit(Expr::Assign* expr, bool as_lvalue) {
     return right;
 }
 
+std::any CodeGenerator::visit(Expr::Logical* expr, bool as_lvalue) {
+    llvm::Value* result = nullptr;
+    // TODO: Implement logical expressions.
+    panic("CodeGenerator::visit(Expr::Logical*): Not implemented yet.");
+    return result;
+}
+
 std::any CodeGenerator::visit(Expr::Binary* expr, bool as_lvalue) {
     llvm::Value* result = nullptr;
     auto left = std::any_cast<llvm::Value*>(expr->left->accept(this, false));

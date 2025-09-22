@@ -46,6 +46,7 @@ class LocalChecker : public Stmt::Visitor,
     std::any visit(Stmt::Eof* stmt) override;
 
     std::any visit(Expr::Assign* expr, bool as_lvalue) override;
+    std::any visit(Expr::Logical* expr, bool as_lvalue) override;
     std::any visit(Expr::Binary* expr, bool as_lvalue) override;
     std::any visit(Expr::Unary* expr, bool as_lvalue) override;
     std::any visit(Expr::Deref* expr, bool as_lvalue) override;

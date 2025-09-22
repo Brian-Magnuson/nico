@@ -233,6 +233,7 @@ public:
     class IPLValue;
 
     class Assign;
+    class Logical;
     class Binary;
     class Unary;
     class Deref;
@@ -254,6 +255,7 @@ public:
     class Visitor {
     public:
         virtual std::any visit(Assign* expr, bool as_lvalue) = 0;
+        virtual std::any visit(Logical* expr, bool as_lvalue) = 0;
         virtual std::any visit(Binary* expr, bool as_lvalue) = 0;
         virtual std::any visit(Unary* expr, bool as_lvalue) = 0;
         virtual std::any visit(Deref* expr, bool as_lvalue) = 0;

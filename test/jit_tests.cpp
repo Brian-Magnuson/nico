@@ -704,7 +704,7 @@ TEST_CASE("JIT if expressions", "[jit]") {
     }
 
     SECTION("If else if expression 1") {
-        codegen.set_ir_printing_enabled(true);
+        // codegen.set_ir_printing_enabled(true);
         run_compile_test(
             lexer,
             parser,
