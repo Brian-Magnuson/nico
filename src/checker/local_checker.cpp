@@ -208,8 +208,45 @@ std::any LocalChecker::visit(Expr::Assign* expr, bool as_lvalue) {
 }
 
 std::any LocalChecker::visit(Expr::Logical* expr, bool as_lvalue) {
-    // TODO: Implement logical expressions.
-    panic("LocalChecker::visit(Expr::Logical*): Not implemented yet.");
+    if (as_lvalue) {
+        Logger::inst().log_error(
+            Err::NotAPossibleLValue,
+            expr->op->location,
+            "Logical expression cannot be an lvalue."
+        );
+        return std::any();
+    }
+
+    bool has_error = false;
+
+    auto l_type = expr_check(expr->left, false);
+    if (!l_type)
+        has_error = true;
+    else if (!PTR_INSTANCEOF(l_type, Type::Bool)) {
+        Logger::inst().log_error(
+            Err::NoOperatorOverload,
+            expr->op->location,
+            "Left operand must be of type `bool`."
+        );
+        has_error = true;
+    }
+
+    auto r_type = expr_check(expr->right, false);
+    if (!r_type)
+        has_error = true;
+    else if (!PTR_INSTANCEOF(r_type, Type::Bool)) {
+        Logger::inst().log_error(
+            Err::NoOperatorOverload,
+            expr->op->location,
+            "Right operand must be of type `bool`."
+        );
+        has_error = true;
+    }
+
+    if (has_error)
+        return std::any();
+
+    expr->type = expr->left->type; // The result type is `Bool`.
     return std::any();
 }
 
@@ -300,6 +337,17 @@ std::any LocalChecker::visit(Expr::Unary* expr, bool as_lvalue) {
             return std::any();
         }
         expr->type = r_type;
+        return std::any();
+    case Tok::KwNot:
+        if (!PTR_INSTANCEOF(r_type, Type::Bool)) {
+            Logger::inst().log_error(
+                Err::NoOperatorOverload,
+                expr->op->location,
+                "Operand must be of type `bool`."
+            );
+            return std::any();
+        }
+        expr->type = r_type; // The result type is `Bool`.
         return std::any();
     default:
         panic(
