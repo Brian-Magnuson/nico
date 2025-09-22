@@ -279,7 +279,7 @@ std::optional<std::shared_ptr<Expr>> Parser::logical_and() {
         auto right = equality();
         if (!right)
             return std::nullopt;
-        left = std::make_shared<Expr::Binary>(*left, op, *right);
+        left = std::make_shared<Expr::Logical>(*left, op, *right);
     }
     return left;
 }
@@ -293,7 +293,7 @@ std::optional<std::shared_ptr<Expr>> Parser::logical_or() {
         auto right = logical_and();
         if (!right)
             return std::nullopt;
-        left = std::make_shared<Expr::Binary>(*left, op, *right);
+        left = std::make_shared<Expr::Logical>(*left, op, *right);
     }
     return left;
 }
