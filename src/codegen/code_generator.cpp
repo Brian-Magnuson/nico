@@ -352,8 +352,55 @@ std::any CodeGenerator::visit(Expr::Assign* expr, bool as_lvalue) {
 
 std::any CodeGenerator::visit(Expr::Logical* expr, bool as_lvalue) {
     llvm::Value* result = nullptr;
-    // TODO: Implement logical expressions.
-    panic("CodeGenerator::visit(Expr::Logical*): Not implemented yet.");
+    llvm::BasicBlock* current_block = builder->GetInsertBlock();
+    llvm::Function* current_function = current_block->getParent();
+
+    llvm::BasicBlock* then_block =
+        llvm::BasicBlock::Create(*context, "logic_then", current_function);
+    llvm::BasicBlock* skip_block =
+        llvm::BasicBlock::Create(*context, "logic_skip", current_function);
+    llvm::BasicBlock* merge_block =
+        llvm::BasicBlock::Create(*context, "logic_end", current_function);
+
+    auto left = std::any_cast<llvm::Value*>(expr->left->accept(this, false));
+
+    // This will store the value to use when skipping the right side; either
+    // true or false
+    llvm::Value* skip_val = nullptr;
+
+    if (expr->op->tok_type == Tok::KwAnd) {
+        skip_val = llvm::ConstantInt::getFalse(*context);
+        builder->CreateCondBr(left, then_block, skip_block);
+    }
+    else if (expr->op->tok_type == Tok::KwOr) {
+        skip_val = llvm::ConstantInt::getTrue(*context);
+        builder->CreateCondBr(left, skip_block, then_block);
+    }
+    else {
+        panic(
+            "CodeGenerator::visit(Expr::Logical*): Unknown logical operator."
+        );
+        return std::any();
+    }
+
+    // then_block: evaluate right
+    builder->SetInsertPoint(then_block);
+    auto right_val =
+        std::any_cast<llvm::Value*>(expr->right->accept(this, false));
+    llvm::BasicBlock* right_block = builder->GetInsertBlock();
+    builder->CreateBr(merge_block);
+
+    // skip_block: jumps to merge (used for phi node)
+    builder->SetInsertPoint(skip_block);
+    builder->CreateBr(merge_block);
+
+    // merge_block: phi node to select the correct value
+    builder->SetInsertPoint(merge_block);
+    llvm::PHINode* phi =
+        builder->CreatePHI(expr->type->get_llvm_type(builder), 2);
+    phi->addIncoming(right_val, right_block);
+    phi->addIncoming(skip_val, skip_block);
+    result = phi;
     return result;
 }
 
@@ -611,11 +658,11 @@ std::any CodeGenerator::visit(Expr::Conditional* expr, bool as_lvalue) {
     llvm::Function* current_function = current_block->getParent();
 
     llvm::BasicBlock* then_block =
-        llvm::BasicBlock::Create(*context, "then", current_function);
+        llvm::BasicBlock::Create(*context, "cond_then", current_function);
     llvm::BasicBlock* else_block =
-        llvm::BasicBlock::Create(*context, "else", current_function);
+        llvm::BasicBlock::Create(*context, "cond_else", current_function);
     llvm::BasicBlock* merge_block =
-        llvm::BasicBlock::Create(*context, "endif", current_function);
+        llvm::BasicBlock::Create(*context, "cond_end", current_function);
 
     auto condition =
         std::any_cast<llvm::Value*>(expr->condition->accept(this, false));

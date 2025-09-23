@@ -755,3 +755,59 @@ TEST_CASE("JIT if expressions", "[jit]") {
     codegen.reset();
     jit->reset();
 }
+
+TEST_CASE("JIT logical expressions", "[jit]") {
+    Lexer lexer;
+    Parser parser;
+    GlobalChecker global_checker;
+    LocalChecker local_checker;
+    CodeGenerator codegen;
+    std::unique_ptr<IJit> jit = std::make_unique<SimpleJit>();
+    Logger::inst().set_printing_enabled(true);
+
+    SECTION("Logical OR") {
+        // codegen.set_ir_printing_enabled(true);
+        run_compile_test(
+            lexer,
+            parser,
+            global_checker,
+            local_checker,
+            codegen,
+            jit,
+            R"(let x = false printout true or x)",
+            "true"
+        );
+    }
+
+    SECTION("Logical AND") {
+        run_compile_test(
+            lexer,
+            parser,
+            global_checker,
+            local_checker,
+            codegen,
+            jit,
+            R"(let x = true printout false and x)",
+            "false"
+        );
+    }
+
+    SECTION("Logical expression with blocks") {
+        // codegen.set_ir_printing_enabled(true);
+        run_compile_test(
+            lexer,
+            parser,
+            global_checker,
+            local_checker,
+            codegen,
+            jit,
+            R"(printout true and if true then true else false)",
+            "true"
+        );
+    }
+
+    lexer.reset();
+    parser.reset();
+    codegen.reset();
+    jit->reset();
+}
