@@ -152,7 +152,7 @@ struct Location {
         if (line_start == std::string::npos) {
             line_start = 0;
         }
-        return {file->path.string(), line, start - line_start + 1};
+        return {file->path_string, line, start - line_start + 1};
     }
 };
 

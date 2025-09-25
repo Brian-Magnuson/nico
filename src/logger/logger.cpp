@@ -70,7 +70,7 @@ void Logger::print_code_at_location(
 
     std::string line = src_code.substr(line_start, line_end - line_start);
 
-    *out << location.file->path.string() << ":" << location.line << ":"
+    *out << location.file->path_string << ":" << location.line << ":"
          << (start - line_start + 1) << "\n";
 
     *out << std::setw(5) << location.line << " | " << line << "\n";

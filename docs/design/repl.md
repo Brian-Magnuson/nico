@@ -113,7 +113,7 @@ Not only do we want the REPL to perform as well as the AOT and JIT compilers, we
 
 ### Lexer
 
-- The file path name in a `CodeFile` object is now optional in all modes.
+- The file path name in a `CodeFile` object can now accept any string, not just a file path.
   - In a REPL, there is no file path name since there is no file.
 - In REPL mode, whitespace-only lines are no longer insignificant.
   - Normally, when a line contains only whitespace characters, the lexer ignores it, making no changes to left spacing.

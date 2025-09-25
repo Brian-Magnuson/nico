@@ -59,8 +59,8 @@ int main(int argc, char** argv) {
     file.read(&src_code[0], size);
 
     std::shared_ptr<CodeFile> code_file = std::make_shared<CodeFile>(
-        std::filesystem::absolute(path),
-        std::move(src_code)
+        std::move(src_code),
+        std::filesystem::absolute(path).string()
     );
 
     file.close();
