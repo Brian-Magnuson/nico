@@ -9,7 +9,8 @@
  * @brief A struct to hold the path and source code of a file.
  */
 struct CodeFile {
-    // The absolute path to the file.
+    // The location of the file. If the code came from a file, this should be
+    // the absolute path.
     const std::string path_string;
     // The source code from the file.
     const std::string src_code;

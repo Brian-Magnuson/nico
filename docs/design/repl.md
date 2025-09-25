@@ -83,7 +83,7 @@ Note that steps 1-4 are the same for all three modes.
 This gives us the opportunity to create a common interface for the front end of the compiler, which includes the lexer, parser, type checker, and code generator.
 
 ```cpp
-class FrontEnd {
+class Frontend {
     Lexer lexer;
     Parser parser;
     GlobalChecker global_checker;
@@ -146,8 +146,6 @@ For our REPL, we expect all tokens to be complete.
 - In REPL mode, the following error will be changed to trigger a pause:
   - `NotAnExpression`: This error occurs when the parser expects an expression but does not find one.
 - When using a REPL, all inputs add to the same AST until the REPL is reset.
-- In addition to the AST, the parser output will also contain an index variable indicating where the new statements begin.
-  - This index will be used by the type checkers to only visit the new statements.
 
 ### Type Checkers
 
