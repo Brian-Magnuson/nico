@@ -90,3 +90,82 @@ class FrontEnd {
     LocalChecker local_checker;
     CodeGenerator codegen;
 };
+```
+
+## REPL Mode and Statuses
+
+Because certain parts of the compiler behave differently in a REPL, it is best to think of the REPL as a separate compilation mode.
+The relevant parts of the compiler will store a boolean flag to indicate whether they are in REPL mode or not.
+
+Our REPL will also need to keep track of its current status. There are at least two possible statuses:
+- `Ready`: The REPL is ready to read a new line of input. This new line will be read and evaluated separately from any previous lines.
+- `Pause`: The REPL was not able to evaluate the previous input because it was incomplete. The REPL will read a new line of input and append it to the previous input before attempting to evaluate it again.
+
+As will be explained later, the lexer and parser are the compiler stages capable of pausing the REPL.
+Thus, they will need some way to communicate to the rest of the front end that the REPL should pause.
+Additionally, when they pause the REPL, they will be unable to provide their respective outputs (tokens and AST) as those outputs are incomplete.
+
+## Changes to the Compiler
+
+We will now discuss more precisely how the lexer, parser, and code generator will need to change to support a REPL.
+
+Not only do we want the REPL to perform as well as the AOT and JIT compilers, we also want the user experience to be as similar as possible to writing code in a file.
+
+### Lexer
+
+- The file path name in a `CodeFile` object is now optional in all modes.
+  - In a REPL, there is no file path name since there is no file.
+- In REPL mode, whitespace-only lines are no longer insignificant.
+  - Normally, when a line contains only whitespace characters, the lexer ignores it, making no changes to left spacing.
+  - In REPL mode, when using multi-line input, we want users to have better control over when an indented block is closed.
+  - If the user wants an empty line in a block, they can manually add left-spacing to keep the block open.
+- In REPL mode, the lexer will no longer automatically add dedent tokens at the end of input.
+  - Normally, we automatically add dedent tokens in case user chooses not to add an empty line at the end of a file.
+    - Empty lines have a left spacing of 0, which adds the necessary dedent tokens to close all open blocks.
+  - In REPL mode, an empty line is needed to exit multi-line input anyway, so this automatic behavior is unnecessary.
+- In REPL mode, an indent token no longer requires an increase in left spacing.
+  - An indent token will only require a colon followed by a newline.
+    - This effectively makes it impossible to trigger a `MalformedIndent` error in REPL mode.
+  - Because evaluation is triggered by pressing the Enter/Return key, the input will always have a newline with no additional characters afterward. This makes it impossible for the lexer to measure the left spacing of the next line.
+  - Note that an empty indented block is still an error. This error will be caught by the parser instead.
+- In REPL mode, the following errors will be changed to trigger a pause:
+  - `UnclosedGrouping`: This error occurs when a grouping symbol (parenthesis, bracket, or brace) is opened but not closed.
+  - `UnclosedComment`: This error occurs when a multi-line comment is opened but not closed.
+
+An incomplete token error, such as `UnexpectedEndOfNumber` or `UnterminatedStr` will still be treated as an error and not a pause.
+For our REPL, we expect all tokens to be complete.
+
+### Parser
+
+- In REPL mode, it is now an error for an indented block to be empty.
+  - Because the lexer no longer requires an increase in left spacing for an indent token, it is possible to write a block that immediately closes on the next line.
+  - We consider this an error as it may look confusing to see nothing under a block.
+  - The parser will instead catch this error by checking to see if an indent token is immediately followed by a dedent token.
+  - If the user wishes to create an empty block, they must use the `pass` statement.
+    - Comments cannot be used to create empty blocks; only the lexer can detect comments.
+- In REPL mode, the following error will be changed to trigger a pause:
+  - `NotAnExpression`: This error occurs when the parser expects an expression but does not find one.
+- When using a REPL, all inputs add to the same AST until the REPL is reset.
+- In addition to the AST, the parser output will also contain an index variable indicating where the new statements begin.
+  - This index will be used by the type checkers to only visit the new statements.
+
+### Type Checkers
+
+- When using a REPL, the global checker and local checker will reuse the same AST, including the AST nodes and symbol tree, across all lines of input until the REPL is reset.
+- When using a REPL, the type checkers will only visit statements that have been added since the last line of input was evaluated.
+  - If we check every statement, resetting the symbol tree each time, the REPL would get progressively slower as more lines of input are added.
+    - Admittedly, this slowdown would be negligible in most cases, but it is still best to avoid it.
+  - If we check every statement without resetting the symbol tree, we would get errors about redefined variables and functions.
+  - Ideally, we want to check every statement once.
+
+### Code Generator
+
+- In REPL mode, all global variables and functions will have external linkage.
+  - The REPL will function by compiling and executing each line of input as its own module.
+  - For variables and functions to be accessible across multiple lines of input, they must have external linkage.
+- When using a REPL, the code generator will reuse the same AST, including the AST nodes and symbol tree, across all lines of input until the REPL is reset.
+- In REPL mode, instead of creating a `script` function, the code generator will instead create a `repl_N` function for each line of input, where N is a counter that increments with each new line of input.
+  - This allows each line of input to be executed separately while still having access to the same global variables and functions.
+- In REPL mode, expression statements will be treated as print statements.
+  - The expression is visited the same in both cases, but the result is printed in addition to being evaluated.
+  - If the expression already prints something, those prints will still occur as normal.
