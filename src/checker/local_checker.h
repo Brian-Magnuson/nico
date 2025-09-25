@@ -5,6 +5,7 @@
 #include <memory>
 #include <vector>
 
+#include "../frontend/context.h"
 #include "../nodes/ast_node.h"
 #include "../nodes/type_node.h"
 #include "../parser/ast.h"
@@ -68,13 +69,13 @@ public:
     LocalChecker() = default;
 
     /**
-     * @brief Type checks the given AST at the local level.
+     * @brief Type checks the given context at the local level.
      *
      * This function will modify the AST to add type information to the nodes.
      *
-     * @param ast The AST to type check.
+     * @param context The front end context containing the AST to type check.
      */
-    void check(Ast& ast);
+    void check(std::unique_ptr<Context>& context);
 };
 
 #endif // NICO_LOCAL_CHECKER_H

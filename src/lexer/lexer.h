@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "../common/code_file.h"
+#include "../frontend/context.h"
 #include "token.h"
 
 /**
@@ -266,17 +267,31 @@ public:
      */
     void reset();
 
+    // /**
+    //  * @brief Scans the provided file for tokens.
+    //  *
+    //  * The lexer will be reset before scanning the file.
+    //  * After scanning, the lexer will hold onto the tokens and file pointer.
+    //  *
+    //  * @param file The file to scan.
+    //  * @return A vector of tokens scanned from the file.
+    //  */
+    // std::vector<std::shared_ptr<Token>>&
+    // scan(const std::shared_ptr<CodeFile>& file);
+
     /**
-     * @brief Scans the provided file for tokens.
+     * @brief Scans the provided file for tokens and adds them to the provided
+     * context.
      *
      * The lexer will be reset before scanning the file.
      * After scanning, the lexer will hold onto the tokens and file pointer.
      *
+     * @param context The context to add the tokens to.
      * @param file The file to scan.
-     * @return A vector of tokens scanned from the file.
      */
-    std::vector<std::shared_ptr<Token>>&
-    scan(const std::shared_ptr<CodeFile>& file);
+    void scan(
+        std::unique_ptr<Context>& context, const std::shared_ptr<CodeFile>& file
+    );
 };
 
 #endif // NICO_LEXER_H

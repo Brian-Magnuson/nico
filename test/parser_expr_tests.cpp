@@ -13,716 +13,436 @@
 #include "utils/ast_printer.h"
 #include "utils/test_utils.h"
 
-// MARK: Expr tests
+void run_parser_expr_test(
+    std::string_view src_code, const std::vector<std::string>& expected
+) {
+    auto context = std::make_unique<Context>();
+    auto file = make_test_code_file(src_code);
+    Lexer lexer;
+    lexer.scan(context, file);
+    Parser parser;
+    parser.parse(context);
+    AstPrinter printer;
+    CHECK(printer.stmts_to_strings(context->stmts) == expected);
+
+    lexer.reset();
+    parser.reset();
+    context->reset();
+    Logger::inst().reset();
+}
+
+void run_parser_expr_error_test(
+    std::string_view src_code, Err expected_error, bool print_errors = false
+) {
+    Logger::inst().set_printing_enabled(print_errors);
+
+    auto context = std::make_unique<Context>();
+    auto file = make_test_code_file(src_code);
+    Lexer lexer;
+    lexer.scan(context, file);
+    Parser parser;
+    parser.parse(context);
+
+    auto& errors = Logger::inst().get_errors();
+    REQUIRE(errors.size() >= 1);
+    CHECK(errors.at(0) == expected_error);
+
+    lexer.reset();
+    parser.reset();
+    context->reset();
+    Logger::inst().reset();
+}
+
+// MARK: Parser expr tests
 
 TEST_CASE("Parser basic", "[parser]") {
-    Lexer lexer;
-    Parser parser;
-    AstPrinter printer;
-
     SECTION("Basic 1") {
-        auto file = make_test_code_file("basic");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {
-            "(expr (nameref basic))",
-            "(stmt:eof)"
-        };
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test("basic", {"(expr (nameref basic))", "(stmt:eof)"});
     }
 
     SECTION("Basic 2") {
-        auto file = make_test_code_file("123");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {"(expr (lit 123))", "(stmt:eof)"};
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test("123", {"(expr (lit 123))", "(stmt:eof)"});
     }
-
-    lexer.reset();
-    parser.reset();
-    Logger::inst().reset();
 }
 
 TEST_CASE("Parser expressions", "[parser]") {
-    Lexer lexer;
-    Parser parser;
-    AstPrinter printer;
-
     SECTION("Unary 1") {
-        auto file = make_test_code_file("-123");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {
-            "(expr (unary - (lit 123)))",
-            "(stmt:eof)"
-        };
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test(
+            "-123",
+            {"(expr (unary - (lit 123)))", "(stmt:eof)"}
+        );
     }
 
     SECTION("Binary 1") {
-        auto file = make_test_code_file("1 + 2");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {
-            "(expr (binary + (lit 1) (lit 2)))",
-            "(stmt:eof)"
-        };
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test(
+            "1 + 2",
+            {"(expr (binary + (lit 1) (lit 2)))", "(stmt:eof)"}
+        );
     }
 
     SECTION("Binary 2") {
-        auto file = make_test_code_file("1 + 2 * 3");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {
-            "(expr (binary + (lit 1) (binary * (lit 2) (lit 3))))",
-            "(stmt:eof)"
-        };
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test(
+            "1 + 2 * 3",
+            {"(expr (binary + (lit 1) (binary * (lit 2) (lit 3))))",
+             "(stmt:eof)"}
+        );
     }
 
     SECTION("Binary 3") {
-        auto file = make_test_code_file("1 * 2 1 + 2");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {
-            "(expr (binary * (lit 1) (lit 2)))",
-            "(expr (binary + (lit 1) (lit 2)))",
-            "(stmt:eof)"
-        };
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test(
+            "1 * 2 1 + 2",
+            {"(expr (binary * (lit 1) (lit 2)))",
+             "(expr (binary + (lit 1) (lit 2)))",
+             "(stmt:eof)"}
+        );
     }
 
     SECTION("Binary 4") {
-        auto file = make_test_code_file("1 * -2 + -3");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {
-            "(expr (binary + (binary * (lit 1) (unary - (lit 2))) (unary - "
-            "(lit 3))))",
-            "(stmt:eof)"
-        };
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test(
+            "1 * -2 + -3",
+            {"(expr (binary + (binary * (lit 1) (unary - (lit 2))) (unary - "
+             "(lit 3))))",
+             "(stmt:eof)"}
+        );
     }
 
     SECTION("Logical 1") {
-        auto file = make_test_code_file("true and false");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {
-            "(expr (logical and (lit true) (lit false)))",
-            "(stmt:eof)"
-        };
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test(
+            "true and false",
+            {"(expr (logical and (lit true) (lit false)))", "(stmt:eof)"}
+        );
     }
 
     SECTION("Logical 2") {
-        auto file = make_test_code_file("true or false and false");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {
-            "(expr (logical or (lit true) (logical and (lit false) (lit "
-            "false))))",
-            "(stmt:eof)"
-        };
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test(
+            "true or false and false",
+            {"(expr (logical or (lit true) (logical and (lit false) (lit "
+             "false))))",
+             "(stmt:eof)"}
+        );
     }
 
     SECTION("Logical 3") {
-        auto file = make_test_code_file("true or not true");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {
-            "(expr (logical or (lit true) (unary not (lit true))))",
-            "(stmt:eof)"
-        };
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test(
+            "true or not true",
+            {"(expr (logical or (lit true) (unary not (lit true))))",
+             "(stmt:eof)"}
+        );
     }
 
     SECTION("Assignment 1") {
-        auto file = make_test_code_file("a = 1");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {
-            "(expr (assign (nameref a) (lit 1)))",
-            "(stmt:eof)"
-        };
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test(
+            "a = 1",
+            {"(expr (assign (nameref a) (lit 1)))", "(stmt:eof)"}
+        );
     }
 
     SECTION("Assignment 2") {
-        auto file = make_test_code_file("a = b = c");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {
-            "(expr (assign (nameref a) (assign (nameref b) (nameref c))))",
-            "(stmt:eof)"
-        };
+        run_parser_expr_test(
+            "a = b = c",
+            {"(expr (assign (nameref a) (assign (nameref b) (nameref c))))",
+             "(stmt:eof)"}
+        );
     }
-
-    lexer.reset();
-    parser.reset();
-    Logger::inst().reset();
 }
 
 TEST_CASE("Parser groupings and tuples", "[parser]") {
-    Lexer lexer;
-    Parser parser;
-    AstPrinter printer;
-
     SECTION("Grouping 1") {
-        auto file = make_test_code_file("(1)");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {"(expr (lit 1))", "(stmt:eof)"};
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test("(1)", {"(expr (lit 1))", "(stmt:eof)"});
     }
 
     SECTION("Grouping 2") {
-        auto file = make_test_code_file("(1 + 2)");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {
-            "(expr (binary + (lit 1) (lit 2)))",
-            "(stmt:eof)"
-        };
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test(
+            "(1 + 2)",
+            {"(expr (binary + (lit 1) (lit 2)))", "(stmt:eof)"}
+        );
     }
 
     SECTION("Grouping 3") {
-        auto file = make_test_code_file("(1 + 2) * 3");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {
-            "(expr (binary * (binary + (lit 1) (lit 2)) (lit 3)))",
-            "(stmt:eof)"
-        };
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test(
+            "(1 + 2) * 3",
+            {"(expr (binary * (binary + (lit 1) (lit 2)) (lit 3)))",
+             "(stmt:eof)"}
+        );
     }
 
     SECTION("Tuple unit") {
-        auto file = make_test_code_file("()");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {"(expr (tuple))", "(stmt:eof)"};
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test("()", {"(expr (tuple))", "(stmt:eof)"});
     }
 
     SECTION("Tuple 1") {
-        auto file = make_test_code_file("(1,)");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {
-            "(expr (tuple (lit 1)))",
-            "(stmt:eof)"
-        };
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test("(1,)", {"(expr (tuple (lit 1)))", "(stmt:eof)"});
     }
 
     SECTION("Tuple 2") {
-        auto file = make_test_code_file("(1, 2)");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {
-            "(expr (tuple (lit 1) (lit 2)))",
-            "(stmt:eof)"
-        };
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test(
+            "(1, 2)",
+            {"(expr (tuple (lit 1) (lit 2)))", "(stmt:eof)"}
+        );
     }
 
     SECTION("Tuple 3") {
-        auto file = make_test_code_file("(1, 2, 3,)");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {
-            "(expr (tuple (lit 1) (lit 2) (lit 3)))",
-            "(stmt:eof)"
-        };
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test(
+            "(1, 2, 3,)",
+            {"(expr (tuple (lit 1) (lit 2) (lit 3)))", "(stmt:eof)"}
+        );
     }
-
-    lexer.reset();
-    parser.reset();
-    Logger::inst().reset();
 }
 
 TEST_CASE("Parser blocks", "[parser]") {
-    Lexer lexer;
-    Parser parser;
-    AstPrinter printer;
-
     SECTION("Braced block 1") {
-        auto file = make_test_code_file("block { 123 }");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {
-            "(expr (block (expr (lit 123))))",
-            "(stmt:eof)"
-        };
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test(
+            "block { 123 }",
+            {"(expr (block (expr (lit 123))))", "(stmt:eof)"}
+        );
     }
 
     SECTION("Braced block 2") {
-        auto file = make_test_code_file("block { let a = 1 printout a }");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {
-            "(expr (block (stmt:let a (lit 1)) (stmt:print (nameref a))))",
-            "(stmt:eof)"
-        };
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test(
+            "block { let a = 1 printout a }",
+            {"(expr (block (stmt:let a (lit 1)) (stmt:print (nameref a))))",
+             "(stmt:eof)"}
+        );
     }
 
     SECTION("Braced block 3") {
-        auto file = make_test_code_file("block { 123 } 456");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {
-            "(expr (block (expr (lit 123))))",
-            "(expr (lit 456))",
-            "(stmt:eof)"
-        };
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test(
+            "block { 123 } 456",
+            {"(expr (block (expr (lit 123))))",
+             "(expr (lit 456))",
+             "(stmt:eof)"}
+        );
     }
 
     SECTION("Indented block 1") {
-        auto file = make_test_code_file(R"(
-block:
-    123
-)");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {
-            "(expr (block (expr (lit 123))))",
-            "(stmt:eof)"
-        };
-
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test(
+            "block:\n    123\n",
+            {"(expr (block (expr (lit 123))))", "(stmt:eof)"}
+        );
     }
 
     SECTION("Indented block 2") {
-        auto file = make_test_code_file(R"(
-block:
-    let a = 1
-    printout a
-)");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {
-            "(expr (block (stmt:let a (lit 1)) (stmt:print (nameref a))))",
-            "(stmt:eof)"
-        };
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test(
+            "block:\n    let a = 1\n    printout a\n",
+            {"(expr (block (stmt:let a (lit 1)) (stmt:print (nameref a))))",
+             "(stmt:eof)"}
+        );
     }
 
     SECTION("Indented block 3") {
-        auto file = make_test_code_file(R"(
-block:
-    123
-456
-)");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {
-            "(expr (block (expr (lit 123))))",
-            "(expr (lit 456))",
-            "(stmt:eof)"
-        };
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test(
+            "block:\n    123\n456\n",
+            {"(expr (block (expr (lit 123))))",
+             "(expr (lit 456))",
+             "(stmt:eof)"}
+        );
     }
 
     SECTION("Block with pass") {
-        auto file = make_test_code_file(R"(
-block:
-    pass
-)");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {
-            "(expr (block (stmt:pass)))",
-            "(stmt:eof)"
-        };
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test(
+            "block:\n    pass\n",
+            {"(expr (block (stmt:pass)))", "(stmt:eof)"}
+        );
     }
 
     SECTION("Block with comments") {
-        auto file = make_test_code_file(R"(
-    block:
-        // comment
-        )");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {"(expr (block))", "(stmt:eof)"};
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test(
+            "    block:\n        // comment\n",
+            {"(expr (block))", "(stmt:eof)"}
+        );
     }
 
     SECTION("Empty block") {
-        auto file = make_test_code_file("block { }");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {"(expr (block))", "(stmt:eof)"};
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test("block { }", {"(expr (block))", "(stmt:eof)"});
     }
-
-    lexer.reset();
-    parser.reset();
-    Logger::inst().reset();
 }
 
 TEST_CASE("Parser tuples", "[parser]") {
-    Lexer lexer;
-    Parser parser;
-    AstPrinter printer;
-
     SECTION("Tuple 1") {
-        auto file = make_test_code_file("(1,)");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {
-            "(expr (tuple (lit 1)))",
-            "(stmt:eof)"
-        };
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test("(1,)", {"(expr (tuple (lit 1)))", "(stmt:eof)"});
     }
 
     SECTION("Tuple 2") {
-        auto file = make_test_code_file("(1, 2)");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {
-            "(expr (tuple (lit 1) (lit 2)))",
-            "(stmt:eof)"
-        };
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test(
+            "(1, 2)",
+            {"(expr (tuple (lit 1) (lit 2)))", "(stmt:eof)"}
+        );
     }
 
     SECTION("Tuple 3") {
-        auto file = make_test_code_file("(1, 2, 3,)");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {
-            "(expr (tuple (lit 1) (lit 2) (lit 3)))",
-            "(stmt:eof)"
-        };
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test(
+            "(1, 2, 3,)",
+            {"(expr (tuple (lit 1) (lit 2) (lit 3)))", "(stmt:eof)"}
+        );
     }
 
     SECTION("Not a tuple") {
-        auto file = make_test_code_file("(1)");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {"(expr (lit 1))", "(stmt:eof)"};
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test("(1)", {"(expr (lit 1))", "(stmt:eof)"});
     }
 
     SECTION("Empty tuple") {
-        auto file = make_test_code_file("()");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {"(expr (tuple))", "(stmt:eof)"};
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test("()", {"(expr (tuple))", "(stmt:eof)"});
     }
-
-    lexer.reset();
-    parser.reset();
-    Logger::inst().reset();
 }
 
 TEST_CASE("Parser dot access", "[parser]") {
-    Lexer lexer;
-    Parser parser;
-    AstPrinter printer;
-
     SECTION("Dot access 1") {
-        auto file = make_test_code_file("a.b");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {
-            "(expr (access . (nameref a) b))",
-            "(stmt:eof)"
-        };
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test(
+            "a.b",
+            {"(expr (access . (nameref a) b))", "(stmt:eof)"}
+        );
     }
 
     SECTION("Dot access 2") {
-        auto file = make_test_code_file("a.b.c");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {
-            "(expr (access . (access . (nameref a) b) c))",
-            "(stmt:eof)"
-        };
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test(
+            "a.b.c",
+            {"(expr (access . (access . (nameref a) b) c))", "(stmt:eof)"}
+        );
     }
 
     SECTION("Dot access 3") {
-        auto file = make_test_code_file("a.b.c.d");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {
-            "(expr (access . (access . (access . (nameref a) b) c) d))",
-            "(stmt:eof)"
-        };
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test(
+            "a.b.c.d",
+            {"(expr (access . (access . (access . (nameref a) b) c) d))",
+             "(stmt:eof)"}
+        );
     }
 
     SECTION("Dot access with integer") {
-        auto file = make_test_code_file("a.b.0");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {
-            "(expr (access . (access . (nameref a) b) 0))",
-            "(stmt:eof)"
-        };
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test(
+            "a.b.0",
+            {"(expr (access . (access . (nameref a) b) 0))", "(stmt:eof)"}
+        );
     }
 
     SECTION("Dot access with multiple integers") {
-        auto file = make_test_code_file("a.0.1");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {
-            "(expr (access . (access . (nameref a) 0) 1))",
-            "(stmt:eof)"
-        };
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test(
+            "a.0.1",
+            {"(expr (access . (access . (nameref a) 0) 1))", "(stmt:eof)"}
+        );
     }
 
     SECTION("Dot access with many integers") {
-        auto file = make_test_code_file("a.0.1.2");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {
-            "(expr (access . (access . (access . (nameref a) 0) 1) 2))",
-            "(stmt:eof)"
-        };
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test(
+            "a.0.1.2",
+            {"(expr (access . (access . (access . (nameref a) 0) 1) 2))",
+             "(stmt:eof)"}
+        );
     }
-
-    lexer.reset();
-    parser.reset();
-    Logger::inst().reset();
 }
 
 TEST_CASE("Parser if expressions", "[parser]") {
-    Lexer lexer;
-    Parser parser;
-    AstPrinter printer;
-
     SECTION("If expression 1") {
-        auto file = make_test_code_file(R"(
-        if true then 123
-        )");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {
-            "(expr (if (lit true) then (lit 123) else (tuple)))",
-            "(stmt:eof)"
-        };
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test(
+            "if true then 123\n",
+            {"(expr (if (lit true) then (lit 123) else (tuple)))", "(stmt:eof)"}
+        );
     }
 
     SECTION("If expression 2") {
-        auto file = make_test_code_file(R"(
-        if true:
-            123
-        )");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {
-            "(expr (if (lit true) then (block (expr (lit 123))) else (tuple)))",
-            "(stmt:eof)"
-        };
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test(
+            "if true:\n    123\n",
+            {"(expr (if (lit true) then (block (expr (lit 123))) else "
+             "(tuple)))",
+             "(stmt:eof)"}
+        );
     }
 
     SECTION("If expression 3") {
-        auto file = make_test_code_file(R"(
-        if true { 123 }
-        )");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {
-            "(expr (if (lit true) then (block (expr (lit 123))) else (tuple)))",
-            "(stmt:eof)"
-        };
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test(
+            "if true { 123 }\n",
+            {"(expr (if (lit true) then (block (expr (lit 123))) else "
+             "(tuple)))",
+             "(stmt:eof)"}
+        );
     }
 
     SECTION("If else expression 1") {
-        auto file = make_test_code_file(R"(
-        if true then 123 else 456
-        )");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {
-            "(expr (if (lit true) then (lit 123) else (lit 456)))",
-            "(stmt:eof)"
-        };
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test(
+            "if true then 123 else 456\n",
+            {"(expr (if (lit true) then (lit 123) else (lit 456)))",
+             "(stmt:eof)"}
+        );
     }
 
     SECTION("If else expression 2") {
-        auto file = make_test_code_file(R"(
-        if true:
-            123
-        else:
-            456
-        )");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {
-            "(expr (if (lit true) then (block (expr (lit 123))) else (block "
-            "(expr (lit 456)))))",
-            "(stmt:eof)"
-        };
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test(
+            "if true:\n    123\nelse:\n    456\n",
+            {"(expr (if (lit true) then (block (expr (lit 123))) else (block "
+             "(expr (lit 456)))))",
+             "(stmt:eof)"}
+        );
     }
 
     SECTION("If else expression 3") {
-        auto file = make_test_code_file(R"(
-        if true { 123 } else { 456 }
-        )");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {
-            "(expr (if (lit true) then (block (expr (lit 123))) else (block "
-            "(expr (lit 456)))))",
-            "(stmt:eof)"
-        };
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test(
+            "if true { 123 } else { 456 }\n",
+            {"(expr (if (lit true) then (block (expr (lit 123))) else (block "
+             "(expr (lit 456)))))",
+             "(stmt:eof)"}
+        );
     }
 
     SECTION("If else if expression 1") {
-        auto file = make_test_code_file(R"(
-        if true then 123 else if false then 456 else 789
-        )");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {
-            "(expr (if (lit true) then (lit 123) else (if (lit false) then "
-            "(lit 456) else (lit 789))))",
-            "(stmt:eof)"
-        };
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test(
+            "if true then 123 else if false then 456 else 789\n",
+            {"(expr (if (lit true) then (lit 123) else (if (lit false) then "
+             "(lit 456) else (lit 789))))",
+             "(stmt:eof)"}
+        );
     }
 
     SECTION("If else if expression 2") {
-        auto file = make_test_code_file(R"(
-        if true:
-            123
-        else if false:
-            456
-        else:
-            789
-        )");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {
-            "(expr (if (lit true) then (block (expr (lit 123))) else (if "
-            "(lit false) then (block (expr (lit 456))) else (block (expr "
-            "(lit 789))))))",
-            "(stmt:eof)"
-        };
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test(
+            "if true:\n    123\nelse if false:\n    456\nelse:\n    789\n",
+            {"(expr (if (lit true) then (block (expr (lit 123))) else (if (lit "
+             "false) then (block (expr (lit 456))) else (block (expr (lit "
+             "789))))))",
+             "(stmt:eof)"}
+        );
     }
 
     SECTION("If else if expression 3") {
-        auto file = make_test_code_file(R"(
-        if true { 123 } else if false { 456 } else { 789 }
-        )");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {
-            "(expr (if (lit true) then (block (expr (lit 123))) else (if "
-            "(lit false) then (block (expr (lit 456))) else (block (expr "
-            "(lit 789))))))",
-            "(stmt:eof)"
-        };
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test(
+            "if true { 123 } else if false { 456 } else { 789 }\n",
+            {"(expr (if (lit true) then (block (expr (lit 123))) else (if (lit "
+             "false) then (block (expr (lit 456))) else (block (expr (lit "
+             "789))))))",
+             "(stmt:eof)"}
+        );
     }
 
     SECTION("Weird if expression") {
-        auto file = make_test_code_file(R"(
-        if if true then true else false then 123 else 456
-        )");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        std::vector<std::string> expected = {
-            "(expr (if (if (lit true) then (lit true) else (lit false)) then "
-            "(lit 123) else (lit 456)))",
-            "(stmt:eof)"
-        };
-        CHECK(printer.stmts_to_strings(ast) == expected);
+        run_parser_expr_test(
+            "if if true then true else false then 123 else 456\n",
+            {"(expr (if (if (lit true) then (lit true) else (lit false)) then "
+             "(lit 123) else (lit 456)))",
+             "(stmt:eof)"}
+        );
     }
-
-    lexer.reset();
-    parser.reset();
-    Logger::inst().reset();
 }
 
 // MARK: Error tests
 
 TEST_CASE("Parser block errors", "[parser]") {
-    Lexer lexer;
-    Parser parser;
-    Logger::inst().set_printing_enabled(false);
-
     SECTION("Not a block") {
-        auto file = make_test_code_file("block 123");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        auto& errors = Logger::inst().get_errors();
-
-        REQUIRE(errors.size() >= 1);
-        CHECK(errors.at(0) == Err::NotABlock);
+        run_parser_expr_error_test("block 123", Err::NotABlock);
     }
 
     SECTION("Conditional without then or block") {
-        // Logger::inst().set_printing_enabled(true);
-        auto file = make_test_code_file(R"(
-        if true 123
-        )");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        auto& errors = Logger::inst().get_errors();
-
-        REQUIRE(errors.size() >= 1);
-        CHECK(errors.at(0) == Err::ConditionalWithoutThenOrBlock);
+        run_parser_expr_error_test(
+            "if true 123",
+            Err::ConditionalWithoutThenOrBlock
+        );
     }
-
-    lexer.reset();
-    parser.reset();
-    Logger::inst().reset();
 }
 
 TEST_CASE("Parser access errors", "[parser]") {
-    Lexer lexer;
-    Parser parser;
-    Logger::inst().set_printing_enabled(false);
-
     SECTION("Unexpected token after dot 1") {
-        auto file = make_test_code_file("a.+b");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        auto& errors = Logger::inst().get_errors();
-
-        REQUIRE(errors.size() >= 1);
-        CHECK(errors.at(0) == Err::UnexpectedTokenAfterDot);
+        run_parser_expr_error_test("a.+b", Err::UnexpectedTokenAfterDot);
     }
 
     SECTION("Unexpected token after dot 2") {
-        auto file = make_test_code_file("a.(b)");
-        auto tokens = lexer.scan(file);
-        auto ast = parser.parse(std::move(tokens));
-        auto& errors = Logger::inst().get_errors();
-
-        REQUIRE(errors.size() >= 1);
-        CHECK(errors.at(0) == Err::UnexpectedTokenAfterDot);
+        run_parser_expr_error_test("a.(b)", Err::UnexpectedTokenAfterDot);
     }
-
-    lexer.reset();
-    parser.reset();
-    Logger::inst().reset();
 }

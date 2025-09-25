@@ -98,8 +98,9 @@ Because certain parts of the compiler behave differently in a REPL, it is best t
 The relevant parts of the compiler will store a boolean flag to indicate whether they are in REPL mode or not.
 
 Our REPL will also need to keep track of its current status. There are at least two possible statuses:
-- `Ready`: The REPL is ready to read a new line of input. This new line will be read and evaluated separately from any previous lines.
+- `OK`: The REPL is ready to read a new line of input. This new line will be read and evaluated separately from any previous lines.
 - `Pause`: The REPL was not able to evaluate the previous input because it was incomplete. The REPL will read a new line of input and append it to the previous input before attempting to evaluate it again.
+  - Note: Resuming from a pause doesn't actually mean the lexer and parser will continue from where they left off. They will start over from the beginning of the combined input.
 
 As will be explained later, the lexer and parser are the compiler stages capable of pausing the REPL.
 Thus, they will need some way to communicate to the rest of the front end that the REPL should pause.

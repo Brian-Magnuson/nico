@@ -4,20 +4,20 @@
 #include <memory>
 #include <vector>
 
-#include "../parser/ast.h"
+#include "../frontend/context.h"
 
 class GlobalChecker {
 public:
     GlobalChecker() = default;
 
     /**
-     * @brief Type checks the given AST at the global level.
+     * @brief Type checks the given context at the global level.
      *
      * This function will modify the AST to add type information to the nodes.
      *
-     * @param ast The AST to type check.
+     * @param context The front end context containing the AST to type check.
      */
-    void check(Ast& ast) { return; }
+    void check(std::unique_ptr<Context>& context) { return; }
 };
 
 #endif // NICO_GLOBAL_CHECKER_H

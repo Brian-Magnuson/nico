@@ -7,9 +7,9 @@
 #include <unordered_map>
 #include <vector>
 
+#include "../frontend/context.h"
 #include "../lexer/token.h"
 #include "../nodes/ast_node.h"
-#include "ast.h"
 
 /**
  * @brief A parser to parse a vector of tokens into an abstract syntax tree.
@@ -270,15 +270,24 @@ public:
      */
     void reset();
 
+    // /**
+    //  * Parses the vector of tokens into an abstract syntax tree.
+    //  *
+    //  * The parser will be reset before parsing.
+    //  *
+    //  * @param tokens (Requires move) The vector of tokens to parse.
+    //  * @return Ast The parsed abstract syntax tree.
+    //  */
+    // Ast parse(const std::vector<std::shared_ptr<Token>>&& tokens);
+
     /**
-     * Parses the vector of tokens into an abstract syntax tree.
+     * @brief Parses the vector of tokens contained in the provided context into
+     * an AST.
      *
-     * The parser will be reset before parsing.
-     *
-     * @param tokens (Requires move) The vector of tokens to parse.
-     * @return Ast The parsed abstract syntax tree.
+     * The tokens will be moved from the context into the parser.
+     * Upon success, the parsed AST will be appended to the context's AST.
      */
-    Ast parse(const std::vector<std::shared_ptr<Token>>&& tokens);
+    void parse(std::unique_ptr<Context>& context);
 };
 
 #endif // NICO_PARSER_H

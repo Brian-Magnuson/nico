@@ -13,68 +13,15 @@
 #include "../codegen/code_generator.h"
 #include "../common/code_file.h"
 #include "../lexer/lexer.h"
-#include "../lexer/token.h"
-#include "../nodes/ast_node.h"
 #include "../parser/parser.h"
-#include "../parser/symbol_tree.h"
+#include "context.h"
 
 /**
  * @brief The compiler front end, which includes the lexer, parser, type
  * checkers, and code generator.
  */
 class Frontend {
-public:
-    /**
-     * @brief The status of the front end.
-     */
-    enum class Status {
-        // The front end is ready to accept input.
-        OK,
-        // The front end could not complete processing, but can try again after
-        // receiving more input.
-        Pause,
-        // The front end encountered an unrecoverable error and cannot continue.
-        Error
-    };
 
-    /**
-     * @brief A front end context, which contains the current status, AST, and
-     * symbol tree.
-     */
-    struct Context {
-        // The current status of the front end.
-        Status status = Status::OK;
-        // The AST containing all statements processed so far.
-        std::vector<std::shared_ptr<Stmt>> stmts;
-        // The number of statements at the beginning of `stmts` that have been
-        // type-checked.
-        size_t stmts_checked = 0;
-        // The symbol tree used for type checking.
-        std::shared_ptr<SymbolTree> symbol_tree;
-
-        // The generated LLVM module.
-        std::unique_ptr<llvm::Module> ir_module = nullptr;
-        // The LLVM context used to generate the module.
-        std::unique_ptr<llvm::LLVMContext> context = nullptr;
-
-        Context() { reset(); }
-
-        /**
-         * @brief Resets the context to its initial state.
-         *
-         * Useful for resetting the front end.
-         */
-        void reset() {
-            status = Status::OK;
-            stmts.clear();
-            stmts_checked = 0;
-            symbol_tree = std::make_shared<SymbolTree>();
-            ir_module = nullptr;
-            context = nullptr;
-        }
-    };
-
-private:
     // The lexer. Scans source code into tokens.
     Lexer lexer;
     // The parser. Parses tokens into an AST.
@@ -109,13 +56,50 @@ public:
     compile(const std::shared_ptr<CodeFile>& file, bool repl_mode = false);
 
     /**
-     * @brief Resets the front end context to its initial state.
+     * @brief Sets whether the code generator should use panic recovery.
+     *
+     * If setting panic recoverable, make sure to call this function before any
+     * code is generated.
+     *
+     * Normally, panics cause the program to terminate. But this makes the
+     * program difficult to test. So we provide a means to make a panic
+     * "recoverable".
+     *
+     * When panic recoverable is true, the program will generate instructions to
+     * call setjmp and longjmp. These behave similar to throw and catch in C++.
+     *
+     * @param value True to enable panic recovery, false to disable it.
+     */
+    void set_panic_recoverable(bool value) {
+        codegen.set_panic_recoverable(value);
+    }
+
+    /**
+     * @brief Sets whether the code generator should print the generated IR just
+     * before verification.
+     *
+     * This is useful for debugging/testing purposes.
+     * Make sure to call this function before any code is generated.
+     *
+     * @param value True to enable IR printing, false to disable it.
+     */
+    void set_ir_printing_enabled(bool value) {
+        codegen.set_ir_printing_enabled(value);
+    }
+
+    /**
+     * @brief Resets the front end to its initial state.
      *
      * This will clear the AST and symbol tree, eliminating all statements and
      * symbols.
      * Useful for REPLs to clear the current state.
      */
-    void reset() { context->reset(); }
+    void reset() {
+        lexer.reset();
+        parser.reset();
+        codegen.reset();
+        context->reset();
+    }
 };
 
 #endif // NICO_FRONTEND_H

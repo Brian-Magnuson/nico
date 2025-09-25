@@ -664,9 +664,16 @@ std::any LocalChecker::visit(Annotation::Tuple* annotation) {
     return type;
 }
 
-void LocalChecker::check(Ast& ast) {
-    symbol_tree = ast.symbol_tree;
-    for (auto& stmt : ast.stmts) {
+void LocalChecker::check(std::unique_ptr<Context>& context) {
+    symbol_tree = context->symbol_tree;
+    for (auto& stmt : context->stmts) {
         stmt->accept(this);
+    }
+
+    if (Logger::inst().get_errors().empty()) {
+        context->status = Context::Status::OK;
+    }
+    else {
+        context->status = Context::Status::Error;
     }
 }

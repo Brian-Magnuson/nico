@@ -54,6 +54,7 @@ set(CODEGEN_SRC
     src/codegen/code_generator.cpp
 )
 set(COMPILER_SRC
+    src/frontend/frontend.cpp
     src/compiler/emitter.cpp
     src/compiler/jit.cpp
     src/compiler/optimizer.cpp

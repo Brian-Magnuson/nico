@@ -12,6 +12,7 @@
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 
+#include "../frontend/context.h"
 #include "../lexer/token.h"
 #include "../nodes/ast_node.h"
 #include "../parser/ast.h"
@@ -26,7 +27,7 @@
  */
 class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
     // The LLVM context.
-    std::unique_ptr<llvm::LLVMContext> context;
+    std::unique_ptr<llvm::LLVMContext> llvm_context;
     // The LLVM Module that will be generated.
     std::unique_ptr<llvm::Module> ir_module;
     // The IR builder used to generate the IR; always set the insertion point
@@ -104,35 +105,19 @@ class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
 
 public:
     /**
-     * @brief The output of the code generator, containing the generated LLVM
-     * module and context.
-     *
-     * This struct has no additional functions; it is simply a wrapper for both
-     * the module and context.
-     *
-     * Objects of this type are NOT copy-assignable/copy-constructible.
-     * Use `std::move` to transfer ownership.
-     */
-    struct Output {
-        // The generated LLVM module.
-        std::unique_ptr<llvm::Module> module;
-        // The LLVM context used to generate the module.
-        std::unique_ptr<llvm::LLVMContext> context;
-
-        Output(
-            std::unique_ptr<llvm::Module> mod,
-            std::unique_ptr<llvm::LLVMContext> ctx
-        )
-            : module(std::move(mod)), context(std::move(ctx)) {}
-    };
-
-    /**
      * @brief Constructs a code generator with a new LLVM context and module.
      */
     CodeGenerator() { reset(); }
 
+    // Move constructors and move assignment are disabled due to LLVM context
+    // and module complexities.
+    CodeGenerator(CodeGenerator&&) = delete;
+    CodeGenerator(const CodeGenerator&) = delete;
+    CodeGenerator& operator=(CodeGenerator&&) = delete;
+    CodeGenerator& operator=(const CodeGenerator&) = delete;
+
     /**
-     * @brief Generate the LLVM IR for the given AST statements.
+     * @brief Generate the LLVM IR for the given frontend context.
      *
      * This method traverses the AST and generates the corresponding LLVM IR.
      * A `script` function will be generated, which can be called to "run" the
@@ -142,9 +127,10 @@ public:
      * If the goal is to generate a complete executable module, use
      * `generate_executable_ir` instead.
      *
-     * @param ast The AST to generate IR for.
+     * @param context The front end context containing the AST to generate IR
+     * for.
      */
-    void generate_script(const Ast& ast);
+    void generate_script(const std::unique_ptr<Context>& context);
 
     /**
      * @brief Generates the LLVM IR for the main function.
@@ -163,10 +149,9 @@ public:
      * @brief Verify the generated LLVM IR for correctness.
      *
      * This method uses LLVM's built-in verification to check the generated IR
-     * for correctness. If the IR is invalid, an error message will be logged
-     * and false will be returned.
+     * for correctness.
      *
-     * @return true if the IR is valid, false otherwise.
+     * @return True if the IR is valid, false otherwise.
      */
     bool verify_ir();
 
@@ -186,27 +171,40 @@ public:
      * The resulting module will contain a `main` function, allowing it to be
      * executed as a standalone program.
      *
-     * @param ast The AST to generate IR for.
-     * @param require_verification Whether to verify the generated IR.
-     Defaults
+     * @param context The front end context containing the AST to generate IR
+     * for.
+     * @param require_verification Whether to verify the generated IR. Defaults
      * to true.
-     * @return true if the IR was generated successfully, false otherwise.
      */
-    bool
-    generate_executable_ir(const Ast& ast, bool require_verification = true);
+    void generate_executable_ir(
+        const std::unique_ptr<Context>& context,
+        bool require_verification = true
+    );
+
+    // /**
+    //  * @brief Eject the generated LLVM module and context.
+    //  *
+    //  * This method moves the generated LLVM module and context into a
+    //  * CodeGenerator::Output object and returns it.
+    //  * After calling this method, the CodeGenerator object is in an invalid
+    //  * state and should not be used.
+    //  *
+    //  * @return An Output object containing the generated LLVM module and
+    //  * context.
+    //  */
+    // Output eject() { return Output(std::move(ir_module), std::move(context));
+    // }
 
     /**
-     * @brief Eject the generated LLVM module and context.
+     * @brief Moves the generated LLVM module and context into the provided
+     * front end context.
      *
-     * This method moves the generated LLVM module and context into a
-     * CodeGenerator::Output object and returns it.
-     * After calling this method, the CodeGenerator object is in an invalid
-     * state and should not be used.
+     * Once the module and llvm context are moved into the front end context,
+     * the code generator will be reset, allowing it to be reused.
      *
-     * @return An Output object containing the generated LLVM module and
-     * context.
+     * @param context The front end context to add the module and context to.
      */
-    Output eject() { return Output(std::move(ir_module), std::move(context)); }
+    void add_module_to_context(std::unique_ptr<Context>& context);
 
     /**
      * @brief Reset the code generator to its initial state.

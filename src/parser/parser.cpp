@@ -461,9 +461,14 @@ void Parser::reset() {
     current = 0;
 }
 
-Ast Parser::parse(const std::vector<std::shared_ptr<Token>>&& tokens) {
+void Parser::parse(std::unique_ptr<Context>& context) {
+    if (context->status == Context::Status::Error) {
+        panic("Parser::parse: context is already in an error state.");
+    }
+
     reset();
-    this->tokens = std::move(tokens);
+    this->tokens = std::move(context->scanned_tokens);
+    context->scanned_tokens = {};
 
     std::vector<std::shared_ptr<Stmt>> statements;
 
@@ -477,5 +482,13 @@ Ast Parser::parse(const std::vector<std::shared_ptr<Token>>&& tokens) {
         }
     }
 
-    return Ast(statements);
+    if (Logger::inst().get_errors().empty()) {
+        context->status = Context::Status::OK;
+        // Add the statements to the context's AST.
+        context->stmts
+            .insert(context->stmts.end(), statements.begin(), statements.end());
+    }
+    else {
+        context->status = Context::Status::Error;
+    }
 }

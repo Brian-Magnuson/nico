@@ -701,8 +701,9 @@ void Lexer::reset() {
     current = 0;
 }
 
-std::vector<std::shared_ptr<Token>>&
-Lexer::scan(const std::shared_ptr<CodeFile>& file) {
+void Lexer::scan(
+    std::unique_ptr<Context>& context, const std::shared_ptr<CodeFile>& file
+) {
     reset();
     this->file = file;
 
@@ -729,5 +730,11 @@ Lexer::scan(const std::shared_ptr<CodeFile>& file) {
 
     tokens.push_back(eof_token);
 
-    return tokens;
+    if (Logger::inst().get_errors().empty()) {
+        context->status = Context::Status::OK;
+        context->scanned_tokens = std::move(tokens);
+    }
+    else {
+        context->status = Context::Status::Error;
+    }
 }
