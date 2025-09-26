@@ -17,7 +17,7 @@ public:
      *
      * @param context The front end context containing the AST to type check.
      */
-    void check(std::unique_ptr<Context>& context) { return; }
+    void check(std::unique_ptr<FrontendContext>& context) { return; }
 };
 
 #endif // NICO_GLOBAL_CHECKER_H

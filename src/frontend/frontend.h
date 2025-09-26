@@ -34,11 +34,11 @@ class Frontend {
     CodeGenerator codegen;
 
     // The unique front end context.
-    std::unique_ptr<Context> context;
+    std::unique_ptr<FrontendContext> context;
 
 public:
     Frontend()
-        : context(std::make_unique<Context>()) {}
+        : context(std::make_unique<FrontendContext>()) {}
 
     /**
      * @brief Compiles the given code file.
@@ -52,7 +52,7 @@ public:
      * @param file The code file to compile.
      * @return A unique pointer reference to the front end context.
      */
-    std::unique_ptr<Context>&
+    std::unique_ptr<FrontendContext>&
     compile(const std::shared_ptr<CodeFile>& file, bool repl_mode = false);
 
     /**

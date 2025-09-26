@@ -290,7 +290,8 @@ public:
      * @param file The file to scan.
      */
     void scan(
-        std::unique_ptr<Context>& context, const std::shared_ptr<CodeFile>& file
+        std::unique_ptr<FrontendContext>& context,
+        const std::shared_ptr<CodeFile>& file
     );
 };
 

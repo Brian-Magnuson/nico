@@ -76,14 +76,11 @@ void run_jit_test(
 
     frontend.set_ir_printing_enabled(print_ir);
 
-    std::unique_ptr<Context>& context = frontend.compile(file, false);
-    REQUIRE(context->status == Context::Status::OK);
+    std::unique_ptr<FrontendContext>& context = frontend.compile(file, false);
+    REQUIRE(context->status == FrontendContext::Status::OK);
 
     std::unique_ptr<IJit> jit = std::make_unique<SimpleJit>();
-    auto jit_err = jit->add_module(
-        std::move(context->ir_module),
-        std::move(context->llvm_context)
-    );
+    auto jit_err = jit->add_module_and_context(std::move(context->mod_ctx));
     REQUIRE(!jit_err);
 
     std::optional<llvm::Expected<int>> return_code;

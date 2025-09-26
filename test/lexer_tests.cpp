@@ -13,7 +13,7 @@
 void run_lexer_test(
     std::string_view src_code, const std::vector<Tok>& expected
 ) {
-    auto context = std::make_unique<Context>();
+    auto context = std::make_unique<FrontendContext>();
     auto file = make_test_code_file(src_code);
     Lexer lexer;
     lexer.scan(context, file);
@@ -29,7 +29,7 @@ void run_lexer_error_test(
 ) {
     Logger::inst().set_printing_enabled(print_errors);
 
-    auto context = std::make_unique<Context>();
+    auto context = std::make_unique<FrontendContext>();
     auto file = make_test_code_file(src_code);
     Lexer lexer;
     lexer.scan(context, file);

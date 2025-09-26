@@ -702,7 +702,8 @@ void Lexer::reset() {
 }
 
 void Lexer::scan(
-    std::unique_ptr<Context>& context, const std::shared_ptr<CodeFile>& file
+    std::unique_ptr<FrontendContext>& context,
+    const std::shared_ptr<CodeFile>& file
 ) {
     reset();
     this->file = file;
@@ -731,10 +732,10 @@ void Lexer::scan(
     tokens.push_back(eof_token);
 
     if (Logger::inst().get_errors().empty()) {
-        context->status = Context::Status::OK;
+        context->status = FrontendContext::Status::OK;
         context->scanned_tokens = std::move(tokens);
     }
     else {
-        context->status = Context::Status::Error;
+        context->status = FrontendContext::Status::Error;
     }
 }

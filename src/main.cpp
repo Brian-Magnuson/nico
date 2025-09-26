@@ -60,17 +60,15 @@ int main(int argc, char** argv) {
     file.close();
 
     Frontend frontend;
-    std::unique_ptr<Context>& context = frontend.compile(code_file, false);
-    if (context->status == Context::Status::Error) {
+    std::unique_ptr<FrontendContext>& context =
+        frontend.compile(code_file, false);
+    if (context->status == FrontendContext::Status::Error) {
         std::cerr << "Compilation failed; exiting...";
         return 1;
     }
 
     std::unique_ptr<IJit> jit = std::make_unique<SimpleJit>();
-    auto err = jit->add_module(
-        std::move(context->ir_module),
-        std::move(context->llvm_context)
-    );
+    auto err = jit->add_module_and_context(std::move(context->mod_ctx));
 
     auto result = jit->run_main(0, nullptr);
 

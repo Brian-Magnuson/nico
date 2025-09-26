@@ -461,8 +461,8 @@ void Parser::reset() {
     current = 0;
 }
 
-void Parser::parse(std::unique_ptr<Context>& context) {
-    if (context->status == Context::Status::Error) {
+void Parser::parse(std::unique_ptr<FrontendContext>& context) {
+    if (context->status == FrontendContext::Status::Error) {
         panic("Parser::parse: context is already in an error state.");
     }
 
@@ -483,12 +483,12 @@ void Parser::parse(std::unique_ptr<Context>& context) {
     }
 
     if (Logger::inst().get_errors().empty()) {
-        context->status = Context::Status::OK;
+        context->status = FrontendContext::Status::OK;
         // Add the statements to the context's AST.
         context->stmts
             .insert(context->stmts.end(), statements.begin(), statements.end());
     }
     else {
-        context->status = Context::Status::Error;
+        context->status = FrontendContext::Status::Error;
     }
 }

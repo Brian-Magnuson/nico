@@ -664,16 +664,16 @@ std::any LocalChecker::visit(Annotation::Tuple* annotation) {
     return type;
 }
 
-void LocalChecker::check(std::unique_ptr<Context>& context) {
+void LocalChecker::check(std::unique_ptr<FrontendContext>& context) {
     symbol_tree = context->symbol_tree;
     for (auto& stmt : context->stmts) {
         stmt->accept(this);
     }
 
     if (Logger::inst().get_errors().empty()) {
-        context->status = Context::Status::OK;
+        context->status = FrontendContext::Status::OK;
     }
     else {
-        context->status = Context::Status::Error;
+        context->status = FrontendContext::Status::Error;
     }
 }

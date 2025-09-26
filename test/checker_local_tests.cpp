@@ -25,7 +25,7 @@ void run_checker_test(
         print_errors.value_or(!expected_error.has_value())
     );
 
-    auto context = std::make_unique<Context>();
+    auto context = std::make_unique<FrontendContext>();
     auto file = make_test_code_file(src_code);
     Lexer lexer;
     lexer.scan(context, file);

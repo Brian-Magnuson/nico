@@ -8,6 +8,7 @@
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 
+#include "../codegen/ir_module_context.h"
 #include "../lexer/token.h"
 #include "../nodes/ast_node.h"
 #include "../parser/symbol_tree.h"
@@ -16,10 +17,12 @@
  * @brief A front end context, which contains the current status, AST, and
  * symbol tree.
  *
- * This struct is neither copyable nor movable. It can only be borrowed once
- * created.
+ * This class is move only. It cannot be copied.
+ *
+ * It is recommended to use a `std::unique_ptr` for this class.
  */
-struct Context {
+class FrontendContext {
+public:
     /**
      * @brief The status of the front end.
      */
@@ -44,21 +47,10 @@ struct Context {
     size_t stmts_checked = 0;
     // The symbol tree used for type checking.
     std::shared_ptr<SymbolTree> symbol_tree;
+    // The LLVM module and context used for code generation.
+    IrModuleContext mod_ctx;
 
-    // The generated LLVM module.
-    std::unique_ptr<llvm::Module> ir_module = nullptr;
-    // The LLVM context used to generate the module.
-    std::unique_ptr<llvm::LLVMContext> llvm_context = nullptr;
-
-    Context() { reset(); }
-
-    // Move constructors and move assignment are disabled due to LLVM context
-    // and module complexities.
-    Context(Context&&) = delete;
-    Context(const Context&) = delete;
-    Context& operator=(Context&&) = delete;
-    Context& operator=(const Context&) = delete;
-    // You cannot move this struct; you can only borrow it from its owner.
+    FrontendContext() { reset(); }
 
     /**
      * @brief Resets the context to its initial state.
@@ -70,8 +62,7 @@ struct Context {
         stmts.clear();
         stmts_checked = 0;
         symbol_tree = std::make_shared<SymbolTree>();
-        ir_module = nullptr;
-        llvm_context = nullptr;
+        mod_ctx.reset();
     }
 };
 

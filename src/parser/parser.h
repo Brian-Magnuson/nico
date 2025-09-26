@@ -287,7 +287,7 @@ public:
      * The tokens will be moved from the context into the parser.
      * Upon success, the parsed AST will be appended to the context's AST.
      */
-    void parse(std::unique_ptr<Context>& context);
+    void parse(std::unique_ptr<FrontendContext>& context);
 };
 
 #endif // NICO_PARSER_H

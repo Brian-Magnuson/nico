@@ -17,19 +17,20 @@
 #include "../nodes/ast_node.h"
 #include "../parser/ast.h"
 #include "block.h"
+#include "ir_module_context.h"
 
 /**
  * @brief A class to perform LLVM code generation.
+ *
+ * This class is move only. It cannot be copied.
  *
  * This class assumes that the AST has been type-checked.
  * It does not perform type-checking, it does not check for memory safety, and
  * it does not check for undefined behavior.
  */
 class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
-    // The LLVM context.
-    std::unique_ptr<llvm::LLVMContext> llvm_context;
-    // The LLVM Module that will be generated.
-    std::unique_ptr<llvm::Module> ir_module;
+    // The LLVM module and context used for code generation.
+    IrModuleContext mod_ctx;
     // The IR builder used to generate the IR; always set the insertion point
     // before using it.
     std::unique_ptr<llvm::IRBuilder<>> builder;
@@ -130,7 +131,7 @@ public:
      * @param context The front end context containing the AST to generate IR
      * for.
      */
-    void generate_script(const std::unique_ptr<Context>& context);
+    void generate_script(const std::unique_ptr<FrontendContext>& context);
 
     /**
      * @brief Generates the LLVM IR for the main function.
@@ -177,7 +178,7 @@ public:
      * to true.
      */
     void generate_executable_ir(
-        const std::unique_ptr<Context>& context,
+        const std::unique_ptr<FrontendContext>& context,
         bool require_verification = true
     );
 
@@ -204,7 +205,7 @@ public:
      *
      * @param context The front end context to add the module and context to.
      */
-    void add_module_to_context(std::unique_ptr<Context>& context);
+    void add_module_to_context(std::unique_ptr<FrontendContext>& context);
 
     /**
      * @brief Reset the code generator to its initial state.

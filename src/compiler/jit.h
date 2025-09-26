@@ -10,6 +10,8 @@
 #include <llvm/IR/Module.h>
 #include <llvm/Support/Error.h>
 
+#include "../codegen/ir_module_context.h"
+
 /**
  * @brief Interface for JIT compilation.
  *
@@ -35,21 +37,17 @@ public:
     virtual llvm::Error add_module(llvm::orc::ThreadSafeModule tsm) = 0;
 
     /**
-     * @brief Adds a module to the JIT. Accepts ownership of both Module and
-     * Context.
+     * @brief Adds an IrModuleContext to the JIT. Accepts ownership of both
+     * Module and Context.
      *
-     * By default, this method will take ownership of the provided module and
-     * context, wrap it in a ThreadSafeModule, then add it to the JIT.
-     *
-     * @param _module (Requires move) The module to be added.
-     * @param context (Requires move) The context to be added.
+     * @param mod_ctx (Requires move) The IrModuleContext to be added.
      * @return An Error indicating success or failure of the operation.
      */
-    virtual llvm::Error add_module(
-        std::unique_ptr<llvm::Module> _module,
-        std::unique_ptr<llvm::LLVMContext> context
-    ) {
-        llvm::orc::ThreadSafeModule tsm(std::move(_module), std::move(context));
+    virtual llvm::Error add_module_and_context(IrModuleContext&& mod_ctx) {
+        llvm::orc::ThreadSafeModule tsm(
+            std::move(mod_ctx.ir_module),
+            std::move(mod_ctx.llvm_context)
+        );
         return add_module(std::move(tsm));
     }
 
