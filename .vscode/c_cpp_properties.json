@@ -3,7 +3,8 @@
         {
             "name": "Linux",
             "includePath": [
-                "${workspaceFolder}/**",
+                "${workspaceFolder}/include",
+                "${workspaceFolder}/test/include",
                 "/usr/include/llvm-18",
                 "/usr/include/llvm-c-18"
             ],

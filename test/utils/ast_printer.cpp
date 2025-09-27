@@ -137,9 +137,10 @@ std::string AstPrinter::stmt_to_string(std::shared_ptr<Stmt> stmt) {
     return std::any_cast<std::string>(stmt->accept(this));
 }
 
-std::vector<std::string> AstPrinter::stmts_to_strings(const Ast& ast) {
+std::vector<std::string>
+AstPrinter::stmts_to_strings(const std::vector<std::shared_ptr<Stmt>>& ast) {
     std::vector<std::string> strings;
-    for (const auto& stmt : ast.stmts) {
+    for (const auto& stmt : ast) {
         strings.push_back(stmt_to_string(stmt));
     }
     return strings;

@@ -8,19 +8,18 @@
 
 #include <llvm/Support/Error.h>
 
-#include "../src/checker/global_checker.h"
-#include "../src/checker/local_checker.h"
-#include "../src/codegen/code_generator.h"
-#include "../src/common/code_file.h"
-#include "../src/compiler/jit.h"
-#include "../src/frontend/context.h"
-#include "../src/frontend/frontend.h"
-#include "../src/lexer/lexer.h"
-#include "../src/lexer/token.h"
-#include "../src/logger/logger.h"
-#include "../src/parser/ast.h"
-#include "../src/parser/parser.h"
-#include "utils/test_utils.h"
+#include "backend/jit.h"
+#include "frontend/code_generator.h"
+#include "frontend/frontend.h"
+#include "frontend/global_checker.h"
+#include "frontend/lexer.h"
+#include "frontend/local_checker.h"
+#include "frontend/parser.h"
+#include "frontend/utils/frontend_context.h"
+#include "shared/code_file.h"
+#include "shared/logger.h"
+#include "shared/token.h"
+#include "test_utils.h"
 
 // void run_compile_test(
 //     Lexer& lexer, Parser& parser, GlobalChecker& global_checker,

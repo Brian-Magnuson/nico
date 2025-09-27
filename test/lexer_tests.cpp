@@ -3,12 +3,12 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-#include "../src/common/code_file.h"
-#include "../src/frontend/context.h"
-#include "../src/lexer/lexer.h"
-#include "../src/lexer/token.h"
-#include "../src/logger/logger.h"
-#include "utils/test_utils.h"
+#include "frontend/lexer.h"
+#include "frontend/utils/frontend_context.h"
+#include "shared/code_file.h"
+#include "shared/logger.h"
+#include "shared/token.h"
+#include "test_utils.h"
 
 void run_lexer_test(
     std::string_view src_code, const std::vector<Tok>& expected

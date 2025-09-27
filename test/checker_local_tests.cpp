@@ -5,15 +5,15 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-#include "../src/checker/global_checker.h"
-#include "../src/checker/local_checker.h"
-#include "../src/common/code_file.h"
-#include "../src/lexer/lexer.h"
-#include "../src/lexer/token.h"
-#include "../src/logger/logger.h"
-#include "../src/nodes/ast_node.h"
-#include "../src/parser/parser.h"
-#include "utils/test_utils.h"
+#include "frontend/global_checker.h"
+#include "frontend/lexer.h"
+#include "frontend/local_checker.h"
+#include "frontend/parser.h"
+#include "frontend/utils/ast_node.h"
+#include "shared/code_file.h"
+#include "shared/logger.h"
+#include "shared/token.h"
+#include "test_utils.h"
 
 void run_checker_test(
     std::string_view src_code, std::optional<Err> expected_error = std::nullopt,

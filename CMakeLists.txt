@@ -35,50 +35,55 @@ endif()
 
 include(Catch)
 
-# Core files
-set(NODES_SRC
-    src/nodes/symbol_node.cpp
+# Front end utility files
+set(FRONT_END_UTILS_SRC
+    src/frontend/utils/symbol_node.cpp
+    src/frontend/utils/symbol_tree.cpp
 )
-set(LEXER_SRC
-    src/lexer/lexer.cpp
-)
-set(PARSER_SRC
-    src/parser/parser.cpp
-    src/parser/symbol_tree.cpp
-)
-set(CHECKER_SRC
-    src/checker/global_checker.cpp
-    src/checker/local_checker.cpp
-)
-set(CODEGEN_SRC
-    src/codegen/code_generator.cpp
-)
-set(COMPILER_SRC
+
+# Front end files
+set(FRONT_END_SRC
+    src/frontend/code_generator.cpp
     src/frontend/frontend.cpp
-    src/compiler/emitter.cpp
-    src/compiler/jit.cpp
-    src/compiler/optimizer.cpp
+    src/frontend/global_checker.cpp
+    src/frontend/lexer.cpp
+    src/frontend/local_checker.cpp
+    src/frontend/parser.cpp
 )
-set(LOGGER_SRC
-    src/logger/logger.cpp
+
+# Back end files
+set(BACK_END_SRC
+    src/backend/emitter.cpp
+    src/backend/jit.cpp
+    src/backend/optimizer.cpp
 )
+
+# Shared files
+set(SHARED_SRC
+    src/shared/logger.cpp
+)
+
+# Core source files
 set(CORE_SRC
-    ${NODES_SRC}
-    ${LEXER_SRC}
-    ${PARSER_SRC}
-    ${CHECKER_SRC}
-    ${CODEGEN_SRC}
-    ${COMPILER_SRC}
-    ${LOGGER_SRC}
+    ${FRONT_END_UTILS_SRC}
+    ${FRONT_END_SRC}
+    ${BACK_END_SRC}
+    ${SHARED_SRC}
 )
 
 # Main file
-set(MAIN_SRC src/main.cpp)
+set(MAIN_SRC
+    src/main.cpp
+)
+
+# Test utility files
+set(TEST_UTILS_SRC
+    test/utils/ast_printer.cpp
+    test/utils/test_utils.cpp
+)
 
 # Test files
 set(TEST_SRC
-    test/utils/ast_printer.cpp
-    test/utils/test_utils.cpp
     test/lexer_tests.cpp
     test/parser_expr_tests.cpp
     test/parser_stmt_tests.cpp
@@ -88,10 +93,13 @@ set(TEST_SRC
 
 # Main executable
 add_executable(nico ${MAIN_SRC} ${CORE_SRC})
+target_include_directories(nico PRIVATE ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(nico ${llvm_libs})
 
 # Test executable
-add_executable(tests ${TEST_SRC} ${CORE_SRC})
+add_executable(tests ${TEST_SRC} ${TEST_UTILS_SRC} ${CORE_SRC})
+target_include_directories(tests PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_include_directories(tests PRIVATE ${CMAKE_SOURCE_DIR}/test/include)
 target_link_libraries(tests Catch2::Catch2WithMain ${llvm_libs})
 enable_testing()
 catch_discover_tests(tests)
