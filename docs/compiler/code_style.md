@@ -111,12 +111,13 @@ For `#include` directives, include files in the following order.
 1. If the current file is an implementation file, include the corresponding header file first.
 2. C++ standard library headers (e.g., `<vector>`, `<string>`).
 3. Third-party library headers (e.g., `<llvm/IR/Function.h>`).
-4. Project-specific headers (e.g., `"code_generator.h"`).
-5. Platform-specific headers (e.g., `<unistd.h>`, `<io.h>`)
+4. Project-specific public headers (e.g., `"nico/frontend/code_generator.h"`).
+5. Project-specific internal headers (e.g., `"test_utils.h"`).
+6. Platform-specific headers (e.g., `<unistd.h>`, `<io.h>`)
 
 Example:
 ```cpp
-#include "code_generator.h"
+#include "nico/frontend/code_generator.h"
 
 #include <string_view>
 
@@ -124,8 +125,8 @@ Example:
 #include <llvm/IR/Function.h>
 #include <llvm/IR/Verifier.h>
 
-#include "../common/utils.h"
-#include "../logger/logger.h"
+#include "nico/shared/utils.h"
+#include "nico/shared/logger.h"
 ```
 
 For C standard library headers with a C++ counterpart, prefer using the C++ counterpart.

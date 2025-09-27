@@ -5,10 +5,10 @@
 #include <memory>
 #include <vector>
 
-#include "frontend/utils/ast_node.h"
-#include "frontend/utils/frontend_context.h"
-#include "frontend/utils/symbol_tree.h"
-#include "frontend/utils/type_node.h"
+#include "nico/frontend/utils/ast_node.h"
+#include "nico/frontend/utils/frontend_context.h"
+#include "nico/frontend/utils/symbol_tree.h"
+#include "nico/frontend/utils/type_node.h"
 
 /**
  * @brief A local type checker.

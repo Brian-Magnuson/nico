@@ -1,8 +1,8 @@
-#include "frontend/local_checker.h"
+#include "nico/frontend/local_checker.h"
 
-#include "shared/error_code.h"
-#include "shared/logger.h"
-#include "shared/utils.h"
+#include "nico/shared/error_code.h"
+#include "nico/shared/logger.h"
+#include "nico/shared/utils.h"
 
 std::shared_ptr<Type>
 LocalChecker::expr_check(std::shared_ptr<Expr>& expr, bool as_lvalue) {

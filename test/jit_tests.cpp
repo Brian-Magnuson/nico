@@ -8,17 +8,18 @@
 
 #include <llvm/Support/Error.h>
 
-#include "backend/jit.h"
-#include "frontend/code_generator.h"
-#include "frontend/frontend.h"
-#include "frontend/global_checker.h"
-#include "frontend/lexer.h"
-#include "frontend/local_checker.h"
-#include "frontend/parser.h"
-#include "frontend/utils/frontend_context.h"
-#include "shared/code_file.h"
-#include "shared/logger.h"
-#include "shared/token.h"
+#include "nico/backend/jit.h"
+#include "nico/frontend/code_generator.h"
+#include "nico/frontend/frontend.h"
+#include "nico/frontend/global_checker.h"
+#include "nico/frontend/lexer.h"
+#include "nico/frontend/local_checker.h"
+#include "nico/frontend/parser.h"
+#include "nico/frontend/utils/frontend_context.h"
+#include "nico/shared/code_file.h"
+#include "nico/shared/logger.h"
+#include "nico/shared/token.h"
+
 #include "test_utils.h"
 
 // void run_compile_test(

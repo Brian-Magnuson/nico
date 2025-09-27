@@ -1,4 +1,4 @@
-#include "frontend/code_generator.h"
+#include "nico/frontend/code_generator.h"
 
 #include <iostream>
 #include <string_view>
@@ -7,10 +7,10 @@
 #include <llvm/IR/Function.h>
 #include <llvm/IR/Verifier.h>
 
-#include "frontend/utils/symbol_node.h"
-#include "frontend/utils/type_node.h"
-#include "shared/logger.h"
-#include "shared/utils.h"
+#include "nico/frontend/utils/symbol_node.h"
+#include "nico/frontend/utils/type_node.h"
+#include "nico/shared/logger.h"
+#include "nico/shared/utils.h"
 
 // MARK: Helpers
 

@@ -6,8 +6,8 @@
 #include <string_view>
 #include <vector>
 
-#include "shared/error_code.h"
-#include "shared/token.h"
+#include "nico/shared/error_code.h"
+#include "nico/shared/token.h"
 
 /**
  * @brief A color to use for console output.

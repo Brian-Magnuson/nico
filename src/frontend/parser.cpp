@@ -1,8 +1,8 @@
-#include "frontend/parser.h"
+#include "nico/frontend/parser.h"
 
-#include "frontend/utils/nodes.h"
-#include "shared/logger.h"
-#include "shared/utils.h"
+#include "nico/frontend/utils/nodes.h"
+#include "nico/shared/logger.h"
+#include "nico/shared/utils.h"
 
 bool Parser::is_at_end() const {
     return current >= tokens.size();

@@ -1,4 +1,4 @@
-#include "backend/emitter.h"
+#include "nico/backend/emitter.h"
 
 #include <string>
 #include <system_error>
@@ -12,7 +12,7 @@
 #include <llvm/Target/TargetOptions.h>
 #include <llvm/TargetParser/Host.h>
 
-#include "shared/logger.h"
+#include "nico/shared/logger.h"
 
 void Emitter::emit(
     const std::unique_ptr<llvm::Module>& ir_module,

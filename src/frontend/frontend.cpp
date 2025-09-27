@@ -1,4 +1,4 @@
-#include "frontend/frontend.h"
+#include "nico/frontend/frontend.h"
 
 std::unique_ptr<FrontendContext>&
 Frontend::compile(const std::shared_ptr<CodeFile>& file, bool repl_mode) {

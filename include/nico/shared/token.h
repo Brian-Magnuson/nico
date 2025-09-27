@@ -6,7 +6,7 @@
 #include <string_view>
 #include <utility>
 
-#include "shared/code_file.h"
+#include "nico/shared/code_file.h"
 
 /**
  * @brief A token type.

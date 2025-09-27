@@ -1,6 +1,6 @@
-#include "frontend/utils/symbol_node.h"
+#include "nico/frontend/utils/symbol_node.h"
 
-#include "frontend/utils/type_node.h"
+#include "nico/frontend/utils/type_node.h"
 
 int Node::LocalScope::next_scope_id = 0;
 

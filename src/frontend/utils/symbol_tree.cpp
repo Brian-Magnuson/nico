@@ -1,6 +1,6 @@
-#include "frontend/utils/symbol_tree.h"
+#include "nico/frontend/utils/symbol_tree.h"
 
-#include "shared/utils.h"
+#include "nico/shared/utils.h"
 
 void SymbolTree::install_primitive_types() {
     std::shared_ptr<Node> new_node;

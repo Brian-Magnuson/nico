@@ -1,9 +1,9 @@
-#include "backend/jit.h"
+#include "nico/backend/jit.h"
 
 #include <llvm/Support/InitLLVM.h>
 #include <llvm/Support/TargetSelect.h>
 
-#include "shared/logger.h"
+#include "nico/shared/logger.h"
 
 llvm::Expected<int> IJit::run_main(int argc, char** argv) {
     auto symbol = lookup("main");

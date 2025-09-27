@@ -3,11 +3,12 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-#include "frontend/lexer.h"
-#include "frontend/utils/frontend_context.h"
-#include "shared/code_file.h"
-#include "shared/logger.h"
-#include "shared/token.h"
+#include "nico/frontend/lexer.h"
+#include "nico/frontend/utils/frontend_context.h"
+#include "nico/shared/code_file.h"
+#include "nico/shared/logger.h"
+#include "nico/shared/token.h"
+
 #include "test_utils.h"
 
 void run_lexer_test(

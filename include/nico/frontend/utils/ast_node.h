@@ -7,8 +7,8 @@
 #include <string>
 #include <vector>
 
-#include "frontend/utils/nodes.h"
-#include "shared/dictionary.h"
+#include "nico/frontend/utils/nodes.h"
+#include "nico/shared/dictionary.h"
 
 // MARK: Statements
 

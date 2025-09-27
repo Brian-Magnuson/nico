@@ -7,9 +7,9 @@
 #include <unordered_map>
 #include <vector>
 
-#include "frontend/utils/frontend_context.h"
-#include "shared/code_file.h"
-#include "shared/token.h"
+#include "nico/frontend/utils/frontend_context.h"
+#include "nico/shared/code_file.h"
+#include "nico/shared/token.h"
 
 /**
  * @brief A lexer for scanning source code into a list of tokens.

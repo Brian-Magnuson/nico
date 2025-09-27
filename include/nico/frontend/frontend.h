@@ -8,13 +8,13 @@
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 
-#include "frontend/code_generator.h"
-#include "frontend/global_checker.h"
-#include "frontend/lexer.h"
-#include "frontend/local_checker.h"
-#include "frontend/parser.h"
-#include "frontend/utils/frontend_context.h"
-#include "shared/code_file.h"
+#include "nico/frontend/code_generator.h"
+#include "nico/frontend/global_checker.h"
+#include "nico/frontend/lexer.h"
+#include "nico/frontend/local_checker.h"
+#include "nico/frontend/parser.h"
+#include "nico/frontend/utils/frontend_context.h"
+#include "nico/shared/code_file.h"
 
 /**
  * @brief The compiler front end, which includes the lexer, parser, type

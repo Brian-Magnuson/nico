@@ -9,8 +9,8 @@
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Type.h>
 
-#include "shared/token.h"
-#include "shared/utils.h"
+#include "nico/shared/token.h"
+#include "nico/shared/utils.h"
 
 // MARK: Node
 

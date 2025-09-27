@@ -3,10 +3,10 @@
 
 #include <utility>
 
-#include "frontend/utils/nodes.h"
-#include "frontend/utils/symbol_node.h"
-#include "shared/dictionary.h"
-#include "shared/utils.h"
+#include "nico/frontend/utils/nodes.h"
+#include "nico/frontend/utils/symbol_node.h"
+#include "nico/shared/dictionary.h"
+#include "nico/shared/utils.h"
 
 // MARK: Numeric types
 

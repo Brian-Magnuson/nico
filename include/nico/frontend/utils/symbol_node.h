@@ -1,9 +1,9 @@
 #ifndef NICO_SYMBOL_NODE_H
 #define NICO_SYMBOL_NODE_H
 
-#include "frontend/utils/nodes.h"
-#include "shared/dictionary.h"
-#include "shared/utils.h"
+#include "nico/frontend/utils/nodes.h"
+#include "nico/shared/dictionary.h"
+#include "nico/shared/utils.h"
 
 /**
  * @brief A basic node in the symbol tree.

@@ -7,8 +7,8 @@
 #include <string_view>
 #include <vector>
 
-#include "shared/code_file.h"
-#include "shared/token.h"
+#include "nico/shared/code_file.h"
+#include "nico/shared/token.h"
 
 /**
  * @brief Creates a test code file with the provided source code.

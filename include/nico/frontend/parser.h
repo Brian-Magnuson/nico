@@ -7,9 +7,9 @@
 #include <unordered_map>
 #include <vector>
 
-#include "frontend/utils/ast_node.h"
-#include "frontend/utils/frontend_context.h"
-#include "shared/token.h"
+#include "nico/frontend/utils/ast_node.h"
+#include "nico/frontend/utils/frontend_context.h"
+#include "nico/shared/token.h"
 
 /**
  * @brief A parser to parse a vector of tokens into an abstract syntax tree.

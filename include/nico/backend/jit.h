@@ -10,7 +10,7 @@
 #include <llvm/IR/Module.h>
 #include <llvm/Support/Error.h>
 
-#include "shared/ir_module_context.h"
+#include "nico/shared/ir_module_context.h"
 
 /**
  * @brief Interface for JIT compilation.

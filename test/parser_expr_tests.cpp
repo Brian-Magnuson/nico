@@ -4,13 +4,14 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "nico/frontend/lexer.h"
+#include "nico/frontend/parser.h"
+#include "nico/frontend/utils/ast_node.h"
+#include "nico/shared/code_file.h"
+#include "nico/shared/logger.h"
+#include "nico/shared/token.h"
+
 #include "ast_printer.h"
-#include "frontend/lexer.h"
-#include "frontend/parser.h"
-#include "frontend/utils/ast_node.h"
-#include "shared/code_file.h"
-#include "shared/logger.h"
-#include "shared/token.h"
 #include "test_utils.h"
 
 void run_parser_expr_test(

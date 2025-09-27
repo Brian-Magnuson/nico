@@ -6,10 +6,10 @@
 #include <string>
 #include <utility>
 
-#include "frontend/utils/nodes.h"
-#include "frontend/utils/type_node.h"
-#include "shared/dictionary.h"
-#include "shared/error_code.h"
+#include "nico/frontend/utils/nodes.h"
+#include "nico/frontend/utils/type_node.h"
+#include "nico/shared/dictionary.h"
+#include "nico/shared/error_code.h"
 
 /**
  * @brief A symbol tree that represents the structure of the program's symbols.

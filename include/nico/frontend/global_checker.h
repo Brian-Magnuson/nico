@@ -4,7 +4,7 @@
 #include <memory>
 #include <vector>
 
-#include "frontend/utils/frontend_context.h"
+#include "nico/frontend/utils/frontend_context.h"
 
 class GlobalChecker {
 public:

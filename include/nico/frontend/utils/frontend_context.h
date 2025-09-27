@@ -8,10 +8,10 @@
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 
-#include "frontend/utils/ast_node.h"
-#include "frontend/utils/symbol_tree.h"
-#include "shared/ir_module_context.h"
-#include "shared/token.h"
+#include "nico/frontend/utils/ast_node.h"
+#include "nico/frontend/utils/symbol_tree.h"
+#include "nico/shared/ir_module_context.h"
+#include "nico/shared/token.h"
 
 /**
  * @brief A front end context, which contains the current status, AST, and

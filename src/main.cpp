@@ -7,9 +7,9 @@
 #include <utility>
 #include <vector>
 
-#include "backend/jit.h"
-#include "frontend/frontend.h"
-#include "shared/code_file.h"
+#include "nico/backend/jit.h"
+#include "nico/frontend/frontend.h"
+#include "nico/shared/code_file.h"
 
 /**
  * @brief Checks if there are any errors logged in the Logger singleton and

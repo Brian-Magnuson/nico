@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-#include "frontend/utils/ast_node.h"
+#include "nico/frontend/utils/ast_node.h"
 
 /**
  * @brief A class for printing the AST for debugging purposes.

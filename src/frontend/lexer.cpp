@@ -1,11 +1,11 @@
-#include "frontend/lexer.h"
+#include "nico/frontend/lexer.h"
 
 #include <cstdint>
 #include <string>
 
-#include "shared/error_code.h"
-#include "shared/logger.h"
-#include "shared/utils.h"
+#include "nico/shared/error_code.h"
+#include "nico/shared/logger.h"
+#include "nico/shared/utils.h"
 
 std::unordered_map<std::string_view, Tok> Lexer::keywords = {
     // Literals
