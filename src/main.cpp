@@ -11,22 +11,6 @@
 #include "nico/frontend/frontend.h"
 #include "nico/shared/code_file.h"
 
-/**
- * @brief Checks if there are any errors logged in the Logger singleton and
- * exits the program if there are.
- *
- * This function is used to ensure that the compilation process does not
- * continue if there are any errors logged. If there are errors, it prints a
- * message to std::cerr and exits with a non-zero status code.
- */
-// void exit_if_errors() {
-//     const auto& errors = Logger::inst().get_errors();
-//     if (!errors.empty()) {
-//         std::cerr << "Compilation failed; exiting...";
-//         std::exit(1);
-//     }
-// }
-
 int main(int argc, char** argv) {
     if (argc != 2) {
         std::cout << "Usage: nico <source file>" << std::endl;

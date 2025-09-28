@@ -22,41 +22,26 @@
 
 #include "test_utils.h"
 
-// void run_compile_test(
-//     Lexer& lexer, Parser& parser, GlobalChecker& global_checker,
-//     LocalChecker& local_checker, CodeGenerator& codegen,
-//     std::unique_ptr<IJit>& jit, std::string_view source,
-//     std::optional<std::string_view> expected_output = std::nullopt,
-//     std::optional<int> expected_return_code = std::nullopt
-// ) {
-//     auto file = make_test_code_file(source);
-
-//     auto tokens = lexer.scan(file);
-//     auto ast = parser.parse(std::move(tokens));
-//     global_checker.check(ast);
-//     local_checker.check(ast);
-//     REQUIRE(codegen.generate_executable_ir(ast));
-//     auto output = codegen.eject();
-//     auto error =
-//         jit->add_module(std::move(output.module), std::move(output.context));
-
-//     std::optional<llvm::Expected<int>> return_code;
-
-//     auto [out, err] = capture_stdout(
-//         [&]() { return_code = jit->run_main(0, nullptr); },
-//         4096
-//     );
-
-//     if (expected_output) {
-//         CHECK(out == *expected_output);
-//     }
-//     if (expected_return_code) {
-//         REQUIRE(return_code.has_value());
-//         REQUIRE(*return_code);
-//         CHECK(return_code->get() == *expected_return_code);
-//     }
-// }
-
+/**
+ * @brief Run a JIT test with the given source code, expected output, and
+ * expected return code.
+ *
+ * This test will check that the source code compiles successfully.
+ *
+ * If expected_output is provided, this test will check that the output of the
+ * JIT (written to stdout) matches the expected output.
+ *
+ * If expected_return_code is provided, this test will check that the return
+ * code of the JIT matches the expected return code.
+ * If expected_return_code is non-zero, the code generator will be set to panic
+ * recoverable mode to avoid a signal termination.
+ *
+ * @param source The source code to test.
+ * @param expected_output (Optional) The expected output, if any.
+ * @param expected_return_code (Optional) The expected return code, if any.
+ * @param print_ir Whether to print the generated IR before verification.
+ * Defaults to false.
+ */
 void run_jit_test(
     std::string_view source,
     std::optional<std::string_view> expected_output = std::nullopt,

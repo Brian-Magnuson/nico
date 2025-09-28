@@ -14,6 +14,13 @@
 #include "ast_printer.h"
 #include "test_utils.h"
 
+/**
+ * @brief Run a parser statement test with the given source code and expected
+ * AST strings.
+ *
+ * @param src_code The source code to test.
+ * @param expected The expected AST strings.
+ */
 void run_parser_stmt_test(
     std::string_view src_code, const std::vector<std::string>& expected
 ) {
@@ -32,6 +39,17 @@ void run_parser_stmt_test(
     Logger::inst().reset();
 }
 
+/**
+ * @brief Run a parser statement error test with the given source code and
+ * expected error.
+ *
+ * Erroneous input can potentially produce multiple errors.
+ * Only the first error is checked by this test.
+ *
+ * @param src_code The source code to test.
+ * @param expected_error The expected error.
+ * @param print_errors Whether to print errors. Defaults to false.
+ */
 void run_parser_stmt_error_test(
     std::string_view src_code, Err expected_error, bool print_errors = false
 ) {

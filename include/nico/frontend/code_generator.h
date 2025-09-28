@@ -244,4 +244,4 @@ public:
     void set_ir_printing_enabled(bool value) { ir_printing_enabled = value; }
 };
 
-#endif // CODE_GENERATOR_H
+#endif // NICO_CODE_GENERATOR_H

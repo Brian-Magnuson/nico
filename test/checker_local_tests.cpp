@@ -16,6 +16,21 @@
 
 #include "test_utils.h"
 
+/**
+ * @brief Run a checker test with the given source code and expected error.
+ *
+ * Pass an error code to assert that that the checker produces that error first.
+ * If no error code is given, this test asserts that no errors are produced.
+ *
+ * Use print_errors to control whether errors are printed.
+ * If print_errors is not given, printing will be enabled when there are no
+ * expected errors and will be disabled when there are expected errors.
+ *
+ * @param src_code The source code to test.
+ * @param expected_error (Optional) The expected error, if any.
+ * @param print_errors (Optional) Whether to print errors. If not provided, will
+ * be based on the presence of expected_error (see description).
+ */
 void run_checker_test(
     std::string_view src_code, std::optional<Err> expected_error = std::nullopt,
     std::optional<bool> print_errors = std::nullopt
