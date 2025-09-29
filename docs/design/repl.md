@@ -116,10 +116,6 @@ Not only do we want the REPL to perform as well as the AOT and JIT compilers, we
 
 - The file path name in a `CodeFile` object can now accept any string, not just a file path.
   - In a REPL, there is no file path name since there is no file.
-- In REPL mode, whitespace-only lines are no longer insignificant.
-  - Normally, when a line contains only whitespace characters, the lexer ignores it, making no changes to left spacing.
-  - In REPL mode, when using multi-line input, we want users to have better control over when an indented block is closed.
-  - If the user wants an empty line in a block, they can manually add left-spacing to keep the block open.
 - In REPL mode, the lexer will no longer automatically add dedent tokens at the end of input.
   - Normally, we automatically add dedent tokens in case user chooses not to add an empty line at the end of a file.
     - Empty lines have a left spacing of 0, which adds the necessary dedent tokens to close all open blocks.

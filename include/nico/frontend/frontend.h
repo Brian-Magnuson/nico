@@ -21,20 +21,12 @@
  * checkers, and code generator.
  */
 class Frontend {
-
-    // The lexer. Scans source code into tokens.
-    Lexer lexer;
-    // The parser. Parses tokens into an AST.
-    Parser parser;
-    // The global type checker. Checks the AST at the global level.
-    GlobalChecker global_checker;
-    // The local type checker. Checks the AST at the local level.
-    LocalChecker local_checker;
-    // The code generator. Generates LLVM IR from the AST.
-    CodeGenerator codegen;
-
     // The unique front end context.
     std::unique_ptr<FrontendContext> context;
+    // A flag to indicate whether panic is recoverable.
+    bool panic_recoverable = false;
+    // A flag to indicate whether IR should be printed just before verification.
+    bool ir_printing_enabled = false;
 
 public:
     Frontend()
@@ -70,9 +62,7 @@ public:
      *
      * @param value True to enable panic recovery, false to disable it.
      */
-    void set_panic_recoverable(bool value) {
-        codegen.set_panic_recoverable(value);
-    }
+    void set_panic_recoverable(bool value) { panic_recoverable = value; }
 
     /**
      * @brief Sets whether the code generator should print the generated IR just
@@ -83,9 +73,7 @@ public:
      *
      * @param value True to enable IR printing, false to disable it.
      */
-    void set_ir_printing_enabled(bool value) {
-        codegen.set_ir_printing_enabled(value);
-    }
+    void set_ir_printing_enabled(bool value) { ir_printing_enabled = value; }
 
     /**
      * @brief Resets the front end to its initial state.
@@ -94,12 +82,7 @@ public:
      * symbols.
      * Useful for REPLs to clear the current state.
      */
-    void reset() {
-        lexer.reset();
-        parser.reset();
-        codegen.reset();
-        context->reset();
-    }
+    void reset() { context->reset(); }
 };
 
 #endif // NICO_FRONTEND_H

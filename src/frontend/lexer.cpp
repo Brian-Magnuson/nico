@@ -183,8 +183,10 @@ void Lexer::consume_whitespace() {
 
     // Handle indents.
     if (!tokens.empty() && tokens.back()->tok_type == Tok::Colon) {
-        // Left spacing must be greater than previous indent.
-        if (spacing_amount <= current_left_spacing) {
+        if (!repl_mode && spacing_amount <= current_left_spacing) {
+            // Left spacing must be greater than previous indent.
+            // In REPL mode, this is not required.
+
             Logger::inst().log_error(
                 Err::MalformedIndent,
                 tokens.back()->location,
@@ -491,6 +493,12 @@ void Lexer::multi_line_comment() {
     auto opening_token = make_token(Tok::SlashStar);
     while (open_count) {
         if (is_at_end()) {
+            // If in REPL mode, request more input instead of erroring.
+            if (repl_mode) {
+                repl_require_pause = true;
+                return;
+            }
+
             Logger::inst().log_error(
                 Err::UnclosedComment,
                 opening_token->location,
@@ -715,6 +723,15 @@ void Lexer::scan(
     while (!is_at_end()) {
         start = current;
         scan_token();
+    }
+
+    if (repl_mode) {
+        // If in REPL mode, and we need more input, pause.
+        if (repl_require_pause || grouping_token_stack.empty() ||
+            left_spacing_stack.empty()) {
+            context->status = FrontendContext::Status::Pause;
+            return;
+        }
     }
 
     auto eof_token = make_token(Tok::Eof);

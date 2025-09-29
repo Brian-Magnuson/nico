@@ -36,6 +36,10 @@ class Lexer {
     unsigned current_left_spacing = 0;
     // The type of left spacing.
     char left_spacing_type = '\0';
+    // Whether or not the lexer is in REPL mode.
+    bool repl_mode = false;
+    // Whether or not the lexer needs the REPL to pause for more input.
+    bool repl_require_pause = false;
 
     /**
      * @brief Checks if the lexer has reached the end of the source code.
@@ -281,6 +285,8 @@ public:
         std::unique_ptr<FrontendContext>& context,
         const std::shared_ptr<CodeFile>& file
     );
+
+    void set_repl_mode(bool value) { repl_mode = value; }
 };
 
 #endif // NICO_LEXER_H
