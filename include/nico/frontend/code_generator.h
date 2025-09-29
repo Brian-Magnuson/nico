@@ -181,20 +181,6 @@ public:
         bool require_verification = true
     );
 
-    // /**
-    //  * @brief Eject the generated LLVM module and context.
-    //  *
-    //  * This method moves the generated LLVM module and context into a
-    //  * CodeGenerator::Output object and returns it.
-    //  * After calling this method, the CodeGenerator object is in an invalid
-    //  * state and should not be used.
-    //  *
-    //  * @return An Output object containing the generated LLVM module and
-    //  * context.
-    //  */
-    // Output eject() { return Output(std::move(ir_module), std::move(context));
-    // }
-
     /**
      * @brief Moves the generated LLVM module and context into the provided
      * front end context.

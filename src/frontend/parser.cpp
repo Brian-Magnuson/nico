@@ -463,7 +463,7 @@ void Parser::reset() {
 
 void Parser::parse(std::unique_ptr<FrontendContext>& context) {
     if (context->status == FrontendContext::Status::Error) {
-        panic("Parser::parse: context is already in an error state.");
+        panic("Parser::parse: Context is already in an error state.");
     }
 
     reset();

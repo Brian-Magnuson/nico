@@ -732,6 +732,10 @@ std::any CodeGenerator::visit(Expr::Conditional* expr, bool as_lvalue) {
 void CodeGenerator::generate_script(
     const std::unique_ptr<FrontendContext>& context
 ) {
+    if (context->status == FrontendContext::Status::Error) {
+        panic("CodeGenerator::generate_script: Context is in an error state.");
+    }
+
     add_c_functions();
 
     llvm::FunctionType* script_fn_type =

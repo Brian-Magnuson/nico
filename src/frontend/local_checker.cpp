@@ -665,6 +665,10 @@ std::any LocalChecker::visit(Annotation::Tuple* annotation) {
 }
 
 void LocalChecker::check(std::unique_ptr<FrontendContext>& context) {
+    if (context->status == FrontendContext::Status::Error) {
+        panic("LocalChecker::check: Context is already in an error state.");
+    }
+
     symbol_tree = context->symbol_tree;
     for (auto& stmt : context->stmts) {
         stmt->accept(this);

@@ -705,6 +705,10 @@ void Lexer::scan(
     std::unique_ptr<FrontendContext>& context,
     const std::shared_ptr<CodeFile>& file
 ) {
+    if (context->status == FrontendContext::Status::Error) {
+        panic("Lexer::scan: Context is already in an error state.");
+    }
+
     reset();
     this->file = file;
 
