@@ -6,8 +6,7 @@ Frontend::compile(const std::shared_ptr<CodeFile>& file, bool repl_mode) {
     if (context->status == FrontendContext::Status::Error)
         return context;
 
-    Parser parser;
-    parser.parse(context);
+    Parser::parse(context);
     if (context->status == FrontendContext::Status::Error)
         return context;
 

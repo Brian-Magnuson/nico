@@ -16,11 +16,13 @@
  */
 class Parser {
     // The vector of tokens to parse.
-    std::vector<std::shared_ptr<Token>> tokens;
+    const std::vector<std::shared_ptr<Token>> tokens;
+
     // The current token index.
     unsigned current = 0;
-    // A table of basic types.
-    // static std::unordered_map<std::string, std::shared_ptr<Type>> type_table;
+
+    Parser(const std::vector<std::shared_ptr<Token>>&& tokens)
+        : tokens(std::move(tokens)) {}
 
     /**
      * @brief Checks if the parser has reached the end of the tokens list.
@@ -258,36 +260,38 @@ class Parser {
 
     // MARK: Annotations
 
+    /**
+     * @brief Parses a type annotation.
+     *
+     * A type annotation is a construct that specifies the type of a variable.
+     *
+     * Note: an annotation is not a type. Types are resolved during semantic
+     * analysis.
+     *
+     * @return A shared pointer to the parsed annotation, or nullopt if the
+     * annotation could not be parsed.
+     */
     std::optional<std::shared_ptr<Annotation>> annotation();
 
-public:
-    // MARK: Interface
-
     /**
-     * Resets the parser.
+     * @brief Parses the vector of tokens contained in the provided context into
+     * an AST.
      *
-     * The parser will be reset to its initial state.
+     * Upon success, the parsed AST will be appended to the context's AST.
      */
-    void reset();
+    void run_parse(std::unique_ptr<FrontendContext>& context);
 
-    // /**
-    //  * Parses the vector of tokens into an abstract syntax tree.
-    //  *
-    //  * The parser will be reset before parsing.
-    //  *
-    //  * @param tokens (Requires move) The vector of tokens to parse.
-    //  * @return Ast The parsed abstract syntax tree.
-    //  */
-    // Ast parse(const std::vector<std::shared_ptr<Token>>&& tokens);
-
+public:
     /**
      * @brief Parses the vector of tokens contained in the provided context into
      * an AST.
      *
      * The tokens will be moved from the context into the parser.
      * Upon success, the parsed AST will be appended to the context's AST.
+     *
+     * @param context The context containing the tokens to parse.
      */
-    void parse(std::unique_ptr<FrontendContext>& context);
+    static void parse(std::unique_ptr<FrontendContext>& context);
 };
 
 #endif // NICO_PARSER_H

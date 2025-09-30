@@ -456,26 +456,13 @@ std::optional<std::shared_ptr<Annotation>> Parser::annotation() {
 
 // MARK: Interface
 
-void Parser::reset() {
-    tokens.clear();
-    current = 0;
-}
-
-void Parser::parse(std::unique_ptr<FrontendContext>& context) {
-    if (context->status == FrontendContext::Status::Error) {
-        panic("Parser::parse: Context is already in an error state.");
-    }
-
-    reset();
-    this->tokens = std::move(context->scanned_tokens);
-    context->scanned_tokens = {};
-
-    std::vector<std::shared_ptr<Stmt>> statements;
+void Parser::run_parse(std::unique_ptr<FrontendContext>& context) {
+    size_t start_size = context->stmts.size();
 
     while (!is_at_end()) {
         auto stmt = statement();
         if (stmt) {
-            statements.push_back(*stmt);
+            context->stmts.push_back(*stmt);
         }
         else {
             synchronize();
@@ -484,11 +471,20 @@ void Parser::parse(std::unique_ptr<FrontendContext>& context) {
 
     if (Logger::inst().get_errors().empty()) {
         context->status = FrontendContext::Status::OK;
-        // Add the statements to the context's AST.
-        context->stmts
-            .insert(context->stmts.end(), statements.begin(), statements.end());
     }
     else {
         context->status = FrontendContext::Status::Error;
+        // Roll back any statements added during this parse.
+        context->stmts.resize(start_size);
     }
+}
+
+void Parser::parse(std::unique_ptr<FrontendContext>& context) {
+    if (context->status == FrontendContext::Status::Error) {
+        panic("Parser::parse: Context is already in an error state.");
+    }
+
+    Parser parser(std::move(context->scanned_tokens));
+    context->scanned_tokens = {};
+    parser.run_parse(context);
 }

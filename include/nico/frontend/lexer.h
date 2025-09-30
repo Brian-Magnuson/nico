@@ -268,7 +268,7 @@ class Lexer {
     void scan_token();
 
     /**
-     * @brief Creates a lexer and scans the input file, adding the tokens to
+     * @brief Scans the input file, adding the tokens to
      * the provided context.
      *
      * @param context The context to add the tokens to.
