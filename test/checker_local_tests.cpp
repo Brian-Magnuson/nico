@@ -45,10 +45,8 @@ void run_checker_test(
     auto file = make_test_code_file(src_code);
     Lexer::scan(context, file);
     Parser::parse(context);
-    GlobalChecker global_checker;
-    global_checker.check(context);
-    LocalChecker local_checker;
-    local_checker.check(context);
+    GlobalChecker::check(context);
+    LocalChecker::check(context);
 
     if (expected_error.has_value()) {
         auto& errors = Logger::inst().get_errors();

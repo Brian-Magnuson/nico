@@ -7,7 +7,6 @@
 #include "nico/frontend/utils/frontend_context.h"
 
 class GlobalChecker {
-public:
     GlobalChecker() = default;
 
     /**
@@ -17,7 +16,10 @@ public:
      *
      * @param context The front end context containing the AST to type check.
      */
-    void check(std::unique_ptr<FrontendContext>& context) { return; }
+    void run_check(std::unique_ptr<FrontendContext>& context);
+
+public:
+    static void check(std::unique_ptr<FrontendContext>& context);
 };
 
 #endif // NICO_GLOBAL_CHECKER_H

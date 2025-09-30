@@ -10,13 +10,11 @@ Frontend::compile(const std::shared_ptr<CodeFile>& file, bool repl_mode) {
     if (context->status == FrontendContext::Status::Error)
         return context;
 
-    GlobalChecker global_checker;
-    global_checker.check(context);
+    GlobalChecker::check(context);
     if (context->status == FrontendContext::Status::Error)
         return context;
 
-    LocalChecker local_checker;
-    local_checker.check(context);
+    LocalChecker::check(context);
     if (context->status == FrontendContext::Status::Error)
         return context;
 

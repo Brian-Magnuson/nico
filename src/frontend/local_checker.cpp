@@ -664,12 +664,7 @@ std::any LocalChecker::visit(Annotation::Tuple* annotation) {
     return type;
 }
 
-void LocalChecker::check(std::unique_ptr<FrontendContext>& context) {
-    if (context->status == FrontendContext::Status::Error) {
-        panic("LocalChecker::check: Context is already in an error state.");
-    }
-
-    symbol_tree = context->symbol_tree;
+void LocalChecker::run_check(std::unique_ptr<FrontendContext>& context) {
     for (auto& stmt : context->stmts) {
         stmt->accept(this);
     }
@@ -680,4 +675,13 @@ void LocalChecker::check(std::unique_ptr<FrontendContext>& context) {
     else {
         context->status = FrontendContext::Status::Error;
     }
+}
+
+void LocalChecker::check(std::unique_ptr<FrontendContext>& context) {
+    if (context->status == FrontendContext::Status::Error) {
+        panic("LocalChecker::check: Context is already in an error state.");
+    }
+
+    LocalChecker checker(context->symbol_tree);
+    checker.run_check(context);
 }

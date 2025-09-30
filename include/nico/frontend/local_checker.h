@@ -20,7 +20,10 @@ class LocalChecker : public Stmt::Visitor,
                      public Expr::Visitor,
                      public Annotation::Visitor {
     // The symbol tree used for type checking.
-    std::shared_ptr<SymbolTree> symbol_tree;
+    const std::shared_ptr<SymbolTree> symbol_tree;
+
+    LocalChecker(std::shared_ptr<SymbolTree> symbol_tree)
+        : symbol_tree(symbol_tree) {};
 
     /**
      * @brief Checks the type of the expression, dereferencing any references.
@@ -64,9 +67,6 @@ class LocalChecker : public Stmt::Visitor,
     std::any visit(Annotation::Object* annotation) override;
     std::any visit(Annotation::Tuple* annotation) override;
 
-public:
-    LocalChecker() = default;
-
     /**
      * @brief Type checks the given context at the local level.
      *
@@ -74,7 +74,17 @@ public:
      *
      * @param context The front end context containing the AST to type check.
      */
-    void check(std::unique_ptr<FrontendContext>& context);
+    void run_check(std::unique_ptr<FrontendContext>& context);
+
+public:
+    /**
+     * @brief Type checks the given context at the local level.
+     *
+     * This function will modify the AST to add type information to the nodes.
+     *
+     * @param context The front end context containing the AST to type check.
+     */
+    static void check(std::unique_ptr<FrontendContext>& context);
 };
 
 #endif // NICO_LOCAL_CHECKER_H
