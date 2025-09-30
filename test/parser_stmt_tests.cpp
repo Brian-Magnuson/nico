@@ -26,14 +26,12 @@ void run_parser_stmt_test(
 ) {
     auto context = std::make_unique<FrontendContext>();
     auto file = make_test_code_file(src_code);
-    Lexer lexer;
-    lexer.scan(context, file);
+    Lexer::scan(context, file);
     Parser parser;
     parser.parse(context);
     AstPrinter printer;
     CHECK(printer.stmts_to_strings(context->stmts) == expected);
 
-    lexer.reset();
     parser.reset();
     context->reset();
     Logger::inst().reset();
@@ -57,8 +55,7 @@ void run_parser_stmt_error_test(
 
     auto context = std::make_unique<FrontendContext>();
     auto file = make_test_code_file(src_code);
-    Lexer lexer;
-    lexer.scan(context, file);
+    Lexer::scan(context, file);
     Parser parser;
     parser.parse(context);
 
@@ -66,7 +63,6 @@ void run_parser_stmt_error_test(
     REQUIRE(errors.size() >= 1);
     CHECK(errors.at(0) == expected_error);
 
-    lexer.reset();
     parser.reset();
     context->reset();
     Logger::inst().reset();

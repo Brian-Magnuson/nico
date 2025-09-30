@@ -2,8 +2,7 @@
 
 std::unique_ptr<FrontendContext>&
 Frontend::compile(const std::shared_ptr<CodeFile>& file, bool repl_mode) {
-    Lexer lexer;
-    lexer.scan(context, file);
+    Lexer::scan(context, file);
     if (context->status == FrontendContext::Status::Error)
         return context;
 

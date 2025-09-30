@@ -19,7 +19,10 @@ class Lexer {
     static std::unordered_map<std::string_view, Tok> keywords;
 
     // The file being scanned.
-    std::shared_ptr<CodeFile> file;
+    const std::shared_ptr<CodeFile> file;
+    // Whether or not the lexer is in REPL mode.
+    const bool repl_mode = false;
+
     // The tokens scanned from the file.
     std::vector<std::shared_ptr<Token>> tokens;
     // The index of the first character of the current token.
@@ -36,10 +39,11 @@ class Lexer {
     unsigned current_left_spacing = 0;
     // The type of left spacing.
     char left_spacing_type = '\0';
-    // Whether or not the lexer is in REPL mode.
-    bool repl_mode = false;
     // Whether or not the lexer needs the REPL to pause for more input.
     bool repl_require_pause = false;
+
+    Lexer(std::shared_ptr<CodeFile> file, bool repl_mode = false)
+        : file(file), repl_mode(repl_mode) {}
 
     /**
      * @brief Checks if the lexer has reached the end of the source code.
@@ -263,30 +267,29 @@ class Lexer {
      */
     void scan_token();
 
+    /**
+     * @brief Creates a lexer and scans the input file, adding the tokens to
+     * the provided context.
+     *
+     * @param context The context to add the tokens to.
+     */
+    void run_scan(std::unique_ptr<FrontendContext>& context);
+
 public:
     /**
-     * @brief Resets the lexer.
+     * @brief Scans the input file, adding the tokens to the provided context.
      *
-     * The lexer will be reset to its initial state.
-     */
-    void reset();
-
-    /**
-     * @brief Scans the provided file for tokens and adds them to the provided
-     * context.
-     *
-     * The lexer will be reset before scanning the file.
-     * After scanning, the lexer will hold onto the tokens and file pointer.
+     * If the context is in an error state, this function will abort.
      *
      * @param context The context to add the tokens to.
      * @param file The file to scan.
+     * @param repl_mode Whether or not the lexer is in REPL mode. Default is
+     * false.
      */
-    void scan(
+    static void scan(
         std::unique_ptr<FrontendContext>& context,
-        const std::shared_ptr<CodeFile>& file
+        const std::shared_ptr<CodeFile>& file, bool repl_mode = false
     );
-
-    void set_repl_mode(bool value) { repl_mode = value; }
 };
 
 #endif // NICO_LEXER_H

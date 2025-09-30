@@ -43,8 +43,7 @@ void run_checker_test(
 
     auto context = std::make_unique<FrontendContext>();
     auto file = make_test_code_file(src_code);
-    Lexer lexer;
-    lexer.scan(context, file);
+    Lexer::scan(context, file);
     Parser parser;
     parser.parse(context);
     GlobalChecker global_checker;
@@ -61,7 +60,6 @@ void run_checker_test(
         CHECK(Logger::inst().get_errors().empty());
     }
 
-    lexer.reset();
     parser.reset();
     context->reset();
     Logger::inst().reset();

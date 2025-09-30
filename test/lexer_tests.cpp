@@ -22,11 +22,9 @@ void run_lexer_test(
 ) {
     auto context = std::make_unique<FrontendContext>();
     auto file = make_test_code_file(src_code);
-    Lexer lexer;
-    lexer.scan(context, file);
+    Lexer::scan(context, file);
     CHECK(extract_token_types(context->scanned_tokens) == expected);
 
-    lexer.reset();
     context->reset();
     Logger::inst().reset();
 }
@@ -48,14 +46,12 @@ void run_lexer_error_test(
 
     auto context = std::make_unique<FrontendContext>();
     auto file = make_test_code_file(src_code);
-    Lexer lexer;
-    lexer.scan(context, file);
+    Lexer::scan(context, file);
 
     auto& errors = Logger::inst().get_errors();
     REQUIRE(errors.size() >= 1);
     CHECK(errors.at(0) == expected_error);
 
-    lexer.reset();
     context->reset();
     Logger::inst().reset();
 }

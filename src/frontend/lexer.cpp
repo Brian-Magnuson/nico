@@ -702,24 +702,7 @@ void Lexer::scan_token() {
     }
 }
 
-void Lexer::reset() {
-    file = nullptr;
-    tokens.clear();
-    start = 0;
-    current = 0;
-}
-
-void Lexer::scan(
-    std::unique_ptr<FrontendContext>& context,
-    const std::shared_ptr<CodeFile>& file
-) {
-    if (context->status == FrontendContext::Status::Error) {
-        panic("Lexer::scan: Context is already in an error state.");
-    }
-
-    reset();
-    this->file = file;
-
+void Lexer::run_scan(std::unique_ptr<FrontendContext>& context) {
     while (!is_at_end()) {
         start = current;
         scan_token();
@@ -759,4 +742,16 @@ void Lexer::scan(
     else {
         context->status = FrontendContext::Status::Error;
     }
+}
+
+void Lexer::scan(
+    std::unique_ptr<FrontendContext>& context,
+    const std::shared_ptr<CodeFile>& file, bool repl_mode
+) {
+    if (context->status == FrontendContext::Status::Error) {
+        panic("Lexer::scan: Context is already in an error state.");
+    }
+
+    Lexer lexer(file, repl_mode);
+    lexer.run_scan(context);
 }
