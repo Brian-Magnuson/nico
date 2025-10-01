@@ -20,6 +20,7 @@ BraceWrapping:
 AlignAfterOpenBracket: BlockIndent
 AllowAllArgumentsOnNextLine: false
 BinPackArguments: false
+BinPackParameters: OnePerLine
 PackConstructorInitializers: NextLineOnly
 
 # If-statements without braces must have a line break and never be on one line.

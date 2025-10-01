@@ -21,13 +21,19 @@
 /**
  * @brief A class to perform LLVM code generation.
  *
- * This class is move only. It cannot be copied.
- *
  * This class assumes that the AST has been type-checked.
  * It does not perform type-checking, it does not check for memory safety, and
  * it does not check for undefined behavior.
  */
 class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
+    // A flag to indicate whether IR should be printed just before verification.
+    const bool ir_printing_enabled = false;
+    // A flag to indicate whether panic is recoverable.
+    // Can be set to true when testing panics.
+    const bool panic_recoverable = false;
+    // A flag to indicate whether we are generating code in REPL mode.
+    const bool repl_mode = false;
+
     // The LLVM module and context used for code generation.
     IrModuleContext mod_ctx;
     // The IR builder used to generate the IR; always set the insertion point
@@ -35,11 +41,13 @@ class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
     std::unique_ptr<llvm::IRBuilder<>> builder;
     // A linked list of blocks for tracking control flow.
     std::shared_ptr<Block> block_list = nullptr;
-    // A flag to indicate whether panic is recoverable.
-    // Can be set to true when testing panics.
-    bool panic_recoverable = false;
-    // A flag to indicate whether IR should be printed just before verification.
-    bool ir_printing_enabled = false;
+
+    CodeGenerator(
+        std::string_view module_name,
+        bool ir_printing_enabled,
+        bool panic_recoverable,
+        bool repl_mode
+    );
 
     std::any visit(Stmt::Expression* stmt) override;
     std::any visit(Stmt::Let* stmt) override;
@@ -103,48 +111,6 @@ class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
      */
     void add_panic(std::string_view message, const Location* location);
 
-public:
-    /**
-     * @brief Constructs a code generator with a new LLVM context and module.
-     */
-    CodeGenerator() { reset(); }
-
-    // Move constructors and move assignment are disabled due to LLVM context
-    // and module complexities.
-    CodeGenerator(CodeGenerator&&) = delete;
-    CodeGenerator(const CodeGenerator&) = delete;
-    CodeGenerator& operator=(CodeGenerator&&) = delete;
-    CodeGenerator& operator=(const CodeGenerator&) = delete;
-
-    /**
-     * @brief Generate the LLVM IR for the given frontend context.
-     *
-     * This method traverses the AST and generates the corresponding LLVM IR.
-     * A `script` function will be generated, which can be called to "run" the
-     * code.
-     *
-     * This method does not verify the generated IR; use `verify_ir` to do so.
-     * If the goal is to generate a complete executable module, use
-     * `generate_executable_ir` instead.
-     *
-     * @param context The front end context containing the AST to generate IR
-     * for.
-     */
-    void generate_script(const std::unique_ptr<FrontendContext>& context);
-
-    /**
-     * @brief Generates the LLVM IR for the main function.
-     *
-     * The main function is used to make the module executable.
-     * It calls a function named `$script`, which begins executing code
-     * generated from top-level statements.
-     *
-     * This method does not verify the generated IR; use `verify_ir` to do so.
-     * If the goal is to generate a complete executable module, use
-     * `generate_executable_ir` instead.
-     */
-    void generate_main();
-
     /**
      * @brief Verify the generated LLVM IR for correctness.
      *
@@ -156,78 +122,77 @@ public:
     bool verify_ir();
 
     /**
-     * @brief Generates the LLVM IR for the script and main functions.
+     * @brief Generates the LLVM IR for the script function.
      *
-     * This method has the same effect as calling `generate_script`,
-     * `generate_main`, and `verify_ir` sequentially.
+     * All of the AST statements in the context are processed here.
      *
-     * If verification fails, an error message will be logged and false will
-     be
-     * returned.
-     * Verification may be skipped by setting `require_verification` to
-     false.
-     * In such case, this function always returns true.
+     * In our programming language, code is executed from the top level instead
+     * of an explicit "main" function. Internally, this code is put into a
+     * special function called the script function, which can be called to "run"
+     * the code.
      *
-     * The resulting module will contain a `main` function, allowing it to be
-     * executed as a standalone program.
-     *
-     * @param context The front end context containing the AST to generate IR
-     * for.
-     * @param require_verification Whether to verify the generated IR. Defaults
-     * to true.
+     * @param context The front end context containing the AST to generate IR.
+     * @param script_fn_name The name of the script function to generate.
+     * Defaults to "$script".
      */
-    void generate_executable_ir(
+    void generate_script(
         const std::unique_ptr<FrontendContext>& context,
-        bool require_verification = true
+        std::string_view script_fn_name = "$script"
     );
 
     /**
-     * @brief Moves the generated LLVM module and context into the provided
+     * @brief Generates the LLVM IR for the main function.
+     *
+     * The main function is a special function that serves as the entry point
+     * for the executable. Internally, it calls the script function to execute
+     * the top-level code.
+     *
+     * With a main function, the module can be executed as a standalone program.
+     *
+     * @param script_fn_name The name of the script function to call from main.
+     * Should be the same as the name used in the call to generate_script.
+     * Defaults to "$script".
+     */
+    void generate_main(std::string_view script_fn_name = "$script");
+
+public:
+    /**
+     * @brief Generates the LLVM IR for an executable module from the given
      * front end context.
      *
-     * Once the module and llvm context are moved into the front end context,
-     * the code generator will be reset, allowing it to be reused.
+     * Use only for AOT and JIT compilation modes.
      *
-     * @param context The front end context to add the module and context to.
+     * Once code generation is complete, the generated module and context
+     * will be moved into the provided front end context. If code generation
+     * fails, this function will panic. Ensure code is correct before calling
+     * this function.
+     *
+     * If ir_printing_enabled is true, the generated IR will be printed to the
+     * console just before verification. Useful for debugging.
+     *
+     * If panic_recoverable is true, the generated code will include mechanisms
+     * to recover from panics using setjmp and longjmp. Useful for testing.
+     *
+     * If require_verification is true, the generated IR will be verified for
+     * correctness. If verification fails, this function will panic.
+     *
+     * @param context The front end context containing the AST to generate IR
+     * for.
+     * @param ir_printing_enabled Whether to print the generated IR before
+     * verification. Defaults to false.
+     * @param panic_recoverable Whether to make panics recoverable using
+     * setjmp and longjmp. Defaults to false.
+     * @param module_name The name of the generated module. Defaults to "main".
+     * @param require_verification Whether to verify the generated IR.
+     * Defaults to true.
      */
-    void add_module_to_context(std::unique_ptr<FrontendContext>& context);
-
-    /**
-     * @brief Reset the code generator to its initial state.
-     *
-     * This method creates a new LLVMContext object and Module object.
-     *
-     * Effectively equivalent to constructing a new CodeGenerator object.
-     */
-    void reset();
-
-    /**
-     * @brief Sets whether the code generator should use panic recovery.
-     *
-     * If setting panic recoverable, make sure to call this function before any
-     * code is generated.
-     *
-     * Normally, panics cause the program to terminate. But this makes the
-     * program difficult to test. So we provide a means to make a panic
-     * "recoverable".
-     *
-     * When panic recoverable is true, the program will generate instructions to
-     * call setjmp and longjmp. These behave similar to throw and catch in C++.
-     *
-     * @param value True to enable panic recovery, false to disable it.
-     */
-    void set_panic_recoverable(bool value) { panic_recoverable = value; }
-
-    /**
-     * @brief Sets whether the code generator should print the generated IR just
-     * before verification.
-     *
-     * This is useful for debugging/testing purposes.
-     * Make sure to call this function before any code is generated.
-     *
-     * @param value True to enable IR printing, false to disable it.
-     */
-    void set_ir_printing_enabled(bool value) { ir_printing_enabled = value; }
+    static void generate_exe_ir(
+        std::unique_ptr<FrontendContext>& context,
+        bool ir_printing_enabled = false,
+        bool panic_recoverable = false,
+        std::string_view module_name = "main",
+        bool require_verification = true
+    );
 };
 
 #endif // NICO_CODE_GENERATOR_H

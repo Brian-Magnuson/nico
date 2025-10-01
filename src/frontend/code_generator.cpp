@@ -12,247 +12,19 @@
 #include "nico/shared/logger.h"
 #include "nico/shared/utils.h"
 
-// MARK: Helpers
+CodeGenerator::CodeGenerator(
+    std::string_view module_name,
+    bool ir_printing_enabled,
+    bool panic_recoverable,
+    bool repl_mode
+)
+    : ir_printing_enabled(ir_printing_enabled),
+      panic_recoverable(panic_recoverable),
+      repl_mode(repl_mode),
+      mod_ctx() {
 
-void CodeGenerator::add_c_functions() {
-    // stderr
-    if (!mod_ctx.ir_module->getGlobalVariable("stderr")) {
-        llvm::PointerType* file_ptr_type =
-            llvm::PointerType::get(*mod_ctx.llvm_context, 0);
-        new llvm::GlobalVariable(
-            *mod_ctx.ir_module,
-            file_ptr_type,
-            true, // isConstant
-            llvm::GlobalValue::ExternalLinkage,
-            nullptr,
-            "stderr"
-        );
-    }
-    // printf
-    if (!mod_ctx.ir_module->getFunction("printf")) {
-        llvm::FunctionType* printf_type = llvm::FunctionType::get(
-            llvm::Type::getInt32Ty(*mod_ctx.llvm_context),
-            {llvm::PointerType::get(*mod_ctx.llvm_context, 0)},
-            true // true = variadic
-        );
-        llvm::Function::Create(
-            printf_type,
-            llvm::Function::ExternalLinkage,
-            "printf",
-            *mod_ctx.ir_module
-        );
-    }
-    // fprintf
-    if (!mod_ctx.ir_module->getFunction("fprintf")) {
-        llvm::FunctionType* fprintf_type = llvm::FunctionType::get(
-            llvm::Type::getInt32Ty(*mod_ctx.llvm_context),
-            {llvm::PointerType::get(*mod_ctx.llvm_context, 0),
-             llvm::PointerType::get(*mod_ctx.llvm_context, 0)},
-            true // true = variadic
-        );
-        llvm::Function::Create(
-            fprintf_type,
-            llvm::Function::ExternalLinkage,
-            "fprintf",
-            *mod_ctx.ir_module
-        );
-    }
-    // abort
-    if (!mod_ctx.ir_module->getFunction("abort")) {
-        llvm::FunctionType* abort_type = llvm::FunctionType::get(
-            llvm::Type::getVoidTy(*mod_ctx.llvm_context),
-            {},
-            false
-        );
-        llvm::Function::Create(
-            abort_type,
-            llvm::Function::ExternalLinkage,
-            "abort",
-            *mod_ctx.ir_module
-        );
-    }
-    // exit
-    if (!mod_ctx.ir_module->getFunction("exit")) {
-        llvm::FunctionType* exit_type = llvm::FunctionType::get(
-            llvm::Type::getVoidTy(*mod_ctx.llvm_context),
-            {llvm::Type::getInt32Ty(*mod_ctx.llvm_context)},
-            false
-        );
-        llvm::Function::Create(
-            exit_type,
-            llvm::Function::ExternalLinkage,
-            "exit",
-            *mod_ctx.ir_module
-        );
-    }
-    // malloc
-    if (!mod_ctx.ir_module->getFunction("malloc")) {
-        llvm::FunctionType* malloc_type = llvm::FunctionType::get(
-            llvm::PointerType::get(*mod_ctx.llvm_context, 0),
-            {llvm::Type::getIntNTy(*mod_ctx.llvm_context, sizeof(size_t) * 8)},
-            false
-        );
-        llvm::Function::Create(
-            malloc_type,
-            llvm::Function::ExternalLinkage,
-            "malloc",
-            *mod_ctx.ir_module
-        );
-    }
-    // free
-    if (!mod_ctx.ir_module->getFunction("free")) {
-        llvm::FunctionType* free_type = llvm::FunctionType::get(
-            llvm::Type::getVoidTy(*mod_ctx.llvm_context),
-            {llvm::PointerType::get(*mod_ctx.llvm_context, 0)},
-            false
-        );
-        llvm::Function::Create(
-            free_type,
-            llvm::Function::ExternalLinkage,
-            "free",
-            *mod_ctx.ir_module
-        );
-    }
-    if (panic_recoverable) {
-        // jmp_buf
-        if (!mod_ctx.ir_module->getGlobalVariable("jmp_buf", true)) {
-            llvm::ArrayType* jmp_buf_type = llvm::ArrayType::get(
-                llvm::Type::getInt8Ty(*mod_ctx.llvm_context),
-                256
-            );
-            new llvm::GlobalVariable(
-                *mod_ctx.ir_module,
-                jmp_buf_type,
-                false,
-                llvm::GlobalValue::InternalLinkage,
-                llvm::Constant::getNullValue(jmp_buf_type),
-                "jmp_buf"
-            );
-        }
-
-        // setjmp (panic recoverable only)
-        if (!mod_ctx.ir_module->getFunction("setjmp")) {
-            llvm::FunctionType* setjmp_type = llvm::FunctionType::get(
-                llvm::Type::getInt32Ty(*mod_ctx.llvm_context),
-                {llvm::PointerType::get(*mod_ctx.llvm_context, 0)},
-                false
-            );
-            llvm::Function::Create(
-                setjmp_type,
-                llvm::Function::ExternalLinkage,
-                "setjmp",
-                *mod_ctx.ir_module
-            );
-        }
-        // longjmp (panic recoverable only)
-        if (!mod_ctx.ir_module->getFunction("longjmp")) {
-            llvm::FunctionType* longjmp_type = llvm::FunctionType::get(
-                llvm::Type::getVoidTy(*mod_ctx.llvm_context),
-                {llvm::PointerType::get(*mod_ctx.llvm_context, 0),
-                 llvm::Type::getInt32Ty(*mod_ctx.llvm_context)},
-                false
-            );
-            llvm::Function::Create(
-                longjmp_type,
-                llvm::Function::ExternalLinkage,
-                "longjmp",
-                *mod_ctx.ir_module
-            );
-        }
-    }
-}
-
-void CodeGenerator::add_div_zero_check(
-    llvm::Value* divisor, const Location* location
-) {
-    llvm::BasicBlock* current_block = builder->GetInsertBlock();
-    llvm::Function* current_function = current_block->getParent();
-
-    llvm::BasicBlock* div_by_zero_block = llvm::BasicBlock::Create(
-        *mod_ctx.llvm_context,
-        "div_by_zero",
-        current_function
-    );
-    llvm::BasicBlock* div_ok_block = llvm::BasicBlock::Create(
-        *mod_ctx.llvm_context,
-        "div_ok",
-        current_function
-    );
-
-    llvm::Value* is_zero = builder->CreateICmpEQ(
-        divisor,
-        llvm::ConstantInt::get(divisor->getType(), 0)
-    );
-    builder->CreateCondBr(is_zero, div_by_zero_block, div_ok_block);
-
-    // div_by_zero_block
-    builder->SetInsertPoint(div_by_zero_block);
-    add_panic("Division by zero.", location);
-    builder->CreateUnreachable();
-
-    // div_ok_block
-    builder->SetInsertPoint(div_ok_block);
-}
-
-void CodeGenerator::add_panic(
-    std::string_view message, const Location* location
-) {
-    llvm::Value* jmp_buf_ptr;
-    if (panic_recoverable) {
-        llvm::GlobalVariable* jmp_buf_global =
-            mod_ctx.ir_module->getGlobalVariable("jmp_buf", true);
-        jmp_buf_ptr = builder->CreateBitCast(
-            jmp_buf_global,
-            llvm::PointerType::get(*mod_ctx.llvm_context, 0)
-        );
-    }
-    auto fprintf_fn = mod_ctx.ir_module->getFunction("fprintf");
-    llvm::Value* stderr_stream = builder->CreateLoad(
-        llvm::PointerType::get(*mod_ctx.llvm_context, 0),
-        mod_ctx.ir_module->getGlobalVariable("stderr")
-    );
-    llvm::Value* format_string =
-        builder->CreateGlobalStringPtr("Panic: %s: %s\n%s:%d:%d\n");
-    llvm::Value* func_name =
-        builder->CreateGlobalStringPtr(block_list->get_function_name());
-    llvm::Value* msg = builder->CreateGlobalStringPtr(message);
-    auto location_tuple = location->to_tuple();
-    llvm::Value* file_name =
-        builder->CreateGlobalStringPtr(std::get<0>(location_tuple));
-    llvm::Value* line_number = llvm::ConstantInt::get(
-        llvm::Type::getInt32Ty(*mod_ctx.llvm_context),
-        std::get<1>(location_tuple)
-    );
-    llvm::Value* column_number = llvm::ConstantInt::get(
-        llvm::Type::getInt32Ty(*mod_ctx.llvm_context),
-        std::get<2>(location_tuple)
-    );
-    builder->CreateCall(
-        fprintf_fn,
-        {stderr_stream,
-         format_string,
-         func_name,
-         msg,
-         file_name,
-         line_number,
-         column_number}
-    );
-
-    if (panic_recoverable) {
-        auto longjmp_fn = mod_ctx.ir_module->getFunction("longjmp");
-        builder->CreateCall(
-            longjmp_fn,
-            {jmp_buf_ptr,
-             llvm::ConstantInt::get(
-                 llvm::Type::getInt32Ty(*mod_ctx.llvm_context),
-                 1
-             )}
-        );
-    }
-    else {
-        auto abort_fn = mod_ctx.ir_module->getFunction("abort");
-        builder->CreateCall(abort_fn);
-    }
+    mod_ctx.initialize(module_name);
+    builder = std::make_unique<llvm::IRBuilder<>>(*mod_ctx.llvm_context);
 }
 
 // MARK: Statements
@@ -268,12 +40,17 @@ std::any CodeGenerator::visit(Stmt::Let* stmt) {
     llvm::Value* allocation = nullptr;
 
     if (PTR_INSTANCEOF(block_list, Block::Script)) {
+        // In REPL mode, global variables have external linkage so that they can
+        // be accessed across multiple submissions.
+        auto linkage = repl_mode ? llvm::GlobalValue::ExternalLinkage
+                                 : llvm::GlobalValue::InternalLinkage;
+
         // If we are in a script, create a global variable instead of a local
         allocation = new llvm::GlobalVariable(
             *mod_ctx.ir_module,
             llvm_type,
             false,
-            llvm::GlobalValue::InternalLinkage,
+            linkage,
             llvm::Constant::getNullValue(
                 llvm_type
             ), // We cannot assign non-constants here, so we use this instead
@@ -727,15 +504,272 @@ std::any CodeGenerator::visit(Expr::Conditional* expr, bool as_lvalue) {
     return yield_value;
 }
 
-// MARK: Interface
+// MARK: Helpers
 
-void CodeGenerator::generate_script(
-    const std::unique_ptr<FrontendContext>& context
+void CodeGenerator::add_c_functions() {
+    // stderr
+    if (!mod_ctx.ir_module->getGlobalVariable("stderr")) {
+        llvm::PointerType* file_ptr_type =
+            llvm::PointerType::get(*mod_ctx.llvm_context, 0);
+        new llvm::GlobalVariable(
+            *mod_ctx.ir_module,
+            file_ptr_type,
+            true, // isConstant
+            llvm::GlobalValue::ExternalLinkage,
+            nullptr,
+            "stderr"
+        );
+    }
+    // printf
+    if (!mod_ctx.ir_module->getFunction("printf")) {
+        llvm::FunctionType* printf_type = llvm::FunctionType::get(
+            llvm::Type::getInt32Ty(*mod_ctx.llvm_context),
+            {llvm::PointerType::get(*mod_ctx.llvm_context, 0)},
+            true // true = variadic
+        );
+        llvm::Function::Create(
+            printf_type,
+            llvm::Function::ExternalLinkage,
+            "printf",
+            *mod_ctx.ir_module
+        );
+    }
+    // fprintf
+    if (!mod_ctx.ir_module->getFunction("fprintf")) {
+        llvm::FunctionType* fprintf_type = llvm::FunctionType::get(
+            llvm::Type::getInt32Ty(*mod_ctx.llvm_context),
+            {llvm::PointerType::get(*mod_ctx.llvm_context, 0),
+             llvm::PointerType::get(*mod_ctx.llvm_context, 0)},
+            true // true = variadic
+        );
+        llvm::Function::Create(
+            fprintf_type,
+            llvm::Function::ExternalLinkage,
+            "fprintf",
+            *mod_ctx.ir_module
+        );
+    }
+    // abort
+    if (!mod_ctx.ir_module->getFunction("abort")) {
+        llvm::FunctionType* abort_type = llvm::FunctionType::get(
+            llvm::Type::getVoidTy(*mod_ctx.llvm_context),
+            {},
+            false
+        );
+        llvm::Function::Create(
+            abort_type,
+            llvm::Function::ExternalLinkage,
+            "abort",
+            *mod_ctx.ir_module
+        );
+    }
+    // exit
+    if (!mod_ctx.ir_module->getFunction("exit")) {
+        llvm::FunctionType* exit_type = llvm::FunctionType::get(
+            llvm::Type::getVoidTy(*mod_ctx.llvm_context),
+            {llvm::Type::getInt32Ty(*mod_ctx.llvm_context)},
+            false
+        );
+        llvm::Function::Create(
+            exit_type,
+            llvm::Function::ExternalLinkage,
+            "exit",
+            *mod_ctx.ir_module
+        );
+    }
+    // malloc
+    if (!mod_ctx.ir_module->getFunction("malloc")) {
+        llvm::FunctionType* malloc_type = llvm::FunctionType::get(
+            llvm::PointerType::get(*mod_ctx.llvm_context, 0),
+            {llvm::Type::getIntNTy(*mod_ctx.llvm_context, sizeof(size_t) * 8)},
+            false
+        );
+        llvm::Function::Create(
+            malloc_type,
+            llvm::Function::ExternalLinkage,
+            "malloc",
+            *mod_ctx.ir_module
+        );
+    }
+    // free
+    if (!mod_ctx.ir_module->getFunction("free")) {
+        llvm::FunctionType* free_type = llvm::FunctionType::get(
+            llvm::Type::getVoidTy(*mod_ctx.llvm_context),
+            {llvm::PointerType::get(*mod_ctx.llvm_context, 0)},
+            false
+        );
+        llvm::Function::Create(
+            free_type,
+            llvm::Function::ExternalLinkage,
+            "free",
+            *mod_ctx.ir_module
+        );
+    }
+    if (panic_recoverable) {
+        // jmp_buf
+        if (!mod_ctx.ir_module->getGlobalVariable("jmp_buf", true)) {
+            llvm::ArrayType* jmp_buf_type = llvm::ArrayType::get(
+                llvm::Type::getInt8Ty(*mod_ctx.llvm_context),
+                256
+            );
+            new llvm::GlobalVariable(
+                *mod_ctx.ir_module,
+                jmp_buf_type,
+                false,
+                llvm::GlobalValue::InternalLinkage,
+                llvm::Constant::getNullValue(jmp_buf_type),
+                "jmp_buf"
+            );
+        }
+
+        // setjmp (panic recoverable only)
+        if (!mod_ctx.ir_module->getFunction("setjmp")) {
+            llvm::FunctionType* setjmp_type = llvm::FunctionType::get(
+                llvm::Type::getInt32Ty(*mod_ctx.llvm_context),
+                {llvm::PointerType::get(*mod_ctx.llvm_context, 0)},
+                false
+            );
+            llvm::Function::Create(
+                setjmp_type,
+                llvm::Function::ExternalLinkage,
+                "setjmp",
+                *mod_ctx.ir_module
+            );
+        }
+        // longjmp (panic recoverable only)
+        if (!mod_ctx.ir_module->getFunction("longjmp")) {
+            llvm::FunctionType* longjmp_type = llvm::FunctionType::get(
+                llvm::Type::getVoidTy(*mod_ctx.llvm_context),
+                {llvm::PointerType::get(*mod_ctx.llvm_context, 0),
+                 llvm::Type::getInt32Ty(*mod_ctx.llvm_context)},
+                false
+            );
+            llvm::Function::Create(
+                longjmp_type,
+                llvm::Function::ExternalLinkage,
+                "longjmp",
+                *mod_ctx.ir_module
+            );
+        }
+    }
+}
+
+void CodeGenerator::add_div_zero_check(
+    llvm::Value* divisor, const Location* location
 ) {
-    if (context->status == FrontendContext::Status::Error) {
-        panic("CodeGenerator::generate_script: Context is in an error state.");
+    llvm::BasicBlock* current_block = builder->GetInsertBlock();
+    llvm::Function* current_function = current_block->getParent();
+
+    llvm::BasicBlock* div_by_zero_block = llvm::BasicBlock::Create(
+        *mod_ctx.llvm_context,
+        "div_by_zero",
+        current_function
+    );
+    llvm::BasicBlock* div_ok_block = llvm::BasicBlock::Create(
+        *mod_ctx.llvm_context,
+        "div_ok",
+        current_function
+    );
+
+    llvm::Value* is_zero = builder->CreateICmpEQ(
+        divisor,
+        llvm::ConstantInt::get(divisor->getType(), 0)
+    );
+    builder->CreateCondBr(is_zero, div_by_zero_block, div_ok_block);
+
+    // div_by_zero_block
+    builder->SetInsertPoint(div_by_zero_block);
+    add_panic("Division by zero.", location);
+    builder->CreateUnreachable();
+
+    // div_ok_block
+    builder->SetInsertPoint(div_ok_block);
+}
+
+void CodeGenerator::add_panic(
+    std::string_view message, const Location* location
+) {
+    llvm::Value* jmp_buf_ptr;
+    if (panic_recoverable) {
+        llvm::GlobalVariable* jmp_buf_global =
+            mod_ctx.ir_module->getGlobalVariable("jmp_buf", true);
+        jmp_buf_ptr = builder->CreateBitCast(
+            jmp_buf_global,
+            llvm::PointerType::get(*mod_ctx.llvm_context, 0)
+        );
+    }
+    auto fprintf_fn = mod_ctx.ir_module->getFunction("fprintf");
+    llvm::Value* stderr_stream = builder->CreateLoad(
+        llvm::PointerType::get(*mod_ctx.llvm_context, 0),
+        mod_ctx.ir_module->getGlobalVariable("stderr")
+    );
+    llvm::Value* format_string =
+        builder->CreateGlobalStringPtr("Panic: %s: %s\n%s:%d:%d\n");
+    llvm::Value* func_name =
+        builder->CreateGlobalStringPtr(block_list->get_function_name());
+    llvm::Value* msg = builder->CreateGlobalStringPtr(message);
+    auto location_tuple = location->to_tuple();
+    llvm::Value* file_name =
+        builder->CreateGlobalStringPtr(std::get<0>(location_tuple));
+    llvm::Value* line_number = llvm::ConstantInt::get(
+        llvm::Type::getInt32Ty(*mod_ctx.llvm_context),
+        std::get<1>(location_tuple)
+    );
+    llvm::Value* column_number = llvm::ConstantInt::get(
+        llvm::Type::getInt32Ty(*mod_ctx.llvm_context),
+        std::get<2>(location_tuple)
+    );
+    builder->CreateCall(
+        fprintf_fn,
+        {stderr_stream,
+         format_string,
+         func_name,
+         msg,
+         file_name,
+         line_number,
+         column_number}
+    );
+
+    if (panic_recoverable) {
+        auto longjmp_fn = mod_ctx.ir_module->getFunction("longjmp");
+        builder->CreateCall(
+            longjmp_fn,
+            {jmp_buf_ptr,
+             llvm::ConstantInt::get(
+                 llvm::Type::getInt32Ty(*mod_ctx.llvm_context),
+                 1
+             )}
+        );
+    }
+    else {
+        auto abort_fn = mod_ctx.ir_module->getFunction("abort");
+        builder->CreateCall(abort_fn);
+    }
+}
+
+bool CodeGenerator::verify_ir() {
+    if (ir_printing_enabled) {
+        mod_ctx.ir_module->print(llvm::outs(), nullptr);
     }
 
+    std::string error_str;
+    llvm::raw_string_ostream error_stream(error_str);
+
+    bool failed = llvm::verifyModule(*mod_ctx.ir_module, &error_stream);
+    if (failed) {
+        error_stream.flush(); // Ensure all output is written to error_str
+        panic(
+            std::string("CodeGenerator::verify_ir: IR verification failed: ") +
+            error_str
+        );
+    }
+    return !failed;
+}
+
+void CodeGenerator::generate_script(
+    const std::unique_ptr<FrontendContext>& context,
+    std::string_view script_fn_name
+) {
     add_c_functions();
 
     llvm::FunctionType* script_fn_type =
@@ -743,7 +777,7 @@ void CodeGenerator::generate_script(
     llvm::Function* script_fn = llvm::Function::Create(
         script_fn_type,
         llvm::Function::ExternalLinkage,
-        "script",
+        script_fn_name,
         mod_ctx.ir_module.get()
     );
 
@@ -824,7 +858,7 @@ void CodeGenerator::generate_script(
     builder->CreateRet(builder->CreateLoad(builder->getInt32Ty(), ret_val));
 }
 
-void CodeGenerator::generate_main() {
+void CodeGenerator::generate_main(std::string_view script_fn_name) {
     // Generate the main function that calls $script
     llvm::FunctionType* main_fn_type = llvm::FunctionType::get(
         builder->getInt32Ty(),
@@ -845,7 +879,7 @@ void CodeGenerator::generate_main() {
     builder->SetInsertPoint(main_entry);
 
     // Call the script function
-    llvm::Function* script_fn = mod_ctx.ir_module->getFunction("script");
+    llvm::Function* script_fn = mod_ctx.ir_module->getFunction(script_fn_name);
     llvm::Value* script_ret = builder->CreateCall(script_fn);
 
     // We discard the args for now; later we can come up with a way to make them
@@ -855,52 +889,29 @@ void CodeGenerator::generate_main() {
     builder->CreateRet(script_ret);
 }
 
-bool CodeGenerator::verify_ir() {
-    if (ir_printing_enabled) {
-        mod_ctx.ir_module->print(llvm::outs(), nullptr);
-    }
-
-    std::string error_str;
-    llvm::raw_string_ostream error_stream(error_str);
-
-    bool failed = llvm::verifyModule(*mod_ctx.ir_module, &error_stream);
-    if (failed) {
-        error_stream.flush(); // Ensure all output is written to error_str
-        panic(
-            std::string(
-                "CodeGenerator::generate_executable_ir(): IR verification "
-                "failed:\n"
-            ) +
-            error_str
-        );
-    }
-    return !failed;
-}
-
-void CodeGenerator::generate_executable_ir(
-    const std::unique_ptr<FrontendContext>& context, bool require_verification
+void CodeGenerator::generate_exe_ir(
+    std::unique_ptr<FrontendContext>& context,
+    bool ir_printing_enabled,
+    bool panic_recoverable,
+    std::string_view module_name,
+    bool require_verification
 ) {
-    generate_script(context);
-    generate_main();
-    if (require_verification && !verify_ir()) {
-        panic(
-            "CodeGenerator::generate_executable_ir(): IR verification "
-            "failed."
-        );
+    if (context->status == FrontendContext::Status::Error) {
+        panic("CodeGenerator::generate_exe_ir: Context is in an error state.");
     }
-}
 
-void CodeGenerator::add_module_to_context(
-    std::unique_ptr<FrontendContext>& context
-) {
-    context->mod_ctx = std::move(mod_ctx);
-    reset();
-}
+    CodeGenerator codegen(
+        module_name,
+        ir_printing_enabled,
+        panic_recoverable,
+        false // repl_mode
+    );
 
-void CodeGenerator::reset() {
-    mod_ctx.initialize();
-    builder = std::make_unique<llvm::IRBuilder<>>(*mod_ctx.llvm_context);
-    block_list = nullptr;
-    panic_recoverable = false;
-    ir_printing_enabled = false;
+    codegen.generate_script(context);
+    codegen.generate_main();
+    if (require_verification && !codegen.verify_ir()) {
+        panic("CodeGenerator::generate_exe_ir(): IR verification failed.");
+    }
+
+    context->mod_ctx = std::move(codegen.mod_ctx);
 }

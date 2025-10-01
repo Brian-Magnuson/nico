@@ -18,11 +18,11 @@ Frontend::compile(const std::shared_ptr<CodeFile>& file, bool repl_mode) {
     if (context->status == FrontendContext::Status::Error)
         return context;
 
-    CodeGenerator codegen;
-    codegen.set_panic_recoverable(panic_recoverable);
-    codegen.set_ir_printing_enabled(ir_printing_enabled);
-    codegen.generate_executable_ir(context, true);
-    codegen.add_module_to_context(context);
+    CodeGenerator::generate_exe_ir(
+        context,
+        ir_printing_enabled,
+        panic_recoverable
+    );
 
     return context;
 }
