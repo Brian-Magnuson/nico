@@ -17,12 +17,19 @@
 class Parser {
     // The vector of tokens to parse.
     const std::vector<std::shared_ptr<Token>> tokens;
+    // Whether the parser is running in REPL mode.
+    const bool repl_mode;
 
     // The current token index.
     unsigned current = 0;
+    // Whether the parser should pause and wait for more input (REPL mode only).
+    bool repl_require_pause = false;
 
-    Parser(const std::vector<std::shared_ptr<Token>>&& tokens)
-        : tokens(std::move(tokens)) {}
+    Parser(
+        const std::vector<std::shared_ptr<Token>>&& tokens,
+        bool repl_mode = false
+    )
+        : tokens(std::move(tokens)), repl_mode(repl_mode) {}
 
     /**
      * @brief Checks if the parser has reached the end of the tokens list.
@@ -290,8 +297,11 @@ public:
      * Upon success, the parsed AST will be appended to the context's AST.
      *
      * @param context The context containing the tokens to parse.
+     * @param repl_mode Whether the parser is running in REPL mode. Defaults to
+     * false.
      */
-    static void parse(std::unique_ptr<FrontendContext>& context);
+    static void
+    parse(std::unique_ptr<FrontendContext>& context, bool repl_mode = false);
 };
 
 #endif // NICO_PARSER_H

@@ -2,11 +2,11 @@
 
 std::unique_ptr<FrontendContext>&
 Frontend::compile(const std::shared_ptr<CodeFile>& file, bool repl_mode) {
-    Lexer::scan(context, file);
+    Lexer::scan(context, file, repl_mode);
     if (context->status == FrontendContext::Status::Error)
         return context;
 
-    Parser::parse(context);
+    Parser::parse(context, repl_mode);
     if (context->status == FrontendContext::Status::Error)
         return context;
 
@@ -17,6 +17,8 @@ Frontend::compile(const std::shared_ptr<CodeFile>& file, bool repl_mode) {
     LocalChecker::check(context);
     if (context->status == FrontendContext::Status::Error)
         return context;
+
+    context->stmts_checked = context->stmts.size();
 
     CodeGenerator::generate_exe_ir(
         context,

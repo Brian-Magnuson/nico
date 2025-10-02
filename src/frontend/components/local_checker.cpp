@@ -665,8 +665,8 @@ std::any LocalChecker::visit(Annotation::Tuple* annotation) {
 }
 
 void LocalChecker::run_check(std::unique_ptr<FrontendContext>& context) {
-    for (auto& stmt : context->stmts) {
-        stmt->accept(this);
+    for (size_t i = context->stmts_checked; i < context->stmts.size(); ++i) {
+        context->stmts[i]->accept(this);
     }
 
     if (Logger::inst().get_errors().empty()) {

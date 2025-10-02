@@ -192,11 +192,16 @@ std::optional<std::shared_ptr<Expr>> Parser::primary() {
         }
     }
 
-    Logger::inst().log_error(
-        Err::NotAnExpression,
-        peek()->location,
-        "Expected expression."
-    );
+    if (repl_mode) {
+        repl_require_pause = true;
+    }
+    else {
+        Logger::inst().log_error(
+            Err::NotAnExpression,
+            peek()->location,
+            "Expected expression."
+        );
+    }
     return std::nullopt;
 }
 
@@ -464,6 +469,10 @@ void Parser::run_parse(std::unique_ptr<FrontendContext>& context) {
         if (stmt) {
             context->stmts.push_back(*stmt);
         }
+        else if (repl_mode && repl_require_pause) {
+            context->status = FrontendContext::Status::Pause;
+            return;
+        }
         else {
             synchronize();
         }
@@ -479,12 +488,12 @@ void Parser::run_parse(std::unique_ptr<FrontendContext>& context) {
     }
 }
 
-void Parser::parse(std::unique_ptr<FrontendContext>& context) {
+void Parser::parse(std::unique_ptr<FrontendContext>& context, bool repl_mode) {
     if (context->status == FrontendContext::Status::Error) {
         panic("Parser::parse: Context is already in an error state.");
     }
 
-    Parser parser(std::move(context->scanned_tokens));
+    Parser parser(std::move(context->scanned_tokens), repl_mode);
     context->scanned_tokens = {};
     parser.run_parse(context);
 }
