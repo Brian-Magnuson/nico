@@ -26,6 +26,9 @@
  * it does not check for undefined behavior.
  */
 class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
+    // A static counter for generating unique names in REPL mode.
+    static int repl_counter;
+
     // A flag to indicate whether IR should be printed just before verification.
     const bool ir_printing_enabled = false;
     // A flag to indicate whether panic is recoverable.
@@ -160,7 +163,8 @@ public:
      * @brief Generates the LLVM IR for an executable module from the given
      * front end context.
      *
-     * Use only for AOT and JIT compilation modes.
+     * Use only for AOT and JIT compilation modes. For REPL mode, use
+     * `generate_repl_ir`.
      *
      * Once code generation is complete, the generated module and context
      * will be moved into the provided front end context. If code generation
@@ -191,6 +195,34 @@ public:
         bool ir_printing_enabled = false,
         bool panic_recoverable = false,
         std::string_view module_name = "main",
+        bool require_verification = true
+    );
+
+    /**
+     * @brief Generates the LLVM IR for a REPL submission from the given
+     * front end context.
+     *
+     * Use only for REPL mode. For other compilation modes, use
+     * `generate_exe_ir`.
+     *
+     * Once code generation is complete, the generated module and context
+     * will be moved into the provided front end context. If code generation
+     * fails, this function will panic. Ensure code is correct before calling
+     * this function.
+     *
+     * If ir_printing_enabled is true, the generated IR will be printed to the
+     * console just before verification. Useful for debugging.
+     *
+     * @param context The front end context containing the AST to generate IR
+     * for.
+     * @param ir_printing_enabled Whether to print the generated IR before
+     * verification. Defaults to false.
+     * @param require_verification Whether to verify the generated IR.
+     * Defaults to true.
+     */
+    static void generate_repl_ir(
+        std::unique_ptr<FrontendContext>& context,
+        bool ir_printing_enabled = false,
         bool require_verification = true
     );
 };

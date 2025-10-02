@@ -472,6 +472,7 @@ void Parser::run_parse(std::unique_ptr<FrontendContext>& context) {
         }
         else if (repl_mode && repl_require_pause) {
             context->status = Status::Pause;
+            context->request = Request::Input;
             return;
         }
         else {

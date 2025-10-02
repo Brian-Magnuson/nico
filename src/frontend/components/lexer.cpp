@@ -714,6 +714,7 @@ void Lexer::run_scan(std::unique_ptr<FrontendContext>& context) {
         if (repl_require_pause || grouping_token_stack.empty() ||
             left_spacing_stack.empty()) {
             context->status = Status::Pause;
+            context->request = Request::Input;
             return;
         }
     }

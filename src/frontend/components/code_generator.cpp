@@ -13,6 +13,8 @@
 #include "nico/shared/status.h"
 #include "nico/shared/utils.h"
 
+int CodeGenerator::repl_counter = 0;
+
 CodeGenerator::CodeGenerator(
     std::string_view module_name,
     bool ir_printing_enabled,
@@ -912,6 +914,32 @@ void CodeGenerator::generate_exe_ir(
     codegen.generate_main();
     if (require_verification && !codegen.verify_ir()) {
         panic("CodeGenerator::generate_exe_ir(): IR verification failed.");
+    }
+
+    context->mod_ctx = std::move(codegen.mod_ctx);
+}
+void CodeGenerator::generate_repl_ir(
+    std::unique_ptr<FrontendContext>& context,
+    bool ir_printing_enabled,
+    bool require_verification
+) {
+    if (context->status == Status::Error) {
+        panic("CodeGenerator::generate_repl_ir: Context is in an error state.");
+    }
+
+    auto repl_counter_str = std::to_string(++repl_counter);
+    auto script_fn_name = "$entry_" + repl_counter_str;
+    CodeGenerator codegen(
+        "repl_" + repl_counter_str,
+        ir_printing_enabled,
+        true, // panic_recoverable
+        true  // repl_mode
+    );
+
+    codegen.generate_script(context, script_fn_name);
+    codegen.generate_main(script_fn_name);
+    if (require_verification && !codegen.verify_ir()) {
+        panic("CodeGenerator::generate_repl_ir(): IR verification failed.");
     }
 
     context->mod_ctx = std::move(codegen.mod_ctx);

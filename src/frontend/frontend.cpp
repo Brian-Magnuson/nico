@@ -22,11 +22,16 @@ Frontend::compile(const std::shared_ptr<CodeFile>& file, bool repl_mode) {
 
     context->stmts_checked = context->stmts.size();
 
-    CodeGenerator::generate_exe_ir(
-        context,
-        ir_printing_enabled,
-        panic_recoverable
-    );
+    if (repl_mode) {
+        CodeGenerator::generate_repl_ir(context, ir_printing_enabled);
+    }
+    else {
+        CodeGenerator::generate_exe_ir(
+            context,
+            ir_printing_enabled,
+            panic_recoverable
+        );
+    }
 
     return context;
 }
