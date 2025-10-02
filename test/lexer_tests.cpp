@@ -3,7 +3,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-#include "nico/frontend/lexer.h"
+#include "nico/frontend/components/lexer.h"
 #include "nico/frontend/utils/frontend_context.h"
 #include "nico/shared/code_file.h"
 #include "nico/shared/logger.h"

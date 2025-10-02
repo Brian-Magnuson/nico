@@ -1,4 +1,4 @@
-#include "nico/frontend/code_generator.h"
+#include "nico/frontend/components/code_generator.h"
 
 #include <iostream>
 #include <string_view>

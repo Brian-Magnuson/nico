@@ -1,4 +1,4 @@
-#include "nico/frontend/lexer.h"
+#include "nico/frontend/components/lexer.h"
 
 #include <cstdint>
 #include <string>
@@ -746,7 +746,8 @@ void Lexer::run_scan(std::unique_ptr<FrontendContext>& context) {
 
 void Lexer::scan(
     std::unique_ptr<FrontendContext>& context,
-    const std::shared_ptr<CodeFile>& file, bool repl_mode
+    const std::shared_ptr<CodeFile>& file,
+    bool repl_mode
 ) {
     if (context->status == FrontendContext::Status::Error) {
         panic("Lexer::scan: Context is already in an error state.");

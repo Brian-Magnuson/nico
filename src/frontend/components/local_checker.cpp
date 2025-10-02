@@ -1,4 +1,4 @@
-#include "nico/frontend/local_checker.h"
+#include "nico/frontend/components/local_checker.h"
 
 #include "nico/shared/error_code.h"
 #include "nico/shared/logger.h"

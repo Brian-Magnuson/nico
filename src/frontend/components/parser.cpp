@@ -1,4 +1,4 @@
-#include "nico/frontend/parser.h"
+#include "nico/frontend/components/parser.h"
 
 #include "nico/frontend/utils/nodes.h"
 #include "nico/shared/logger.h"

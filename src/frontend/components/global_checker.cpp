@@ -1,4 +1,4 @@
-#include "nico/frontend/global_checker.h"
+#include "nico/frontend/components/global_checker.h"
 
 void GlobalChecker::run_check(std::unique_ptr<FrontendContext>& context) {
     // Currently, the global checker does nothing.

@@ -41,14 +41,20 @@ set(FRONT_END_UTILS_SRC
     src/frontend/utils/symbol_tree.cpp
 )
 
+# Front end component files
+set(FRONT_END_COMPONENTS_SRC
+    src/frontend/components/code_generator.cpp
+    src/frontend/components/global_checker.cpp
+    src/frontend/components/lexer.cpp
+    src/frontend/components/local_checker.cpp
+    src/frontend/components/parser.cpp
+)
+
 # Front end files
 set(FRONT_END_SRC
-    src/frontend/code_generator.cpp
     src/frontend/frontend.cpp
-    src/frontend/global_checker.cpp
-    src/frontend/lexer.cpp
-    src/frontend/local_checker.cpp
-    src/frontend/parser.cpp
+    ${FRONT_END_COMPONENTS_SRC}
+    ${FRONT_END_UTILS_SRC}
 )
 
 # Back end files
@@ -65,7 +71,6 @@ set(SHARED_SRC
 
 # Core source files
 set(CORE_SRC
-    ${FRONT_END_UTILS_SRC}
     ${FRONT_END_SRC}
     ${BACK_END_SRC}
     ${SHARED_SRC}
@@ -84,6 +89,7 @@ set(TEST_UTILS_SRC
 
 # Test files
 set(TEST_SRC
+    ${TEST_UTILS_SRC}
     test/lexer_tests.cpp
     test/parser_expr_tests.cpp
     test/parser_stmt_tests.cpp
@@ -97,7 +103,7 @@ target_include_directories(nico PRIVATE ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(nico ${llvm_libs})
 
 # Test executable
-add_executable(tests ${TEST_SRC} ${TEST_UTILS_SRC} ${CORE_SRC})
+add_executable(tests ${TEST_SRC} ${CORE_SRC})
 target_include_directories(tests PRIVATE ${CMAKE_SOURCE_DIR}/include)
 target_include_directories(tests PRIVATE ${CMAKE_SOURCE_DIR}/test/include)
 target_link_libraries(tests Catch2::Catch2WithMain ${llvm_libs})

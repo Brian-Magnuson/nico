@@ -9,12 +9,7 @@
 #include <llvm/Support/Error.h>
 
 #include "nico/backend/jit.h"
-#include "nico/frontend/code_generator.h"
 #include "nico/frontend/frontend.h"
-#include "nico/frontend/global_checker.h"
-#include "nico/frontend/lexer.h"
-#include "nico/frontend/local_checker.h"
-#include "nico/frontend/parser.h"
 #include "nico/frontend/utils/frontend_context.h"
 #include "nico/shared/code_file.h"
 #include "nico/shared/logger.h"

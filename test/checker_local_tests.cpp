@@ -5,10 +5,10 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-#include "nico/frontend/global_checker.h"
-#include "nico/frontend/lexer.h"
-#include "nico/frontend/local_checker.h"
-#include "nico/frontend/parser.h"
+#include "nico/frontend/components/global_checker.h"
+#include "nico/frontend/components/lexer.h"
+#include "nico/frontend/components/local_checker.h"
+#include "nico/frontend/components/parser.h"
 #include "nico/frontend/utils/ast_node.h"
 #include "nico/shared/code_file.h"
 #include "nico/shared/logger.h"
@@ -32,7 +32,8 @@
  * be based on the presence of expected_error (see description).
  */
 void run_checker_test(
-    std::string_view src_code, std::optional<Err> expected_error = std::nullopt,
+    std::string_view src_code,
+    std::optional<Err> expected_error = std::nullopt,
     std::optional<bool> print_errors = std::nullopt
 ) {
     // If there is no expected error, we enable printing to look for unexpected
