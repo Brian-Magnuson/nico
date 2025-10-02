@@ -2,6 +2,7 @@
 
 #include "nico/shared/error_code.h"
 #include "nico/shared/logger.h"
+#include "nico/shared/status.h"
 #include "nico/shared/utils.h"
 
 std::shared_ptr<Type>
@@ -670,15 +671,15 @@ void LocalChecker::run_check(std::unique_ptr<FrontendContext>& context) {
     }
 
     if (Logger::inst().get_errors().empty()) {
-        context->status = FrontendContext::Status::OK;
+        context->status = Status::OK;
     }
     else {
-        context->status = FrontendContext::Status::Error;
+        context->status = Status::Error;
     }
 }
 
 void LocalChecker::check(std::unique_ptr<FrontendContext>& context) {
-    if (context->status == FrontendContext::Status::Error) {
+    if (context->status == Status::Error) {
         panic("LocalChecker::check: Context is already in an error state.");
     }
 

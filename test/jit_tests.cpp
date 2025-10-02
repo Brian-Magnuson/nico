@@ -13,6 +13,7 @@
 #include "nico/frontend/utils/frontend_context.h"
 #include "nico/shared/code_file.h"
 #include "nico/shared/logger.h"
+#include "nico/shared/status.h"
 #include "nico/shared/token.h"
 
 #include "test_utils.h"
@@ -57,7 +58,7 @@ void run_jit_test(
     frontend.set_ir_printing_enabled(print_ir);
 
     std::unique_ptr<FrontendContext>& context = frontend.compile(file, false);
-    REQUIRE(context->status == FrontendContext::Status::OK);
+    REQUIRE(context->status == Status::OK);
 
     std::unique_ptr<IJit> jit = std::make_unique<SimpleJit>();
     auto jit_err = jit->add_module_and_context(std::move(context->mod_ctx));

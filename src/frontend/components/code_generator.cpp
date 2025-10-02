@@ -10,6 +10,7 @@
 #include "nico/frontend/utils/symbol_node.h"
 #include "nico/frontend/utils/type_node.h"
 #include "nico/shared/logger.h"
+#include "nico/shared/status.h"
 #include "nico/shared/utils.h"
 
 CodeGenerator::CodeGenerator(
@@ -896,7 +897,7 @@ void CodeGenerator::generate_exe_ir(
     std::string_view module_name,
     bool require_verification
 ) {
-    if (context->status == FrontendContext::Status::Error) {
+    if (context->status == Status::Error) {
         panic("CodeGenerator::generate_exe_ir: Context is in an error state.");
     }
 

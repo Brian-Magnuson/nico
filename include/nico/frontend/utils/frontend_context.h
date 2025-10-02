@@ -11,6 +11,7 @@
 #include "nico/frontend/utils/ast_node.h"
 #include "nico/frontend/utils/symbol_tree.h"
 #include "nico/shared/ir_module_context.h"
+#include "nico/shared/status.h"
 #include "nico/shared/token.h"
 
 /**
@@ -23,19 +24,6 @@
  */
 class FrontendContext {
 public:
-    /**
-     * @brief The status of the front end.
-     */
-    enum class Status {
-        // The front end is ready to accept input.
-        OK,
-        // The front end could not complete processing, but can try again after
-        // receiving more input.
-        Pause,
-        // The front end encountered an unrecoverable error and cannot continue.
-        Error
-    };
-
     // The current status of the front end.
     Status status = Status::OK;
     // The tokens scanned from the last input.

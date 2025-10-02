@@ -5,6 +5,7 @@
 
 #include "nico/shared/error_code.h"
 #include "nico/shared/logger.h"
+#include "nico/shared/status.h"
 #include "nico/shared/utils.h"
 
 std::unordered_map<std::string_view, Tok> Lexer::keywords = {
@@ -712,7 +713,7 @@ void Lexer::run_scan(std::unique_ptr<FrontendContext>& context) {
         // If in REPL mode, and we need more input, pause.
         if (repl_require_pause || grouping_token_stack.empty() ||
             left_spacing_stack.empty()) {
-            context->status = FrontendContext::Status::Pause;
+            context->status = Status::Pause;
             return;
         }
     }
@@ -736,11 +737,11 @@ void Lexer::run_scan(std::unique_ptr<FrontendContext>& context) {
     tokens.push_back(eof_token);
 
     if (Logger::inst().get_errors().empty()) {
-        context->status = FrontendContext::Status::OK;
+        context->status = Status::OK;
         context->scanned_tokens = std::move(tokens);
     }
     else {
-        context->status = FrontendContext::Status::Error;
+        context->status = Status::Error;
     }
 }
 
@@ -749,7 +750,7 @@ void Lexer::scan(
     const std::shared_ptr<CodeFile>& file,
     bool repl_mode
 ) {
-    if (context->status == FrontendContext::Status::Error) {
+    if (context->status == Status::Error) {
         panic("Lexer::scan: Context is already in an error state.");
     }
 

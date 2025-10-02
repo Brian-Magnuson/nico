@@ -2,6 +2,7 @@
 
 #include "nico/frontend/utils/nodes.h"
 #include "nico/shared/logger.h"
+#include "nico/shared/status.h"
 #include "nico/shared/utils.h"
 
 bool Parser::is_at_end() const {
@@ -470,7 +471,7 @@ void Parser::run_parse(std::unique_ptr<FrontendContext>& context) {
             context->stmts.push_back(*stmt);
         }
         else if (repl_mode && repl_require_pause) {
-            context->status = FrontendContext::Status::Pause;
+            context->status = Status::Pause;
             return;
         }
         else {
@@ -479,17 +480,17 @@ void Parser::run_parse(std::unique_ptr<FrontendContext>& context) {
     }
 
     if (Logger::inst().get_errors().empty()) {
-        context->status = FrontendContext::Status::OK;
+        context->status = Status::OK;
     }
     else {
-        context->status = FrontendContext::Status::Error;
+        context->status = Status::Error;
         // Roll back any statements added during this parse.
         context->stmts.resize(start_size);
     }
 }
 
 void Parser::parse(std::unique_ptr<FrontendContext>& context, bool repl_mode) {
-    if (context->status == FrontendContext::Status::Error) {
+    if (context->status == Status::Error) {
         panic("Parser::parse: Context is already in an error state.");
     }
 

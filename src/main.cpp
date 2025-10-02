@@ -10,6 +10,7 @@
 #include "nico/backend/jit.h"
 #include "nico/frontend/frontend.h"
 #include "nico/shared/code_file.h"
+#include "nico/shared/status.h"
 
 int main(int argc, char** argv) {
     if (argc != 2) {
@@ -46,7 +47,7 @@ int main(int argc, char** argv) {
     Frontend frontend;
     std::unique_ptr<FrontendContext>& context =
         frontend.compile(code_file, false);
-    if (context->status == FrontendContext::Status::Error) {
+    if (context->status == Status::Error) {
         std::cerr << "Compilation failed; exiting...";
         return 1;
     }
