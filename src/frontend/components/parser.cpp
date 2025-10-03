@@ -2,7 +2,6 @@
 
 #include "nico/frontend/utils/nodes.h"
 #include "nico/shared/logger.h"
-#include "nico/shared/status.h"
 #include "nico/shared/utils.h"
 
 bool Parser::is_at_end() const {
@@ -194,7 +193,7 @@ std::optional<std::shared_ptr<Expr>> Parser::primary() {
     }
 
     if (repl_mode) {
-        repl_require_pause = true;
+        repl_request = Request::Input;
     }
     else {
         Logger::inst().log_error(
@@ -470,9 +469,9 @@ void Parser::run_parse(std::unique_ptr<FrontendContext>& context) {
         if (stmt) {
             context->stmts.push_back(*stmt);
         }
-        else if (repl_mode && repl_require_pause) {
+        else if (repl_mode && repl_request != Request::None) {
             context->status = Status::Pause;
-            context->request = Request::Input;
+            context->request = repl_request;
             return;
         }
         else {

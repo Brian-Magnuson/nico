@@ -24,6 +24,8 @@ enum class Request {
     None,
     // The REPL needs more input from the user.
     Input,
+    // The REPL should discard the last input.
+    Discard,
     // The REPL should reset its state.
     Reset,
     // The REPL should exit.

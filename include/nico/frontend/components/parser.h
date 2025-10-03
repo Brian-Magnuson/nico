@@ -9,6 +9,7 @@
 
 #include "nico/frontend/utils/ast_node.h"
 #include "nico/frontend/utils/frontend_context.h"
+#include "nico/shared/status.h"
 #include "nico/shared/token.h"
 
 /**
@@ -22,8 +23,8 @@ class Parser {
 
     // The current token index.
     unsigned current = 0;
-    // Whether the parser should pause and wait for more input (REPL mode only).
-    bool repl_require_pause = false;
+    // Request for the REPL, if any.
+    Request repl_request = Request::None;
 
     Parser(
         const std::vector<std::shared_ptr<Token>>&& tokens,

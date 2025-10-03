@@ -40,7 +40,7 @@ class Lexer {
     // The type of left spacing.
     char left_spacing_type = '\0';
     // Whether or not the lexer needs the REPL to pause for more input.
-    bool repl_require_pause = false;
+    bool repl_request_input = false;
 
     Lexer(std::shared_ptr<CodeFile> file, bool repl_mode = false)
         : file(file), repl_mode(repl_mode) {}
@@ -288,7 +288,8 @@ public:
      */
     static void scan(
         std::unique_ptr<FrontendContext>& context,
-        const std::shared_ptr<CodeFile>& file, bool repl_mode = false
+        const std::shared_ptr<CodeFile>& file,
+        bool repl_mode = false
     );
 };
 
