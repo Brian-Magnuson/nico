@@ -61,11 +61,12 @@ std::any CodeGenerator::visit(Stmt::Let* stmt) {
         );
     }
     else {
-        allocation =
+        auto alloca_inst =
             builder->CreateAlloca(llvm_type, nullptr, stmt->identifier->lexeme);
-    }
 
-    stmt->field_entry.lock()->llvm_ptr = allocation;
+        stmt->field_entry.lock()->llvm_ptr = alloca_inst;
+        allocation = alloca_inst;
+    }
 
     if (stmt->expression.has_value()) {
         // Here, storing a non-constant is okay.
@@ -346,17 +347,15 @@ std::any CodeGenerator::visit(Expr::Access* expr, bool as_lvalue) {
 
 std::any CodeGenerator::visit(Expr::NameRef* expr, bool as_lvalue) {
     llvm::Value* result = nullptr;
+    llvm::Value* ptr = expr->field_entry.lock()->get_llvm_allocation(builder);
 
     if (as_lvalue) {
         // We use the pointer to the variable (its alloca inst or global ptr)
-        result = expr->field_entry.lock()->llvm_ptr;
+        result = ptr;
     }
     else {
         // We load the value from the variable's memory location
-        result = builder->CreateLoad(
-            expr->type->get_llvm_type(builder),
-            expr->field_entry.lock()->llvm_ptr
-        );
+        result = builder->CreateLoad(expr->type->get_llvm_type(builder), ptr);
     }
 
     return result;

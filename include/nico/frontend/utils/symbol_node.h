@@ -169,7 +169,8 @@ public:
     virtual ~PrimitiveType() = default;
 
     PrimitiveType(
-        std::weak_ptr<Node::IScope> parent_scope, const std::string& name,
+        std::weak_ptr<Node::IScope> parent_scope,
+        const std::string& name,
         std::shared_ptr<Type> type
     )
         : Node::IBasicNode(parent_scope, name), Node::ITypeNode() {
@@ -210,7 +211,8 @@ public:
     virtual ~StructDef() = default;
 
     StructDef(
-        std::weak_ptr<Node::IScope> parent_scope, std::shared_ptr<Token> token,
+        std::weak_ptr<Node::IScope> parent_scope,
+        std::shared_ptr<Token> token,
         bool is_class = false
     )
         : Node::IBasicNode(parent_scope, std::string(token->lexeme)),
@@ -293,19 +295,60 @@ public:
 class Node::FieldEntry : public virtual Node::IBasicNode,
                          public virtual Node::ILocatable {
 public:
+    // Whether this field entry is declared in a global scope or not.
+    const bool is_global;
     // The field object that this entry represents.
     Field field;
-    // The LLVM IR value containing the pointer to the field's memory location
-    // (AllocaInst if it is a local variable and GlobalVariable if it is a
-    // global variable).
-    llvm::Value* llvm_ptr = nullptr;
+    // If this field is a local variable, the pointer to the LLVM allocation.
+    llvm::AllocaInst* llvm_ptr = nullptr;
 
     virtual ~FieldEntry() = default;
 
     FieldEntry(std::weak_ptr<Node::IScope> parent_scope, const Field& field)
         : Node::IBasicNode(parent_scope, std::string(field.token->lexeme)),
           Node::ILocatable(field.token),
+          is_global(PTR_INSTANCEOF(parent_scope.lock(), Node::IGlobalScope)),
           field(field) {}
+
+    /**
+     * @brief Gets the LLVM allocation for this field entry.
+     *
+     * If the field is global, this function will attempt to get the global
+     * variable. If the field is local, it will return the LLVM pointer stored
+     * in the node.
+     *
+     * @param builder The IRBuilder used to create the allocation if needed.
+     */
+    llvm::Value*
+    get_llvm_allocation(std::unique_ptr<llvm::IRBuilder<>>& builder) {
+        llvm::Value* ptr;
+        if (is_global) {
+            auto ir_module = builder->GetInsertBlock()->getModule();
+            // Attempt to get the global variable.
+            ptr = ir_module->getGlobalVariable(field.token->lexeme, true);
+            // If it doesn't exist, declare it.
+            if (ptr == nullptr) {
+                ptr = new llvm::GlobalVariable(
+                    *ir_module,
+                    field.type->get_llvm_type(builder),
+                    false, // isConstant
+                    llvm::GlobalValue::ExternalLinkage,
+                    nullptr, // Initializer
+                    field.token->lexeme
+                );
+            }
+        }
+        else {
+            ptr = llvm_ptr;
+            if (ptr == nullptr) {
+                panic(
+                    "Node::FieldEntry::get_llvm_allocation: Local variable has "
+                    "no LLVM allocation."
+                );
+            }
+        }
+        return ptr;
+    }
 };
 
 #endif // NICO_SYMBOL_NODE_H
