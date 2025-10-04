@@ -20,8 +20,6 @@ Frontend::compile(const std::shared_ptr<CodeFile>& file, bool repl_mode) {
     if (context->status != Status::OK)
         return context;
 
-    context->stmts_checked = context->stmts.size();
-
     if (repl_mode) {
         CodeGenerator::generate_repl_ir(context, ir_printing_enabled);
     }
@@ -32,6 +30,7 @@ Frontend::compile(const std::shared_ptr<CodeFile>& file, bool repl_mode) {
             panic_recoverable
         );
     }
+    context->stmts_processed = context->stmts.size();
 
     return context;
 }

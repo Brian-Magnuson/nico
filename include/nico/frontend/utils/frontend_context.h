@@ -34,8 +34,8 @@ public:
     // The AST containing all statements processed so far.
     std::vector<std::shared_ptr<Stmt>> stmts;
     // The number of statements at the beginning of `stmts` that have been
-    // type-checked.
-    size_t stmts_checked = 0;
+    // type-checked and converted to LLVM IR.
+    size_t stmts_processed = 0;
     // The symbol tree used for type checking.
     std::shared_ptr<SymbolTree> symbol_tree;
     // The LLVM module and context used for code generation.
@@ -51,7 +51,7 @@ public:
     void reset() {
         status = Status::OK;
         stmts.clear();
-        stmts_checked = 0;
+        stmts_processed = 0;
         symbol_tree = std::make_shared<SymbolTree>();
         mod_ctx.reset();
     }

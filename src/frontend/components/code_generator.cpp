@@ -844,8 +844,8 @@ void CodeGenerator::generate_script(
 
     // CODE STARTS HERE
 
-    for (auto& stmt : context->stmts) {
-        stmt->accept(this);
+    for (size_t i = context->stmts_processed; i < context->stmts.size(); ++i) {
+        context->stmts[i]->accept(this);
     }
 
     // CODE ENDS HERE
@@ -937,6 +937,7 @@ void CodeGenerator::generate_repl_ir(
     );
 
     codegen.generate_script(context, script_fn_name);
+    // FIXME: We cannot name the main function "main" every time in REPL mode.
     codegen.generate_main(script_fn_name);
     if (require_verification && !codegen.verify_ir()) {
         panic("CodeGenerator::generate_repl_ir(): IR verification failed.");
