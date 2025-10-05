@@ -138,7 +138,7 @@ class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
      * @param script_fn_name The name of the script function to generate.
      * Defaults to "$script".
      */
-    void generate_script(
+    void generate_script_func(
         const std::unique_ptr<FrontendContext>& context,
         std::string_view script_fn_name = "$script"
     );
@@ -150,13 +150,18 @@ class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
      * for the executable. Internally, it calls the script function to execute
      * the top-level code.
      *
-     * With a main function, the module can be executed as a standalone program.
+     * The main function always has the type `i32 (i32, ptr)`.
+     * It may be named "main" or something else.
      *
      * @param script_fn_name The name of the script function to call from main.
      * Should be the same as the name used in the call to generate_script.
      * Defaults to "$script".
+     * @param main_fn_name The name of the main function. Defaults to "main".
      */
-    void generate_main(std::string_view script_fn_name = "$script");
+    void generate_main_func(
+        std::string_view script_fn_name = "$script",
+        std::string_view main_fn_name = "main"
+    );
 
 public:
     /**

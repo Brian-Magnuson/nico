@@ -66,7 +66,7 @@ void run_jit_test(
 
     std::optional<llvm::Expected<int>> return_code;
     auto [out, err] = capture_stdout(
-        [&]() { return_code = jit->run_main(0, nullptr); },
+        [&]() { return_code = jit->run_main_func(0, nullptr); },
         4096
     );
 

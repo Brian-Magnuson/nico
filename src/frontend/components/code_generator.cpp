@@ -768,7 +768,7 @@ bool CodeGenerator::verify_ir() {
     return !failed;
 }
 
-void CodeGenerator::generate_script(
+void CodeGenerator::generate_script_func(
     const std::unique_ptr<FrontendContext>& context,
     std::string_view script_fn_name
 ) {
@@ -860,7 +860,9 @@ void CodeGenerator::generate_script(
     builder->CreateRet(builder->CreateLoad(builder->getInt32Ty(), ret_val));
 }
 
-void CodeGenerator::generate_main(std::string_view script_fn_name) {
+void CodeGenerator::generate_main_func(
+    std::string_view script_fn_name, std::string_view main_fn_name
+) {
     // Generate the main function that calls $script
     llvm::FunctionType* main_fn_type = llvm::FunctionType::get(
         builder->getInt32Ty(),
@@ -871,7 +873,7 @@ void CodeGenerator::generate_main(std::string_view script_fn_name) {
     llvm::Function* main_fn = llvm::Function::Create(
         main_fn_type,
         llvm::Function::ExternalLinkage,
-        "main",
+        main_fn_name,
         mod_ctx.ir_module.get()
     );
 
@@ -909,14 +911,15 @@ void CodeGenerator::generate_exe_ir(
         false // repl_mode
     );
 
-    codegen.generate_script(context);
-    codegen.generate_main();
+    codegen.generate_script_func(context);
+    codegen.generate_main_func();
     if (require_verification && !codegen.verify_ir()) {
         panic("CodeGenerator::generate_exe_ir(): IR verification failed.");
     }
 
     context->mod_ctx = std::move(codegen.mod_ctx);
 }
+
 void CodeGenerator::generate_repl_ir(
     std::unique_ptr<FrontendContext>& context,
     bool ir_printing_enabled,
@@ -935,9 +938,8 @@ void CodeGenerator::generate_repl_ir(
         true  // repl_mode
     );
 
-    codegen.generate_script(context, script_fn_name);
-    // FIXME: We cannot name the main function "main" every time in REPL mode.
-    codegen.generate_main(script_fn_name);
+    codegen.generate_script_func(context, script_fn_name);
+    codegen.generate_main_func(script_fn_name);
     if (require_verification && !codegen.verify_ir()) {
         panic("CodeGenerator::generate_repl_ir(): IR verification failed.");
     }

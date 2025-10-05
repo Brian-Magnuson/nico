@@ -63,12 +63,17 @@ public:
 
     /**
      * @brief Runs the main function of the JIT-compiled module.
+     *
      * @param argc The number of command-line arguments.
      * @param argv The command-line arguments.
+     * @param main_fn_name The name of the main function to run. Defaults to
+     * "main".
      * @return An Expected containing the return value of the main function, or
      * an error if the function could not be run.
      */
-    virtual llvm::Expected<int> run_main(int argc, char** argv);
+    virtual llvm::Expected<int> run_main_func(
+        int argc, char** argv, std::string_view main_fn_name = "main"
+    );
 
     /**
      * @brief Resets the JIT to its initial state, clearing all added modules.

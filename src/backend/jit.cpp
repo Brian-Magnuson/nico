@@ -5,12 +5,14 @@
 
 #include "nico/shared/logger.h"
 
-llvm::Expected<int> IJit::run_main(int argc, char** argv) {
-    auto symbol = lookup("main");
+llvm::Expected<int>
+IJit::run_main_func(int argc, char** argv, std::string_view main_fn_name) {
+    auto symbol = lookup(main_fn_name);
     if (!symbol) {
         Logger::inst().log_error(
             Err::JitMissingEntryPoint,
-            "Failed to find 'main' function in JIT module: " +
+            "Failed to find '" + std::string(main_fn_name) +
+                "' function in JIT module: " +
                 llvm::toString(symbol.takeError())
         );
         return symbol.takeError();
@@ -32,7 +34,8 @@ llvm::Expected<int> IJit::run_main(int argc, char** argv) {
     if (!func) {
         Logger::inst().log_error(
             Err::JitBadMainPointer,
-            "Failed to cast 'main' function address to a function pointer."
+            "Failed to cast '" + std::string(main_fn_name) +
+                "' function address to a function pointer."
         );
         return llvm::make_error<llvm::StringError>(
             "Failed to cast function pointer",
