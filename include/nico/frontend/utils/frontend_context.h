@@ -2,6 +2,7 @@
 #define NICO_FRONTEND_CONTEXT_H
 
 #include <memory>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -40,6 +41,8 @@ public:
     std::shared_ptr<SymbolTree> symbol_tree;
     // The LLVM module and context used for code generation.
     IrModuleContext mod_ctx;
+    // The name of the main function generated in the module.
+    std::string main_fn_name;
 
     FrontendContext() { reset(); }
 

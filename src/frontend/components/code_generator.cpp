@@ -918,6 +918,7 @@ void CodeGenerator::generate_exe_ir(
     }
 
     context->mod_ctx = std::move(codegen.mod_ctx);
+    context->main_fn_name = "main";
 }
 
 void CodeGenerator::generate_repl_ir(
@@ -930,19 +931,22 @@ void CodeGenerator::generate_repl_ir(
     }
 
     auto repl_counter_str = std::to_string(++repl_counter);
-    auto script_fn_name = "$entry_" + repl_counter_str;
+    auto script_fn_name = "$script_" + repl_counter_str;
+    auto main_fn_name = "main_" + repl_counter_str;
+
     CodeGenerator codegen(
-        "repl_" + repl_counter_str,
+        main_fn_name,
         ir_printing_enabled,
         true, // panic_recoverable
         true  // repl_mode
     );
 
     codegen.generate_script_func(context, script_fn_name);
-    codegen.generate_main_func(script_fn_name);
+    codegen.generate_main_func(script_fn_name, main_fn_name);
     if (require_verification && !codegen.verify_ir()) {
         panic("CodeGenerator::generate_repl_ir(): IR verification failed.");
     }
 
     context->mod_ctx = std::move(codegen.mod_ctx);
+    context->main_fn_name = main_fn_name;
 }

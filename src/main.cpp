@@ -55,7 +55,7 @@ int main(int argc, char** argv) {
     std::unique_ptr<IJit> jit = std::make_unique<SimpleJit>();
     auto err = jit->add_module_and_context(std::move(context->mod_ctx));
 
-    auto result = jit->run_main_func(0, nullptr);
+    auto result = jit->run_main_func(0, nullptr, context->main_fn_name);
 
     return 0;
 }
