@@ -115,6 +115,12 @@ std::any CodeGenerator::visit(Stmt::Print* stmt) {
         }
     }
 
+    if (repl_mode) {
+        // In REPL mode, add an extra newline.
+        format_str = builder->CreateGlobalStringPtr("\n");
+        builder->CreateCall(printf_fn, {format_str});
+    }
+
     // Generate code for the print statement
     return std::any();
 }

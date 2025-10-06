@@ -400,6 +400,11 @@ std::optional<std::shared_ptr<Stmt>> Parser::expression_statement() {
     auto expr = expression();
     if (!expr)
         return std::nullopt;
+    if (repl_mode) {
+        // In REPL mode, print the result of the expression
+        return std::make_shared<Stmt::Print>(std::vector{*expr});
+    }
+
     return std::make_shared<Stmt::Expression>(*expr);
 }
 
