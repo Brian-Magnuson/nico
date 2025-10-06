@@ -711,8 +711,8 @@ void Lexer::run_scan(std::unique_ptr<FrontendContext>& context) {
 
     if (repl_mode) {
         // If in REPL mode, and we need more input, pause.
-        if (repl_request_input || grouping_token_stack.empty() ||
-            left_spacing_stack.empty()) {
+        if (repl_request_input || !grouping_token_stack.empty() ||
+            !left_spacing_stack.empty()) {
             context->status = Status::Pause;
             context->request = Request::Input;
             return;

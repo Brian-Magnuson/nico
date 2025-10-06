@@ -4,6 +4,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -12,21 +13,16 @@
 #include "nico/shared/code_file.h"
 #include "nico/shared/status.h"
 
-int main(int argc, char** argv) {
-    if (argc != 2) {
-        std::cout << "Usage: nico <source file>" << std::endl;
-        return 64;
-    }
-
+void run_jit(std::string_view file_name) {
     // Open the file.
-    std::ifstream file(argv[1]);
+    std::ifstream file(file_name.data());
     if (!file.is_open()) {
-        std::cerr << "Could not open file: " << argv[1] << std::endl;
-        return 66;
+        std::cerr << "Could not open file: " << file_name << std::endl;
+        std::exit(66);
     }
 
     // Read the file's path.
-    std::filesystem::path path = argv[1];
+    std::filesystem::path path = file_name;
 
     // Read the entire file.
     file.seekg(0, std::ios::end);
@@ -49,13 +45,87 @@ int main(int argc, char** argv) {
         frontend.compile(code_file, false);
     if (context->status == Status::Error) {
         std::cerr << "Compilation failed; exiting...";
-        return 1;
+        std::exit(1);
     }
 
     std::unique_ptr<IJit> jit = std::make_unique<SimpleJit>();
     auto err = jit->add_module_and_context(std::move(context->mod_ctx));
 
     auto result = jit->run_main_func(0, nullptr, context->main_fn_name);
+}
+
+void run_repl() {
+    Frontend frontend;
+    std::unique_ptr<IJit> jit = std::make_unique<SimpleJit>();
+    std::string input;
+
+    std::cout << "> ";
+
+    while (true) {
+        std::string line;
+        if (!std::getline(std::cin, line)) {
+            break;
+        }
+        input += line;
+        std::shared_ptr<CodeFile> code_file =
+            std::make_shared<CodeFile>(std::move(input), "<stdin>");
+        std::unique_ptr<FrontendContext>& context =
+            frontend.compile(code_file, true);
+        if (context->status == Status::OK) {
+            auto err = jit->add_module_and_context(std::move(context->mod_ctx));
+            auto result = jit->run_main_func(0, nullptr, context->main_fn_name);
+            input.clear();
+            std::cout << "> ";
+        }
+        else if (context->status == Status::Pause) {
+            if (context->request == Request::Input) {
+                std::cout << ". ";
+            }
+            else if (context->request == Request::Discard) {
+                input.clear();
+                std::cout << "> ";
+            }
+            else if (context->request == Request::Reset) {
+                input.clear();
+                frontend.reset();
+                jit->reset();
+                std::cout << "> ";
+            }
+            else if (context->request == Request::Exit) {
+                std::cout << "Exiting REPL..." << std::endl;
+                break;
+            }
+            else if (context->request == Request::Help) {
+                std::cout << "Help message not implemented yet." << std::endl;
+                input.clear();
+                std::cout << "> ";
+            }
+            else {
+                // Unknown request; reset the input.
+                input.clear();
+                std::cout << "> ";
+            }
+        }
+        else if (context->status == Status::Error) {
+            // An error occurred; reset the input.
+            std::cout << "Error occurred; exiting REPL..." << std::endl;
+            break;
+        }
+    }
+}
+
+int main(int argc, char** argv) {
+    if (argc > 2) {
+        std::cout << "Usage: nico [source_file]" << std::endl;
+        return 64;
+    }
+
+    if (argc == 2) {
+        run_jit(argv[1]);
+    }
+    else {
+        run_repl();
+    }
 
     return 0;
 }
