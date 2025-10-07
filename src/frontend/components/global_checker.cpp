@@ -9,7 +9,7 @@ void GlobalChecker::run_check(std::unique_ptr<FrontendContext>& context) {
 }
 
 void GlobalChecker::check(std::unique_ptr<FrontendContext>& context) {
-    if (context->status == Status::Error) {
+    if (IS_VARIANT(context->status, Status::Error)) {
         panic("GlobalChecker::check: Context is already in an error state.");
     }
 

@@ -58,7 +58,7 @@ void run_jit_test(
     frontend.set_ir_printing_enabled(print_ir);
 
     std::unique_ptr<FrontendContext>& context = frontend.compile(file, false);
-    REQUIRE(context->status == Status::OK);
+    REQUIRE(IS_VARIANT(context->status, Status::Ok));
 
     std::unique_ptr<IJit> jit = std::make_unique<SimpleJit>();
     auto jit_err = jit->add_module_and_context(std::move(context->mod_ctx));

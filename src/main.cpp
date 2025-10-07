@@ -43,7 +43,7 @@ void run_jit(std::string_view file_name) {
     Frontend frontend;
     std::unique_ptr<FrontendContext>& context =
         frontend.compile(code_file, false);
-    if (context->status == Status::Error) {
+    if (!IS_VARIANT(context->status, Status::Ok)) {
         std::cerr << "Compilation failed; exiting...";
         std::exit(1);
     }
@@ -71,32 +71,32 @@ void run_repl() {
             std::make_shared<CodeFile>(std::move(input), "<stdin>");
         std::unique_ptr<FrontendContext>& context =
             frontend.compile(code_file, true);
-        if (context->status == Status::OK) {
+        if (IS_VARIANT(context->status, Status::Ok)) {
             auto err = jit->add_module_and_context(std::move(context->mod_ctx));
             auto result = jit->run_main_func(0, nullptr, context->main_fn_name);
             input.clear();
             std::cout << "> ";
         }
-        else if (context->status == Status::Pause) {
-            if (context->request == Request::Input) {
+        else if (WITH_VARIANT(context->status, Status::Pause, pause_state)) {
+            if (pause_state->request == Request::Input) {
                 std::cout << ". ";
                 input += "\n";
             }
-            else if (context->request == Request::Discard) {
+            else if (pause_state->request == Request::Discard) {
                 input.clear();
                 std::cout << "> ";
             }
-            else if (context->request == Request::Reset) {
+            else if (pause_state->request == Request::Reset) {
                 input.clear();
                 frontend.reset();
                 jit->reset();
                 std::cout << "> ";
             }
-            else if (context->request == Request::Exit) {
+            else if (pause_state->request == Request::Exit) {
                 std::cout << "Exiting REPL..." << std::endl;
                 break;
             }
-            else if (context->request == Request::Help) {
+            else if (pause_state->request == Request::Help) {
                 std::cout << "Help message not implemented yet." << std::endl;
                 input.clear();
                 std::cout << "> ";
@@ -107,7 +107,7 @@ void run_repl() {
                 std::cout << "> ";
             }
         }
-        else if (context->status == Status::Error) {
+        else if (IS_VARIANT(context->status, Status::Error)) {
             // An error occurred; reset the input.
             std::cout << "Error occurred; exiting REPL..." << std::endl;
             break;

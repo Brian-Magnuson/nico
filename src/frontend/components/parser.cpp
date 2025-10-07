@@ -475,8 +475,7 @@ void Parser::run_parse(std::unique_ptr<FrontendContext>& context) {
             context->stmts.push_back(*stmt);
         }
         else if (repl_mode && repl_request != Request::None) {
-            context->status = Status::Pause;
-            context->request = repl_request;
+            context->status = Status::Pause(repl_request);
             return;
         }
         else {
@@ -485,17 +484,17 @@ void Parser::run_parse(std::unique_ptr<FrontendContext>& context) {
     }
 
     if (Logger::inst().get_errors().empty()) {
-        context->status = Status::OK;
+        context->status = Status::Ok();
     }
     else {
-        context->status = Status::Error;
+        context->status = Status::Error();
         // Roll back any statements added during this parse.
         context->stmts.resize(start_size);
     }
 }
 
 void Parser::parse(std::unique_ptr<FrontendContext>& context, bool repl_mode) {
-    if (context->status == Status::Error) {
+    if (IS_VARIANT(context->status, Status::Error)) {
         panic("Parser::parse: Context is already in an error state.");
     }
 

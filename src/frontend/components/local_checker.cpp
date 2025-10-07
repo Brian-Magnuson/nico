@@ -671,15 +671,15 @@ void LocalChecker::run_check(std::unique_ptr<FrontendContext>& context) {
     }
 
     if (Logger::inst().get_errors().empty()) {
-        context->status = Status::OK;
+        context->status = Status::Ok();
     }
     else {
-        context->status = Status::Error;
+        context->status = Status::Error();
     }
 }
 
 void LocalChecker::check(std::unique_ptr<FrontendContext>& context) {
-    if (context->status == Status::Error) {
+    if (IS_VARIANT(context->status, Status::Error)) {
         panic("LocalChecker::check: Context is already in an error state.");
     }
 

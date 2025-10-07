@@ -5,19 +5,19 @@
 std::unique_ptr<FrontendContext>&
 Frontend::compile(const std::shared_ptr<CodeFile>& file, bool repl_mode) {
     Lexer::scan(context, file, repl_mode);
-    if (context->status != Status::OK)
+    if (!IS_VARIANT(context->status, Status::Ok))
         return context;
 
     Parser::parse(context, repl_mode);
-    if (context->status != Status::OK)
+    if (!IS_VARIANT(context->status, Status::Ok))
         return context;
 
     GlobalChecker::check(context);
-    if (context->status != Status::OK)
+    if (!IS_VARIANT(context->status, Status::Ok))
         return context;
 
     LocalChecker::check(context);
-    if (context->status != Status::OK)
+    if (!IS_VARIANT(context->status, Status::Ok))
         return context;
 
     if (repl_mode) {

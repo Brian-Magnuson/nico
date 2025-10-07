@@ -1,17 +1,19 @@
 #ifndef NICO_STATUS_H
 #define NICO_STATUS_H
 
+#include <variant>
+
 /**
- * @brief Enum class for the status of the front end.
+ * @brief Macro to check if an std::variant holds a specific type.
  */
-enum class Status {
-    // The front end is in a valid state and can continue processing.
-    OK,
-    // The front end has stopped, but can continue processing.
-    Pause,
-    // The front end has stopped due to an error and cannot continue.
-    Error
-};
+#define IS_VARIANT(variant, type) std::holds_alternative<type>(variant)
+
+/**
+ * @brief Macro to get a pointer to the value of a specific type in an
+ * std::variant and store it in a new variable.
+ */
+#define WITH_VARIANT(variant, type, variable)                                  \
+    auto variable = std::get_if<type>(&variant)
 
 /**
  * @brief Enum class for requests from the REPL.
@@ -33,5 +35,17 @@ enum class Request {
     // The REPL should display a help message.
     Help
 };
+
+struct Status {
+    struct Ok {};
+    struct Error {};
+    struct Pause {
+        Request request;
+        Pause(Request req)
+            : request(req) {}
+    };
+};
+
+using VariantStatus = std::variant<Status::Ok, Status::Error, Status::Pause>;
 
 #endif // NICO_STATUS_H

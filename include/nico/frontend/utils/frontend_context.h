@@ -26,10 +26,7 @@
 class FrontendContext {
 public:
     // The current status of the front end.
-    Status status = Status::OK;
-    // The current request from the REPL. If status is not `Pause`, this should
-    // be ignored.
-    Request request = Request::None;
+    VariantStatus status = Status::Ok();
     // The tokens scanned from the last input.
     std::vector<std::shared_ptr<Token>> scanned_tokens;
     // The AST containing all statements processed so far.
@@ -52,7 +49,7 @@ public:
      * Useful for resetting the front end.
      */
     void reset() {
-        status = Status::OK;
+        status = Status::Ok();
         stmts.clear();
         stmts_processed = 0;
         symbol_tree = std::make_shared<SymbolTree>();

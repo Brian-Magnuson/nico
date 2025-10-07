@@ -884,7 +884,7 @@ void CodeGenerator::generate_exe_ir(
     std::string_view module_name,
     bool require_verification
 ) {
-    if (context->status == Status::Error) {
+    if (IS_VARIANT(context->status, Status::Error)) {
         panic("CodeGenerator::generate_exe_ir: Context is in an error state.");
     }
 
@@ -910,7 +910,7 @@ void CodeGenerator::generate_repl_ir(
     bool ir_printing_enabled,
     bool require_verification
 ) {
-    if (context->status == Status::Error) {
+    if (IS_VARIANT(context->status, Status::Error)) {
         panic("CodeGenerator::generate_repl_ir: Context is in an error state.");
     }
 
