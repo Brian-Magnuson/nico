@@ -3,6 +3,8 @@
 
 #include <utility>
 
+#include <llvm/IR/IRBuilder.h>
+
 #include "nico/frontend/utils/nodes.h"
 #include "nico/frontend/utils/symbol_node.h"
 #include "nico/shared/dictionary.h"
@@ -15,7 +17,10 @@
  *
  * Includes `Type::Int` and `Type::Float`.
  */
-class Type::INumeric : public Type {};
+class Type::INumeric : virtual public Type {
+public:
+    virtual std::string to_string() const = 0;
+};
 
 /**
  * @brief An integer type.
@@ -50,6 +55,14 @@ public:
     virtual llvm::Type*
     get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
         return llvm::IntegerType::get(builder->getContext(), width);
+    }
+
+    virtual std::pair<std::string, std::vector<llvm::Value*>> to_print_args(
+        std::unique_ptr<llvm::IRBuilder<>>& builder,
+        llvm::Value* value,
+        bool include_quotes = false
+    ) const override {
+        return {"%d", {value}};
     }
 };
 
@@ -98,6 +111,14 @@ public:
             );
         }
     }
+
+    virtual std::pair<std::string, std::vector<llvm::Value*>> to_print_args(
+        std::unique_ptr<llvm::IRBuilder<>>& builder,
+        llvm::Value* value,
+        bool include_quotes = false
+    ) const override {
+        return {"%g", {value}};
+    }
 };
 
 // MARK: Boolean type
@@ -120,6 +141,20 @@ public:
     virtual llvm::Type*
     get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
         return llvm::Type::getInt1Ty(builder->getContext());
+    }
+
+    virtual std::pair<std::string, std::vector<llvm::Value*>> to_print_args(
+        std::unique_ptr<llvm::IRBuilder<>>& builder,
+        llvm::Value* value,
+        bool include_quotes = false
+    ) const override {
+        // Convert the boolean to an integer for printing.
+        auto bool_value = builder->CreateSelect(
+            value,
+            builder->CreateGlobalStringPtr("true"),
+            builder->CreateGlobalStringPtr("false")
+        );
+        return {"%s", {bool_value}};
     }
 };
 
@@ -157,6 +192,14 @@ public:
     get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
         return llvm::PointerType::get(builder->getContext(), 0);
     }
+
+    virtual std::pair<std::string, std::vector<llvm::Value*>> to_print_args(
+        std::unique_ptr<llvm::IRBuilder<>>& builder,
+        llvm::Value* value,
+        bool include_quotes = false
+    ) const override {
+        return {"%p", {value}};
+    }
 };
 
 /**
@@ -192,6 +235,15 @@ public:
     get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
         return llvm::PointerType::get(builder->getContext(), 0);
     }
+
+    virtual std::pair<std::string, std::vector<llvm::Value*>> to_print_args(
+        std::unique_ptr<llvm::IRBuilder<>>& builder,
+        llvm::Value* value,
+        bool include_quotes = false
+    ) const override {
+        auto val = builder->CreateLoad(base->get_llvm_type(builder), value);
+        return base->to_print_args(builder, val, include_quotes);
+    }
 };
 
 /**
@@ -215,6 +267,19 @@ public:
     virtual llvm::Type*
     get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
         return llvm::PointerType::get(builder->getContext(), 0);
+    }
+
+    virtual std::pair<std::string, std::vector<llvm::Value*>> to_print_args(
+        std::unique_ptr<llvm::IRBuilder<>>& builder,
+        llvm::Value* value,
+        bool include_quotes = false
+    ) const override {
+        if (include_quotes) {
+            return {"\"%s\"", {value}};
+        }
+        else {
+            return {"%s", {value}};
+        }
     }
 };
 
@@ -258,6 +323,14 @@ public:
         else {
             return llvm::PointerType::get(builder->getContext(), 0);
         }
+    }
+
+    virtual std::pair<std::string, std::vector<llvm::Value*>> to_print_args(
+        std::unique_ptr<llvm::IRBuilder<>>& builder,
+        llvm::Value* value,
+        bool include_quotes = false
+    ) const override {
+        return {"[array]", {}};
     }
 };
 
@@ -310,6 +383,29 @@ public:
         }
         return llvm::StructType::get(builder->getContext(), element_types);
     }
+
+    virtual std::pair<std::string, std::vector<llvm::Value*>> to_print_args(
+        std::unique_ptr<llvm::IRBuilder<>>& builder,
+        llvm::Value* value,
+        bool include_quotes = false
+    ) const override {
+        std::string format_str = "(";
+        std::vector<llvm::Value*> args;
+        for (unsigned i = 0; i < elements.size(); ++i) {
+            auto [fmt, vals] = elements[i]->to_print_args(
+                builder,
+                builder->CreateExtractValue(value, {i}),
+                true
+            );
+            format_str += fmt;
+            args.insert(args.end(), vals.begin(), vals.end());
+            if (i < elements.size() - 1) {
+                format_str += ", ";
+            }
+        }
+        format_str += ")";
+        return {format_str, args};
+    }
 };
 
 /**
@@ -335,6 +431,14 @@ public:
     llvm::Type*
     get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
         return llvm::StructType::get(builder->getContext());
+    }
+
+    std::pair<std::string, std::vector<llvm::Value*>> to_print_args(
+        std::unique_ptr<llvm::IRBuilder<>>& builder,
+        llvm::Value* value,
+        bool include_quotes = false
+    ) const override {
+        return {"()", {}};
     }
 };
 
@@ -484,6 +588,14 @@ public:
         }
         llvm::Type* return_llvm_type = return_type->get_llvm_type(builder);
         return llvm::FunctionType::get(return_llvm_type, param_types, false);
+    }
+
+    virtual std::pair<std::string, std::vector<llvm::Value*>> to_print_args(
+        std::unique_ptr<llvm::IRBuilder<>>& builder,
+        llvm::Value* value,
+        bool include_quotes = false
+    ) const override {
+        return {"[function]", {}};
     }
 };
 

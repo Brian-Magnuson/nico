@@ -173,6 +173,30 @@ public:
      */
     virtual llvm::Type*
     get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const = 0;
+
+    /**
+     * @brief Generate the arguments for printing a value of this type.
+     *
+     * This method is used to generate the format string and arguments for
+     * printing a value of this type using `printf`.
+     *
+     * If the type does not have a specific way to be printed, "[object]" will
+     * be used as the format string as a fallback.
+     *
+     * @param builder The LLVM IR builder to use for generating the type.
+     * @param value The LLVM value to print.
+     * @param include_quotes Whether or not to include quotes around string
+     * values.
+     * @return A pair containing the format string and a vector of LLVM values
+     * to use as arguments for the format string.
+     */
+    virtual std::pair<std::string, std::vector<llvm::Value*>> to_print_args(
+        std::unique_ptr<llvm::IRBuilder<>>& builder,
+        llvm::Value* value,
+        bool include_quotes = false
+    ) const {
+        return {"[object]", {}};
+    }
 };
 
 // MARK: Stmt

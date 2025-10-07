@@ -273,6 +273,25 @@ TEST_CASE("JIT tuple expressions", "[jit]") {
             "1,4,5"
         );
     }
+
+    SECTION("Tuple printing 1") {
+        run_jit_test(R"(printout (1, 2, 3))", "(1, 2, 3)");
+    }
+
+    SECTION("Tuple printing 2") {
+        run_jit_test(
+            R"(printout (1, (2.0, true), "hello"))",
+            "(1, (2, true), \"hello\")"
+        );
+    }
+
+    SECTION("Tuple printing 3") {
+        run_jit_test(R"(printout ())", "()");
+    }
+
+    SECTION("Tuple printing 4") {
+        run_jit_test("let var x = (1, 2) x.0 = 3 printout x", "(3, 2)");
+    }
 }
 
 TEST_CASE("JIT if expressions", "[jit]") {

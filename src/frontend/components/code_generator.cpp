@@ -86,33 +86,11 @@ std::any CodeGenerator::visit(Stmt::Print* stmt) {
     llvm::Value* format_str = nullptr;
     for (const auto& expr : stmt->expressions) {
         auto value = std::any_cast<llvm::Value*>(expr->accept(this, false));
-        if (PTR_INSTANCEOF(expr->type, Type::Int)) {
-            format_str = builder->CreateGlobalStringPtr("%d");
-            builder->CreateCall(printf_fn, {format_str, value});
-        }
-        else if (PTR_INSTANCEOF(expr->type, Type::Float)) {
-            format_str = builder->CreateGlobalStringPtr("%g");
-            builder->CreateCall(printf_fn, {format_str, value});
-        }
-        else if (PTR_INSTANCEOF(expr->type, Type::Bool)) {
-            format_str = builder->CreateGlobalStringPtr("%s");
-            llvm::Value* bool_str = builder->CreateSelect(
-                value,
-                builder->CreateGlobalStringPtr("true"),
-                builder->CreateGlobalStringPtr("false")
-            );
-            builder->CreateCall(printf_fn, {format_str, bool_str});
-        }
-        else if (PTR_INSTANCEOF(expr->type, Type::Str)) {
-            format_str = builder->CreateGlobalStringPtr("%s");
-            builder->CreateCall(printf_fn, {format_str, value});
-        }
-        else {
-            panic(
-                "CodeGenerator::visit(Stmt::Print*): Cannot print expression "
-                "of this type."
-            );
-        }
+        auto [fmt, fmt_args] = expr->type->to_print_args(builder, value);
+        auto args =
+            std::vector<llvm::Value*>{builder->CreateGlobalStringPtr(fmt)};
+        args.insert(args.end(), fmt_args.begin(), fmt_args.end());
+        builder->CreateCall(printf_fn, args);
     }
 
     if (repl_mode) {
