@@ -82,16 +82,6 @@ And the REPL would use the following stages:
 Note that steps 1-4 are the same for all three modes.
 This gives us the opportunity to create a common interface for the front end of the compiler, which includes the lexer, parser, type checker, and code generator.
 
-```cpp
-class Frontend {
-    Lexer lexer;
-    Parser parser;
-    GlobalChecker global_checker;
-    LocalChecker local_checker;
-    CodeGenerator codegen;
-};
-```
-
 ## REPL Mode and Statuses
 
 Because certain parts of the compiler behave differently in a REPL, it is best to think of the REPL as a separate compilation mode.
@@ -120,14 +110,13 @@ Not only do we want the REPL to perform as well as the AOT and JIT compilers, we
   - Normally, we automatically add dedent tokens in case user chooses not to add an empty line at the end of a file.
     - Empty lines have a left spacing of 0, which adds the necessary dedent tokens to close all open blocks.
   - In REPL mode, an empty line is needed to exit multi-line input anyway, so this automatic behavior is unnecessary.
-- In REPL mode, an indent token no longer requires an increase in left spacing.
-  - An indent token will only require a colon followed by a newline.
-    - This effectively makes it impossible to trigger a `MalformedIndent` error in REPL mode.
-  - Because evaluation is triggered by pressing the Enter/Return key, the input will always have a newline with no additional characters afterward. This makes it impossible for the lexer to measure the left spacing of the next line.
-  - Note that an empty indented block is still an error. This error will be caught by the parser instead.
-- In REPL mode, the following errors will be changed to trigger a pause:
-  - `UnclosedGrouping`: This error occurs when a grouping symbol (parenthesis, bracket, or brace) is opened but not closed.
-  - `UnclosedComment`: This error occurs when a multi-line comment is opened but not closed.
+- In REPL mode, the following cases will trigger a pause:
+  - An unclosed multi-line comment.
+  - An unclosed grouping token, such as `(`, `{`, or `[`.
+  - An indent token at the end of input.
+    - This is not an error outside of REPL mode because we automatically add dedent tokens at the end of input outside of REPL mode.
+  - A colon token at the end of input.
+    - A colon token indicates the start of an indented block, so we expect an indent token to follow it.
 
 An incomplete token error, such as `UnexpectedEndOfNumber` or `UnterminatedStr` will still be treated as an error and not a pause.
 For our REPL, we expect all tokens to be complete.

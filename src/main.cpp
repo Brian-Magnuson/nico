@@ -80,6 +80,7 @@ void run_repl() {
         else if (context->status == Status::Pause) {
             if (context->request == Request::Input) {
                 std::cout << ". ";
+                input += "\n";
             }
             else if (context->request == Request::Discard) {
                 input.clear();

@@ -35,12 +35,12 @@ class Lexer {
     std::vector<char> grouping_token_stack = {};
     // A stack for tracking left-spacing indentation levels.
     std::vector<unsigned> left_spacing_stack = {};
-    // The current left spacing.
-    unsigned current_left_spacing = 0;
+    // The left spacing of the previous line.
+    unsigned prev_line_left_spacing = 0;
     // The type of left spacing.
     char left_spacing_type = '\0';
-    // Whether or not the lexer needs the REPL to pause for more input.
-    bool repl_request_input = false;
+    // Whether or not there is an unclosed multi-line comment in REPL mode.
+    bool unclosed_comment = false;
 
     Lexer(std::shared_ptr<CodeFile> file, bool repl_mode = false)
         : file(file), repl_mode(repl_mode) {}
@@ -194,6 +194,9 @@ class Lexer {
     /**
      * @brief Consumes whitespace characters, handling indentation.
      *
+     * This function is for JIT and AOT compilation modes only. For REPL mode,
+     * use `consume_repl_whitespace` instead.
+     *
      * The lexer should have advanced at least one character before calling this
      * function. All whitespace characters will be consumed until a
      * non-whitespace character is found. If the lexer is within grouping
@@ -205,6 +208,14 @@ class Lexer {
      * dedent tokens are needed and insert them.
      */
     void consume_whitespace();
+
+    /**
+     * @brief Consumes whitespace characters in REPL mode, handling indentation.
+     *
+     * This function is for REPL mode only. For JIT and AOT compilation modes,
+     * use `consume_whitespace` instead.
+     */
+    void consume_repl_whitespace();
 
     /**
      * @brief Scans an identifier from the source code and adds it to the list

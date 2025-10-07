@@ -109,7 +109,15 @@ void Lexer::consume_whitespace() {
 
     unsigned current_spaces = 0;
     unsigned current_tabs = 0;
-    bool newline = current == 0;
+
+    // Here, we handle a unique edge case.
+    // In most cases, we initialize `is_left_spacing` to false, and only set it
+    // to true once we reach a newline character.
+    // We set it to false because this function is almost never called at the
+    // start of a line (only in the middle or at the end of a line).
+    // The lone exception is when the first character of input is whitespace.
+    // In this case, we want to treat the whitespace as left spacing.
+    bool is_left_spacing = current == 0;
 
     // Consume all whitespace.
     while (true) {
@@ -126,7 +134,7 @@ void Lexer::consume_whitespace() {
         else if (c == '\n') {
             current_spaces = 0;
             current_tabs = 0;
-            newline = true;
+            is_left_spacing = true;
             line++;
             start = current + 1;
         }
@@ -134,21 +142,25 @@ void Lexer::consume_whitespace() {
             break;
         }
         advance();
+        // If a line contains only whitespace characters, that line is
+        // effectively ignored.
     }
 
     // If within grouping tokens or not on a newline...
-    if (!grouping_token_stack.empty() || !newline) {
+    if (!grouping_token_stack.empty() || !is_left_spacing) {
+        // This spacing is not left spacing.
         // Return early.
         return;
     }
+    // Otherwise, the current spacing is left spacing.
 
-    // If user tried to mix spacing...
+    // If user tried to mix left spacing...
     if (current_spaces > 0 && current_tabs > 0) {
         auto token = make_token(Tok::Unknown);
         Logger::inst().log_error(
             Err::MixedLeftSpacing,
             token->location,
-            "Line contains both tabs and spaces."
+            "Line left spacing contains both tabs and spaces."
         );
         return;
     }
@@ -171,11 +183,11 @@ void Lexer::consume_whitespace() {
         return;
     }
 
-    // Set spacing_amount to whichever isn't 0.
-    unsigned spacing_amount = current_spaces | current_tabs;
+    // Set curr_line_left_spacing to whichever isn't 0.
+    unsigned curr_line_left_spacing = current_spaces | current_tabs;
 
     // Update left_spacing_type.
-    if (spacing_amount == 0) {
+    if (curr_line_left_spacing == 0) {
         left_spacing_type = '\0';
     }
     else {
@@ -184,38 +196,38 @@ void Lexer::consume_whitespace() {
 
     // Handle indents.
     if (!tokens.empty() && tokens.back()->tok_type == Tok::Colon) {
-        if (!repl_mode && spacing_amount <= current_left_spacing) {
-            // Left spacing must be greater than previous indent.
-            // In REPL mode, this is not required.
-
+        // If the last token was a colon...
+        if (curr_line_left_spacing <= prev_line_left_spacing) {
+            // If the current left spacing is not greater than the previous
+            // line's spacing, log an error.
             Logger::inst().log_error(
                 Err::MalformedIndent,
                 tokens.back()->location,
                 "Expected indent with left-spacing greater than " +
-                    std::to_string(current_left_spacing) + "."
+                    std::to_string(prev_line_left_spacing) + "."
 
             );
             Logger::inst().log_note(
                 make_token(Tok::Unknown)->location,
                 "Next line only has left-spacing of " +
-                    std::to_string(spacing_amount) +
+                    std::to_string(curr_line_left_spacing) +
                     ". If this is meant to be an empty block, add a `pass` "
                     "statement."
             );
         }
         // Change the colon token to an indent token.
         tokens.back()->tok_type = Tok::Indent;
-        left_spacing_stack.push_back(current_left_spacing);
+        left_spacing_stack.push_back(prev_line_left_spacing);
     }
 
     // Handle dedents.
     while (!left_spacing_stack.empty() &&
-           spacing_amount <= left_spacing_stack.back()) {
+           curr_line_left_spacing <= left_spacing_stack.back()) {
         left_spacing_stack.pop_back();
         add_token(Tok::Dedent);
     }
 
-    current_left_spacing = spacing_amount;
+    prev_line_left_spacing = curr_line_left_spacing;
 }
 
 void Lexer::identifier() {
@@ -496,7 +508,7 @@ void Lexer::multi_line_comment() {
         if (is_at_end()) {
             // If in REPL mode, request more input instead of erroring.
             if (repl_mode) {
-                repl_request_input = true;
+                unclosed_comment = true;
                 return;
             }
 
@@ -711,8 +723,9 @@ void Lexer::run_scan(std::unique_ptr<FrontendContext>& context) {
 
     if (repl_mode) {
         // If in REPL mode, and we need more input, pause.
-        if (repl_request_input || !grouping_token_stack.empty() ||
-            !left_spacing_stack.empty()) {
+        if (unclosed_comment || !grouping_token_stack.empty() ||
+            !left_spacing_stack.empty() ||
+            (!tokens.empty() && tokens.back()->tok_type == Tok::Colon)) {
             context->status = Status::Pause;
             context->request = Request::Input;
             return;
