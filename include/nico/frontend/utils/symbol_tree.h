@@ -21,6 +21,10 @@
  * searching upward and downward through different scopes.
  */
 class SymbolTree {
+    // Whether or not the symbol tree has been modified since this flag was
+    // cleared or the tree was created/reset.
+    bool modified = false;
+
     /**
      * @brief Installs primitive types into the root scope of the symbol tree.
      */
@@ -80,9 +84,24 @@ public:
         root_scope = std::make_shared<Node::RootScope>();
         current_scope = root_scope;
         reserved_scope = std::make_shared<Node::RootScope>();
+        modified = false;
 
         install_primitive_types();
     }
+
+    /**
+     * @brief Checks if the symbol tree has been modified since the last
+     * reset or since this flag was last cleared.
+     *
+     * @return True if the symbol tree has been modified, false otherwise.
+     */
+    bool was_modified() const { return modified; }
+
+    /**
+     * @brief Clears the modified flag, indicating that the symbol tree is
+     * considered unmodified.
+     */
+    void clear_modified() { modified = false; }
 
     /**
      * @brief Enters the namespace with the name contained in token, adding it

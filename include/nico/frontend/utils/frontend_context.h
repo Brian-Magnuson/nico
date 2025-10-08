@@ -55,6 +55,21 @@ public:
         symbol_tree = std::make_shared<SymbolTree>();
         mod_ctx.reset();
     }
+
+    /**
+     * @brief Marks all statements in the AST as processed.
+     *
+     * A statement is only considered processed if it has been visited by the
+     * code generator.
+     */
+    void commit() { stmts_processed = stmts.size(); }
+
+    /**
+     * @brief Rolls back the context to the last committed state.
+     *
+     * This will discard any unprocessed statements in the AST.
+     */
+    void rollback() { stmts.resize(stmts_processed); }
 };
 
 #endif // NICO_FRONTEND_CONTEXT_H

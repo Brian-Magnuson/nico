@@ -21,9 +21,13 @@ class LocalChecker : public Stmt::Visitor,
                      public Annotation::Visitor {
     // The symbol tree used for type checking.
     const std::shared_ptr<SymbolTree> symbol_tree;
+    // Whether or not the checker is running in REPL mode.
+    const bool repl_mode = false;
 
-    LocalChecker(std::shared_ptr<SymbolTree> symbol_tree)
-        : symbol_tree(symbol_tree) {};
+    LocalChecker(
+        std::shared_ptr<SymbolTree> symbol_tree, bool repl_mode = false
+    )
+        : symbol_tree(symbol_tree), repl_mode(repl_mode) {};
 
     /**
      * @brief Checks the type of the expression, dereferencing any references.
@@ -83,8 +87,11 @@ public:
      * This function will modify the AST to add type information to the nodes.
      *
      * @param context The front end context containing the AST to type check.
+     * @param repl_mode Whether or not the checker is running in REPL mode.
+     * Defaults to false.
      */
-    static void check(std::unique_ptr<FrontendContext>& context);
+    static void
+    check(std::unique_ptr<FrontendContext>& context, bool repl_mode = false);
 };
 
 #endif // NICO_LOCAL_CHECKER_H

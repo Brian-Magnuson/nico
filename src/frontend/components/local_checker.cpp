@@ -666,6 +666,8 @@ std::any LocalChecker::visit(Annotation::Tuple* annotation) {
 }
 
 void LocalChecker::run_check(std::unique_ptr<FrontendContext>& context) {
+    symbol_tree->clear_modified();
+
     for (size_t i = context->stmts_processed; i < context->stmts.size(); ++i) {
         context->stmts[i]->accept(this);
     }
@@ -673,16 +675,27 @@ void LocalChecker::run_check(std::unique_ptr<FrontendContext>& context) {
     if (Logger::inst().get_errors().empty()) {
         context->status = Status::Ok();
     }
+    else if (repl_mode) {
+        if (symbol_tree->was_modified()) {
+            context->status = Status::Pause(Request::DiscardWarn);
+        }
+        else {
+            context->status = Status::Pause(Request::Discard);
+        }
+        context->rollback();
+    }
     else {
         context->status = Status::Error();
     }
 }
 
-void LocalChecker::check(std::unique_ptr<FrontendContext>& context) {
+void LocalChecker::check(
+    std::unique_ptr<FrontendContext>& context, bool repl_mode
+) {
     if (IS_VARIANT(context->status, Status::Error)) {
         panic("LocalChecker::check: Context is already in an error state.");
     }
 
-    LocalChecker checker(context->symbol_tree);
+    LocalChecker checker(context->symbol_tree, repl_mode);
     checker.run_check(context);
 }

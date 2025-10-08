@@ -11,6 +11,7 @@
 #include "nico/backend/jit.h"
 #include "nico/frontend/frontend.h"
 #include "nico/shared/code_file.h"
+#include "nico/shared/logger.h"
 #include "nico/shared/status.h"
 
 void run_jit(std::string_view file_name) {
@@ -62,6 +63,7 @@ void run_repl() {
     std::cout << ">> ";
 
     while (true) {
+        Logger::inst().reset();
         std::string line;
         if (!std::getline(std::cin, line)) {
             break;
@@ -85,6 +87,14 @@ void run_repl() {
             else if (pause_state->request == Request::Discard) {
                 input.clear();
                 std::cout << "Input discarded." << std::endl;
+                std::cout << ">> ";
+            }
+            else if (pause_state->request == Request::DiscardWarn) {
+                input.clear();
+                std::cout << "Input discarded.\n";
+                std::cout << "Warning: REPL state was modified. Proceed with "
+                             "caution.\n";
+                std::cout << "Use `:reset` to clear the state.\n";
                 std::cout << ">> ";
             }
             else if (pause_state->request == Request::Reset) {

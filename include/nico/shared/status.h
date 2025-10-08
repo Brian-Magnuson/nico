@@ -28,6 +28,9 @@ enum class Request {
     Input,
     // The REPL should discard the last input.
     Discard,
+    // The REPL should discard the last input, warning the user that some
+    // statements were processed.
+    DiscardWarn,
     // The REPL should reset its state.
     Reset,
     // The REPL should exit.

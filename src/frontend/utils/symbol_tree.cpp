@@ -3,6 +3,7 @@
 #include "nico/shared/utils.h"
 
 void SymbolTree::install_primitive_types() {
+    modified = true;
     std::shared_ptr<Node> new_node;
 
     new_node = std::make_shared<Node::PrimitiveType>(
@@ -25,6 +26,8 @@ void SymbolTree::install_primitive_types() {
         std::make_shared<Type::Bool>()
     );
     new_node->initialize_node();
+
+    modified = true;
 }
 
 std::optional<std::shared_ptr<Node>> SymbolTree::search_name_from_scope(
@@ -99,6 +102,7 @@ SymbolTree::add_namespace(std::shared_ptr<Token> token) {
                 std::dynamic_pointer_cast<Node::Namespace>(node.value())) {
             // If existing name is a namespace...
             current_scope = ns_node;
+            modified = true;
             return std::make_pair(ns_node, Err::Null);
         }
         else {
@@ -113,6 +117,7 @@ SymbolTree::add_namespace(std::shared_ptr<Token> token) {
             std::make_shared<Node::Namespace>(current_scope, token);
         new_namespace->initialize_node();
         current_scope = new_namespace;
+        modified = true;
         return std::make_pair(new_namespace, Err::Null);
     }
 }
@@ -138,6 +143,7 @@ SymbolTree::add_struct_def(std::shared_ptr<Token> token, bool is_class) {
     new_struct
         ->initialize_node(); // Add the struct to its parent scope's children
     current_scope = new_struct;
+    modified = true;
     return std::make_pair(new_struct, Err::Null);
 }
 
@@ -153,6 +159,7 @@ SymbolTree::add_function_scope(std::shared_ptr<Token> token) {
         std::make_shared<Node::FunctionScope>(current_scope, token);
     new_function_scope->initialize_node();
     current_scope = new_function_scope;
+    modified = true;
     return std::make_pair(new_function_scope, Err::Null);
 }
 
@@ -162,6 +169,7 @@ SymbolTree::add_local_scope() {
     auto new_local_scope = std::make_shared<Node::LocalScope>(current_scope);
     new_local_scope->initialize_node();
     current_scope = new_local_scope;
+    modified = true;
     return std::make_pair(new_local_scope, Err::Null);
 }
 
@@ -171,6 +179,7 @@ std::optional<std::shared_ptr<Node::IScope>> SymbolTree::exit_scope() {
     }
 
     current_scope = current_scope->parent.lock();
+    modified = true;
     return current_scope;
 }
 
@@ -200,6 +209,7 @@ SymbolTree::add_field_entry(const Field& field) {
     auto new_field_entry =
         std::make_shared<Node::FieldEntry>(current_scope, field);
     new_field_entry->initialize_node();
+    modified = true;
 
     return std::make_pair(new_field_entry, Err::Null);
 }

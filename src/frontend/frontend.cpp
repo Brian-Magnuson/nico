@@ -16,7 +16,7 @@ Frontend::compile(const std::shared_ptr<CodeFile>& file, bool repl_mode) {
     if (!IS_VARIANT(context->status, Status::Ok))
         return context;
 
-    LocalChecker::check(context);
+    LocalChecker::check(context, repl_mode);
     if (!IS_VARIANT(context->status, Status::Ok))
         return context;
 
@@ -30,7 +30,8 @@ Frontend::compile(const std::shared_ptr<CodeFile>& file, bool repl_mode) {
             panic_recoverable
         );
     }
-    context->stmts_processed = context->stmts.size();
+
+    context->commit();
 
     return context;
 }
