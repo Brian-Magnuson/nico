@@ -256,6 +256,18 @@ class Parser {
     std::optional<std::shared_ptr<Stmt>> expression_statement();
 
     /**
+     * @brief Parses a command statement.
+     *
+     * A command statement is a REPL-mode-only statement that issues a command
+     * to pause the REPL and issue a request.
+     *
+     * If the parser is not in REPL mode, an error will be logged.
+     *
+     * @return std::nullopt, always.
+     */
+    std::nullopt_t command_statement();
+
+    /**
      * @brief Parses a statement.
      *
      * A statement is the most basic construct in the language. Includes all

@@ -753,6 +753,9 @@ void Lexer::run_scan(std::unique_ptr<FrontendContext>& context) {
         context->status = Status::Ok();
         context->scanned_tokens = std::move(tokens);
     }
+    else if (repl_mode) {
+        context->status = Status::Pause(Request::Discard);
+    }
     else {
         context->status = Status::Error();
     }

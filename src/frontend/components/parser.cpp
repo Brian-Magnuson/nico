@@ -408,6 +408,57 @@ std::optional<std::shared_ptr<Stmt>> Parser::expression_statement() {
     return std::make_shared<Stmt::Expression>(*expr);
 }
 
+std::nullopt_t Parser::command_statement() {
+    static const std::unordered_map<std::string, Request> command_map = {
+        {"exit", Request::Exit},
+        {"quit", Request::Exit},
+        {"q", Request::Exit},
+        {"help", Request::Help},
+        {"clear", Request::Discard},
+        {"cls", Request::Discard},
+        {"discard", Request::Discard},
+        {"reset", Request::Reset},
+        {"clearall", Request::Reset},
+    };
+
+    if (!repl_mode) {
+        Logger::inst().log_error(
+            Err::CommandOutsideOfReplMode,
+            peek()->location,
+            "Commands can only be used in REPL mode."
+        );
+        return std::nullopt;
+    }
+
+    if (!match({Tok::Identifier})) {
+        Logger::inst().log_error(
+            Err::MissingCommandIdentifier,
+            peek()->location,
+            "Expected command identifier."
+        );
+        return std::nullopt;
+    }
+    auto command = previous();
+
+    auto it = command_map.find(std::string(command->lexeme));
+    if (it == command_map.end()) {
+        Logger::inst().log_error(
+            Err::UnrecognizedCommand,
+            command->location,
+            "Unrecognized command: " + std::string(command->lexeme)
+        );
+        Logger::inst().log_note(
+            "Use `:help` to see a list of available commands."
+        );
+        return std::nullopt;
+    }
+    else {
+        repl_request = it->second;
+    }
+
+    return std::nullopt;
+}
+
 std::optional<std::shared_ptr<Stmt>> Parser::statement() {
     // Consume semicolons to separate statements
     while (match({Tok::Semicolon}))
@@ -427,6 +478,9 @@ std::optional<std::shared_ptr<Stmt>> Parser::statement() {
     }
     else if (match({Tok::KwYield})) {
         return yield_statement();
+    }
+    else if (match({Tok::Colon})) {
+        return command_statement();
     }
     return expression_statement();
 }
@@ -476,6 +530,8 @@ void Parser::run_parse(std::unique_ptr<FrontendContext>& context) {
         }
         else if (repl_mode && repl_request != Request::None) {
             context->status = Status::Pause(repl_request);
+            // Roll back any statements added during this parse.
+            context->stmts.resize(start_size);
             return;
         }
         else {
@@ -485,6 +541,11 @@ void Parser::run_parse(std::unique_ptr<FrontendContext>& context) {
 
     if (Logger::inst().get_errors().empty()) {
         context->status = Status::Ok();
+    }
+    else if (repl_mode) {
+        context->status = Status::Pause(Request::Discard);
+        // Roll back any statements added during this parse.
+        context->stmts.resize(start_size);
     }
     else {
         context->status = Status::Error();

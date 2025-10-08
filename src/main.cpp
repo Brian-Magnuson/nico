@@ -59,7 +59,7 @@ void run_repl() {
     std::unique_ptr<IJit> jit = std::make_unique<SimpleJit>();
     std::string input;
 
-    std::cout << "> ";
+    std::cout << ">> ";
 
     while (true) {
         std::string line;
@@ -75,22 +75,23 @@ void run_repl() {
             auto err = jit->add_module_and_context(std::move(context->mod_ctx));
             auto result = jit->run_main_func(0, nullptr, context->main_fn_name);
             input.clear();
-            std::cout << "> ";
+            std::cout << ">> ";
         }
         else if (WITH_VARIANT(context->status, Status::Pause, pause_state)) {
             if (pause_state->request == Request::Input) {
-                std::cout << ". ";
+                std::cout << ".. ";
                 input += "\n";
             }
             else if (pause_state->request == Request::Discard) {
                 input.clear();
-                std::cout << "> ";
+                std::cout << "Input discarded." << std::endl;
+                std::cout << ">> ";
             }
             else if (pause_state->request == Request::Reset) {
                 input.clear();
                 frontend.reset();
                 jit->reset();
-                std::cout << "> ";
+                std::cout << ">> ";
             }
             else if (pause_state->request == Request::Exit) {
                 std::cout << "Exiting REPL..." << std::endl;
@@ -99,12 +100,12 @@ void run_repl() {
             else if (pause_state->request == Request::Help) {
                 std::cout << "Help message not implemented yet." << std::endl;
                 input.clear();
-                std::cout << "> ";
+                std::cout << ">> ";
             }
             else {
                 // Unknown request; reset the input.
                 input.clear();
-                std::cout << "> ";
+                std::cout << ">> ";
             }
         }
         else if (IS_VARIANT(context->status, Status::Error)) {

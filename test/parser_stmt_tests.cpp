@@ -218,3 +218,9 @@ TEST_CASE("Parser let stmt errors", "[parser]") {
         run_parser_stmt_error_test("let a", Err::LetWithoutTypeOrValue);
     }
 }
+
+TEST_CASE("Parser command error", "[parser]") {
+    SECTION("Command outside of REPL mode") {
+        run_parser_stmt_error_test(":quit", Err::CommandOutsideOfReplMode);
+    }
+}
