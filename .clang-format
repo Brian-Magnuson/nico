@@ -38,7 +38,7 @@ AccessModifierOffset: -4
 # Keep case labels (for switch blocks) left, aligned with `switch`.
 IndentCaseLabels: false
 # Always indent in namespaces.
-NamespaceIndentation: All
+NamespaceIndentation: None
 
 # Keep the star next to the type; use `T* t`, never `T *t` or `T * t`.
 PointerAlignment: Left

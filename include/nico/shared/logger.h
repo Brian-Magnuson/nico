@@ -6,25 +6,9 @@
 #include <string_view>
 #include <vector>
 
+#include "nico/shared/colorize.h"
 #include "nico/shared/error_code.h"
 #include "nico/shared/token.h"
-
-/**
- * @brief A color to use for console output.
- */
-enum class Color { Red, Green, Yellow, Blue, Magenta, Cyan, White, Reset };
-
-/**
- * @brief Returns the escape sequence for coloring text in the terminal.
- *
- * If standard output is not a terminal or the current platform cannot be
- * determined, this function returns an empty string.
- *
- * @param color The color to return the escape sequence for. Defaults to
- * Color::Reset.
- * @return The escape sequence for the given color.
- */
-std::string colorize(Color color = Color::Reset);
 
 /**
  * @brief Logger singleton for logging errors and messages.
@@ -51,11 +35,11 @@ class Logger {
      * text, both ending with a newline.
      *
      * @param location The location of the code to print.
-     * @param underline_color The color to use for underlining the code.
-     * Defaults to Color::Red.
+     * @param color_manip The color manipulator to use for the underline.
      */
     void print_code_at_location(
-        const Location& location, Color underline_color = Color::Red
+        const Location& location,
+        std::ostream& (*color_manip)(std::ostream& o) = colorize::red
     );
 
 public:

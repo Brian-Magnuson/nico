@@ -419,6 +419,7 @@ std::nullopt_t Parser::command_statement() {
         {"discard", Request::Discard},
         {"reset", Request::Reset},
         {"clearall", Request::Reset},
+        {"license", Request::License},
     };
 
     if (!repl_mode) {

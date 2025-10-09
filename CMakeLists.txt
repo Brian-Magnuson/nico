@@ -4,6 +4,9 @@ project(nico)
 include(FetchContent)
 include(CTest)
 
+# Project version
+add_compile_definitions(NICO_VERSION="0.0.1")
+
 # Compiler configuration
 set(CMAKE_CXX_STANDARD 20)
 add_compile_options(-Wall)
@@ -62,6 +65,7 @@ set(BACK_END_SRC
     src/backend/emitter.cpp
     src/backend/jit.cpp
     src/backend/optimizer.cpp
+    src/backend/repl.cpp
 )
 
 # Shared files
