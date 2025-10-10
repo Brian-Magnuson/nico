@@ -2,15 +2,31 @@
 #define NICO_REPL_H
 
 #include <iostream>
+#include <memory>
 #include <string>
+#include <unordered_map>
 
+#include "nico/backend/jit.h"
+#include "nico/frontend/frontend.h"
 #include "nico/shared/utils.h"
 
 class Repl {
+    enum class Command { Help, Version, License, Discard, Reset, Exit };
+
+    static const std::unordered_map<std::string, Command> commands;
+
     // The input stream (usually std::cin).
     std::istream* const in = &std::cin;
     // The output stream (usually std::cout).
     std::ostream* const out = &std::cout;
+
+    Frontend frontend;
+
+    std::unique_ptr<IJit> jit = std::make_unique<SimpleJit>();
+
+    std::string input;
+
+    bool continue_mode = false;
     // Whether the REPL should proceed with caution (e.g., when state is
     // possibly corrupted).
     bool use_caution = false;
@@ -18,7 +34,11 @@ class Repl {
     Repl(std::istream& in = std::cin, std::ostream& out = std::cout)
         : in(&in), out(&out) {}
 
-    void print_version() { *out << project_version() << std::endl; }
+    void discard(bool with_warning = false);
+
+    void reset();
+
+    void print_version();
 
     void print_header();
 
@@ -28,7 +48,7 @@ class Repl {
 
     void print_prompt();
 
-    void print_continue_prompt();
+    void handle_command(Command cmd);
 
     /**
      * @brief Runs the REPL loop.

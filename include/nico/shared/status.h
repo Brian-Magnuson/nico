@@ -31,14 +31,6 @@ enum class Request {
     // The REPL should discard the last input, warning the user that some
     // statements were processed.
     DiscardWarn,
-    // The REPL should display the help message.
-    Help,
-    // The REPL should display the license information.
-    License,
-    // The REPL should reset its state.
-    Reset,
-    // The REPL should exit.
-    Exit
 };
 
 struct Status {

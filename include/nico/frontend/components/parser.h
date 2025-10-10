@@ -23,8 +23,8 @@ class Parser {
 
     // The current token index.
     unsigned current = 0;
-    // Request for the REPL, if any.
-    Request repl_request = Request::None;
+    // Whether or not there is an incomplete statement in REPL mode.
+    bool incomplete_statement = false;
 
     Parser(
         const std::vector<std::shared_ptr<Token>>&& tokens,
@@ -254,18 +254,6 @@ class Parser {
      * statement could not be parsed.
      */
     std::optional<std::shared_ptr<Stmt>> expression_statement();
-
-    /**
-     * @brief Parses a command statement.
-     *
-     * A command statement is a REPL-mode-only statement that issues a command
-     * to pause the REPL and issue a request.
-     *
-     * If the parser is not in REPL mode, an error will be logged.
-     *
-     * @return std::nullopt, always.
-     */
-    std::nullopt_t command_statement();
 
     /**
      * @brief Parses a statement.
