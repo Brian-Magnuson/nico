@@ -104,6 +104,8 @@ For all header files, use the following include guard pattern:
 #endif // NICO_FILE_BASE_NAME_H
 ```
 
+The `#endif` comment should always match the `#ifndef` macro name.
+
 View existing header files for more examples.
 
 For `#include` directives, include files in the following order.
@@ -144,19 +146,45 @@ Include what you use in a file.
 - Avoid relying on transitive includes.
   - An exception to this is with header-source file pairs; if an include is in the header file, it does not need to be re-included in the implementation file.
 
-### Names and Identifiers
+### Namespaces
 
 For names in the `std` namespace, `llvm` namespace, or other external namespaces:
 - Use the fully qualified name (e.g., `std::cout`, `std::string`, `llvm::Function`).
-- Do not use `using namespace`.
-- Do not use `using` for the purpose of avoiding namespace qualification.
-  - E.g., do not use `using std::cout;`.
+- Do not use using directives, i.e., `using namespace`.
+- Do not use using declarations, i.e., `using std::cout;`.
+
+With the exception of test files and `main.cpp`, all declarations and definitions should be inside the `nico` namespace.
+This includes the special "helper" macros that we define, such as `PTR_INSTANCEOF` and `IS_VARIANT`.
+
+We may use nested namespaces for declarations that have very simple/common names.
+- An example of this is the `colorize` namespace, which contains stream manipulators with simple names like `red`, `blue`, and `reset`.
+  - Without the nested namespace, these names would be too generic and could easily conflict with other names.
+- In other cases, we try to avoid nested namespaces to avoid overly long names.
+
+Namespaces should be opened and closed like this:
+
+```cpp
+namespace nico {
+
+} // namespace nico
+```
+
+The closing comment is required and must match the namespace name.
+
+Outside of the `nico` namespace:
+- Use the fully qualified name (e.g., `nico::Logger`, `nico::Type`).
+- Do not use using directives, i.e., `using namespace nico;`.
+- Do not use using declarations, i.e., `using nico::Logger;` in header files.
+- Avoid using declarations in implementation files.
+  - Exceptions include `nico::Tok` and `nico::Err` as they are used frequently in testing.
+
+### Names and Identifiers
 
 For macros and compile-time constants:
 - Use `UPPER_SNAKE_CASE`
   - E.g., `PTR_INSTANCEOF`
 
-For variable names, function names, parameter names:
+For variable names, function names, parameter names, and namespace names:
 - Use `lower_snake_case`
   - E.g., `my_variable`, `compute_sum()`
 - It may be helpful to change your IDE settings to use different colors for class member variables and static/global variables.
