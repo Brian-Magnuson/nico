@@ -6,12 +6,11 @@
 
 const std::unordered_map<std::string, Repl::Command> Repl::commands = {
     {":help", Command::Help},
+    {":h", Command::Help},
+    {":?", Command::Help},
     {":version", Command::Version},
     {":license", Command::License},
     {":discard", Command::Discard},
-    {":clear", Command::Discard},
-    {":cls", Command::Discard},
-    {":clearall", Command::Reset},
     {":reset", Command::Reset},
     {":exit", Command::Exit},
     {":quit", Command::Exit},
@@ -54,11 +53,12 @@ void Repl::print_header() {
 void Repl::print_help() {
     *out << R"(Nico REPL Help
 Available commands:
-:help       Show this help message.
+:help       Show this help message. (Also :h or :?)
+:version    Show the REPL version.
 :license    Show the LICENSE file.
 :reset      Reset the REPL state, clearing all variables and definitions. 
-            (Also :clearall)
-:discard    Discard the current input. (Also :clear or :cls)
+:discard    Discard the current input.
+:exit       Exit the REPL. (Also :quit or :q)
 )";
 }
 
@@ -140,6 +140,7 @@ void Repl::run_repl() {
         std::string line;
         if (!std::getline(*in, line)) {
             // Exit REPL on EOF (Ctrl+D)
+            *out << "\nExiting REPL..." << std::endl;
             break;
         }
         else if (commands.find(line) != commands.end()) {
