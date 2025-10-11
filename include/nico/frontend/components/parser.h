@@ -12,6 +12,8 @@
 #include "nico/shared/status.h"
 #include "nico/shared/token.h"
 
+namespace nico {
+
 /**
  * @brief A parser to parse a vector of tokens into an abstract syntax tree.
  */
@@ -304,5 +306,7 @@ public:
     static void
     parse(std::unique_ptr<FrontendContext>& context, bool repl_mode = false);
 };
+
+} // namespace nico
 
 #endif // NICO_PARSER_H

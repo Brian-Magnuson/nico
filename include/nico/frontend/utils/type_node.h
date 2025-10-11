@@ -10,6 +10,8 @@
 #include "nico/shared/dictionary.h"
 #include "nico/shared/utils.h"
 
+namespace nico {
+
 // MARK: Numeric types
 
 /**
@@ -598,5 +600,7 @@ public:
         return {"[function]", {}};
     }
 };
+
+} // namespace nico
 
 #endif // NICO_TYPE_NODE_H

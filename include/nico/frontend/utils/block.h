@@ -6,6 +6,8 @@
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/Value.h>
 
+namespace nico {
+
 /**
  * @brief Base class for llvm block wrapper linked list nodes.
  *
@@ -60,8 +62,10 @@ public:
     std::string function_name;
 
     Function(
-        std::shared_ptr<Block> prev, llvm::Value* yield_allocation,
-        llvm::BasicBlock* exit_block, std::string_view function_name
+        std::shared_ptr<Block> prev,
+        llvm::Value* yield_allocation,
+        llvm::BasicBlock* exit_block,
+        std::string_view function_name
     )
         : Block(prev, yield_allocation),
           exit_block(exit_block),
@@ -86,7 +90,8 @@ public:
 class Block::Script : public Block::Function {
 public:
     Script(
-        std::shared_ptr<Block> prev, llvm::Value* yield_allocation,
+        std::shared_ptr<Block> prev,
+        llvm::Value* yield_allocation,
         llvm::BasicBlock* exit_block
     )
         : Block::Function(prev, yield_allocation, exit_block, "script") {}
@@ -118,7 +123,8 @@ public:
     llvm::BasicBlock* merge_block;
 
     Control(
-        std::shared_ptr<Block> prev, llvm::Value* yield_allocation,
+        std::shared_ptr<Block> prev,
+        llvm::Value* yield_allocation,
         llvm::BasicBlock* merge_block
     )
         : Block(prev, yield_allocation), merge_block(merge_block) {}
@@ -140,8 +146,10 @@ public:
     llvm::BasicBlock* continue_block;
 
     Loop(
-        std::shared_ptr<Block> prev, llvm::Value* yield_allocation,
-        llvm::BasicBlock* merge_block, llvm::BasicBlock* continue_block
+        std::shared_ptr<Block> prev,
+        llvm::Value* yield_allocation,
+        llvm::BasicBlock* merge_block,
+        llvm::BasicBlock* continue_block
     )
         : Control(prev, yield_allocation, merge_block),
           continue_block(continue_block) {}
@@ -163,12 +171,15 @@ public:
 class Block::Conditional : public Block::Control {
 public:
     Conditional(
-        std::shared_ptr<Block> prev, llvm::Value* yield_allocation,
+        std::shared_ptr<Block> prev,
+        llvm::Value* yield_allocation,
         llvm::BasicBlock* merge_block
     )
         : Control(prev, yield_allocation, merge_block) {}
 
     virtual ~Conditional() = default;
 };
+
+} // namespace nico
 
 #endif // NICO_BLOCK_H

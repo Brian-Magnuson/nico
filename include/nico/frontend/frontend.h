@@ -16,6 +16,8 @@
 #include "nico/frontend/utils/frontend_context.h"
 #include "nico/shared/code_file.h"
 
+namespace nico {
+
 /**
  * @brief The compiler front end, which includes the lexer, parser, type
  * checkers, and code generator.
@@ -84,5 +86,7 @@ public:
      */
     void reset() { context->reset(); }
 };
+
+} // namespace nico
 
 #endif // NICO_FRONTEND_H

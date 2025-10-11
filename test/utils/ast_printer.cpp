@@ -1,5 +1,7 @@
 #include "ast_printer.h"
 
+namespace nico {
+
 std::any AstPrinter::visit(Stmt::Expression* stmt) {
     return std::string(
         "(expr " +
@@ -145,3 +147,5 @@ AstPrinter::stmts_to_strings(const std::vector<std::shared_ptr<Stmt>>& ast) {
     }
     return strings;
 }
+
+} // namespace nico

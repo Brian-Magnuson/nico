@@ -8,6 +8,8 @@
 #include <utility>
 #include <vector>
 
+namespace nico {
+
 /**
  * @brief A dictionary class that maps keys to values.
  *
@@ -267,5 +269,7 @@ public:
         return keys == other.keys;
     }
 };
+
+} // namespace nico
 
 #endif // NICO_DICTIONARY_H

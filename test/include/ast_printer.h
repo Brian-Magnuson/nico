@@ -8,6 +8,8 @@
 
 #include "nico/frontend/utils/ast_node.h"
 
+namespace nico {
+
 /**
  * @brief A class for printing the AST for debugging purposes.
  *
@@ -57,5 +59,7 @@ public:
     std::vector<std::string>
     stmts_to_strings(const std::vector<std::shared_ptr<Stmt>>& ast);
 };
+
+} // namespace nico
 
 #endif // NICO_AST_PRINTER_H

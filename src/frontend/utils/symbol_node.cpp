@@ -2,6 +2,8 @@
 
 #include "nico/frontend/utils/type_node.h"
 
+namespace nico {
+
 int Node::LocalScope::next_scope_id = 0;
 
 Node::Node(
@@ -38,3 +40,5 @@ void Node::initialize_node() {
         }
     }
 }
+
+} // namespace nico

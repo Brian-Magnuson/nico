@@ -4,6 +4,8 @@
 #include "nico/shared/logger.h"
 #include "nico/shared/utils.h"
 
+namespace nico {
+
 bool Parser::is_at_end() const {
     return current >= tokens.size();
 }
@@ -509,3 +511,5 @@ void Parser::parse(std::unique_ptr<FrontendContext>& context, bool repl_mode) {
     context->scanned_tokens = {};
     parser.run_parse(context);
 }
+
+} // namespace nico

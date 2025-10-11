@@ -8,6 +8,8 @@
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 
+namespace nico {
+
 /**
  * @brief A safe wrapper around an LLVM context and module.
  *
@@ -71,5 +73,7 @@ public:
         llvm_context = nullptr;
     }
 };
+
+} // namespace nico
 
 #endif // NICO_IR_MODULE_CONTEXT_H

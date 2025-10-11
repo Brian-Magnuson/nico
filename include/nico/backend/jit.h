@@ -12,6 +12,8 @@
 
 #include "nico/shared/ir_module_context.h"
 
+namespace nico {
+
 /**
  * @brief Interface for JIT compilation.
  *
@@ -101,5 +103,7 @@ public:
 
     void reset() override;
 };
+
+} // namespace nico
 
 #endif // NICO_JIT_H

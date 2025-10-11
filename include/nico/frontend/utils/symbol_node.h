@@ -5,6 +5,8 @@
 #include "nico/shared/dictionary.h"
 #include "nico/shared/utils.h"
 
+namespace nico {
+
 /**
  * @brief A basic node in the symbol tree.
  *
@@ -350,5 +352,7 @@ public:
         return ptr;
     }
 };
+
+} // namespace nico
 
 #endif // NICO_SYMBOL_NODE_H

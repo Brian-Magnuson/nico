@@ -16,6 +16,8 @@
 
 #include "test_utils.h"
 
+using nico::Err;
+
 /**
  * @brief Run a checker test with the given source code and expected error.
  *
@@ -38,28 +40,28 @@ void run_checker_test(
 ) {
     // If there is no expected error, we enable printing to look for unexpected
     // errors.
-    Logger::inst().set_printing_enabled(
+    nico::Logger::inst().set_printing_enabled(
         print_errors.value_or(!expected_error.has_value())
     );
 
-    auto context = std::make_unique<FrontendContext>();
-    auto file = make_test_code_file(src_code);
-    Lexer::scan(context, file);
-    Parser::parse(context);
-    GlobalChecker::check(context);
-    LocalChecker::check(context);
+    auto context = std::make_unique<nico::FrontendContext>();
+    auto file = nico::make_test_code_file(src_code);
+    nico::Lexer::scan(context, file);
+    nico::Parser::parse(context);
+    nico::GlobalChecker::check(context);
+    nico::LocalChecker::check(context);
 
     if (expected_error.has_value()) {
-        auto& errors = Logger::inst().get_errors();
+        auto& errors = nico::Logger::inst().get_errors();
         REQUIRE(errors.size() >= 1);
         CHECK(errors.at(0) == expected_error.value());
     }
     else {
-        CHECK(Logger::inst().get_errors().empty());
+        CHECK(nico::Logger::inst().get_errors().empty());
     }
 
     context->reset();
-    Logger::inst().reset();
+    nico::Logger::inst().reset();
 }
 
 TEST_CASE("Local variable declarations", "[checker]") {

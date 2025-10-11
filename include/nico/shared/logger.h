@@ -10,6 +10,8 @@
 #include "nico/shared/error_code.h"
 #include "nico/shared/token.h"
 
+namespace nico {
+
 /**
  * @brief Logger singleton for logging errors and messages.
  */
@@ -124,5 +126,7 @@ public:
      */
     const std::vector<Err>& get_errors() const { return errors; }
 };
+
+} // namespace nico
 
 #endif // NICO_LOGGER_H

@@ -6,6 +6,8 @@
 
 #include "nico/frontend/utils/frontend_context.h"
 
+namespace nico {
+
 class GlobalChecker {
     GlobalChecker() = default;
 
@@ -21,5 +23,7 @@ class GlobalChecker {
 public:
     static void check(std::unique_ptr<FrontendContext>& context);
 };
+
+} // namespace nico
 
 #endif // NICO_GLOBAL_CHECKER_H

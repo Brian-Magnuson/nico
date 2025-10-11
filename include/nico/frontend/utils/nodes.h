@@ -12,6 +12,8 @@
 #include "nico/shared/token.h"
 #include "nico/shared/utils.h"
 
+namespace nico {
+
 // MARK: Node
 
 /**
@@ -496,5 +498,7 @@ public:
                *type == *other.type;
     }
 };
+
+} // namespace nico
 
 #endif // NICO_NODES_H

@@ -15,6 +15,8 @@
 #include "nico/shared/status.h"
 #include "nico/shared/token.h"
 
+namespace nico {
+
 /**
  * @brief A front end context, which contains the current status, AST, and
  * symbol tree.
@@ -71,5 +73,7 @@ public:
      */
     void rollback() { stmts.resize(stmts_processed); }
 };
+
+} // namespace nico
 
 #endif // NICO_FRONTEND_CONTEXT_H

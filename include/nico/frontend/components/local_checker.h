@@ -10,6 +10,8 @@
 #include "nico/frontend/utils/symbol_tree.h"
 #include "nico/frontend/utils/type_node.h"
 
+namespace nico {
+
 /**
  * @brief A local type checker.
  *
@@ -93,5 +95,7 @@ public:
     static void
     check(std::unique_ptr<FrontendContext>& context, bool repl_mode = false);
 };
+
+} // namespace nico
 
 #endif // NICO_LOCAL_CHECKER_H

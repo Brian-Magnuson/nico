@@ -5,6 +5,8 @@
 
 #include "nico/shared/utils.h"
 
+namespace nico {
+
 namespace colorize {
 
 /**
@@ -154,5 +156,7 @@ inline std::ostream& reset(std::ostream& o) {
 }
 
 } // namespace colorize
+
+} // namespace nico
 
 #endif // NICO_COLORIZE_H

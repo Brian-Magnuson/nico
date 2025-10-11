@@ -4,6 +4,8 @@
 #include "nico/shared/logger.h"
 #include "nico/shared/status.h"
 
+namespace nico {
+
 const std::unordered_map<std::string, Repl::Command> Repl::commands = {
     {":help", Command::Help},
     {":h", Command::Help},
@@ -183,3 +185,5 @@ void Repl::run_repl() {
         }
     }
 }
+
+} // namespace nico

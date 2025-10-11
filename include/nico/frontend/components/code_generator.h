@@ -18,6 +18,8 @@
 #include "nico/shared/ir_module_context.h"
 #include "nico/shared/token.h"
 
+namespace nico {
+
 /**
  * @brief A class to perform LLVM code generation.
  *
@@ -231,5 +233,7 @@ public:
         bool require_verification = true
     );
 };
+
+} // namespace nico
 
 #endif // NICO_CODE_GENERATOR_H

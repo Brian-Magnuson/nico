@@ -11,6 +11,8 @@
 #include "nico/shared/dictionary.h"
 #include "nico/shared/error_code.h"
 
+namespace nico {
+
 /**
  * @brief A symbol tree that represents the structure of the program's symbols.
  *
@@ -214,5 +216,7 @@ public:
      */
     std::pair<std::shared_ptr<Node>, Err> add_field_entry(const Field& field);
 };
+
+} // namespace nico
 
 #endif // NICO_SYMBOL_TREE_H

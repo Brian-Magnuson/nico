@@ -14,6 +14,8 @@
 
 #include "nico/shared/logger.h"
 
+namespace nico {
+
 void Emitter::emit(
     const std::unique_ptr<llvm::Module>& ir_module,
     std::string_view target_destination
@@ -79,3 +81,5 @@ void Emitter::emit(
     pass.run(*ir_module);
     dest.flush();
 }
+
+} // namespace nico

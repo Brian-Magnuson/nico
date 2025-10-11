@@ -14,6 +14,8 @@
 #include "nico/shared/code_file.h"
 #include "nico/shared/status.h"
 
+namespace nico {
+
 void compile_and_run(std::string_view file_name) {
     // Open the file.
     std::ifstream file(file_name.data());
@@ -54,3 +56,5 @@ void compile_and_run(std::string_view file_name) {
 
     auto result = jit->run_main_func(0, nullptr, context->main_fn_name);
 }
+
+} // namespace nico

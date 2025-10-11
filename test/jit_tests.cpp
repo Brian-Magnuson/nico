@@ -44,11 +44,11 @@ void run_jit_test(
     std::optional<int> expected_return_code = std::nullopt,
     bool print_ir = false
 ) {
-    auto file = make_test_code_file(source);
+    auto file = nico::make_test_code_file(source);
 
-    Logger::inst().set_printing_enabled(true);
+    nico::Logger::inst().set_printing_enabled(true);
 
-    Frontend frontend;
+    nico::Frontend frontend;
     if (expected_return_code.has_value() && *expected_return_code != 0) {
         // If we expect a non-zero return code, enable panic recovery to avoid
         // terminating the program.
@@ -57,15 +57,16 @@ void run_jit_test(
 
     frontend.set_ir_printing_enabled(print_ir);
 
-    std::unique_ptr<FrontendContext>& context = frontend.compile(file, false);
-    REQUIRE(IS_VARIANT(context->status, Status::Ok));
+    std::unique_ptr<nico::FrontendContext>& context =
+        frontend.compile(file, false);
+    REQUIRE(IS_VARIANT(context->status, nico::Status::Ok));
 
-    std::unique_ptr<IJit> jit = std::make_unique<SimpleJit>();
+    std::unique_ptr<nico::IJit> jit = std::make_unique<nico::SimpleJit>();
     auto jit_err = jit->add_module_and_context(std::move(context->mod_ctx));
     REQUIRE(!jit_err);
 
     std::optional<llvm::Expected<int>> return_code;
-    auto [out, err] = capture_stdout(
+    auto [out, err] = nico::capture_stdout(
         [&]() {
             return_code = jit->run_main_func(0, nullptr, context->main_fn_name);
         },

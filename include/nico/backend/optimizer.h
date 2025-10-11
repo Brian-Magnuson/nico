@@ -6,6 +6,8 @@
 #include <llvm/IR/Module.h>
 #include <llvm/Passes/PassBuilder.h>
 
+namespace nico {
+
 /**
  * @brief A class to perform optimization on an IR module.
  *
@@ -27,5 +29,7 @@ public:
         llvm::OptimizationLevel opt_level = llvm::OptimizationLevel::O2
     );
 };
+
+} // namespace nico
 
 #endif // NICO_OPTIMIZER_H

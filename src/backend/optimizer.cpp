@@ -3,6 +3,8 @@
 #include <llvm/IR/PassManager.h>
 #include <llvm/Passes/PassBuilder.h>
 
+namespace nico {
+
 void Optimizer::optimize(
     std::unique_ptr<llvm::Module>& ir_module, llvm::OptimizationLevel opt_level
 ) {
@@ -24,3 +26,5 @@ void Optimizer::optimize(
 
     mpm.run(*ir_module, mam);
 }
+
+} // namespace nico

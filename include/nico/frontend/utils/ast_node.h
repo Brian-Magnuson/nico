@@ -10,6 +10,8 @@
 #include "nico/frontend/utils/nodes.h"
 #include "nico/shared/dictionary.h"
 
+namespace nico {
+
 // MARK: Statements
 
 /**
@@ -47,7 +49,8 @@ public:
     std::weak_ptr<Node::FieldEntry> field_entry;
 
     Let(std::shared_ptr<Token> identifier,
-        std::optional<std::shared_ptr<Expr>> expression, bool has_var,
+        std::optional<std::shared_ptr<Expr>> expression,
+        bool has_var,
         std::optional<std::shared_ptr<Annotation>> annotation)
         : identifier(identifier),
           expression(expression),
@@ -156,7 +159,8 @@ public:
     std::shared_ptr<Expr> right;
 
     Assign(
-        std::shared_ptr<Expr> left, std::shared_ptr<Token> op,
+        std::shared_ptr<Expr> left,
+        std::shared_ptr<Token> op,
         std::shared_ptr<Expr> right
     )
         : left(left), op(op), right(right) {
@@ -187,7 +191,8 @@ public:
     std::shared_ptr<Expr> right;
 
     Logical(
-        std::shared_ptr<Expr> left, std::shared_ptr<Token> op,
+        std::shared_ptr<Expr> left,
+        std::shared_ptr<Token> op,
         std::shared_ptr<Expr> right
     )
         : left(left), op(op), right(right) {
@@ -215,7 +220,8 @@ public:
     std::shared_ptr<Expr> right;
 
     Binary(
-        std::shared_ptr<Expr> left, std::shared_ptr<Token> op,
+        std::shared_ptr<Expr> left,
+        std::shared_ptr<Token> op,
         std::shared_ptr<Expr> right
     )
         : left(left), op(op), right(right) {
@@ -293,7 +299,8 @@ public:
     std::shared_ptr<Token> right_token;
 
     Access(
-        std::shared_ptr<Expr> left, std::shared_ptr<Token> op,
+        std::shared_ptr<Expr> left,
+        std::shared_ptr<Token> op,
         std::shared_ptr<Token> right_token
     )
         : left(left), op(op), right_token(right_token) {
@@ -444,8 +451,10 @@ public:
     bool implicit_else = false;
 
     Conditional(
-        std::shared_ptr<Token> if_kw, std::shared_ptr<Expr> condition,
-        std::shared_ptr<Expr> then_branch, std::shared_ptr<Expr> else_branch,
+        std::shared_ptr<Token> if_kw,
+        std::shared_ptr<Expr> condition,
+        std::shared_ptr<Expr> then_branch,
+        std::shared_ptr<Expr> else_branch,
         bool implicit_else
     )
         : if_kw(if_kw),
@@ -616,5 +625,7 @@ public:
         return result;
     }
 };
+
+} // namespace nico
 
 #endif // NICO_AST_NODE_H

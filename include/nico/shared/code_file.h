@@ -5,6 +5,8 @@
 #include <optional>
 #include <string>
 
+namespace nico {
+
 /**
  * @brief A struct to hold the path and source code of a file.
  */
@@ -27,5 +29,7 @@ struct CodeFile {
     CodeFile(const std::string&& src_code, const std::string& path_string)
         : path_string(path_string), src_code(std::move(src_code)) {}
 };
+
+} // namespace nico
 
 #endif // NICO_CODE_FILE_H

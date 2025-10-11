@@ -1,6 +1,8 @@
 #ifndef NICO_ERROR_CODE_H
 #define NICO_ERROR_CODE_H
 
+namespace nico {
+
 /**
  * @brief An error code that can be issued by the compiler.
  *
@@ -69,12 +71,6 @@ enum class Err {
     UnexpectedTokenAfterDot,
     // A conditional expression was found without a `then` keyword or block.
     ConditionalWithoutThenOrBlock,
-    // A command statement was found outside of REPL mode.
-    CommandOutsideOfReplMode,
-    // A command was found without an identifier.
-    MissingCommandIdentifier,
-    // A command was not recognized.
-    UnrecognizedCommand,
 
     // Global type check error.
     GlobalType = 4000,
@@ -165,5 +161,7 @@ enum class Err {
     // function pointer.
     JitBadMainPointer,
 };
+
+} // namespace nico
 
 #endif // ERROR_CODE_H

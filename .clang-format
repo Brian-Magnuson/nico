@@ -43,6 +43,5 @@ NamespaceIndentation: None
 # Keep the star next to the type; use `T* t`, never `T *t` or `T * t`.
 PointerAlignment: Left
 
-# Do not modify namespace end comments.
-# Namespace end comments restate the namespace name at the end of a namespace.
-FixNamespaceComments: false
+# Namespace end comments are required and must match the namespace name.
+FixNamespaceComments: true

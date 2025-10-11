@@ -6,6 +6,8 @@
 
 #include <llvm/IR/Module.h>
 
+namespace nico {
+
 /**
  * @brief A class to emit the IR module to an object file.
  *
@@ -25,5 +27,7 @@ public:
         std::string_view target_destination = "output.o"
     );
 };
+
+} // namespace nico
 
 #endif // NICO_EMITTER_H

@@ -14,6 +14,8 @@
 #include "ast_printer.h"
 #include "test_utils.h"
 
+using nico::Err;
+
 /**
  * @brief Run a parser statement test with the given source code and expected
  * AST strings.
@@ -24,15 +26,15 @@
 void run_parser_stmt_test(
     std::string_view src_code, const std::vector<std::string>& expected
 ) {
-    auto context = std::make_unique<FrontendContext>();
-    auto file = make_test_code_file(src_code);
-    Lexer::scan(context, file);
-    Parser::parse(context);
-    AstPrinter printer;
+    auto context = std::make_unique<nico::FrontendContext>();
+    auto file = nico::make_test_code_file(src_code);
+    nico::Lexer::scan(context, file);
+    nico::Parser::parse(context);
+    nico::AstPrinter printer;
     CHECK(printer.stmts_to_strings(context->stmts) == expected);
 
     context->reset();
-    Logger::inst().reset();
+    nico::Logger::inst().reset();
 }
 
 /**
@@ -49,19 +51,19 @@ void run_parser_stmt_test(
 void run_parser_stmt_error_test(
     std::string_view src_code, Err expected_error, bool print_errors = false
 ) {
-    Logger::inst().set_printing_enabled(print_errors);
+    nico::Logger::inst().set_printing_enabled(print_errors);
 
-    auto context = std::make_unique<FrontendContext>();
-    auto file = make_test_code_file(src_code);
-    Lexer::scan(context, file);
-    Parser::parse(context);
+    auto context = std::make_unique<nico::FrontendContext>();
+    auto file = nico::make_test_code_file(src_code);
+    nico::Lexer::scan(context, file);
+    nico::Parser::parse(context);
 
-    auto& errors = Logger::inst().get_errors();
+    auto& errors = nico::Logger::inst().get_errors();
     REQUIRE(errors.size() >= 1);
     CHECK(errors.at(0) == expected_error);
 
     context->reset();
-    Logger::inst().reset();
+    nico::Logger::inst().reset();
 }
 
 // MARK: Parser stmt tests
@@ -216,11 +218,5 @@ TEST_CASE("Parser let stmt errors", "[parser]") {
 
     SECTION("Let without type or value") {
         run_parser_stmt_error_test("let a", Err::LetWithoutTypeOrValue);
-    }
-}
-
-TEST_CASE("Parser command error", "[parser]") {
-    SECTION("Command outside of REPL mode") {
-        run_parser_stmt_error_test(":quit", Err::CommandOutsideOfReplMode);
     }
 }

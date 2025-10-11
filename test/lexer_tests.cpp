@@ -11,6 +11,9 @@
 
 #include "test_utils.h"
 
+using nico::Err;
+using nico::Tok;
+
 /**
  * @brief Run a lexer test with the given source code and expected token types.
  *
@@ -20,13 +23,13 @@
 void run_lexer_test(
     std::string_view src_code, const std::vector<Tok>& expected
 ) {
-    auto context = std::make_unique<FrontendContext>();
-    auto file = make_test_code_file(src_code);
-    Lexer::scan(context, file);
+    auto context = std::make_unique<nico::FrontendContext>();
+    auto file = nico::make_test_code_file(src_code);
+    nico::Lexer::scan(context, file);
     CHECK(extract_token_types(context->scanned_tokens) == expected);
 
     context->reset();
-    Logger::inst().reset();
+    nico::Logger::inst().reset();
 }
 
 /**
@@ -42,18 +45,18 @@ void run_lexer_test(
 void run_lexer_error_test(
     std::string_view src_code, Err expected_error, bool print_errors = false
 ) {
-    Logger::inst().set_printing_enabled(print_errors);
+    nico::Logger::inst().set_printing_enabled(print_errors);
 
-    auto context = std::make_unique<FrontendContext>();
-    auto file = make_test_code_file(src_code);
-    Lexer::scan(context, file);
+    auto context = std::make_unique<nico::FrontendContext>();
+    auto file = nico::make_test_code_file(src_code);
+    nico::Lexer::scan(context, file);
 
-    auto& errors = Logger::inst().get_errors();
+    auto& errors = nico::Logger::inst().get_errors();
     REQUIRE(errors.size() >= 1);
     CHECK(errors.at(0) == expected_error);
 
     context->reset();
-    Logger::inst().reset();
+    nico::Logger::inst().reset();
 }
 
 TEST_CASE("Sanity check", "[sanity]") {

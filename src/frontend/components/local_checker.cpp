@@ -5,6 +5,8 @@
 #include "nico/shared/status.h"
 #include "nico/shared/utils.h"
 
+namespace nico {
+
 std::shared_ptr<Type>
 LocalChecker::expr_check(std::shared_ptr<Expr>& expr, bool as_lvalue) {
     expr->accept(this, as_lvalue);
@@ -699,3 +701,5 @@ void LocalChecker::check(
     LocalChecker checker(context->symbol_tree, repl_mode);
     checker.run_check(context);
 }
+
+} // namespace nico

@@ -13,6 +13,8 @@
 #include "nico/shared/status.h"
 #include "nico/shared/utils.h"
 
+namespace nico {
+
 int CodeGenerator::repl_counter = 0;
 
 CodeGenerator::CodeGenerator(
@@ -934,3 +936,5 @@ void CodeGenerator::generate_repl_ir(
     context->mod_ctx = std::move(codegen.mod_ctx);
     context->main_fn_name = main_fn_name;
 }
+
+} // namespace nico

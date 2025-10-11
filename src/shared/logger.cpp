@@ -1,5 +1,7 @@
 #include "nico/shared/logger.h"
 
+namespace nico {
+
 void Logger::print_code_at_location(
     const Location& location, std::ostream& (*color_manip)(std::ostream& o)
 ) {
@@ -81,3 +83,5 @@ void Logger::log_note(std::string_view message) {
              << "\n";
     }
 }
+
+} // namespace nico

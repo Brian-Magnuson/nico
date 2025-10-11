@@ -10,6 +10,8 @@
 #include "nico/shared/code_file.h"
 #include "nico/shared/token.h"
 
+namespace nico {
+
 /**
  * @brief Creates a test code file with the provided source code.
  *
@@ -60,5 +62,7 @@ extract_token_types(const std::vector<std::shared_ptr<Token>>& tokens);
  */
 std::pair<std::string, std::string>
 capture_stdout(std::function<void()> func, int buffer_size = 4096);
+
+} // namespace nico
 
 #endif // NICO_TEST_UTILS_H

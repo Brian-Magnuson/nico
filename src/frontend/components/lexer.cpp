@@ -8,6 +8,8 @@
 #include "nico/shared/status.h"
 #include "nico/shared/utils.h"
 
+namespace nico {
+
 std::unordered_map<std::string_view, Tok> Lexer::keywords = {
     // Literals
 
@@ -773,3 +775,5 @@ void Lexer::scan(
     Lexer lexer(file, repl_mode);
     lexer.run_scan(context);
 }
+
+} // namespace nico

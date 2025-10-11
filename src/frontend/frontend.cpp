@@ -2,6 +2,8 @@
 
 #include "nico/shared/status.h"
 
+namespace nico {
+
 std::unique_ptr<FrontendContext>&
 Frontend::compile(const std::shared_ptr<CodeFile>& file, bool repl_mode) {
     Lexer::scan(context, file, repl_mode);
@@ -35,3 +37,5 @@ Frontend::compile(const std::shared_ptr<CodeFile>& file, bool repl_mode) {
 
     return context;
 }
+
+} // namespace nico

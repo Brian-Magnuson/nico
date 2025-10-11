@@ -3,6 +3,8 @@
 
 #include <variant>
 
+namespace nico {
+
 /**
  * @brief Macro to check if an std::variant holds a specific type.
  */
@@ -44,5 +46,7 @@ struct Status {
 };
 
 using VariantStatus = std::variant<Status::Ok, Status::Error, Status::Pause>;
+
+} // namespace nico
 
 #endif // NICO_STATUS_H

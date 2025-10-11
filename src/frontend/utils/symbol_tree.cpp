@@ -2,6 +2,8 @@
 
 #include "nico/shared/utils.h"
 
+namespace nico {
+
 void SymbolTree::install_primitive_types() {
     modified = true;
     std::shared_ptr<Node> new_node;
@@ -213,3 +215,5 @@ SymbolTree::add_field_entry(const Field& field) {
 
     return std::make_pair(new_field_entry, Err::Null);
 }
+
+} // namespace nico

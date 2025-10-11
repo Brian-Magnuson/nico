@@ -10,6 +10,8 @@
 #include "nico/frontend/frontend.h"
 #include "nico/shared/utils.h"
 
+namespace nico {
+
 /**
  * @brief REPL (Read-Eval-Print Loop) class for handling user input and
  * commands.
@@ -167,5 +169,7 @@ public:
      */
     static void run(std::istream& in = std::cin, std::ostream& out = std::cout);
 };
+
+} // namespace nico
 
 #endif // NICO_REPL_H

@@ -2,6 +2,8 @@
 
 #include "nico/shared/status.h"
 
+namespace nico {
+
 void GlobalChecker::run_check(std::unique_ptr<FrontendContext>& context) {
     // Currently, the global checker does nothing.
     // This is a placeholder for future functionality.
@@ -16,3 +18,5 @@ void GlobalChecker::check(std::unique_ptr<FrontendContext>& context) {
     GlobalChecker checker;
     checker.run_check(context);
 }
+
+} // namespace nico

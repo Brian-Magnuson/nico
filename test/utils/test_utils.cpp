@@ -16,6 +16,8 @@
 #include <unistd.h>
 #endif
 
+namespace nico {
+
 std::shared_ptr<CodeFile> make_test_code_file(std::string_view src_code) {
     auto file = std::make_shared<CodeFile>(
         std::string(src_code),
@@ -129,3 +131,5 @@ capture_stdout(std::function<void()> func, int buffer_size) {
     return "";
 #endif
 }
+
+} // namespace nico

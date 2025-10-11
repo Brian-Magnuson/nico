@@ -5,6 +5,8 @@
 
 #include "nico/shared/logger.h"
 
+namespace nico {
+
 llvm::Expected<int>
 IJit::run_main_func(int argc, char** argv, std::string_view main_fn_name) {
     auto symbol = lookup(main_fn_name);
@@ -83,3 +85,5 @@ void SimpleJit::reset() {
     }
     jit = std::move(jit_or_err.get());
 }
+
+} // namespace nico

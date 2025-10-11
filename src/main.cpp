@@ -10,10 +10,10 @@ int main(int argc, char** argv) {
     }
 
     if (argc == 2) {
-        compile_and_run(argv[1]);
+        nico::compile_and_run(argv[1]);
     }
     else {
-        Repl::run();
+        nico::Repl::run();
     }
 
     return 0;

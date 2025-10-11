@@ -8,6 +8,8 @@
 
 #include "nico/shared/code_file.h"
 
+namespace nico {
+
 /**
  * @brief A token type.
  */
@@ -188,5 +190,7 @@ public:
           ),
           literal(literal) {}
 };
+
+} // namespace nico
 
 #endif // NICO_TOKEN_H

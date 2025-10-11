@@ -11,6 +11,8 @@
 #include "nico/shared/code_file.h"
 #include "nico/shared/token.h"
 
+namespace nico {
+
 /**
  * @brief A lexer for scanning source code into a list of tokens.
  */
@@ -303,5 +305,7 @@ public:
         bool repl_mode = false
     );
 };
+
+} // namespace nico
 
 #endif // NICO_LEXER_H

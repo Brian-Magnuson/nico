@@ -14,6 +14,8 @@
 #include <unistd.h>
 #endif
 
+namespace nico {
+
 // Checks if the provided std::shared_ptr points to an instance of the specified
 // type.
 #define PTR_INSTANCEOF(ptr, type)                                              \
@@ -75,5 +77,7 @@ inline std::string project_version() {
     return "<unknown version>";
 #endif
 }
+
+} // namespace nico
 
 #endif // NICO_UTILS_H
