@@ -65,7 +65,11 @@ set(BACK_END_SRC
     src/backend/emitter.cpp
     src/backend/jit.cpp
     src/backend/optimizer.cpp
-    src/backend/repl.cpp
+)
+
+set(DRIVER_SRC
+    src/driver/repl.cpp
+    src/driver/jit_runner.cpp
 )
 
 # Shared files
@@ -78,6 +82,7 @@ set(CORE_SRC
     ${FRONT_END_SRC}
     ${BACK_END_SRC}
     ${SHARED_SRC}
+    ${DRIVER_SRC}
 )
 
 # Main file
