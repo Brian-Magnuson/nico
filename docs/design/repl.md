@@ -129,8 +129,8 @@ For our REPL, we expect all tokens to be complete.
   - The parser will instead catch this error by checking to see if an indent token is immediately followed by a dedent token.
   - If the user wishes to create an empty block, they must use the `pass` statement.
     - Comments cannot be used to create empty blocks; only the lexer can detect comments.
-- In REPL mode, the following error will be changed to trigger a pause:
-  - `NotAnExpression`: This error occurs when the parser expects an expression but does not find one.
+- In REPL mode, if the parser expects and expression but instead receives an EOF token, it will trigger a pause.
+  - For other "expected expression" errors, the parser will still treat them as errors and not pauses.
 - When using a REPL, all inputs add to the same AST until the REPL is reset.
 
 ### Type Checkers

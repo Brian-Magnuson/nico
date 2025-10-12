@@ -685,6 +685,22 @@ while condition:
 while condition { statement1 }
 ```
 
+Despite while loops being expressions, they are only allowed to yield `()`. This is because they may not always execute, and thus, can never guarantee a yield value.
+
+### Do-while expressions
+
+A do-while expression is similar to a while expression, but the condition is checked after the block is executed. This means the block will always
+execute at least once. It uses blocks, and thus, may be written in idented form or braced form:
+```
+do:
+    statement1
+while condition
+
+do { statement1 } while condition
+```
+
+A do-while expression may yield values other than `()` if and only if the block contains a yield or break statement at the top level inside the do-while block (it cannot be inside a nested block).
+
 ### Move expressions
 
 A move expression is used to move a value from one location to another. It is written as follows:
@@ -743,9 +759,14 @@ return ()
 
 ### Break and continue statements
 
-A break statement is used to exit a loop:
+A break statement is used to yield a value and exit a loop:
 ```
-break
+break value
+```
+
+Break statements must always provide a value to be yielded, even if the expected type is `()`. This is to prevent ambiguity in case any statements come after the break statement.
+```
+break ()
 ```
 
 A continue statement is used to skip the rest of the current iteration and continue to the next:
