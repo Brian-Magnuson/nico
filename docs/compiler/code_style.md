@@ -317,7 +317,7 @@ We recommend setting your IDE to format code automatically on save in accordance
 
 - **Indentation:** Always use **4 spaces** for indentation.
 - **Tabs:** Never use tabs; always spaces.
-- **Consistency:** This ensures the code looks the same in all editors and platforms.
+- This ensures the code looks the same in all editors and platforms.
 
 ### Braces
 
@@ -434,4 +434,19 @@ For constructor initializer lists:
   int* ptr;   // Correct
   int *ptr;   // Please don't
   int * ptr;  // Please don't
+  ```
+
+### Namespaces
+
+- Close namespaces with a comment indicating the namespace name.
+- Keep code inside namespaces aligned with the namespace declaration.
+
+  ```cpp
+  namespace nico {
+
+  void my_function() {
+      // ...
+  }
+
+  } // namespace nico
   ```
