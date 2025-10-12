@@ -164,10 +164,13 @@ public:
      * Currently, this function has no restrictions on where local scopes can be
      * added.
      *
+     * @param is_loop Whether this local scope is a loop scope. Loop scopes
+     * allow `break` and `continue` statements to be used within them.
      * @return std::pair<std::shared_ptr<Node::LocalScope>, Err> The local scope
      * if added successfully (first), or nullptr and an error (second).
      */
-    std::pair<std::shared_ptr<Node::LocalScope>, Err> add_local_scope();
+    std::pair<std::shared_ptr<Node::LocalScope>, Err>
+    add_local_scope(bool is_loop = false);
 
     /**
      * @brief Exits the current scope and returns to the parent scope.

@@ -248,10 +248,13 @@ public:
     // The top local scope in the parent chain. Can be this. The memory for this
     // node is managed by its parent; do not manually delete it.
     Node::LocalScope* top_local_scope;
+    // The nearest enclosing loop scope, if any. Can be this. The memory for
+    // this node is managed by its parent; do not manually delete it.
+    Node::LocalScope* current_loop_scope = nullptr;
 
     virtual ~LocalScope() = default;
 
-    LocalScope(std::weak_ptr<Node::IScope> parent_scope)
+    LocalScope(std::weak_ptr<Node::IScope> parent_scope, bool is_loop = false)
         : Node::IBasicNode(parent_scope, std::to_string(next_scope_id++)),
           Node::IScope(parent_scope, std::to_string(next_scope_id++)) {
         if (auto parent_local_scope =
@@ -259,10 +262,17 @@ public:
                     parent_scope.lock()
                 )) {
             top_local_scope = parent_local_scope->top_local_scope;
+            if (!is_loop) {
+                // If this is not a loop, inherit the current loop scope from
+                // the parent local scope.
+                current_loop_scope = parent_local_scope->current_loop_scope;
+            }
         }
         else {
             top_local_scope = this;
         }
+        // If this is a loop, set the current loop scope to this.
+        current_loop_scope = is_loop ? this : current_loop_scope;
     }
 };
 

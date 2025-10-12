@@ -470,6 +470,40 @@ public:
     }
 };
 
+/**
+ * @brief A loop expression.
+ *
+ * Loop expressions are used to represent infinite loops or loops with a
+ * condition (similar to while loops).
+ */
+class Expr::Loop : public Expr {
+public:
+    // The 'loop' keyword token.
+    std::shared_ptr<Token> loop_kw;
+    // The body of the loop.
+    std::shared_ptr<Expr> body;
+    // The condition of the loop, if any.
+    std::optional<std::shared_ptr<Expr>> condition;
+    // Whether this loop is guaranteed to execute at least once.
+    bool loops_once;
+
+    Loop(
+        std::shared_ptr<Token> loop_kw,
+        std::shared_ptr<Expr> body,
+        std::optional<std::shared_ptr<Expr>> condition,
+        bool loops_once
+    )
+        : loop_kw(loop_kw),
+          body(body),
+          condition(condition),
+          loops_once(loops_once) {
+        location = &loop_kw->location;
+    }
+    std::any accept(Visitor* visitor, bool as_lvalue) override {
+        return visitor->visit(this, as_lvalue);
+    }
+};
+
 // MARK: Annotations
 
 /**

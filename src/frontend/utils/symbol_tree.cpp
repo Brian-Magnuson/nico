@@ -166,9 +166,10 @@ SymbolTree::add_function_scope(std::shared_ptr<Token> token) {
 }
 
 std::pair<std::shared_ptr<Node::LocalScope>, Err>
-SymbolTree::add_local_scope() {
+SymbolTree::add_local_scope(bool is_loop) {
     // Add the local scope to its parent scope's children.
-    auto new_local_scope = std::make_shared<Node::LocalScope>(current_scope);
+    auto new_local_scope =
+        std::make_shared<Node::LocalScope>(current_scope, is_loop);
     new_local_scope->initialize_node();
     current_scope = new_local_scope;
     modified = true;

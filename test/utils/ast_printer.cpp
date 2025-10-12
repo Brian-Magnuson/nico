@@ -135,6 +135,22 @@ std::any AstPrinter::visit(Expr::Conditional* expr, bool as_lvalue) {
     return str;
 }
 
+std::any AstPrinter::visit(Expr::Loop* expr, bool as_lvalue) {
+    std::string str = "(loop ";
+    if (expr->condition.has_value()) {
+        if (expr->loops_once)
+            str += "do ";
+        str += "while ";
+        str += std::any_cast<std::string>(
+            expr->condition.value()->accept(this, false)
+        );
+        str += " ";
+    }
+    str += std::any_cast<std::string>(expr->body->accept(this, false));
+    str += ")";
+    return str;
+}
+
 std::string AstPrinter::stmt_to_string(std::shared_ptr<Stmt> stmt) {
     return std::any_cast<std::string>(stmt->accept(this));
 }

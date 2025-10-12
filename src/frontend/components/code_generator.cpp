@@ -492,6 +492,12 @@ std::any CodeGenerator::visit(Expr::Conditional* expr, bool as_lvalue) {
     return yield_value;
 }
 
+std::any CodeGenerator::visit(Expr::Loop* expr, bool as_lvalue) {
+    // TODO: Implement loop expressions.
+    panic("CodeGenerator::visit(Expr::Loop*): Not implemented yet.");
+    return std::any();
+}
+
 // MARK: Helpers
 
 void CodeGenerator::add_c_functions() {

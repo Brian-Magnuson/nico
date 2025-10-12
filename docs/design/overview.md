@@ -685,7 +685,9 @@ while condition:
 while condition { statement1 }
 ```
 
-Despite while loops being expressions, they are only allowed to yield `()`. This is because they may not always execute, and thus, can never guarantee a yield value.
+In most cases, a while expression is only allowed to yield `()`. This is because the while loop may not execute, and thus, cannot guarantee a yield value.
+
+A while-loop may yield values other than `()` if and only if the condition is literally `true`. In such cases, the while-loop is treated like an infinite loop expression.
 
 ### Do-while expressions
 
@@ -699,7 +701,9 @@ while condition
 do { statement1 } while condition
 ```
 
-A do-while expression may yield values other than `()` if and only if the block contains a yield or break statement at the top level inside the do-while block (it cannot be inside a nested block).
+A do-while expression may yield values other than `()` if one of the following is true:
+- The condition is literally `true`, making it an infinite loop.
+- The block contains a yield or break statement at the top level inside the block.
 
 ### Move expressions
 

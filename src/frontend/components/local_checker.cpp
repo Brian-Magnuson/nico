@@ -606,6 +606,12 @@ std::any LocalChecker::visit(Expr::Conditional* expr, bool as_lvalue) {
     return std::any();
 }
 
+std::any LocalChecker::visit(Expr::Loop* expr, bool as_lvalue) {
+    // TODO: Implement loop expressions.
+    panic("LocalChecker::visit(Expr::Loop*): Not implemented yet.");
+    return std::any();
+}
+
 // MARK: Annotations
 
 std::any LocalChecker::visit(Annotation::NameRef* annotation) {
