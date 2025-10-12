@@ -194,7 +194,7 @@ std::optional<std::shared_ptr<Expr>> Parser::primary() {
         }
     }
 
-    if (repl_mode) {
+    if (repl_mode && peek()->tok_type == Tok::Eof) {
         incomplete_statement = true;
     }
     else {
@@ -402,8 +402,9 @@ std::optional<std::shared_ptr<Stmt>> Parser::expression_statement() {
     auto expr = expression();
     if (!expr)
         return std::nullopt;
-    if (repl_mode) {
-        // In REPL mode, print the result of the expression
+
+    if (repl_mode && peek()->tok_type == Tok::Eof) {
+        // If this is the last statement in REPL mode, we print the result.
         return std::make_shared<Stmt::Print>(std::vector{*expr});
     }
 
