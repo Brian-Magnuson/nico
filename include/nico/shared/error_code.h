@@ -15,11 +15,11 @@ enum class Err {
     // Default error; should never be issued under normal circumstances.
     Default,
 
-    // Configuration error.
-    Config = 1000,
+    // Configuration error
+    ConfigError = 1000,
 
     // Lexer error
-    Lexer = 2000,
+    LexerError = 2000,
     // An unexpected character was found in the source code.
     UnexpectedChar,
     // A closing grouping token was found without a matching opening token.
@@ -54,7 +54,7 @@ enum class Err {
     InvalidEscSeq,
 
     // Parser error
-    Parser = 3000,
+    ParserError = 3000,
     // An expression was expected but not found.
     NotAnExpression,
     // A statement was found where an identifier was expected but not found.
@@ -72,8 +72,13 @@ enum class Err {
     // A conditional expression was found without a `then` keyword or block.
     ConditionalWithoutThenOrBlock,
 
-    // Global type check error.
-    GlobalType = 4000,
+    // Parser warning
+    ParserWarning = 3500,
+    // A loop condition was found with the literal `true` as its condition.
+    LoopWithTrueCondition,
+
+    // Global type check error
+    GlobalTypeError = 4000,
     // An attempt was made to declare a namespace in a local scope.
     NamespaceInLocalScope,
     // An attempt was made to declare a namespace in a struct definition.
@@ -86,8 +91,8 @@ enum class Err {
     // An attempt was made to shadow a reserved name.
     NameIsReserved,
 
-    // Local type check error.
-    LocalType = 5000,
+    // Local type check error
+    LocalTypeError = 5000,
     // An expression was visited as an lvalue, but cannot be an lvalue.
     NotAPossibleLValue,
     // A type mismatch was found in an expression.
@@ -121,10 +126,15 @@ enum class Err {
     // The branches of a conditional expression have mismatched types.
     ConditionalBranchTypeMismatch,
 
-    // Code generation error.
-    CodeGen = 6000,
+    // Backend error
+    BackendError = 7000,
+    // SimpleJit could not create an LLJIT instance.
+    JitCannotInstantiate,
     // The JIT compiler could not find an entry point for the module to run.
     JitMissingEntryPoint,
+    // The JIT compiler found a symbol for `main`, but could not cast it to a
+    // function pointer.
+    JitBadMainPointer,
     // The emitter cannot look up a target machine.
     EmitterCannotLookupTarget,
     // The emitter cannot create a target machine.
@@ -134,32 +144,22 @@ enum class Err {
     // The emitter failed to emit the intended file.
     EmitterCannotEmitFile,
 
-    // Post-processing error.
-    PostProcess = 8000,
+    // Post-processing error
+    PostProcessingError = 8000,
 
-    // Compiler malfunction error.
+    // Post-processing warning
+    PostProcessingWarning = 8500,
+    // The symbol tree is in an inconsistent state with the JIT-compiled module.
+    // This can be caused by REPL input being partially processed before being
+    // discarded.
+    SymbolTreeInInconsistentState,
+
+    // Compiler malfunction error
     Malfunction = 9000,
     // An unknown error occurred.
-    Unknown,
-    // Statement was reached that should be unreachable. Typically used when a
-    // series of conditional checks do not catch every case.
-    Unreachable,
-    // Statement was reached that should be impossible. Typically used when a
-    // function does not behave as expected.
-    Impossible,
-    // Statement was reached that should be unimplemented.
-    Unimplemented,
-    // A bad conversion was attempted.
-    BadConversion,
+    UnknownError,
     // Error for testing purposes.
     TestError,
-    // The generated LLVM IR failed verification.
-    ModuleVerificationFailed,
-    // SimpleJit could not create an LLJIT instance.
-    JitCannotInstantiate,
-    // The JIT compiler found a symbol for `main`, but could not cast it to a
-    // function pointer.
-    JitBadMainPointer,
 };
 
 } // namespace nico
