@@ -28,12 +28,17 @@ std::unordered_map<std::string_view, Tok> Lexer::keywords = {
     {"if", Tok::KwIf},
     {"then", Tok::KwThen},
     {"else", Tok::KwElse},
+    {"loop", Tok::KwLoop},
+    {"while", Tok::KwWhile},
+    {"do", Tok::KwDo},
 
     {"let", Tok::KwLet},
     {"var", Tok::KwVar},
 
     {"pass", Tok::KwPass},
     {"yield", Tok::KwYield},
+    {"break", Tok::KwBreak},
+    {"continue", Tok::KwContinue},
 
     {"printout", Tok::KwPrintout},
 };

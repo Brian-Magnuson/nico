@@ -99,6 +99,7 @@ enum class Tok {
     KwElif,
     KwLoop,
     KwWhile,
+    KwDo,
     KwBreak,
     KwContinue,
     KwReturn,
