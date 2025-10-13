@@ -146,6 +146,100 @@ std::optional<std::shared_ptr<Expr>> Parser::conditional() {
     );
 }
 
+std::optional<std::shared_ptr<Expr>> Parser::loop() {
+    auto loop_kw = previous();
+    std::optional<std::shared_ptr<Expr>> condition;
+    std::optional<std::shared_ptr<Expr>> body;
+    bool loops_once = false;
+
+    if (loop_kw->tok_type == Tok::KwLoop) {
+        // Loop-loops always run at least once.
+        loops_once = true;
+        if (peek()->tok_type == Tok::Indent ||
+            peek()->tok_type == Tok::LBrace) {
+            body = block();
+        }
+        else {
+            body = expression();
+        }
+        if (!body)
+            return std::nullopt;
+    }
+    else if (loop_kw->tok_type == Tok::KwWhile) {
+        // Parse the condition.
+        condition = expression();
+        if (!condition)
+            return std::nullopt;
+        if (peek()->tok_type == Tok::Indent ||
+            peek()->tok_type == Tok::LBrace) {
+            body = block();
+        }
+        else if (match({Tok::KwDo})) {
+            body = expression();
+        }
+        else {
+            Logger::inst().log_error(
+                Err::WhileLoopWithoutDoOrBlock,
+                peek()->location,
+                "While loop requires `do` keyword or a block."
+            );
+            return std::nullopt;
+        }
+        if (!body)
+            return std::nullopt;
+
+        // If the condition is literally `true`...
+        if (auto literal =
+                std::dynamic_pointer_cast<Expr::Literal>(*condition)) {
+            if (literal->token->lexeme == "true") {
+                // Treat this like a loop-loop
+                loops_once = true;
+                condition = std::nullopt;
+            }
+        }
+    }
+    else if (loop_kw->tok_type == Tok::KwDo) {
+        // Do-while loops always run at least once.
+        loops_once = true;
+        if (peek()->tok_type == Tok::Indent ||
+            peek()->tok_type == Tok::LBrace) {
+            body = block();
+        }
+        else {
+            body = expression();
+        }
+        if (!body)
+            return std::nullopt;
+
+        // Check for the `while` keyword.
+        if (!match({Tok::KwWhile})) {
+            Logger::inst().log_error(
+                Err::DoWhileLoopWithoutWhile,
+                peek()->location,
+                "`do` must be followed by `while`."
+            );
+            return std::nullopt;
+        }
+        // Parse the condition.
+        condition = expression();
+        if (!condition)
+            return std::nullopt;
+        // If the condition is literally `true`...
+        if (auto literal =
+                std::dynamic_pointer_cast<Expr::Literal>(*condition)) {
+            if (literal->token->lexeme == "true") {
+                // Treat this like a loop-loop
+                condition = std::nullopt;
+            }
+        }
+    }
+    else {
+        panic("Parser::loop: Unexpected loop keyword.");
+    }
+
+    return std::make_shared<Expr::Loop>(loop_kw, *body, condition, loops_once);
+}
+
 std::optional<std::shared_ptr<Expr>> Parser::primary() {
     if (match({Tok::Int, Tok::Float, Tok::Bool, Tok::Str})) {
         return std::make_shared<Expr::Literal>(previous());

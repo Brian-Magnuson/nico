@@ -71,6 +71,10 @@ enum class Err {
     UnexpectedTokenAfterDot,
     // A conditional expression was found without a `then` keyword or block.
     ConditionalWithoutThenOrBlock,
+    // A while-loop expression was found without a `do` keyword or block.
+    WhileLoopWithoutDoOrBlock,
+    // A do-while loop was found without a `while` keyword.
+    DoWhileLoopWithoutWhile,
 
     // Parser warning
     ParserWarning = 3500,
