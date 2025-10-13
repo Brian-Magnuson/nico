@@ -625,6 +625,27 @@ let x = block:
     yield 42
 ```
 
+Any block can be given a label. The label must be written first, inside the block:
+block:
+  label "my_block"
+
+  statement1
+
+block {
+  label "my_block"
+
+  statement1
+}
+
+Blocks may not have more than one label. The label does not need to be globally unique.
+
+Labels are not statements; they simply change the properties of the block they are contained in.
+Labels use string literals, but the string literal is not allocated in memory. It is only used for identification purposes.
+
+Labels allow yield statements to specify a target scope. For more information, refer to the section on yield statements.
+
+Note: Structs do not use blocks, and thus, do not support labels.
+
 ### If expressions
 
 An if expression is used to conditionally execute code. It uses blocks, and thus, may be written in idented form or braced form:
@@ -776,7 +797,8 @@ return ()
 ```
 
 Regular yield statements only yield values within the block they are contained in. To propagate a value out of a block, use multiple yield statements:
-```let x = block:
+```
+let x = block:
     yield block:
         yield 42
 ```
@@ -786,3 +808,22 @@ Ironically, `yield` statements themselves do not yield values (they are a non-de
 let x = yield 42
 if condition then yield 42 else yield 0
 ```
+
+When a yield statement is associated with a block, we say it "targets" that block.
+
+Yield statements (except `return`) may use labels to specify which block to target. This is useful for yielding from nested blocks:
+```
+loop:
+    label "outer"
+
+    loop:
+        if condition:
+            from "outer" break 42
+```
+
+Labels do not need to be globally unique. A yield statement will always target the nearest enclosing block with the specified label. If a labeled block contains a block with the same label, a yield statement using the label will always target the inner block.
+
+Labels may be applied to blocks, even if they are not targeted by any yield statement. However, all yield statements must target a valid block. If a yield statement targets a label that does not exist in any enclosing block, it is considered invalid. 
+Additionally, `break` statements may only target loop blocks.
+
+Labels are allowed on functions and you can use `yield` to set the yield value of a function. However, we do not allow `return` statements to use labels, as they always target the nearest enclosing function.
