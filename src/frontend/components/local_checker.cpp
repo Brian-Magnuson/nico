@@ -520,7 +520,7 @@ std::any LocalChecker::visit(Expr::Block* expr, bool as_lvalue) {
         );
         return std::any();
     }
-    auto [local_scope, err] = symbol_tree->add_local_scope();
+    auto [local_scope, err] = symbol_tree->add_local_scope(expr->kind);
     if (err != Err::Null) {
         panic("LocalChecker::visit(Expr::Block*): Could not add local scope.");
     }

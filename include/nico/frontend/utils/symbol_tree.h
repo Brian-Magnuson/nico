@@ -6,6 +6,7 @@
 #include <string>
 #include <utility>
 
+#include "nico/frontend/utils/ast_node.h"
 #include "nico/frontend/utils/nodes.h"
 #include "nico/frontend/utils/type_node.h"
 #include "nico/shared/dictionary.h"
@@ -142,20 +143,21 @@ public:
     std::pair<std::shared_ptr<Node>, Err>
     add_struct_def(std::shared_ptr<Token> token, bool is_class = false);
 
-    /**
-     * @brief Adds a new function scope to the symbol tree, then enters the
-     * function scope.
-     *
-     * Function scopes may not be added if the current scope is a local scope.
-     * This may change in the future if support for closures is added.
-     *
-     * @param token The token representing the function; should be the
-     * function's name.
-     * @return std::pair<std::shared_ptr<Node::FunctionScope>, Err> The
-     * function scope if added successfully (first), or nullptr and an error.
-     */
-    std::pair<std::shared_ptr<Node::FunctionScope>, Err>
-    add_function_scope(std::shared_ptr<Token> token);
+    // /**
+    //  * @brief Adds a new function scope to the symbol tree, then enters the
+    //  * function scope.
+    //  *
+    //  * Function scopes may not be added if the current scope is a local
+    //  scope.
+    //  * This may change in the future if support for closures is added.
+    //  *
+    //  * @param token The token representing the function; should be the
+    //  * function's name.
+    //  * @return std::pair<std::shared_ptr<Node::FunctionScope>, Err> The
+    //  * function scope if added successfully (first), or nullptr and an error.
+    //  */
+    // std::pair<std::shared_ptr<Node::FunctionScope>, Err>
+    // add_function_scope(std::shared_ptr<Token> token);
 
     /**
      * @brief Adds a new local scope to the symbol tree, then enters the local
@@ -164,13 +166,12 @@ public:
      * Currently, this function has no restrictions on where local scopes can be
      * added.
      *
-     * @param is_loop Whether this local scope is a loop scope. Loop scopes
-     * allow `break` and `continue` statements to be used within them.
+     * @param kind The kind of block used to create the local scope.
      * @return std::pair<std::shared_ptr<Node::LocalScope>, Err> The local scope
      * if added successfully (first), or nullptr and an error (second).
      */
     std::pair<std::shared_ptr<Node::LocalScope>, Err>
-    add_local_scope(bool is_loop = false);
+    add_local_scope(Expr::Block::Kind kind);
 
     /**
      * @brief Exits the current scope and returns to the parent scope.

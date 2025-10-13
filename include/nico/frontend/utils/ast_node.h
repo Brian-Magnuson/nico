@@ -414,16 +414,23 @@ public:
  */
 class Expr::Block : public Expr {
 public:
+    enum class Kind { Plain, Function, Conditional, Loop };
+
     // The token that opened this block.
     std::shared_ptr<Token> opening_tok;
     // The statements contained within the block.
     std::vector<std::shared_ptr<Stmt>> statements;
+    // The kind of block.
+    Kind kind;
 
     Block(
         std::shared_ptr<Token> opening_tok,
-        std::vector<std::shared_ptr<Stmt>> statements
+        std::vector<std::shared_ptr<Stmt>> statements,
+        Kind kind
     )
-        : opening_tok(opening_tok), statements(std::move(statements)) {
+        : opening_tok(opening_tok),
+          statements(std::move(statements)),
+          kind(kind) {
         location = &opening_tok->location;
     }
 

@@ -1,6 +1,7 @@
 #ifndef NICO_SYMBOL_NODE_H
 #define NICO_SYMBOL_NODE_H
 
+#include "nico/frontend/utils/ast_node.h"
 #include "nico/frontend/utils/nodes.h"
 #include "nico/shared/dictionary.h"
 #include "nico/shared/utils.h"
@@ -248,52 +249,81 @@ public:
     // The top local scope in the parent chain. Can be this. The memory for this
     // node is managed by its parent; do not manually delete it.
     Node::LocalScope* top_local_scope;
-    // The nearest enclosing loop scope, if any. Can be this. The memory for
-    // this node is managed by its parent; do not manually delete it.
-    Node::LocalScope* current_loop_scope = nullptr;
+    // The kind of block that created this local scope.
+    Expr::Block::Kind kind;
 
     virtual ~LocalScope() = default;
 
-    LocalScope(std::weak_ptr<Node::IScope> parent_scope, bool is_loop = false)
+    LocalScope(std::weak_ptr<Node::IScope> parent_scope, Expr::Block::Kind kind)
         : Node::IBasicNode(parent_scope, std::to_string(next_scope_id++)),
-          Node::IScope(parent_scope, std::to_string(next_scope_id++)) {
+          Node::IScope(parent_scope, std::to_string(next_scope_id++)),
+          kind(kind) {
         if (auto parent_local_scope =
                 std::dynamic_pointer_cast<Node::LocalScope>(
                     parent_scope.lock()
                 )) {
             top_local_scope = parent_local_scope->top_local_scope;
-            if (!is_loop) {
-                // If this is not a loop, inherit the current loop scope from
-                // the parent local scope.
-                current_loop_scope = parent_local_scope->current_loop_scope;
-            }
         }
         else {
             top_local_scope = this;
         }
-        // If this is a loop, set the current loop scope to this.
-        current_loop_scope = is_loop ? this : current_loop_scope;
+    }
+
+    /**
+     * @brief Searches the local scope chain for the last local scope created
+     * that matches the given kind.
+     *
+     * This scope is included in the search.
+     *
+     * Can be useful for determining if this scope was created inside of a
+     * function or a loop.
+     *
+     * @param kind The kind of block to search for.
+     * @return The last local scope of the given kind, if found.
+     */
+    std::optional<std::shared_ptr<Node::LocalScope>>
+    get_last_scope_of_kind(Expr::Block::Kind kind) {
+        if (this->kind == kind) {
+            return std::dynamic_pointer_cast<Node::LocalScope>(
+                shared_from_this()
+            );
+        }
+        auto current = parent.lock();
+        while (current != nullptr) {
+            if (auto local_scope =
+                    std::dynamic_pointer_cast<Node::LocalScope>(current)) {
+                if (local_scope->kind == kind) {
+                    return local_scope;
+                }
+                current = local_scope->parent.lock();
+            }
+            else {
+                break;
+            }
+        }
+        return std::nullopt;
     }
 };
 
-/**
- * @brief A function scope node in the symbol tree.
- *
- * A function scope is a special local scope created when a function is
- * declared. It stores the function's parameters and tracks the function's
- * return type.
- */
-class Node::FunctionScope : public virtual Node::LocalScope,
-                            public virtual Node::ILocatable {
-public:
-    FunctionScope(
-        std::weak_ptr<Node::IScope> parent_scope, std::shared_ptr<Token> token
-    )
-        : Node::IBasicNode(parent_scope, std::string(token->lexeme)),
-          Node::IScope(parent_scope, std::string(token->lexeme)),
-          Node::LocalScope(parent_scope),
-          Node::ILocatable(token) {}
-};
+// /**
+//  * @brief A function scope node in the symbol tree.
+//  *
+//  * A function scope is a special local scope created when a function is
+//  * declared. It stores the function's parameters and tracks the function's
+//  * return type.
+//  */
+// class Node::FunctionScope : public virtual Node::LocalScope,
+//                             public virtual Node::ILocatable {
+// public:
+//     FunctionScope(
+//         std::weak_ptr<Node::IScope> parent_scope, std::shared_ptr<Token>
+//         token
+//     )
+//         : Node::IBasicNode(parent_scope, std::string(token->lexeme)),
+//           Node::IScope(parent_scope, std::string(token->lexeme)),
+//           Node::LocalScope(parent_scope, Expr::Block::Kind::Function),
+//           Node::ILocatable(token) {}
+// };
 
 /**
  * @brief A field entry in the symbol tree.

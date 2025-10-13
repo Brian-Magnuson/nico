@@ -59,7 +59,7 @@ void Parser::synchronize() {
 
 // MARK: Expressions
 
-std::optional<std::shared_ptr<Expr>> Parser::block() {
+std::optional<std::shared_ptr<Expr>> Parser::block(Expr::Block::Kind kind) {
     Tok closing_token_type;
 
     if (peek()->tok_type == Tok::Indent) {
@@ -86,7 +86,7 @@ std::optional<std::shared_ptr<Expr>> Parser::block() {
         statements.push_back(*stmt);
     }
 
-    return std::make_shared<Expr::Block>(opening_tok, statements);
+    return std::make_shared<Expr::Block>(opening_tok, statements, kind);
 }
 
 std::optional<std::shared_ptr<Expr>> Parser::conditional() {
@@ -101,7 +101,7 @@ std::optional<std::shared_ptr<Expr>> Parser::conditional() {
     // Handle the 'then' branch.
     std::optional<std::shared_ptr<Expr>> then_branch;
     if (peek()->tok_type == Tok::Indent || peek()->tok_type == Tok::LBrace) {
-        then_branch = block();
+        then_branch = block(Expr::Block::Kind::Conditional);
     }
     else if (match({Tok::KwThen})) {
         then_branch = expression();
@@ -123,7 +123,7 @@ std::optional<std::shared_ptr<Expr>> Parser::conditional() {
     if (match({Tok::KwElse})) {
         if (peek()->tok_type == Tok::Indent ||
             peek()->tok_type == Tok::LBrace) {
-            else_branch = block();
+            else_branch = block(Expr::Block::Kind::Conditional);
         }
         else {
             else_branch = expression();
@@ -157,7 +157,7 @@ std::optional<std::shared_ptr<Expr>> Parser::loop() {
         loops_once = true;
         if (peek()->tok_type == Tok::Indent ||
             peek()->tok_type == Tok::LBrace) {
-            body = block();
+            body = block(Expr::Block::Kind::Loop);
         }
         else {
             body = expression();
@@ -172,7 +172,7 @@ std::optional<std::shared_ptr<Expr>> Parser::loop() {
             return std::nullopt;
         if (peek()->tok_type == Tok::Indent ||
             peek()->tok_type == Tok::LBrace) {
-            body = block();
+            body = block(Expr::Block::Kind::Loop);
         }
         else if (match({Tok::KwDo})) {
             body = expression();
@@ -203,7 +203,7 @@ std::optional<std::shared_ptr<Expr>> Parser::loop() {
         loops_once = true;
         if (peek()->tok_type == Tok::Indent ||
             peek()->tok_type == Tok::LBrace) {
-            body = block();
+            body = block(Expr::Block::Kind::Loop);
         }
         else {
             body = expression();
@@ -248,7 +248,7 @@ std::optional<std::shared_ptr<Expr>> Parser::primary() {
         return std::make_shared<Expr::NameRef>(previous());
     }
     if (match({Tok::KwBlock})) {
-        return block();
+        return block(Expr::Block::Kind::Plain);
     }
     if (match({Tok::KwIf})) {
         return conditional();

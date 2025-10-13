@@ -96,10 +96,11 @@ class Parser {
      *
      * A block expression is a sequence of statements enclosed in braces.
      *
+     * @param kind The kind of block being parsed.
      * @return A shared pointer to the parsed expression, or nullopt if the
      * expression could not be parsed.
      */
-    std::optional<std::shared_ptr<Expr>> block();
+    std::optional<std::shared_ptr<Expr>> block(Expr::Block::Kind kind);
 
     /**
      * @brief Parses a conditional expression.
