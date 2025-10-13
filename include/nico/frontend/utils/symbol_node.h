@@ -268,41 +268,6 @@ public:
             top_local_scope = this;
         }
     }
-
-    /**
-     * @brief Searches the local scope chain for the last local scope created
-     * that matches the given kind.
-     *
-     * This scope is included in the search.
-     *
-     * Can be useful for determining if this scope was created inside of a
-     * function or a loop.
-     *
-     * @param kind The kind of block to search for.
-     * @return The last local scope of the given kind, if found.
-     */
-    std::optional<std::shared_ptr<Node::LocalScope>>
-    get_last_scope_of_kind(Expr::Block::Kind kind) {
-        if (this->kind == kind) {
-            return std::dynamic_pointer_cast<Node::LocalScope>(
-                shared_from_this()
-            );
-        }
-        auto current = parent.lock();
-        while (current != nullptr) {
-            if (auto local_scope =
-                    std::dynamic_pointer_cast<Node::LocalScope>(current)) {
-                if (local_scope->kind == kind) {
-                    return local_scope;
-                }
-                current = local_scope->parent.lock();
-            }
-            else {
-                break;
-            }
-        }
-        return std::nullopt;
-    }
 };
 
 // /**

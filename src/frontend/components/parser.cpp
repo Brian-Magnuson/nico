@@ -488,11 +488,12 @@ std::optional<std::shared_ptr<Stmt>> Parser::print_statement() {
 }
 
 std::optional<std::shared_ptr<Stmt>> Parser::yield_statement() {
+    auto yield_token = previous();
     auto expr = expression();
     if (!expr)
         return std::nullopt;
 
-    return std::make_shared<Stmt::Yield>(*expr);
+    return std::make_shared<Stmt::Yield>(yield_token, *expr);
 }
 
 std::optional<std::shared_ptr<Stmt>> Parser::expression_statement() {
@@ -525,7 +526,7 @@ std::optional<std::shared_ptr<Stmt>> Parser::statement() {
     else if (match({Tok::KwPass})) {
         return std::make_shared<Stmt::Pass>();
     }
-    else if (match({Tok::KwYield})) {
+    else if (match({Tok::KwYield, Tok::KwBreak})) {
         return yield_statement();
     }
     return expression_statement();

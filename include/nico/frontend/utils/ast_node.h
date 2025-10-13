@@ -95,14 +95,17 @@ public:
  * @brief A yield statement.
  *
  * Yield statements set the value to be yielded by a block expression.
+ * They may also be used to break out of loops or return from functions.
  */
 class Stmt::Yield : public Stmt {
 public:
+    // The token representing the kind of yield (yield, break, return).
+    std::shared_ptr<Token> yield_token;
     // The expression to yield.
     std::shared_ptr<Expr> expression;
 
-    Yield(std::shared_ptr<Expr> expression)
-        : expression(expression) {}
+    Yield(std::shared_ptr<Token> yield_token, std::shared_ptr<Expr> expression)
+        : yield_token(yield_token), expression(expression) {}
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };

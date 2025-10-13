@@ -112,36 +112,73 @@ std::any LocalChecker::visit(Stmt::Pass* /*stmt*/) {
 }
 
 std::any LocalChecker::visit(Stmt::Yield* stmt) {
+
+    std::optional<std::shared_ptr<Node::LocalScope>> target_scope =
+        std::nullopt;
+    if (stmt->yield_token->tok_type == Tok::KwBreak) {
+        target_scope =
+            symbol_tree->get_local_scope_of_kind(Expr::Block::Kind::Loop);
+        if (!target_scope) {
+            Logger::inst().log_error(
+                Err::BreakOutsideLoop,
+                stmt->yield_token->location,
+                "Cannot break outside of a loop."
+            );
+            return std::any();
+        }
+    }
+    else if (stmt->yield_token->tok_type == Tok::KwReturn) {
+        target_scope =
+            symbol_tree->get_local_scope_of_kind(Expr::Block::Kind::Function);
+        if (!target_scope) {
+            Logger::inst().log_error(
+                Err::ReturnOutsideFunction,
+                stmt->yield_token->location,
+                "Cannot return outside of a function."
+            );
+            return std::any();
+        }
+    }
+    else if (stmt->yield_token->tok_type == Tok::KwYield) {
+        target_scope = std::dynamic_pointer_cast<Node::LocalScope>(
+            symbol_tree->current_scope
+        );
+        if (!target_scope.has_value() || target_scope.value() == nullptr) {
+            Logger::inst().log_error(
+                Err::YieldOutsideLocalScope,
+                stmt->yield_token->location,
+                "Cannot yield outside of a local scope."
+            );
+            return std::any();
+        }
+    }
+    else {
+        panic("LocalChecker::visit(Stmt::Yield*): Invalid yield token.");
+    }
+    // At this point, target_scope is guaranteed to be a valid local scope.
+    auto local_scope = target_scope.value();
+
     // Visit the expression in the yield statement.
     auto expr_type = expr_check(stmt->expression, false);
     if (!expr_type)
         return std::any();
-    if (auto local_scope = std::dynamic_pointer_cast<Node::LocalScope>(
-            symbol_tree->current_scope
-        )) {
-        if (!local_scope->yield_type) {
-            // If this local scope does not currently have a yield type...
-            local_scope->yield_type = expr_type;
-        }
-        else if (local_scope->yield_type.value() != expr_type) {
-            // If this local scope has a yield type, check that the new yield
-            // expression is compatible with it.
-            Logger::inst().log_error(
-                Err::YieldTypeMismatch,
-                *stmt->expression->location,
-                std::string("Type `") + stmt->expression->type->to_string() +
-                    "` is not compatible with previously yielded type `" +
-                    local_scope->yield_type.value()->to_string() + "`."
-            );
-        }
+
+    if (!local_scope->yield_type) {
+        // If this local scope does not currently have a yield type...
+        local_scope->yield_type = expr_type;
     }
-    else {
+    else if (local_scope->yield_type.value() != expr_type) {
+        // If this local scope has a yield type, check that the new yield
+        // expression is compatible with it.
         Logger::inst().log_error(
-            Err::YieldOutsideLocalScope,
+            Err::YieldTypeMismatch,
             *stmt->expression->location,
-            "Cannot yield value outside of a local scope."
+            std::string("Type `") + stmt->expression->type->to_string() +
+                "` is not compatible with previously yielded type `" +
+                local_scope->yield_type.value()->to_string() + "`."
         );
     }
+
     return std::any();
 }
 

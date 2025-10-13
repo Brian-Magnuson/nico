@@ -196,6 +196,26 @@ SymbolTree::search_name(const Name& name) const {
     return search_name_from_scope(name, current_scope);
 }
 
+std::optional<std::shared_ptr<Node::LocalScope>>
+SymbolTree::get_local_scope_of_kind(Expr::Block::Kind kind) const {
+    auto current = current_scope;
+    while (current) {
+        if (auto local_scope =
+                std::dynamic_pointer_cast<Node::LocalScope>(current)) {
+            // If this is a local scope, check if it matches the kind.
+            if (local_scope->kind == kind) {
+                return local_scope;
+            }
+        }
+        else {
+            // If this scope is not a local scope, stop searching.
+            break;
+        }
+        current = current->parent.lock();
+    }
+    return std::nullopt;
+}
+
 std::pair<std::shared_ptr<Node>, Err>
 SymbolTree::add_field_entry(const Field& field) {
     if (auto node =

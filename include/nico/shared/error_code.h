@@ -129,6 +129,10 @@ enum class Err {
     ConditionNotBool,
     // The branches of a conditional expression have mismatched types.
     ConditionalBranchTypeMismatch,
+    // A break statement was found outside of a loop.
+    BreakOutsideLoop,
+    // A return statement was found outside of a function.
+    ReturnOutsideFunction,
 
     // Backend error
     BackendError = 7000,

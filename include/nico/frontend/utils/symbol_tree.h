@@ -206,6 +206,20 @@ public:
     std::optional<std::shared_ptr<Node>> search_name(const Name& name) const;
 
     /**
+     * @brief Retrieves the nearest local scope of the specified kind, starting
+     * from the current scope and searching upward.
+     *
+     * This function is useful for determining if the current scope is within a
+     * loop or function.
+     *
+     * @param kind The kind of scope to search for.
+     * @return The nearest local scope of the specified kind, or std::nullopt if
+     * none is found or if the current scope is not a local scope.
+     */
+    std::optional<std::shared_ptr<Node::LocalScope>>
+    get_local_scope_of_kind(Expr::Block::Kind kind) const;
+
+    /**
      * @brief Adds a field entry to the symbol tree in the current scope.
      *
      * If the field name already exists in the current scope, this function does

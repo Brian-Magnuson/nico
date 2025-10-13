@@ -747,59 +747,42 @@ block:
     pass
 ```
 
-### Return statements
+### Continue statements
 
-A return statement is used to exit a function and yield a value to the caller:
-```
-return value
-```
-
-Return statements can only be used within functions.
-
-Return statements must always provide a value to be returned, even if the expected type is `()`. This is to prevent ambiguity in case any statements come after the return statement.
-```
-return ()
-```
-
-### Break and continue statements
-
-A break statement is used to yield a value and exit a loop:
-```
-break value
-```
-
-Break statements must always provide a value to be yielded, even if the expected type is `()`. This is to prevent ambiguity in case any statements come after the break statement.
-```
-break ()
-```
-
-A continue statement is used to skip the rest of the current iteration and continue to the next:
+A continue statement is a non-declaring statement used inside loops to skip the rest of the current iteration and continue to the next iteration.
 ```
 continue
 ```
 
-Break and continue statements can only be used within loops.
-
 ### Yield statements
 
-A yield statement is used to set the yield value of a block. The yield value is the value that the block will yield when executed. When a block ends, it will evaluate to the last yield value set:
+A yield statement is used to set the yield value of a block and possibly exit the block. 
+The yield value is the value that the block will yield when executed. 
+When a block ends, it will evaluate to the last yield value set:
 ```
 yield value
 ```
 
-Yield statements can only be used within blocks. Yield statements only yield values within the block they are contained in. To propagate a value out of a block, use multiple yield statements:
+There are three types of yield statements:
+- `yield`: Sets the yield value of the current local scope and continues execution. They can only be used within a local scope.
+- `break`: Sets the yield value of the nearest enclosing loop and exits the loop. They can only be used within loops.
+- `return`: Sets the return value of the nearest enclosing function and exits the function. They can only be used within functions.
+
+Yield statements must always provide a value to be yielded, even if the expected type is `()`. This is to prevent ambiguity in case any statements come after the yield statement.
 ```
-let x = block:
+yield ()
+break ()
+return ()
+```
+
+Regular yield statements only yield values within the block they are contained in. To propagate a value out of a block, use multiple yield statements:
+```let x = block:
     yield block:
         yield 42
 ```
 
-Similar to return statements, yield statements must always provide a value to be yielded, even if the expected type is `()`. This is to prevent ambiguity in case any statements come after the yield statement.
-```
-yield ()
-```
-
-Ironically, `yield` statements themselves do not yield values (they are a non-declaring statement); they only affect the yield values of the surrounding blocks. This is not valid:
+Ironically, `yield` statements themselves do not yield values (they are a non-declaring statement); they only affect the yield values of the surrounding blocks. These are not valid:
 ```
 let x = yield 42
+if condition then yield 42 else yield 0
 ```
