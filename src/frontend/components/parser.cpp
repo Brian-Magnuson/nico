@@ -253,6 +253,9 @@ std::optional<std::shared_ptr<Expr>> Parser::primary() {
     if (match({Tok::KwIf})) {
         return conditional();
     }
+    if (match({Tok::KwLoop, Tok::KwWhile, Tok::KwDo})) {
+        return loop();
+    }
     if (match({Tok::LParen})) {
         // Grouping or tuple expression.
         auto lparen = previous();
