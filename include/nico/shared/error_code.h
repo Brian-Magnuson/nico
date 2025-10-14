@@ -138,6 +138,8 @@ enum class Err {
 
     // Local type check warning
     LocalTypeWarning = 5500,
+    // A statement was found that is unreachable.
+    UnreachableStatement,
     // A regular yield statement was found targeting a loop.
     YieldTargetingLoop,
 

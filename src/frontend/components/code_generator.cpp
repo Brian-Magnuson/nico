@@ -493,9 +493,74 @@ std::any CodeGenerator::visit(Expr::Conditional* expr, bool as_lvalue) {
 }
 
 std::any CodeGenerator::visit(Expr::Loop* expr, bool as_lvalue) {
-    // TODO: Implement loop expressions.
-    panic("CodeGenerator::visit(Expr::Loop*): Not implemented yet.");
-    return std::any();
+    llvm::Value* yield_allocation = builder->CreateAlloca(
+        expr->type->get_llvm_type(builder),
+        nullptr,
+        "$yieldval"
+    );
+    llvm::BasicBlock* current_block = builder->GetInsertBlock();
+    llvm::Function* current_function = current_block->getParent();
+
+    llvm::BasicBlock* do_block = llvm::BasicBlock::Create(
+        *mod_ctx.llvm_context,
+        "loop_start",
+        current_function
+    );
+    llvm::BasicBlock* merge_block = llvm::BasicBlock::Create(
+        *mod_ctx.llvm_context,
+        "loop_end",
+        current_function
+    );
+
+    block_list = std::make_shared<Block::Loop>(
+        block_list,
+        yield_allocation,
+        do_block,
+        merge_block
+    );
+
+    if (expr->condition.has_value()) {
+        llvm::BasicBlock* condition_block = llvm::BasicBlock::Create(
+            *mod_ctx.llvm_context,
+            "loop_cond",
+            current_function
+        );
+        if (expr->loops_once) {
+            builder->CreateBr(do_block);
+        }
+        else {
+            builder->CreateBr(condition_block);
+        }
+
+        builder->SetInsertPoint(condition_block);
+        auto condition = std::any_cast<llvm::Value*>(
+            expr->condition.value()->accept(this, false)
+        );
+        builder->CreateCondBr(condition, do_block, merge_block);
+
+        builder->SetInsertPoint(do_block);
+        auto loop_body =
+            std::any_cast<llvm::Value*>(expr->body->accept(this, false));
+        builder->CreateStore(loop_body, yield_allocation);
+        builder->CreateBr(condition_block);
+    }
+    else {
+        builder->CreateBr(do_block);
+        builder->SetInsertPoint(do_block);
+        auto loop_body =
+            std::any_cast<llvm::Value*>(expr->body->accept(this, false));
+        builder->CreateStore(loop_body, yield_allocation);
+        builder->CreateBr(do_block);
+    }
+
+    builder->SetInsertPoint(merge_block);
+    block_list = block_list->prev;
+    llvm::Value* yield_value = builder->CreateLoad(
+        expr->type->get_llvm_type(builder),
+        yield_allocation
+    );
+
+    return yield_value;
 }
 
 // MARK: Helpers

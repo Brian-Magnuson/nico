@@ -411,3 +411,18 @@ TEST_CASE("JIT logical expressions", "[jit]") {
         );
     }
 }
+
+TEST_CASE("JIT loop expressions", "[jit]") {
+    SECTION("Simple do-while loop") {
+        run_jit_test(
+            R"(
+            let var x = 0
+            do:
+                x = x + 1
+            while false
+            printout x
+            )",
+            "1"
+        );
+    }
+}
