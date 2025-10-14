@@ -644,8 +644,67 @@ std::any LocalChecker::visit(Expr::Conditional* expr, bool as_lvalue) {
 }
 
 std::any LocalChecker::visit(Expr::Loop* expr, bool as_lvalue) {
-    // TODO: Implement loop expressions.
-    panic("LocalChecker::visit(Expr::Loop*): Not implemented yet.");
+    if (as_lvalue) {
+        Logger::inst().log_error(
+            Err::NotAPossibleLValue,
+            *expr->location,
+            "Loop expression cannot be an lvalue."
+        );
+        return std::any();
+    }
+
+    bool has_error = false;
+
+    if (expr->condition.has_value()) {
+        auto cond_type = expr_check(expr->condition.value(), false);
+        if (!cond_type)
+            has_error = true;
+        if (!has_error && !PTR_INSTANCEOF(cond_type, Type::Bool)) {
+            Logger::inst().log_error(
+                Err::ConditionNotBool,
+                *expr->condition.value()->location,
+                "Condition expression must be of type `bool`, not `" +
+                    cond_type->to_string() + "`."
+            );
+            has_error = true;
+        }
+    }
+
+    // If this is a conditional loop that does not have a block body...
+    if (!PTR_INSTANCEOF(expr->body, Expr::Block) &&
+        expr->condition.has_value()) {
+        // Wrap the body in a block.
+        expr->body = std::make_shared<Expr::Block>(
+            expr->loop_kw,
+            std::vector<std::shared_ptr<Stmt>>{
+                std::make_shared<Stmt::Expression>(expr->body)
+            },
+            Expr::Block::Kind::Loop
+        );
+        // This allows users to write single-expression while loops without
+        // restriction.
+    }
+
+    auto body_type = expr_check(expr->body, false);
+    if (!body_type)
+        has_error = true;
+    if (!has_error && expr->condition.has_value()) {
+        // If the loop has a condition and its body does not yield unit...
+        if (!PTR_INSTANCEOF(body_type, Type::Unit)) {
+            Logger::inst().log_error(
+                Err::WhileLoopYieldingNonUnit,
+                *expr->body->location,
+                "Body of while loop must yield type `()`, not `" +
+                    body_type->to_string() + "`."
+            );
+            has_error = true;
+        }
+    }
+
+    if (!has_error) {
+        expr->type = body_type;
+    }
+
     return std::any();
 }
 

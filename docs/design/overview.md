@@ -648,20 +648,28 @@ Note: Structs do not use blocks, and thus, do not support labels.
 
 ### If expressions
 
-An if expression is used to conditionally execute code. It uses blocks, and thus, may be written in idented form or braced form:
+An if expression is used to conditionally execute code. It can be written using braced-block form, indented-block form, or short-form:
 ```
+if condition {
+    statement1
+}
+
 if condition:
     statement1
 
-if condition { statement1 }
+if condition then expression1
 ```
 
-An if expression may also include an else block:
+For short-form if expressions, the `then` keyword is required to separate the condition from the statement.
+
+An if expression may also include an else branch:
 ```
 if condition:
     statement1
 else:
     statement2
+
+if condition then expression1 else expression2
 ```
 
 If expressions may be chained together:
@@ -674,7 +682,7 @@ else:
     statement3
 ```
 
-Like block expressions, if expressions yield the value from the last yield statement executed within the block. This is useful for initializing variables based on conditions:
+If expressions yield the values of their branches. If the branches are blocks, they yield the value from the last yield statement executed within the block. If the branches are single expressions, they yield the value of that expression.
 ```
 let x = if condition:
     yield 42
@@ -686,45 +694,73 @@ All blocks in an if expression must yield the same type.
 
 ### Loop expressions
 
-A loop expression is used to repeatedly execute code. It uses blocks, and thus, may be written in idented form or braced form:
+A loop expression is used to repeatedly execute code. When using the `loop` keyword or any other loop with a `true` condition, we call it a non-conditional loop or infinite loop.
+
+It can be written in braced-block form, indented-block form, or short-form:
 ```
+loop { statement1 }
+
 loop:
     statement1
 
-loop { statement1 }
+loop expression
 ```
 
 A loop expression runs indefinitely. To break out of a loop, use the `break` statement.
 
 ### While expressions
 
-A while expression is used to conditionally execute code. It uses blocks, and thus, may be written in idented form or braced form:
+A while expression is used to conditionally execute code. Except when the condition is literally `true`, a while expression is considered a conditional loop.
+
+It can be written in braced-block form, indented-block form, or short-form:
 ```
+while condition { statement1 }
+
 while condition:
     statement1
 
-while condition { statement1 }
+while condition do expression
 ```
 
-In most cases, a while expression is only allowed to yield `()`. This is because the while loop may not execute, and thus, cannot guarantee a yield value.
+Conditional while expressions are only allowed to yield `()`. This is because the while loop may not execute, and thus, cannot guarantee a yield value.
 
-A while-loop may yield values other than `()` if and only if the condition is literally `true`. In such cases, the while-loop is treated like an infinite loop expression.
+A while-loop may yield values other than `()` if and only if the condition is literally `true`. In such cases, the while-loop is treated like a non-conditional loop expression.
+
+For conditional short-form while expressions, the `do` keyword is required to separate the condition from the statement.
+Additionally, unlike with if-statements, the expression in the conditional short-form while expression will not affect the value yielded by the while loop. The while loop will always yield `()`.
+This allows users to write the following without worrying about the yield value:
+```
+while condition do x = x + 1
+```
+
+Although the expression yields the value of `x`, the while loop will continue to yield `()`.
 
 ### Do-while expressions
 
 A do-while expression is similar to a while expression, but the condition is checked after the block is executed. This means the block will always
-execute at least once. It uses blocks, and thus, may be written in idented form or braced form:
+execute at least once. 
+
+It may be written in braced-block form, indented-block form, or short-form:
 ```
+do { statement1 } while condition
+
 do:
     statement1
 while condition
 
-do { statement1 } while condition
+do expression while condition
 ```
 
-A do-while expression may yield values other than `()` if one of the following is true:
-- The condition is literally `true`, making it an infinite loop.
-- The block contains a yield or break statement at the top level inside the block.
+Like while expressions, conditional do-while expressions are only allowed to yield `()`. This is because the do-while loop may not execute, and thus, cannot guarantee a yield value.
+
+A do-while loop may yield values other than `()` if and only if the condition is literally `true`. In such cases, the do-while loop is treated like a non-conditional loop expression.
+
+The expression in the short-form do-while expression will not affect the value yielded by the do-while loop. The do-while loop will always yield `()`.
+```
+do x = x + 1 while condition
+```
+
+Although the expression yields the value of `x`, the do-while loop will continue to yield `()`.
 
 ### Move expressions
 
@@ -785,7 +821,7 @@ yield value
 ```
 
 There are three types of yield statements:
-- `yield`: Sets the yield value of the current local scope and continues execution. They can only be used within a local scope.
+- `yield`: Sets the yield value of the current local scope and continues execution. They can only be used within local scopes.
 - `break`: Sets the yield value of the nearest enclosing loop and exits the loop. They can only be used within loops.
 - `return`: Sets the return value of the nearest enclosing function and exits the function. They can only be used within functions.
 

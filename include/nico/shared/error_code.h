@@ -127,12 +127,19 @@ enum class Err {
     // A control structure was found with a condition that does not have a
     // boolean type.
     ConditionNotBool,
+    // A while loop was found that yields a non-unit type.
+    WhileLoopYieldingNonUnit,
     // The branches of a conditional expression have mismatched types.
     ConditionalBranchTypeMismatch,
     // A break statement was found outside of a loop.
     BreakOutsideLoop,
     // A return statement was found outside of a function.
     ReturnOutsideFunction,
+
+    // Local type check warning
+    LocalTypeWarning = 5500,
+    // A regular yield statement was found targeting a loop.
+    YieldTargetingLoop,
 
     // Backend error
     BackendError = 7000,

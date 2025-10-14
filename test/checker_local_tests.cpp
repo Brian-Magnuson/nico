@@ -419,3 +419,82 @@ TEST_CASE("Local conditional expressions", "[checker]") {
         );
     }
 }
+
+TEST_CASE("Local loop expressions", "[checker]") {
+    SECTION("Valid loop expression 1") {
+        run_checker_test("loop { printout \"Hello, World!\" }");
+    }
+
+    SECTION("Valid loop expression 2") {
+        run_checker_test(
+            "let cond = true while cond { printout \"Hello, World!\" }"
+        );
+    }
+
+    SECTION("Valid loop expression 3") {
+        run_checker_test(R"(
+        let cond = true
+        while cond:
+            printout "Hello, World!"
+        )");
+    }
+
+    SECTION("Valid loop expression 4") {
+        run_checker_test(
+            "let cond = true do { printout \"Hello, World!\" } while cond"
+        );
+    }
+
+    SECTION("Valid loop expression 5") {
+        run_checker_test(R"(
+        let result = loop:
+            break 1
+        )");
+    }
+
+    SECTION("Valid loop expression 6") {
+        run_checker_test(R"(
+        let result = while true:
+            break 1
+        )");
+    }
+
+    SECTION("Valid loop expression 7") {
+        run_checker_test(R"(
+        let result = 
+        do:
+            break 1
+        while true
+        )");
+    }
+
+    SECTION("Valid short loop expression 1") {
+        run_checker_test("let var x = 1 loop x = x + 1");
+    }
+
+    SECTION("Valid short loop expression 2") {
+        run_checker_test("let var x = 1 while false do x = x + 1");
+    }
+
+    SECTION("Valid short loop expression 3") {
+        run_checker_test("let var x = 1 do x = x + 1 while false");
+    }
+
+    SECTION("Loop condition not bool") {
+        run_checker_test("while 1 { }", Err::ConditionNotBool);
+    }
+
+    SECTION("While loop yielding non-unit") {
+        run_checker_test(
+            "let result = while false { yield 1 }",
+            Err::WhileLoopYieldingNonUnit
+        );
+    }
+
+    SECTION("Do-while loop yielding non-unit") {
+        run_checker_test(
+            "let result = do { yield 1 } while false",
+            Err::WhileLoopYieldingNonUnit
+        );
+    }
+}
