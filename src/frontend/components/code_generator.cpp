@@ -44,7 +44,7 @@ std::any CodeGenerator::visit(Stmt::Let* stmt) {
         stmt->field_entry.lock()->field.type->get_llvm_type(builder);
     llvm::Value* allocation = nullptr;
 
-    if (PTR_INSTANCEOF(block_list, Block::Script)) {
+    if (local_scopes.empty()) {
         // In REPL mode, global variables have external linkage so that they can
         // be accessed across multiple submissions.
         auto linkage = repl_mode ? llvm::GlobalValue::ExternalLinkage
@@ -114,7 +114,7 @@ std::any CodeGenerator::visit(Stmt::Yield* stmt) {
     // return stmt->expression->accept(this, false);
     auto value =
         std::any_cast<llvm::Value*>(stmt->expression->accept(this, false));
-    builder->CreateStore(value, block_list->yield_allocation);
+    builder->CreateStore(value, local_scopes.back()->llvm_yield_ptr);
     return std::any();
 }
 
@@ -419,18 +419,23 @@ std::any CodeGenerator::visit(Expr::Tuple* expr, bool as_lvalue) {
 }
 
 std::any CodeGenerator::visit(Expr::Block* expr, bool as_lvalue) {
-    llvm::Value* yield_allocation = builder->CreateAlloca(
+    llvm::AllocaInst* yield_allocation = builder->CreateAlloca(
         expr->type->get_llvm_type(builder),
         nullptr,
         "$yieldval"
     );
-    block_list = std::make_shared<Block::Plain>(block_list, yield_allocation);
+    // block_list = std::make_shared<Block::Plain>(block_list,
+    // yield_allocation);
+    auto local_scope = expr->local_scope.lock();
+    local_scopes.push_back(local_scope);
+    local_scope->llvm_yield_ptr = yield_allocation;
 
     for (auto& stmt : expr->statements) {
         stmt->accept(this);
     }
 
-    block_list = block_list->prev;
+    local_scopes.pop_back();
+    // block_list = block_list->prev;
     llvm::Value* yield_value = builder->CreateLoad(
         expr->type->get_llvm_type(builder),
         yield_allocation
@@ -512,12 +517,12 @@ std::any CodeGenerator::visit(Expr::Loop* expr, bool as_lvalue) {
         current_function
     );
 
-    block_list = std::make_shared<Block::Loop>(
-        block_list,
-        yield_allocation,
-        do_block,
-        merge_block
-    );
+    // block_list = std::make_shared<Block::Loop>(
+    //     block_list,
+    //     yield_allocation,
+    //     do_block,
+    //     merge_block
+    // );
 
     if (expr->condition.has_value()) {
         llvm::BasicBlock* condition_block = llvm::BasicBlock::Create(
@@ -554,7 +559,7 @@ std::any CodeGenerator::visit(Expr::Loop* expr, bool as_lvalue) {
     }
 
     builder->SetInsertPoint(merge_block);
-    block_list = block_list->prev;
+    // block_list = block_list->prev;
     llvm::Value* yield_value = builder->CreateLoad(
         expr->type->get_llvm_type(builder),
         yield_allocation
@@ -763,9 +768,10 @@ void CodeGenerator::add_panic(
         mod_ctx.ir_module->getGlobalVariable("stderr")
     );
     llvm::Value* format_string =
-        builder->CreateGlobalStringPtr("Panic: %s: %s\n%s:%d:%d\n");
-    llvm::Value* func_name =
-        builder->CreateGlobalStringPtr(block_list->get_function_name());
+        // builder->CreateGlobalStringPtr("Panic: %s: %s\n%s:%d:%d\n");
+        builder->CreateGlobalStringPtr("Panic: %s\n%s:%d:%d\n");
+    // llvm::Value* func_name =
+    //     builder->CreateGlobalStringPtr(block_list->get_function_name());
     llvm::Value* msg = builder->CreateGlobalStringPtr(message);
     auto location_tuple = location->to_tuple();
     llvm::Value* file_name =
@@ -782,7 +788,7 @@ void CodeGenerator::add_panic(
         fprintf_fn,
         {stderr_stream,
          format_string,
-         func_name,
+         //  func_name,
          msg,
          file_name,
          line_number,
@@ -854,8 +860,8 @@ void CodeGenerator::generate_script_func(
         builder->CreateAlloca(builder->getInt32Ty(), nullptr, "$retval");
 
     // Append the exit block to the block list.
-    block_list =
-        std::make_shared<Block::Script>(block_list, ret_val, exit_block);
+    // block_list =
+    //     std::make_shared<Block::Script>(block_list, ret_val, exit_block);
 
     // Set panic recoverable code.
     if (panic_recoverable) {

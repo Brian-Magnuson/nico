@@ -166,11 +166,12 @@ SymbolTree::add_struct_def(std::shared_ptr<Token> token, bool is_class) {
 // }
 
 std::pair<std::shared_ptr<Node::LocalScope>, Err>
-SymbolTree::add_local_scope(Expr::Block::Kind kind) {
+SymbolTree::add_local_scope(std::shared_ptr<Expr::Block> block) {
     // Add the local scope to its parent scope's children.
     auto new_local_scope =
-        std::make_shared<Node::LocalScope>(current_scope, kind);
+        std::make_shared<Node::LocalScope>(current_scope, block);
     new_local_scope->initialize_node();
+    block->local_scope = new_local_scope;
     current_scope = new_local_scope;
     modified = true;
     return std::make_pair(new_local_scope, Err::Null);
@@ -203,7 +204,7 @@ SymbolTree::get_local_scope_of_kind(Expr::Block::Kind kind) const {
         if (auto local_scope =
                 std::dynamic_pointer_cast<Node::LocalScope>(current)) {
             // If this is a local scope, check if it matches the kind.
-            if (local_scope->kind == kind) {
+            if (local_scope->block->kind == kind) {
                 return local_scope;
             }
         }

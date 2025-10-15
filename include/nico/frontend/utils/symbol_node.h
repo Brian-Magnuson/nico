@@ -243,30 +243,38 @@ class Node::LocalScope : public virtual Node::IScope {
 public:
     // A static counter to generate unique identifiers for local scopes.
     static int next_scope_id;
+
+    std::shared_ptr<Expr::Block> block;
     // The type of the expressions yielded within this local scope.
-    // If this is the top local scope, this is the return type of the function.
+    // We track the type here until we set the type of the block expression.
     std::optional<std::shared_ptr<Type>> yield_type;
     // The top local scope in the parent chain. Can be this. The memory for this
     // node is managed by its parent; do not manually delete it.
-    Node::LocalScope* top_local_scope;
-    // The kind of block that created this local scope.
-    Expr::Block::Kind kind;
+    // Node::LocalScope* top_local_scope;
+
+    llvm::AllocaInst* llvm_yield_ptr = nullptr;
+
+    llvm::BasicBlock* llvm_exit_block = nullptr;
 
     virtual ~LocalScope() = default;
 
-    LocalScope(std::weak_ptr<Node::IScope> parent_scope, Expr::Block::Kind kind)
+    LocalScope(
+        std::weak_ptr<Node::IScope> parent_scope,
+        std::shared_ptr<Expr::Block> block
+    )
         : Node::IBasicNode(parent_scope, std::to_string(next_scope_id++)),
           Node::IScope(parent_scope, std::to_string(next_scope_id++)),
-          kind(kind) {
-        if (auto parent_local_scope =
-                std::dynamic_pointer_cast<Node::LocalScope>(
-                    parent_scope.lock()
-                )) {
-            top_local_scope = parent_local_scope->top_local_scope;
-        }
-        else {
-            top_local_scope = this;
-        }
+          block(block) {
+
+        // if (auto parent_local_scope =
+        // std::dynamic_pointer_cast<Node::LocalScope>(
+        //             parent_scope.lock()
+        //         )) {
+        //     top_local_scope = parent_local_scope->top_local_scope;
+        // }
+        // else {
+        //     top_local_scope = this;
+        // }
     }
 };
 

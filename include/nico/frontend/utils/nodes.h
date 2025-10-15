@@ -254,7 +254,7 @@ public:
  *
  * Expressions evaluate to a value.
  */
-class Expr {
+class Expr : public std::enable_shared_from_this<Expr> {
 public:
     class IPLValue;
 

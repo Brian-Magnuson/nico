@@ -166,12 +166,12 @@ public:
      * Currently, this function has no restrictions on where local scopes can be
      * added.
      *
-     * @param kind The kind of block used to create the local scope.
+     * @param block The block expression representing the local scope.
      * @return std::pair<std::shared_ptr<Node::LocalScope>, Err> The local scope
      * if added successfully (first), or nullptr and an error (second).
      */
     std::pair<std::shared_ptr<Node::LocalScope>, Err>
-    add_local_scope(Expr::Block::Kind kind);
+    add_local_scope(std::shared_ptr<Expr::Block> block);
 
     /**
      * @brief Exits the current scope and returns to the parent scope.

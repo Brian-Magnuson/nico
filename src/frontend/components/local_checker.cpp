@@ -157,6 +157,7 @@ std::any LocalChecker::visit(Stmt::Yield* stmt) {
     }
     // At this point, target_scope is guaranteed to be a valid local scope.
     auto local_scope = target_scope.value();
+    stmt->target_scope = local_scope;
 
     // Visit the expression in the yield statement.
     auto expr_type = expr_check(stmt->expression, false);
@@ -557,7 +558,9 @@ std::any LocalChecker::visit(Expr::Block* expr, bool as_lvalue) {
         );
         return std::any();
     }
-    auto [local_scope, err] = symbol_tree->add_local_scope(expr->kind);
+    auto [local_scope, err] = symbol_tree->add_local_scope(
+        std::dynamic_pointer_cast<Expr::Block>(expr->shared_from_this())
+    );
     if (err != Err::Null) {
         panic("LocalChecker::visit(Expr::Block*): Could not add local scope.");
     }

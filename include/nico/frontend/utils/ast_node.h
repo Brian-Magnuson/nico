@@ -104,6 +104,8 @@ public:
     // The expression to yield.
     std::shared_ptr<Expr> expression;
 
+    std::weak_ptr<Node::LocalScope> target_scope;
+
     Yield(std::shared_ptr<Token> yield_token, std::shared_ptr<Expr> expression)
         : yield_token(yield_token), expression(expression) {}
 
@@ -423,8 +425,12 @@ public:
     std::shared_ptr<Token> opening_tok;
     // The statements contained within the block.
     std::vector<std::shared_ptr<Stmt>> statements;
+
+    std::optional<std::string> label;
     // The kind of block.
     Kind kind;
+
+    std::weak_ptr<Node::LocalScope> local_scope;
 
     Block(
         std::shared_ptr<Token> opening_tok,

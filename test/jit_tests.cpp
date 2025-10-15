@@ -422,7 +422,22 @@ TEST_CASE("JIT loop expressions", "[jit]") {
             while false
             printout x
             )",
-            "1"
+            "1",
+            std::nullopt,
+            false
         );
     }
+
+    // SECTION("Non-conditional loop with break") {
+    //     run_jit_test(
+    //         R"(
+    //         let x = loop:
+    //             break 1
+    //         printout x
+    //         )",
+    //         "1",
+    //         std::nullopt,
+    //         false
+    //     );
+    // }
 }
