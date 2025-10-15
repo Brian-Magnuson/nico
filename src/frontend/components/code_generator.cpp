@@ -115,6 +115,15 @@ std::any CodeGenerator::visit(Stmt::Yield* stmt) {
     auto value =
         std::any_cast<llvm::Value*>(stmt->expression->accept(this, false));
     builder->CreateStore(value, local_scopes.back()->llvm_yield_ptr);
+    if (stmt->yield_token->tok_type != Tok::KwYield) {
+        builder->CreateBr(local_scopes.back()->llvm_exit_block);
+        auto unreachable_block = llvm::BasicBlock::Create(
+            *mod_ctx.llvm_context,
+            "unreachable",
+            builder->GetInsertBlock()->getParent()
+        );
+        builder->SetInsertPoint(unreachable_block);
+    }
     return std::any();
 }
 
@@ -419,16 +428,19 @@ std::any CodeGenerator::visit(Expr::Tuple* expr, bool as_lvalue) {
 }
 
 std::any CodeGenerator::visit(Expr::Block* expr, bool as_lvalue) {
-    llvm::AllocaInst* yield_allocation = builder->CreateAlloca(
-        expr->type->get_llvm_type(builder),
-        nullptr,
-        "$yieldval"
-    );
-    // block_list = std::make_shared<Block::Plain>(block_list,
-    // yield_allocation);
     auto local_scope = expr->local_scope.lock();
     local_scopes.push_back(local_scope);
-    local_scope->llvm_yield_ptr = yield_allocation;
+
+    if (local_scope->llvm_yield_ptr == nullptr) {
+        llvm::AllocaInst* yield_allocation = builder->CreateAlloca(
+            expr->type->get_llvm_type(builder),
+            nullptr,
+            "$yieldval"
+        );
+        local_scope->llvm_yield_ptr = yield_allocation;
+    }
+    // block_list = std::make_shared<Block::Plain>(block_list,
+    // yield_allocation);
 
     for (auto& stmt : expr->statements) {
         stmt->accept(this);
@@ -438,7 +450,7 @@ std::any CodeGenerator::visit(Expr::Block* expr, bool as_lvalue) {
     // block_list = block_list->prev;
     llvm::Value* yield_value = builder->CreateLoad(
         expr->type->get_llvm_type(builder),
-        yield_allocation
+        local_scope->llvm_yield_ptr
     );
 
     return yield_value;
@@ -498,13 +510,12 @@ std::any CodeGenerator::visit(Expr::Conditional* expr, bool as_lvalue) {
 }
 
 std::any CodeGenerator::visit(Expr::Loop* expr, bool as_lvalue) {
-    llvm::Value* yield_allocation = builder->CreateAlloca(
+    llvm::AllocaInst* yield_allocation = builder->CreateAlloca(
         expr->type->get_llvm_type(builder),
         nullptr,
         "$yieldval"
     );
-    llvm::BasicBlock* current_block = builder->GetInsertBlock();
-    llvm::Function* current_function = current_block->getParent();
+    llvm::Function* current_function = builder->GetInsertBlock()->getParent();
 
     llvm::BasicBlock* do_block = llvm::BasicBlock::Create(
         *mod_ctx.llvm_context,
@@ -516,6 +527,12 @@ std::any CodeGenerator::visit(Expr::Loop* expr, bool as_lvalue) {
         "loop_end",
         current_function
     );
+
+    if (auto loop_block = std::dynamic_pointer_cast<Expr::Block>(expr->body)) {
+        auto local_scope = loop_block->local_scope.lock();
+        local_scope->llvm_yield_ptr = yield_allocation;
+        local_scope->llvm_exit_block = merge_block;
+    }
 
     // block_list = std::make_shared<Block::Loop>(
     //     block_list,
@@ -546,7 +563,7 @@ std::any CodeGenerator::visit(Expr::Loop* expr, bool as_lvalue) {
         builder->SetInsertPoint(do_block);
         auto loop_body =
             std::any_cast<llvm::Value*>(expr->body->accept(this, false));
-        builder->CreateStore(loop_body, yield_allocation);
+        // builder->CreateStore(loop_body, yield_allocation);
         builder->CreateBr(condition_block);
     }
     else {
@@ -554,7 +571,7 @@ std::any CodeGenerator::visit(Expr::Loop* expr, bool as_lvalue) {
         builder->SetInsertPoint(do_block);
         auto loop_body =
             std::any_cast<llvm::Value*>(expr->body->accept(this, false));
-        builder->CreateStore(loop_body, yield_allocation);
+        // builder->CreateStore(loop_body, yield_allocation);
         builder->CreateBr(do_block);
     }
 

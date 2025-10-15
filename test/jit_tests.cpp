@@ -424,15 +424,15 @@ TEST_CASE("JIT loop expressions", "[jit]") {
             )",
             "1",
             std::nullopt,
-            false
+            true
         );
     }
 
-    // SECTION("Non-conditional loop with break") {
+    // SECTION("Do-while short form") {
     //     run_jit_test(
     //         R"(
-    //         let x = loop:
-    //             break 1
+    //         let var x = 0
+    //         do x = x + 1 while false
     //         printout x
     //         )",
     //         "1",
@@ -440,4 +440,17 @@ TEST_CASE("JIT loop expressions", "[jit]") {
     //         false
     //     );
     // }
+
+    SECTION("Non-conditional loop with break") {
+        run_jit_test(
+            R"(
+            let x = loop:
+                break 1
+            printout x
+            )",
+            "1",
+            std::nullopt,
+            false
+        );
+    }
 }
