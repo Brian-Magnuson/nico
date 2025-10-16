@@ -157,7 +157,6 @@ std::any LocalChecker::visit(Stmt::Yield* stmt) {
     }
     // At this point, target_scope is guaranteed to be a valid local scope.
     auto local_scope = target_scope.value();
-    stmt->target_scope = local_scope;
 
     // Visit the expression in the yield statement.
     auto expr_type = expr_check(stmt->expression, false);

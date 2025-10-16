@@ -171,7 +171,6 @@ SymbolTree::add_local_scope(std::shared_ptr<Expr::Block> block) {
     auto new_local_scope =
         std::make_shared<Node::LocalScope>(current_scope, block);
     new_local_scope->initialize_node();
-    block->local_scope = new_local_scope;
     current_scope = new_local_scope;
     modified = true;
     return std::make_pair(new_local_scope, Err::Null);

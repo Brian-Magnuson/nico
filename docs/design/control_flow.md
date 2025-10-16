@@ -81,11 +81,11 @@ All of Nico's non-declaring statements, except `pass`, have some effect on contr
 - `return`
   - Sets the yield value for the function (the return value), then exits the function.
 - `break`
-  - Exits the enclosing loop expression.
-- `continue`
-  - Skips the rest of the current iteration of the enclosing loop expression and continues with the next iteration.
+  - Sets the yield value for the surrounding loop, then exits the loop expression.
 - `yield`
   - Sets the yield value for the surrounding block (includes regular Nico blocks, conditional-expressions, loop-expressions, and functions)
+- `continue`
+  - Skips the rest of the current iteration of the enclosing loop expression and continues with the next iteration.
 
 From these rules, we can infer a few design requirements for our language:
 - Because every block-based expression is an expression, it must be capable of yielding a value, meaning it must allocate space for such a value.
@@ -95,6 +95,7 @@ From these rules, we can infer a few design requirements for our language:
     - For example, if the function's yield value is named `$retval` and other yield values are named `$yieldval`, a yield statement in a function must be able to determine which name use when setting the yield value.
   - Keep track of the function's yield value separately
     - This is probably the easier option to implement.
+- A loop's yield value is also special because it can be set within nested blocks (with `break`). The same design choices as above apply.
 - A loop's merge and continue blocks must be tracked together; else, we cannot use `break` or `continue`.
 - `break` and `continue`, much like `return`, must also create unreachable blocks.
 - A conditional's then, else, and merge blocks do not need to be tracked together because none of the non-declaring control statements result in a jump to one of these blocks.
@@ -134,10 +135,8 @@ public:
     class Function;
     class Script;
 
-    class Control;
     class Plain;
     class Loop;
-    class Conditional;
 
     std::shared_ptr<Block> prev;
     llvm::Value* yield_val;
@@ -152,23 +151,15 @@ class Block::Script : public Block::Function {
     // Adds no additional members
 };
 
-class Block::Control : public Block {
-public:
-    llvm::BasicBlock* merge_block;
-};
-
-class Block::Plain : public Block::Control {
+class Block::Plain : public Block {
 public:
     // Adds no additional members
 };
 
-class Block::Loop : public Block::Control {
+class Block::Loop : public Block {
 public:
+    llvm::BasicBlock* merge_block;
     llvm::BasicBlock* continue_block;
 };
 
-class Block::Conditional : public Block::Control {
-public:
-    // Adds no additional members
-};
 ```

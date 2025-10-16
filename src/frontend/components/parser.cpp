@@ -101,7 +101,7 @@ std::optional<std::shared_ptr<Expr>> Parser::conditional() {
     // Handle the 'then' branch.
     std::optional<std::shared_ptr<Expr>> then_branch;
     if (peek()->tok_type == Tok::Indent || peek()->tok_type == Tok::LBrace) {
-        then_branch = block(Expr::Block::Kind::Conditional);
+        then_branch = block(Expr::Block::Kind::Plain);
     }
     else if (match({Tok::KwThen})) {
         then_branch = expression();
@@ -123,7 +123,7 @@ std::optional<std::shared_ptr<Expr>> Parser::conditional() {
     if (match({Tok::KwElse})) {
         if (peek()->tok_type == Tok::Indent ||
             peek()->tok_type == Tok::LBrace) {
-            else_branch = block(Expr::Block::Kind::Conditional);
+            else_branch = block(Expr::Block::Kind::Plain);
         }
         else {
             else_branch = expression();

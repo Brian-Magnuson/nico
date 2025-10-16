@@ -111,41 +111,50 @@ std::any CodeGenerator::visit(Stmt::Pass* /*stmt*/) {
 }
 
 std::any CodeGenerator::visit(Stmt::Yield* stmt) {
-    // return stmt->expression->accept(this, false);
+    // Evaluate the expression to yield.
     auto yield_value =
         std::any_cast<llvm::Value*>(stmt->expression->accept(this, false));
     auto target_block = block_list;
+    if (!target_block)
+        panic(
+            "CodeGenerator::visit(Stmt::Yield*): No enclosing block for yield."
+        );
 
+    // Determine if this yield statement requires an unreachable block after it.
     bool require_unreachable_block = false;
 
     if (stmt->yield_token->tok_type == Tok::KwYield) {
+        // For yield statements, simply set the yield value of the nearest
+        // block.
         builder->CreateStore(yield_value, target_block->yield_allocation);
     }
     else if (stmt->yield_token->tok_type == Tok::KwBreak) {
+        // For break statements, find the nearest enclosing loop block.
         while (target_block && !PTR_INSTANCEOF(target_block, Block::Loop)) {
             target_block = target_block->prev;
         }
-        if (!target_block) {
+        if (!target_block)
             panic(
                 "CodeGenerator::visit(Stmt::Yield*): 'break' used outside of "
                 "a loop."
             );
-        }
+        // Set the yield value and branch to the merge block.
         auto loop_block = std::dynamic_pointer_cast<Block::Loop>(target_block);
         builder->CreateStore(yield_value, loop_block->yield_allocation);
         builder->CreateBr(loop_block->merge_block);
         require_unreachable_block = true;
     }
     else if (stmt->yield_token->tok_type == Tok::KwReturn) {
+        // For return statements, find the nearest enclosing function block.
         while (target_block && !PTR_INSTANCEOF(target_block, Block::Function)) {
             target_block = target_block->prev;
         }
-        if (!target_block) {
+        if (!target_block)
             panic(
                 "CodeGenerator::visit(Stmt::Yield*): 'return' used outside of "
                 "a function."
             );
-        }
+        // Set the yield value and branch to the function's exit block.
         auto func_block =
             std::dynamic_pointer_cast<Block::Function>(target_block);
         builder->CreateStore(yield_value, func_block->yield_allocation);
@@ -166,6 +175,11 @@ std::any CodeGenerator::visit(Stmt::Yield* stmt) {
             builder->GetInsertBlock()->getParent()
         );
         builder->SetInsertPoint(unreachable_block);
+        // We allow statements to appear after a break or return, but they will
+        // unreachable. LLVM has an "unreachable" instruction, but only as a
+        // block terminator.
+        // In the future, we can change prevent code generation after a break or
+        // return.
     }
 
     return std::any();
@@ -472,32 +486,19 @@ std::any CodeGenerator::visit(Expr::Tuple* expr, bool as_lvalue) {
 }
 
 std::any CodeGenerator::visit(Expr::Block* expr, bool as_lvalue) {
-    // auto local_scope = expr->local_scope.lock();
-    // local_scopes.push_back(local_scope);
-    // bool yield_managed_externally = local_scope->llvm_yield_ptr != nullptr;
-
-    // if (!yield_managed_externally) {
+    // Blocks get their own yield allocation.
     llvm::AllocaInst* yield_allocation = builder->CreateAlloca(
         expr->type->get_llvm_type(builder),
         nullptr,
         "$yieldval"
     );
-    // local_scope->llvm_yield_ptr = yield_allocation;
-    // }
+    // If this is a loop or function block, this yield value may go unused, but
+    // that's okay.
     block_list = std::make_shared<Block::Plain>(block_list, yield_allocation);
 
     for (auto& stmt : expr->statements) {
         stmt->accept(this);
     }
-
-    // local_scopes.pop_back();
-    // block_list = block_list->prev;
-    // llvm::Value* yield_value = nullptr;
-    // if (!yield_managed_externally)
-    // yield_value = builder->CreateLoad(
-    //     expr->type->get_llvm_type(builder),
-    //     local_scope->llvm_yield_ptr
-    // );
 
     llvm::Value* yield_value = builder->CreateLoad(
         expr->type->get_llvm_type(builder),
@@ -510,13 +511,7 @@ std::any CodeGenerator::visit(Expr::Block* expr, bool as_lvalue) {
 }
 
 std::any CodeGenerator::visit(Expr::Conditional* expr, bool as_lvalue) {
-    llvm::Value* yield_allocation = builder->CreateAlloca(
-        expr->type->get_llvm_type(builder),
-        nullptr,
-        "$yieldval"
-    );
-    llvm::BasicBlock* current_block = builder->GetInsertBlock();
-    llvm::Function* current_function = current_block->getParent();
+    llvm::Function* current_function = builder->GetInsertBlock()->getParent();
 
     llvm::BasicBlock* then_block = llvm::BasicBlock::Create(
         *mod_ctx.llvm_context,
@@ -542,22 +537,32 @@ std::any CodeGenerator::visit(Expr::Conditional* expr, bool as_lvalue) {
     builder->SetInsertPoint(then_block);
     auto then_value =
         std::any_cast<llvm::Value*>(expr->then_branch->accept(this, false));
-    builder->CreateStore(then_value, yield_allocation);
+    then_block = builder->GetInsertBlock();
     builder->CreateBr(merge_block);
 
     // Else block
     builder->SetInsertPoint(else_block);
     auto else_value =
         std::any_cast<llvm::Value*>(expr->else_branch->accept(this, false));
-    builder->CreateStore(else_value, yield_allocation);
+    else_block = builder->GetInsertBlock();
     builder->CreateBr(merge_block);
+
+    // We reassign then_block and else_block to the current block after
+    // generating their branch code. This is in case their blocks added
+    // additional llvm::BasicBlocks. And we reuse the variables the save on
+    // space.
 
     // Merge block
     builder->SetInsertPoint(merge_block);
-    llvm::Value* yield_value = builder->CreateLoad(
-        expr->type->get_llvm_type(builder),
-        yield_allocation
-    );
+    auto phi =
+        builder->CreatePHI(expr->type->get_llvm_type(builder), 2, "cond_val");
+    phi->addIncoming(then_value, then_block);
+    phi->addIncoming(else_value, else_block);
+    llvm::Value* yield_value = phi;
+
+    // We *could* use a $yieldval allocation like we do with loops and
+    // functions, but control flow for conditionals is more linear and easier to
+    // manage with a phi node.
 
     return yield_value;
 }
@@ -568,6 +573,14 @@ std::any CodeGenerator::visit(Expr::Loop* expr, bool as_lvalue) {
         nullptr,
         "$yieldval"
     );
+
+    // Loops are complicated because they allow break statements, which
+    // interrupt the control flow in a block. This potentially causes the yield
+    // value of a plain block to become unreachable. So rather than trying to
+    // salvage the yield value of the inner expression, we create a new yield
+    // allocation for the loop itself. Break statements will have the ability to
+    // set this yield allocation.
+
     llvm::Function* current_function = builder->GetInsertBlock()->getParent();
 
     llvm::BasicBlock* do_block = llvm::BasicBlock::Create(
@@ -588,26 +601,26 @@ std::any CodeGenerator::visit(Expr::Loop* expr, bool as_lvalue) {
         do_block
     );
 
-    // if (auto loop_block = std::dynamic_pointer_cast<Expr::Block>(expr->body))
-    // {
-    //     auto local_scope = loop_block->local_scope.lock();
-    //     local_scope->llvm_yield_ptr = yield_allocation;
-    //     local_scope->llvm_exit_block = merge_block;
-    // }
-
     if (expr->condition.has_value()) {
+        // Conditional loops, as the name implies, have a condition block.
         llvm::BasicBlock* condition_block = llvm::BasicBlock::Create(
             *mod_ctx.llvm_context,
             "loop_cond",
             current_function
         );
+        // Conditional loops include while loops and do-while loops.
+        // The flow is the same: cond->do->cond->do...
         if (expr->loops_once) {
+            // For do-while loops, we enter the do block first, skipping the
+            // first conditional check.
             builder->CreateBr(do_block);
         }
         else {
+            // For while loops, we check the condition first.
             builder->CreateBr(condition_block);
         }
 
+        // Setup the condition block.
         builder->SetInsertPoint(condition_block);
         auto condition = std::any_cast<llvm::Value*>(
             expr->condition.value()->accept(this, false)
@@ -615,20 +628,27 @@ std::any CodeGenerator::visit(Expr::Loop* expr, bool as_lvalue) {
         builder->CreateCondBr(condition, do_block, merge_block);
 
         builder->SetInsertPoint(do_block);
+        // For conditional loops, we ignore the value of the loop body because
+        // the yield value is always `()`, which is already the default value
+        // for the yield allocation.
         expr->body->accept(this, false);
-        // builder->CreateStore(loop_body, yield_allocation);
         builder->CreateBr(condition_block);
     }
     else {
+        // Non-conditional loops have no condition block.
+        // The flow is simply: do->do->do...
+        // The only way to exit the loop is with a break statement, which is
+        // accessible through the block list.
         builder->CreateBr(do_block);
         builder->SetInsertPoint(do_block);
         expr->body->accept(this, false);
-        // builder->CreateStore(loop_body, yield_allocation);
+        // For non-conditional loops, we also ignore the value of
+        // the loop body because the yield value is set by break statements,
+        // which are the only way to exit the loop.
         builder->CreateBr(do_block);
     }
 
     builder->SetInsertPoint(merge_block);
-    // block_list = block_list->prev;
     llvm::Value* yield_value = builder->CreateLoad(
         expr->type->get_llvm_type(builder),
         block_list->yield_allocation
@@ -839,10 +859,9 @@ void CodeGenerator::add_panic(
         mod_ctx.ir_module->getGlobalVariable("stderr")
     );
     llvm::Value* format_string =
-        // builder->CreateGlobalStringPtr("Panic: %s: %s\n%s:%d:%d\n");
-        builder->CreateGlobalStringPtr("Panic: %s\n%s:%d:%d\n");
-    // llvm::Value* func_name =
-    //     builder->CreateGlobalStringPtr(block_list->get_function_name());
+        builder->CreateGlobalStringPtr("Panic: %s: %s\n%s:%d:%d\n");
+    llvm::Value* func_name =
+        builder->CreateGlobalStringPtr(block_list->get_function_name());
     llvm::Value* msg = builder->CreateGlobalStringPtr(message);
     auto location_tuple = location->to_tuple();
     llvm::Value* file_name =
@@ -859,7 +878,7 @@ void CodeGenerator::add_panic(
         fprintf_fn,
         {stderr_stream,
          format_string,
-         //  func_name,
+         func_name,
          msg,
          file_name,
          line_number,

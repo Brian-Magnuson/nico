@@ -243,18 +243,11 @@ class Node::LocalScope : public virtual Node::IScope {
 public:
     // A static counter to generate unique identifiers for local scopes.
     static int next_scope_id;
-
+    // The block expression that this local scope represents.
     std::shared_ptr<Expr::Block> block;
     // The type of the expressions yielded within this local scope.
     // We track the type here until we set the type of the block expression.
     std::optional<std::shared_ptr<Type>> yield_type;
-    // The top local scope in the parent chain. Can be this. The memory for this
-    // node is managed by its parent; do not manually delete it.
-    // Node::LocalScope* top_local_scope;
-
-    // llvm::AllocaInst* llvm_yield_ptr = nullptr;
-
-    // llvm::BasicBlock* llvm_exit_block = nullptr;
 
     virtual ~LocalScope() = default;
 
@@ -264,39 +257,8 @@ public:
     )
         : Node::IBasicNode(parent_scope, std::to_string(next_scope_id++)),
           Node::IScope(parent_scope, std::to_string(next_scope_id++)),
-          block(block) {
-
-        // if (auto parent_local_scope =
-        // std::dynamic_pointer_cast<Node::LocalScope>(
-        //             parent_scope.lock()
-        //         )) {
-        //     top_local_scope = parent_local_scope->top_local_scope;
-        // }
-        // else {
-        //     top_local_scope = this;
-        // }
-    }
+          block(block) {}
 };
-
-// /**
-//  * @brief A function scope node in the symbol tree.
-//  *
-//  * A function scope is a special local scope created when a function is
-//  * declared. It stores the function's parameters and tracks the function's
-//  * return type.
-//  */
-// class Node::FunctionScope : public virtual Node::LocalScope,
-//                             public virtual Node::ILocatable {
-// public:
-//     FunctionScope(
-//         std::weak_ptr<Node::IScope> parent_scope, std::shared_ptr<Token>
-//         token
-//     )
-//         : Node::IBasicNode(parent_scope, std::string(token->lexeme)),
-//           Node::IScope(parent_scope, std::string(token->lexeme)),
-//           Node::LocalScope(parent_scope, Expr::Block::Kind::Function),
-//           Node::ILocatable(token) {}
-// };
 
 /**
  * @brief A field entry in the symbol tree.

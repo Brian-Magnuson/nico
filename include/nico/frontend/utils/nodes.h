@@ -48,7 +48,6 @@ public:
     class PrimitiveType;
     class StructDef;
     class LocalScope;
-    class FunctionScope;
     class FieldEntry;
 
     // This node's parent scope, if it exists.
