@@ -45,9 +45,7 @@ class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
     // before using it.
     std::unique_ptr<llvm::IRBuilder<>> builder;
     // A linked list of blocks for tracking control flow.
-    // std::shared_ptr<Block> block_list = nullptr;
-
-    std::vector<std::shared_ptr<Node::LocalScope>> local_scopes;
+    std::shared_ptr<Block> block_list = nullptr;
 
     CodeGenerator(
         std::string_view module_name,

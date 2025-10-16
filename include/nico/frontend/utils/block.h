@@ -24,7 +24,7 @@ public:
 
     class Control;
     class Loop;
-    class Conditional;
+    // class Conditional;
 
     // A pointer to the previous block.
     std::shared_ptr<Block> prev;
@@ -168,17 +168,17 @@ public:
  * These structures have a merge block where control flow continues after the
  * conditional.
  */
-class Block::Conditional : public Block::Control {
-public:
-    Conditional(
-        std::shared_ptr<Block> prev,
-        llvm::Value* yield_allocation,
-        llvm::BasicBlock* merge_block
-    )
-        : Control(prev, yield_allocation, merge_block) {}
+// class Block::Conditional : public Block::Control {
+// public:
+//     Conditional(
+//         std::shared_ptr<Block> prev,
+//         llvm::Value* yield_allocation,
+//         llvm::BasicBlock* merge_block
+//     )
+//         : Control(prev, yield_allocation, merge_block) {}
 
-    virtual ~Conditional() = default;
-};
+//     virtual ~Conditional() = default;
+// };
 
 } // namespace nico
 

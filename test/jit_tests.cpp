@@ -424,22 +424,51 @@ TEST_CASE("JIT loop expressions", "[jit]") {
             )",
             "1",
             std::nullopt,
-            true
+            false
         );
     }
 
-    // SECTION("Do-while short form") {
-    //     run_jit_test(
-    //         R"(
-    //         let var x = 0
-    //         do x = x + 1 while false
-    //         printout x
-    //         )",
-    //         "1",
-    //         std::nullopt,
-    //         false
-    //     );
-    // }
+    SECTION("Simple while loop") {
+        run_jit_test(
+            R"(
+            let var x = 0
+            while false:
+                x = x + 1
+            printout x
+            )",
+            "0",
+            std::nullopt,
+            false
+        );
+    }
+
+    SECTION("While loop with inner conditional expr") {
+        run_jit_test(
+            R"(
+            let var x = 0
+            while true:
+                if true:
+                    break ()
+            printout x
+            )",
+            "0",
+            std::nullopt,
+            false
+        );
+    }
+
+    SECTION("Do-while short form") {
+        run_jit_test(
+            R"(
+            let var x = 0
+            do x = x + 1 while false
+            printout x
+            )",
+            "1",
+            std::nullopt,
+            false
+        );
+    }
 
     SECTION("Non-conditional loop with break") {
         run_jit_test(
@@ -449,6 +478,26 @@ TEST_CASE("JIT loop expressions", "[jit]") {
             printout x
             )",
             "1",
+            std::nullopt,
+            false
+        );
+    }
+
+    SECTION("Nested loops") {
+        run_jit_test(
+            R"(
+            loop:
+                printout 1
+                loop:
+                    printout 2
+                    break ()
+                    printout 3
+                printout 4
+                break ()
+                printout 5
+            printout 6
+            )",
+            "1246",
             std::nullopt,
             false
         );

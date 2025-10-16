@@ -252,9 +252,9 @@ public:
     // node is managed by its parent; do not manually delete it.
     // Node::LocalScope* top_local_scope;
 
-    llvm::AllocaInst* llvm_yield_ptr = nullptr;
+    // llvm::AllocaInst* llvm_yield_ptr = nullptr;
 
-    llvm::BasicBlock* llvm_exit_block = nullptr;
+    // llvm::BasicBlock* llvm_exit_block = nullptr;
 
     virtual ~LocalScope() = default;
 

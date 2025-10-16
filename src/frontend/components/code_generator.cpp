@@ -44,7 +44,7 @@ std::any CodeGenerator::visit(Stmt::Let* stmt) {
         stmt->field_entry.lock()->field.type->get_llvm_type(builder);
     llvm::Value* allocation = nullptr;
 
-    if (local_scopes.empty()) {
+    if (PTR_INSTANCEOF(block_list, Block::Script)) {
         // In REPL mode, global variables have external linkage so that they can
         // be accessed across multiple submissions.
         auto linkage = repl_mode ? llvm::GlobalValue::ExternalLinkage
@@ -112,11 +112,54 @@ std::any CodeGenerator::visit(Stmt::Pass* /*stmt*/) {
 
 std::any CodeGenerator::visit(Stmt::Yield* stmt) {
     // return stmt->expression->accept(this, false);
-    auto value =
+    auto yield_value =
         std::any_cast<llvm::Value*>(stmt->expression->accept(this, false));
-    builder->CreateStore(value, local_scopes.back()->llvm_yield_ptr);
-    if (stmt->yield_token->tok_type != Tok::KwYield) {
-        builder->CreateBr(local_scopes.back()->llvm_exit_block);
+    auto target_block = block_list;
+
+    bool require_unreachable_block = false;
+
+    if (stmt->yield_token->tok_type == Tok::KwYield) {
+        builder->CreateStore(yield_value, target_block->yield_allocation);
+    }
+    else if (stmt->yield_token->tok_type == Tok::KwBreak) {
+        while (target_block && !PTR_INSTANCEOF(target_block, Block::Loop)) {
+            target_block = target_block->prev;
+        }
+        if (!target_block) {
+            panic(
+                "CodeGenerator::visit(Stmt::Yield*): 'break' used outside of "
+                "a loop."
+            );
+        }
+        auto loop_block = std::dynamic_pointer_cast<Block::Loop>(target_block);
+        builder->CreateStore(yield_value, loop_block->yield_allocation);
+        builder->CreateBr(loop_block->merge_block);
+        require_unreachable_block = true;
+    }
+    else if (stmt->yield_token->tok_type == Tok::KwReturn) {
+        while (target_block && !PTR_INSTANCEOF(target_block, Block::Function)) {
+            target_block = target_block->prev;
+        }
+        if (!target_block) {
+            panic(
+                "CodeGenerator::visit(Stmt::Yield*): 'return' used outside of "
+                "a function."
+            );
+        }
+        auto func_block =
+            std::dynamic_pointer_cast<Block::Function>(target_block);
+        builder->CreateStore(yield_value, func_block->yield_allocation);
+        builder->CreateBr(func_block->exit_block);
+        require_unreachable_block = true;
+    }
+    else {
+        panic("CodeGenerator::visit(Stmt::Yield*): Unknown yield type.");
+        return std::any();
+    }
+
+    if (require_unreachable_block) {
+        // After a break or return, we need to create a new block to continue
+        // generating code in.
         auto unreachable_block = llvm::BasicBlock::Create(
             *mod_ctx.llvm_context,
             "unreachable",
@@ -124,6 +167,7 @@ std::any CodeGenerator::visit(Stmt::Yield* stmt) {
         );
         builder->SetInsertPoint(unreachable_block);
     }
+
     return std::any();
 }
 
@@ -428,30 +472,39 @@ std::any CodeGenerator::visit(Expr::Tuple* expr, bool as_lvalue) {
 }
 
 std::any CodeGenerator::visit(Expr::Block* expr, bool as_lvalue) {
-    auto local_scope = expr->local_scope.lock();
-    local_scopes.push_back(local_scope);
+    // auto local_scope = expr->local_scope.lock();
+    // local_scopes.push_back(local_scope);
+    // bool yield_managed_externally = local_scope->llvm_yield_ptr != nullptr;
 
-    if (local_scope->llvm_yield_ptr == nullptr) {
-        llvm::AllocaInst* yield_allocation = builder->CreateAlloca(
-            expr->type->get_llvm_type(builder),
-            nullptr,
-            "$yieldval"
-        );
-        local_scope->llvm_yield_ptr = yield_allocation;
-    }
-    // block_list = std::make_shared<Block::Plain>(block_list,
-    // yield_allocation);
+    // if (!yield_managed_externally) {
+    llvm::AllocaInst* yield_allocation = builder->CreateAlloca(
+        expr->type->get_llvm_type(builder),
+        nullptr,
+        "$yieldval"
+    );
+    // local_scope->llvm_yield_ptr = yield_allocation;
+    // }
+    block_list = std::make_shared<Block::Plain>(block_list, yield_allocation);
 
     for (auto& stmt : expr->statements) {
         stmt->accept(this);
     }
 
-    local_scopes.pop_back();
+    // local_scopes.pop_back();
     // block_list = block_list->prev;
+    // llvm::Value* yield_value = nullptr;
+    // if (!yield_managed_externally)
+    // yield_value = builder->CreateLoad(
+    //     expr->type->get_llvm_type(builder),
+    //     local_scope->llvm_yield_ptr
+    // );
+
     llvm::Value* yield_value = builder->CreateLoad(
         expr->type->get_llvm_type(builder),
-        local_scope->llvm_yield_ptr
+        yield_allocation
     );
+
+    block_list = block_list->prev;
 
     return yield_value;
 }
@@ -528,18 +581,19 @@ std::any CodeGenerator::visit(Expr::Loop* expr, bool as_lvalue) {
         current_function
     );
 
-    if (auto loop_block = std::dynamic_pointer_cast<Expr::Block>(expr->body)) {
-        auto local_scope = loop_block->local_scope.lock();
-        local_scope->llvm_yield_ptr = yield_allocation;
-        local_scope->llvm_exit_block = merge_block;
-    }
+    block_list = std::make_shared<Block::Loop>(
+        block_list,
+        yield_allocation,
+        merge_block,
+        do_block
+    );
 
-    // block_list = std::make_shared<Block::Loop>(
-    //     block_list,
-    //     yield_allocation,
-    //     do_block,
-    //     merge_block
-    // );
+    // if (auto loop_block = std::dynamic_pointer_cast<Expr::Block>(expr->body))
+    // {
+    //     auto local_scope = loop_block->local_scope.lock();
+    //     local_scope->llvm_yield_ptr = yield_allocation;
+    //     local_scope->llvm_exit_block = merge_block;
+    // }
 
     if (expr->condition.has_value()) {
         llvm::BasicBlock* condition_block = llvm::BasicBlock::Create(
@@ -561,16 +615,14 @@ std::any CodeGenerator::visit(Expr::Loop* expr, bool as_lvalue) {
         builder->CreateCondBr(condition, do_block, merge_block);
 
         builder->SetInsertPoint(do_block);
-        auto loop_body =
-            std::any_cast<llvm::Value*>(expr->body->accept(this, false));
+        expr->body->accept(this, false);
         // builder->CreateStore(loop_body, yield_allocation);
         builder->CreateBr(condition_block);
     }
     else {
         builder->CreateBr(do_block);
         builder->SetInsertPoint(do_block);
-        auto loop_body =
-            std::any_cast<llvm::Value*>(expr->body->accept(this, false));
+        expr->body->accept(this, false);
         // builder->CreateStore(loop_body, yield_allocation);
         builder->CreateBr(do_block);
     }
@@ -579,8 +631,10 @@ std::any CodeGenerator::visit(Expr::Loop* expr, bool as_lvalue) {
     // block_list = block_list->prev;
     llvm::Value* yield_value = builder->CreateLoad(
         expr->type->get_llvm_type(builder),
-        yield_allocation
+        block_list->yield_allocation
     );
+
+    block_list = block_list->prev;
 
     return yield_value;
 }
@@ -877,8 +931,8 @@ void CodeGenerator::generate_script_func(
         builder->CreateAlloca(builder->getInt32Ty(), nullptr, "$retval");
 
     // Append the exit block to the block list.
-    // block_list =
-    //     std::make_shared<Block::Script>(block_list, ret_val, exit_block);
+    block_list =
+        std::make_shared<Block::Script>(block_list, ret_val, exit_block);
 
     // Set panic recoverable code.
     if (panic_recoverable) {
@@ -935,6 +989,8 @@ void CodeGenerator::generate_script_func(
     // Jump to exit block
     builder->CreateBr(exit_block);
     builder->SetInsertPoint(exit_block);
+
+    block_list = block_list->prev;
 
     // Return the value from ret_val
     builder->CreateRet(builder->CreateLoad(builder->getInt32Ty(), ret_val));
