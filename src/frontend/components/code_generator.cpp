@@ -114,12 +114,6 @@ std::any CodeGenerator::visit(Stmt::Yield* stmt) {
     // Evaluate the expression to yield.
     auto yield_value =
         std::any_cast<llvm::Value*>(stmt->expression->accept(this, false));
-    // auto target_block = block_list;
-    // if (!target_block)
-    //     panic(
-    //         "CodeGenerator::visit(Stmt::Yield*): No enclosing block for
-    //         yield."
-    //     );
 
     // Determine if this yield statement requires an unreachable block after it.
     bool require_unreachable_block = false;
@@ -132,18 +126,7 @@ std::any CodeGenerator::visit(Stmt::Yield* stmt) {
         );
     }
     else if (stmt->yield_token->tok_type == Tok::KwBreak) {
-        // // For break statements, find the nearest enclosing loop block.
-        // while (target_block && !PTR_INSTANCEOF(target_block, Block::Loop)) {
-        //     target_block = target_block->prev;
-        // }
-        // if (!target_block)
-        //     panic(
-        //         "CodeGenerator::visit(Stmt::Yield*): 'break' used outside of
-        //         " "a loop."
-        //     );
-        // // Set the yield value and branch to the merge block.
-        // auto loop_block =
-        // std::dynamic_pointer_cast<Block::Loop>(target_block);
+        // For break statements, find the nearest enclosing loop block.
         builder->CreateStore(
             yield_value,
             control_stack.get_yield_allocation(Expr::Block::Kind::Loop)
@@ -155,19 +138,6 @@ std::any CodeGenerator::visit(Stmt::Yield* stmt) {
     }
     else if (stmt->yield_token->tok_type == Tok::KwReturn) {
         // For return statements, find the nearest enclosing function block.
-        // while (target_block && !PTR_INSTANCEOF(target_block,
-        // Block::Function)) {
-        //     target_block = target_block->prev;
-        // }
-        // if (!target_block)
-        //     panic(
-        //         "CodeGenerator::visit(Stmt::Yield*): 'return' used outside of
-        //         " "a function."
-        //     );
-        // Set the yield value and branch to the function's exit block.
-        // auto func_block =
-        // std::dynamic_pointer_cast<Block::Function>(target_block);
-
         builder->CreateStore(
             yield_value,
             control_stack.get_yield_allocation(Expr::Block::Kind::Function)
@@ -510,8 +480,6 @@ std::any CodeGenerator::visit(Expr::Block* expr, bool as_lvalue) {
     );
     // If this is a loop or function block, this yield value may go unused, but
     // that's okay.
-    // block_list = std::make_shared<Block::Plain>(block_list,
-    // yield_allocation);
     control_stack.add_block(yield_allocation);
 
     for (auto& stmt : expr->statements) {
@@ -589,7 +557,7 @@ std::any CodeGenerator::visit(Expr::Loop* expr, bool as_lvalue) {
     llvm::AllocaInst* yield_allocation = builder->CreateAlloca(
         expr->type->get_llvm_type(builder),
         nullptr,
-        "$yieldval"
+        "$breakval"
     );
 
     // Loops are complicated because they allow break statements, which

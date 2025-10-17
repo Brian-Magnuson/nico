@@ -22,7 +22,7 @@ llvm::AllocaInst* ControlStack::get_yield_allocation(
         panic("ControlStack::get_yield_allocation: No block in stack.");
     }
     if (kind == Expr::Block::Kind::Plain) {
-        return top_block->yield_allocation;
+        return top_block->get_block(label)->yield_allocation;
     }
     else if (kind == Expr::Block::Kind::Function) {
         auto func = top_block->get_function();
