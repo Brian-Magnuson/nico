@@ -218,6 +218,10 @@ TEST_CASE("JIT assign expressions", "[jit]") {
 }
 
 TEST_CASE("JIT block expressions", "[jit]") {
+    SECTION("Simple block expression") {
+        run_jit_test(R"(block { yield 5 })");
+    }
+
     SECTION("Block expression 1") {
         run_jit_test("let var x = 1 x = block { yield 2 } printout x", "2");
     }
