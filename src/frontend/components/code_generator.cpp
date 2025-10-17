@@ -44,7 +44,7 @@ std::any CodeGenerator::visit(Stmt::Let* stmt) {
         stmt->field_entry.lock()->field.type->get_llvm_type(builder);
     llvm::Value* allocation = nullptr;
 
-    if (PTR_INSTANCEOF(block_list, Block::Script)) {
+    if (control_stack.top_block_is_script()) {
         // In REPL mode, global variables have external linkage so that they can
         // be accessed across multiple submissions.
         auto linkage = repl_mode ? llvm::GlobalValue::ExternalLinkage
@@ -114,51 +114,67 @@ std::any CodeGenerator::visit(Stmt::Yield* stmt) {
     // Evaluate the expression to yield.
     auto yield_value =
         std::any_cast<llvm::Value*>(stmt->expression->accept(this, false));
-    auto target_block = block_list;
-    if (!target_block)
-        panic(
-            "CodeGenerator::visit(Stmt::Yield*): No enclosing block for yield."
-        );
+    // auto target_block = block_list;
+    // if (!target_block)
+    //     panic(
+    //         "CodeGenerator::visit(Stmt::Yield*): No enclosing block for
+    //         yield."
+    //     );
 
     // Determine if this yield statement requires an unreachable block after it.
     bool require_unreachable_block = false;
 
     if (stmt->yield_token->tok_type == Tok::KwYield) {
-        // For yield statements, simply set the yield value of the nearest
-        // block.
-        builder->CreateStore(yield_value, target_block->yield_allocation);
+        Expr::Block::Kind target_kind = stmt->target_block.lock()->kind;
+        builder->CreateStore(
+            yield_value,
+            control_stack.get_yield_allocation(target_kind)
+        );
     }
     else if (stmt->yield_token->tok_type == Tok::KwBreak) {
-        // For break statements, find the nearest enclosing loop block.
-        while (target_block && !PTR_INSTANCEOF(target_block, Block::Loop)) {
-            target_block = target_block->prev;
-        }
-        if (!target_block)
-            panic(
-                "CodeGenerator::visit(Stmt::Yield*): 'break' used outside of "
-                "a loop."
-            );
-        // Set the yield value and branch to the merge block.
-        auto loop_block = std::dynamic_pointer_cast<Block::Loop>(target_block);
-        builder->CreateStore(yield_value, loop_block->yield_allocation);
-        builder->CreateBr(loop_block->merge_block);
+        // // For break statements, find the nearest enclosing loop block.
+        // while (target_block && !PTR_INSTANCEOF(target_block, Block::Loop)) {
+        //     target_block = target_block->prev;
+        // }
+        // if (!target_block)
+        //     panic(
+        //         "CodeGenerator::visit(Stmt::Yield*): 'break' used outside of
+        //         " "a loop."
+        //     );
+        // // Set the yield value and branch to the merge block.
+        // auto loop_block =
+        // std::dynamic_pointer_cast<Block::Loop>(target_block);
+        builder->CreateStore(
+            yield_value,
+            control_stack.get_yield_allocation(Expr::Block::Kind::Loop)
+        );
+        builder->CreateBr(
+            control_stack.get_exit_block(Expr::Block::Kind::Loop)
+        );
         require_unreachable_block = true;
     }
     else if (stmt->yield_token->tok_type == Tok::KwReturn) {
         // For return statements, find the nearest enclosing function block.
-        while (target_block && !PTR_INSTANCEOF(target_block, Block::Function)) {
-            target_block = target_block->prev;
-        }
-        if (!target_block)
-            panic(
-                "CodeGenerator::visit(Stmt::Yield*): 'return' used outside of "
-                "a function."
-            );
+        // while (target_block && !PTR_INSTANCEOF(target_block,
+        // Block::Function)) {
+        //     target_block = target_block->prev;
+        // }
+        // if (!target_block)
+        //     panic(
+        //         "CodeGenerator::visit(Stmt::Yield*): 'return' used outside of
+        //         " "a function."
+        //     );
         // Set the yield value and branch to the function's exit block.
-        auto func_block =
-            std::dynamic_pointer_cast<Block::Function>(target_block);
-        builder->CreateStore(yield_value, func_block->yield_allocation);
-        builder->CreateBr(func_block->exit_block);
+        // auto func_block =
+        // std::dynamic_pointer_cast<Block::Function>(target_block);
+
+        builder->CreateStore(
+            yield_value,
+            control_stack.get_yield_allocation(Expr::Block::Kind::Function)
+        );
+        builder->CreateBr(
+            control_stack.get_exit_block(Expr::Block::Kind::Function)
+        );
         require_unreachable_block = true;
     }
     else {
@@ -494,7 +510,9 @@ std::any CodeGenerator::visit(Expr::Block* expr, bool as_lvalue) {
     );
     // If this is a loop or function block, this yield value may go unused, but
     // that's okay.
-    block_list = std::make_shared<Block::Plain>(block_list, yield_allocation);
+    // block_list = std::make_shared<Block::Plain>(block_list,
+    // yield_allocation);
+    control_stack.add_block(yield_allocation);
 
     for (auto& stmt : expr->statements) {
         stmt->accept(this);
@@ -505,7 +523,7 @@ std::any CodeGenerator::visit(Expr::Block* expr, bool as_lvalue) {
         yield_allocation
     );
 
-    block_list = block_list->prev;
+    control_stack.pop_block();
 
     return yield_value;
 }
@@ -594,12 +612,7 @@ std::any CodeGenerator::visit(Expr::Loop* expr, bool as_lvalue) {
         current_function
     );
 
-    block_list = std::make_shared<Block::Loop>(
-        block_list,
-        yield_allocation,
-        merge_block,
-        do_block
-    );
+    control_stack.add_loop_block(yield_allocation, merge_block, do_block);
 
     if (expr->condition.has_value()) {
         // Conditional loops, as the name implies, have a condition block.
@@ -651,10 +664,10 @@ std::any CodeGenerator::visit(Expr::Loop* expr, bool as_lvalue) {
     builder->SetInsertPoint(merge_block);
     llvm::Value* yield_value = builder->CreateLoad(
         expr->type->get_llvm_type(builder),
-        block_list->yield_allocation
+        control_stack.get_yield_allocation(Expr::Block::Kind::Loop)
     );
 
-    block_list = block_list->prev;
+    control_stack.pop_block();
 
     return yield_value;
 }
@@ -860,8 +873,9 @@ void CodeGenerator::add_panic(
     );
     llvm::Value* format_string =
         builder->CreateGlobalStringPtr("Panic: %s: %s\n%s:%d:%d\n");
-    llvm::Value* func_name =
-        builder->CreateGlobalStringPtr(block_list->get_function_name());
+    llvm::Value* func_name = builder->CreateGlobalStringPtr(
+        control_stack.get_current_function_name()
+    );
     llvm::Value* msg = builder->CreateGlobalStringPtr(message);
     auto location_tuple = location->to_tuple();
     llvm::Value* file_name =
@@ -950,8 +964,7 @@ void CodeGenerator::generate_script_func(
         builder->CreateAlloca(builder->getInt32Ty(), nullptr, "$retval");
 
     // Append the exit block to the block list.
-    block_list =
-        std::make_shared<Block::Script>(block_list, ret_val, exit_block);
+    control_stack.add_script_block(ret_val, exit_block);
 
     // Set panic recoverable code.
     if (panic_recoverable) {
@@ -1009,7 +1022,7 @@ void CodeGenerator::generate_script_func(
     builder->CreateBr(exit_block);
     builder->SetInsertPoint(exit_block);
 
-    block_list = block_list->prev;
+    control_stack.pop_block();
 
     // Return the value from ret_val
     builder->CreateRet(builder->CreateLoad(builder->getInt32Ty(), ret_val));

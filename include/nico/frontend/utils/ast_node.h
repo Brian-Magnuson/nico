@@ -103,6 +103,8 @@ public:
     std::shared_ptr<Token> yield_token;
     // The expression to yield.
     std::shared_ptr<Expr> expression;
+    // A weak pointer to the target block expression.
+    std::weak_ptr<Expr::Block> target_block;
 
     Yield(std::shared_ptr<Token> yield_token, std::shared_ptr<Expr> expression)
         : yield_token(yield_token), expression(expression) {}

@@ -42,6 +42,7 @@ include(Catch)
 set(FRONT_END_UTILS_SRC
     src/frontend/utils/symbol_node.cpp
     src/frontend/utils/symbol_tree.cpp
+    src/frontend/utils/control_stack.cpp
 )
 
 # Front end component files

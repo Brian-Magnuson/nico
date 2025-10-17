@@ -13,7 +13,7 @@
 #include <llvm/IR/Module.h>
 
 #include "nico/frontend/utils/ast_node.h"
-#include "nico/frontend/utils/block.h"
+#include "nico/frontend/utils/control_stack.h"
 #include "nico/frontend/utils/frontend_context.h"
 #include "nico/shared/ir_module_context.h"
 #include "nico/shared/token.h"
@@ -44,8 +44,10 @@ class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
     // The IR builder used to generate the IR; always set the insertion point
     // before using it.
     std::unique_ptr<llvm::IRBuilder<>> builder;
-    // A linked list of blocks for tracking control flow.
-    std::shared_ptr<Block> block_list = nullptr;
+    // // A linked list of blocks for tracking control flow.
+    // std::shared_ptr<Block> block_list = nullptr;
+
+    ControlStack control_stack;
 
     CodeGenerator(
         std::string_view module_name,

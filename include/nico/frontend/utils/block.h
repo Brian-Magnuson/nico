@@ -157,29 +157,6 @@ public:
     virtual ~Loop() = default;
 };
 
-/**
- * @brief A conditional block linked list node.
- *
- * This class is used to distinguish this block from other kinds of control
- * blocks like loops and plain blocks. It adds no additional members to
- * `Block::Control`.
- *
- * Conditional blocks are used for conditional control structures.
- * These structures have a merge block where control flow continues after the
- * conditional.
- */
-// class Block::Conditional : public Block::Control {
-// public:
-//     Conditional(
-//         std::shared_ptr<Block> prev,
-//         llvm::Value* yield_allocation,
-//         llvm::BasicBlock* merge_block
-//     )
-//         : Control(prev, yield_allocation, merge_block) {}
-
-//     virtual ~Conditional() = default;
-// };
-
 } // namespace nico
 
 #endif // NICO_BLOCK_H
