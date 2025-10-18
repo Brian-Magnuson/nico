@@ -367,11 +367,31 @@ std::optional<std::shared_ptr<Expr>> Parser::term() {
 }
 
 std::optional<std::shared_ptr<Expr>> Parser::comparison() {
-    return term();
+    auto left = term();
+    if (!left)
+        return std::nullopt;
+    while (match({Tok::Lt, Tok::Gt, Tok::LtEq, Tok::GtEq})) {
+        auto op = previous();
+        auto right = term();
+        if (!right)
+            return std::nullopt;
+        left = std::make_shared<Expr::Binary>(*left, op, *right);
+    }
+    return left;
 }
 
 std::optional<std::shared_ptr<Expr>> Parser::equality() {
-    return comparison();
+    auto left = comparison();
+    if (!left)
+        return std::nullopt;
+    while (match({Tok::EqEq, Tok::BangEq})) {
+        auto op = previous();
+        auto right = comparison();
+        if (!right)
+            return std::nullopt;
+        left = std::make_shared<Expr::Binary>(*left, op, *right);
+    }
+    return left;
 }
 
 std::optional<std::shared_ptr<Expr>> Parser::logical_and() {

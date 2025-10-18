@@ -181,8 +181,24 @@ class Parser {
      */
     std::optional<std::shared_ptr<Expr>> term();
 
+    /**
+     * @brief Parses a comparison expression.
+     *
+     * Includes `a < b`, `a > b`, `a <= b`, `a >= b`
+     *
+     * @return A shared pointer to the parsed expression, or nullopt if the
+     * expression could not be parsed.
+     */
     std::optional<std::shared_ptr<Expr>> comparison();
 
+    /**
+     * @brief Parses an equality expression.
+     *
+     * Includes `a == b`, `a != b`
+     *
+     * @return A shared pointer to the parsed expression, or nullopt if the
+     * expression could not be parsed.
+     */
     std::optional<std::shared_ptr<Expr>> equality();
 
     /**

@@ -121,6 +121,47 @@ TEST_CASE("Parser expressions", "[parser]") {
         );
     }
 
+    SECTION("Comparison 1") {
+        run_parser_expr_test(
+            "1 < 2",
+            {"(expr (binary < (lit 1) (lit 2)))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Comparison 2") {
+        run_parser_expr_test(
+            "1 + 2 >= 3 * 4",
+            {"(expr (binary >= (binary + (lit 1) (lit 2)) (binary * (lit 3) "
+             "(lit 4))))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Equality 1") {
+        run_parser_expr_test(
+            "a == b",
+            {"(expr (binary == (nameref a) (nameref b)))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Equality 2") {
+        run_parser_expr_test(
+            "a != b + c",
+            {"(expr (binary != (nameref a) (binary + (nameref b) (nameref "
+             "c))))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Equality 3") {
+        run_parser_expr_test(
+            "a < b == c >= d",
+            {"(expr (binary == (binary < (nameref a) (nameref b)) (binary >= "
+             "(nameref c) (nameref d))))",
+             "(stmt:eof)"}
+        );
+    }
+
     SECTION("Logical 1") {
         run_parser_expr_test(
             "true and false",
