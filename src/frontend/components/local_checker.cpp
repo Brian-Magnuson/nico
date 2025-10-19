@@ -342,6 +342,34 @@ std::any LocalChecker::visit(Expr::Binary* expr, bool as_lvalue) {
         }
         expr->type = l_type; // The result type is the same as the operand type.
         break;
+    case Tok::EqEq:
+    case Tok::BangEq:
+    case Tok::Gt:
+    case Tok::GtEq:
+    case Tok::Lt:
+    case Tok::LtEq:
+        // Both operands must be of the same type.
+        if (*l_type != *r_type) {
+            Logger::inst().log_error(
+                Err::NoOperatorOverload,
+                expr->op->location,
+                std::string("Type `") + r_type->to_string() +
+                    "` is not compatible with type `" + l_type->to_string() +
+                    "`."
+            );
+            return std::any();
+        }
+        // Types must inherit from `Type::INumeric`.
+        if (!PTR_INSTANCEOF(l_type, Type::INumeric)) {
+            Logger::inst().log_error(
+                Err::NoOperatorOverload,
+                expr->op->location,
+                "Operands must be of a numeric type."
+            );
+            return std::any();
+        }
+        expr->type = std::make_shared<Type::Bool>(); // The result type is Bool.
+        break;
     default:
         panic(
             "LocalChecker::visit(Expr::Binary*): Could not handle case for "
