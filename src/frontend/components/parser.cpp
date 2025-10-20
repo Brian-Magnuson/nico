@@ -511,7 +511,12 @@ std::optional<std::shared_ptr<Stmt>> Parser::yield_statement() {
     auto yield_token = previous();
     auto expr = expression();
     if (!expr)
-        return std::nullopt;
+        Logger::inst().log_note(
+            yield_token->location,
+            "Yield statement requires an expression. Use `()` if there is no "
+            "value to yield."
+        );
+    return std::nullopt;
 
     return std::make_shared<Stmt::Yield>(yield_token, *expr);
 }

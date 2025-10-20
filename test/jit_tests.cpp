@@ -474,22 +474,7 @@ TEST_CASE("JIT logical expressions", "[jit]") {
     }
 }
 
-TEST_CASE("JIT loop expressions", "[jit]") {
-    SECTION("Simple do-while loop") {
-        run_jit_test(
-            R"(
-            let var x = 0
-            do:
-                x = x + 1
-            while false
-            printout x
-            )",
-            "1",
-            std::nullopt,
-            false
-        );
-    }
-
+TEST_CASE("JIT while loop expressions", "[jit]") {
     SECTION("Simple while loop") {
         run_jit_test(
             R"(
@@ -498,9 +483,67 @@ TEST_CASE("JIT loop expressions", "[jit]") {
                 x = x + 1
             printout x
             )",
-            "0",
-            std::nullopt,
-            false
+            "0"
+        );
+    }
+
+    SECTION("While loop 1") {
+        run_jit_test(
+            R"(
+            let var x = 0
+            while x < 5:
+                x = x + 1
+            printout x
+            )",
+            "5"
+        );
+    }
+
+    SECTION("While loop 2") {
+        run_jit_test(
+            R"(
+            let var x = 10
+            while x > 0:
+                x = x - 2
+            printout x
+            )",
+            "0"
+        );
+    }
+
+    SECTION("While loop 3") {
+        run_jit_test(
+            R"(
+            let var x = 1
+            while x < 100:
+                x = x * 2
+            printout x
+            )",
+            "128"
+        );
+    }
+
+    SECTION("While loop 4") {
+        run_jit_test(
+            R"(
+            let var x = 5
+            while x >= 0:
+                x = x - 1
+            printout x
+            )",
+            "-1"
+        );
+    }
+
+    SECTION("While loop 5") {
+        run_jit_test(
+            R"(
+            let var x = 0
+            while x < 5:
+                printout x
+                x = x + 1
+            )",
+            "01234"
         );
     }
 
@@ -513,9 +556,86 @@ TEST_CASE("JIT loop expressions", "[jit]") {
                     break ()
             printout x
             )",
-            "0",
-            std::nullopt,
-            false
+            "0"
+        );
+    }
+
+    SECTION("While loop with break") {
+        run_jit_test(
+            R"(
+            let var x = 0
+            while x < 5:
+                if x == 3:
+                    break ()
+                x = x + 1
+            printout x
+            )",
+            "3"
+        );
+    }
+
+    SECTION("While loop short form") {
+        run_jit_test(
+            R"(
+            let var x = 0
+            while x < 5 do x = x + 1
+            printout x
+            )",
+            "5"
+        );
+    }
+}
+
+TEST_CASE("JIT loop and do-while loop expressions", "[jit]") {
+    SECTION("Simple do-while loop") {
+        run_jit_test(
+            R"(
+            let var x = 0
+            do:
+                x = x + 1
+            while false
+            printout x
+            )",
+            "1"
+        );
+    }
+
+    SECTION("Do-while loop 1") {
+        run_jit_test(
+            R"(
+            let var x = 0
+            do:
+                x = x + 2
+            while x < 10
+            printout x
+            )",
+            "10"
+        );
+    }
+
+    SECTION("Do-while loop 2") {
+        run_jit_test(
+            R"(
+            let var x = 0
+            do:
+                x = x + 1
+                printout x
+            while x < 3
+            )",
+            "123"
+        );
+    }
+
+    SECTION("Do-while loop 3") {
+        run_jit_test(
+            R"(
+            let var x = 0
+            do:
+                x = x - 1
+                printout x
+            while x > 0
+            )",
+            "-1"
         );
     }
 
@@ -526,9 +646,7 @@ TEST_CASE("JIT loop expressions", "[jit]") {
             do x = x + 1 while false
             printout x
             )",
-            "1",
-            std::nullopt,
-            false
+            "1"
         );
     }
 
@@ -539,9 +657,7 @@ TEST_CASE("JIT loop expressions", "[jit]") {
                 break 1
             printout x
             )",
-            "1",
-            std::nullopt,
-            false
+            "1"
         );
     }
 

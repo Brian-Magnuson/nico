@@ -578,7 +578,12 @@ std::any LocalChecker::visit(Expr::Tuple* expr, bool as_lvalue) {
     }
     if (has_error)
         return std::any();
-    expr->type = std::make_shared<Type::Tuple>(element_types);
+    if (element_types.empty()) {
+        expr->type = std::make_shared<Type::Unit>();
+    }
+    else {
+        expr->type = std::make_shared<Type::Tuple>(element_types);
+    }
     return std::any();
 }
 
@@ -801,7 +806,12 @@ std::any LocalChecker::visit(Annotation::Tuple* annotation) {
             return std::any();
         element_types.push_back(std::any_cast<std::shared_ptr<Type>>(elem_any));
     }
-    type = std::make_shared<Type::Tuple>(element_types);
+    if (element_types.empty()) {
+        type = std::make_shared<Type::Unit>();
+    }
+    else {
+        type = std::make_shared<Type::Tuple>(element_types);
+    }
     return type;
 }
 
