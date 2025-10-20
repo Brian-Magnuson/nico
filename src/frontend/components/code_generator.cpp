@@ -254,7 +254,7 @@ std::any CodeGenerator::visit(Expr::Binary* expr, bool as_lvalue) {
     auto left = std::any_cast<llvm::Value*>(expr->left->accept(this, false));
     auto right = std::any_cast<llvm::Value*>(expr->right->accept(this, false));
 
-    if (PTR_INSTANCEOF(expr->type, Type::Float)) {
+    if (PTR_INSTANCEOF(expr->left->type, Type::Float)) {
         switch (expr->op->tok_type) {
         case Tok::Plus:
             result = builder->CreateFAdd(left, right);
@@ -268,6 +268,24 @@ std::any CodeGenerator::visit(Expr::Binary* expr, bool as_lvalue) {
         case Tok::Slash:
             result = builder->CreateFDiv(left, right);
             break;
+        case Tok::Eq:
+            result = builder->CreateFCmpUEQ(left, right);
+            break;
+        case Tok::BangEq:
+            result = builder->CreateFCmpUNE(left, right);
+            break;
+        case Tok::Lt:
+            result = builder->CreateFCmpULT(left, right);
+            break;
+        case Tok::LtEq:
+            result = builder->CreateFCmpULE(left, right);
+            break;
+        case Tok::Gt:
+            result = builder->CreateFCmpUGT(left, right);
+            break;
+        case Tok::GtEq:
+            result = builder->CreateFCmpUGE(left, right);
+            break;
         default:
             panic(
                 "CodeGenerator::visit(Expr::Binary*): Unknown binary operator "
@@ -275,7 +293,8 @@ std::any CodeGenerator::visit(Expr::Binary* expr, bool as_lvalue) {
             );
         }
     }
-    else if (PTR_INSTANCEOF(expr->type, Type::Int)) {
+    else if (PTR_INSTANCEOF(expr->left->type, Type::Int) ||
+             PTR_INSTANCEOF(expr->left->type, Type::Bool)) {
         switch (expr->op->tok_type) {
         case Tok::Plus:
             result = builder->CreateAdd(left, right);
@@ -289,6 +308,24 @@ std::any CodeGenerator::visit(Expr::Binary* expr, bool as_lvalue) {
         case Tok::Slash:
             add_div_zero_check(right, &expr->op->location);
             result = builder->CreateSDiv(left, right);
+            break;
+        case Tok::Eq:
+            result = builder->CreateICmpEQ(left, right);
+            break;
+        case Tok::BangEq:
+            result = builder->CreateICmpNE(left, right);
+            break;
+        case Tok::Lt:
+            result = builder->CreateICmpSLT(left, right);
+            break;
+        case Tok::LtEq:
+            result = builder->CreateICmpSLE(left, right);
+            break;
+        case Tok::Gt:
+            result = builder->CreateICmpSGT(left, right);
+            break;
+        case Tok::GtEq:
+            result = builder->CreateICmpSGE(left, right);
             break;
         default:
             panic(

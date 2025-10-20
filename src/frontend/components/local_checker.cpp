@@ -1,5 +1,7 @@
 #include "nico/frontend/components/local_checker.h"
 
+#include <unordered_set>
+
 #include "nico/shared/error_code.h"
 #include "nico/shared/logger.h"
 #include "nico/shared/status.h"
@@ -315,22 +317,22 @@ std::any LocalChecker::visit(Expr::Binary* expr, bool as_lvalue) {
     if (has_error)
         return std::any();
 
+    // Both operands must be of the same type.
+    if (*l_type != *r_type) {
+        Logger::inst().log_error(
+            Err::NoOperatorOverload,
+            expr->op->location,
+            std::string("Type `") + r_type->to_string() +
+                "` is not compatible with type `" + l_type->to_string() + "`."
+        );
+        return std::any();
+    }
+
     switch (expr->op->tok_type) {
     case Tok::Plus:
     case Tok::Minus:
     case Tok::Star:
     case Tok::Slash:
-        // Both operands must be of the same type.
-        if (*l_type != *r_type) {
-            Logger::inst().log_error(
-                Err::NoOperatorOverload,
-                expr->op->location,
-                std::string("Type `") + r_type->to_string() +
-                    "` is not compatible with type `" + l_type->to_string() +
-                    "`."
-            );
-            return std::any();
-        }
         // Types must inherit from `Type::INumeric`.
         if (!PTR_INSTANCEOF(l_type, Type::INumeric)) {
             Logger::inst().log_error(
@@ -344,21 +346,22 @@ std::any LocalChecker::visit(Expr::Binary* expr, bool as_lvalue) {
         break;
     case Tok::EqEq:
     case Tok::BangEq:
+        // Types must inherit from `Type::INumeric` or be `Type::Bool`.
+        if (!PTR_INSTANCEOF(l_type, Type::INumeric) &&
+            !PTR_INSTANCEOF(l_type, Type::Bool)) {
+            Logger::inst().log_error(
+                Err::NoOperatorOverload,
+                expr->op->location,
+                "Operands must be of a numeric type or boolean."
+            );
+            return std::any();
+        }
+        expr->type = std::make_shared<Type::Bool>(); // The result type is Bool.
+        break;
     case Tok::Gt:
     case Tok::GtEq:
     case Tok::Lt:
     case Tok::LtEq:
-        // Both operands must be of the same type.
-        if (*l_type != *r_type) {
-            Logger::inst().log_error(
-                Err::NoOperatorOverload,
-                expr->op->location,
-                std::string("Type `") + r_type->to_string() +
-                    "` is not compatible with type `" + l_type->to_string() +
-                    "`."
-            );
-            return std::any();
-        }
         // Types must inherit from `Type::INumeric`.
         if (!PTR_INSTANCEOF(l_type, Type::INumeric)) {
             Logger::inst().log_error(
