@@ -347,7 +347,7 @@ std::any CodeGenerator::visit(Expr::Binary* expr, bool as_lvalue) {
 std::any CodeGenerator::visit(Expr::Unary* expr, bool as_lvalue) {
     llvm::Value* result = nullptr;
     auto right = std::any_cast<llvm::Value*>(expr->right->accept(this, false));
-    if (PTR_INSTANCEOF(expr->type, Type::Float)) {
+    if (PTR_INSTANCEOF(expr->right->type, Type::Float)) {
         switch (expr->op->tok_type) {
         case Tok::Minus:
             result = builder->CreateFNeg(right);
@@ -359,7 +359,7 @@ std::any CodeGenerator::visit(Expr::Unary* expr, bool as_lvalue) {
             );
         }
     }
-    else if (PTR_INSTANCEOF(expr->type, Type::Int)) {
+    else if (PTR_INSTANCEOF(expr->right->type, Type::Int)) {
         switch (expr->op->tok_type) {
         case Tok::Minus:
             result = builder->CreateNeg(right);
@@ -368,6 +368,19 @@ std::any CodeGenerator::visit(Expr::Unary* expr, bool as_lvalue) {
             panic(
                 "CodeGenerator::visit(Expr::Unary*): Unknown unary operator "
                 "for integer."
+            );
+        }
+    }
+    else if (PTR_INSTANCEOF(expr->right->type, Type::Bool)) {
+        switch (expr->op->tok_type) {
+        case Tok::KwNot:
+        case Tok::Bang:
+            result = builder->CreateNot(right);
+            break;
+        default:
+            panic(
+                "CodeGenerator::visit(Expr::Unary*): Unknown unary operator "
+                "for boolean."
             );
         }
     }

@@ -412,6 +412,7 @@ std::any LocalChecker::visit(Expr::Unary* expr, bool as_lvalue) {
         expr->type = r_type;
         return std::any();
     case Tok::KwNot:
+    case Tok::Bang:
         if (!PTR_INSTANCEOF(r_type, Type::Bool)) {
             Logger::inst().log_error(
                 Err::NoOperatorOverload,
