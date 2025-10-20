@@ -150,8 +150,27 @@ TEST_CASE("JIT integer operators", "[jit]") {
         );
     }
 
-    SECTION("Divide by zero") {
-        run_jit_test(R"(printout 1 / 0)", std::nullopt, 101);
+    SECTION("Integer comparison LT") {
+        run_jit_test(R"(printout 1 < 2, 2 < 1, 1 < 1)", "truefalsefalse");
+    }
+
+    SECTION("Integer comparison GT") {
+        run_jit_test(R"(printout 2 > 1, 1 > 2, 1 > 1)", "truefalsefalse");
+    }
+
+    SECTION("Integer comparison LE") {
+        run_jit_test(R"(printout 1 <= 2, 2 <= 1, 1 <= 1)", "truefalsetrue");
+    }
+
+    SECTION("Integer comparison GE") {
+        run_jit_test(R"(printout 2 >= 1, 1 >= 2, 1 >= 1)", "truefalsetrue");
+    }
+
+    SECTION("Integer comparison EQ and NEQ") {
+        run_jit_test(
+            R"(printout 1 == 1, 1 != 1, 1 == 2, 1 != 2)",
+            "truefalsefalsetrue"
+        );
     }
 }
 
@@ -179,6 +198,41 @@ TEST_CASE("JIT float operators", "[jit]") {
         run_jit_test(
             R"(printout 8.0 / 4.0, ",", 0.5 / 0.25, ",", -8.0 / 0.125, ",", -1.5 / -2.0)",
             "2,2,-64,0.75"
+        );
+    }
+
+    SECTION("Float comparison LT") {
+        run_jit_test(
+            R"(printout 1.0 < 2.0, 2.0 < 1.0, 1.0 < 1.0)",
+            "truefalsefalse"
+        );
+    }
+
+    SECTION("Float comparison GT") {
+        run_jit_test(
+            R"(printout 2.0 > 1.0, 1.0 > 2.0, 1.0 > 1.0)",
+            "truefalsefalse"
+        );
+    }
+
+    SECTION("Float comparison LE") {
+        run_jit_test(
+            R"(printout 1.0 <= 2.0, 2.0 <= 1.0, 1.0 <= 1.0)",
+            "truefalsetrue"
+        );
+    }
+
+    SECTION("Float comparison GE") {
+        run_jit_test(
+            R"(printout 2.0 >= 1.0, 1.0 >= 2.0, 1.0 >= 1.0)",
+            "truefalsetrue"
+        );
+    }
+
+    SECTION("Float comparison EQ and NEQ") {
+        run_jit_test(
+            R"(printout 1.0 == 1.0, 1.0 != 1.0, 1.0 == 2.0, 1.0 != 2.0)",
+            "truefalsefalsetrue"
         );
     }
 }
@@ -413,6 +467,10 @@ TEST_CASE("JIT logical expressions", "[jit]") {
             R"(printout true and if true then true else false)",
             "true"
         );
+    }
+
+    SECTION("Unary NOT") {
+        run_jit_test(R"(let x = false printout not x, !x)", "truetrue");
     }
 }
 

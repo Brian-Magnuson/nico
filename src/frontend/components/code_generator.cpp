@@ -268,7 +268,7 @@ std::any CodeGenerator::visit(Expr::Binary* expr, bool as_lvalue) {
         case Tok::Slash:
             result = builder->CreateFDiv(left, right);
             break;
-        case Tok::Eq:
+        case Tok::EqEq:
             result = builder->CreateFCmpUEQ(left, right);
             break;
         case Tok::BangEq:
@@ -309,7 +309,7 @@ std::any CodeGenerator::visit(Expr::Binary* expr, bool as_lvalue) {
             add_div_zero_check(right, &expr->op->location);
             result = builder->CreateSDiv(left, right);
             break;
-        case Tok::Eq:
+        case Tok::EqEq:
             result = builder->CreateICmpEQ(left, right);
             break;
         case Tok::BangEq:
