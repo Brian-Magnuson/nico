@@ -328,7 +328,7 @@ std::optional<std::shared_ptr<Expr>> Parser::postfix() {
 }
 
 std::optional<std::shared_ptr<Expr>> Parser::unary() {
-    if (match({Tok::Minus, Tok::KwNot})) {
+    if (match({Tok::Minus, Tok::KwNot, Tok::Bang})) {
         auto token = previous();
         auto right = unary();
         if (!right)

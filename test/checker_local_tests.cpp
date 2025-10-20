@@ -107,12 +107,20 @@ TEST_CASE("Local unary expressions", "[checker]") {
         run_checker_test("let a = not true");
     }
 
+    SECTION("Valid unary expression 3") {
+        run_checker_test("let a = !false");
+    }
+
     SECTION("Unary type mismatch 1") {
         run_checker_test("let a = -true", Err::NoOperatorOverload);
     }
 
     SECTION("Unary type mismatch 2") {
         run_checker_test("let a = not 1", Err::NoOperatorOverload);
+    }
+
+    SECTION("Unary type mismatch 3") {
+        run_checker_test("let a = !1.0", Err::NoOperatorOverload);
     }
 }
 
@@ -135,6 +143,52 @@ TEST_CASE("Local binary expressions", "[checker]") {
 
     SECTION("Binary type mismatch 3") {
         run_checker_test("let a = true + false", Err::NoOperatorOverload);
+    }
+}
+
+TEST_CASE("Local comparison expressions", "[checker]") {
+    SECTION("Valid comparison expressions 1") {
+        run_checker_test("let a = 1 < 2");
+    }
+
+    SECTION("Valid comparison expressions 2") {
+        run_checker_test("let a = 1.0 >= 2.0");
+    }
+
+    SECTION("Valid comparison expressions 3") {
+        run_checker_test("let a = 1 == 1");
+    }
+
+    SECTION("Valid comparison expressions 4") {
+        run_checker_test("let a = 2.0 != 1.0");
+    }
+
+    SECTION("Valid comparison expressions 5") {
+        run_checker_test("let a = true == false");
+    }
+
+    SECTION("Comparison type mismatch 1") {
+        run_checker_test("let a = 1 < true", Err::NoOperatorOverload);
+    }
+
+    SECTION("Comparison type mismatch 2") {
+        run_checker_test("let a = true >= 1", Err::NoOperatorOverload);
+    }
+
+    SECTION("Comparison type mismatch 3") {
+        run_checker_test("let a = true < false", Err::NoOperatorOverload);
+    }
+
+    SECTION("Comparison type mismatch 4") {
+        run_checker_test("let a = 1 == 1.0", Err::NoOperatorOverload);
+    }
+
+    SECTION("Comparison type mismatch 5") {
+        run_checker_test("let a = 1.0 != true", Err::NoOperatorOverload);
+    }
+
+    SECTION("Comparison type mismatch 6") {
+        run_checker_test("let a = \"\" == 1", Err::NoOperatorOverload);
     }
 }
 
