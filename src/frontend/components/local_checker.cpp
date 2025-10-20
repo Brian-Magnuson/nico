@@ -499,6 +499,23 @@ std::any LocalChecker::visit(Expr::NameRef* expr, bool as_lvalue) {
             expr->name.parts.back().token->location,
             "Name `" + expr->name.to_string() + "` was not declared."
         );
+        if (repl_mode) {
+            static std::unordered_set<std::string> possible_commands = {
+                "help",
+                "h",
+                "version",
+                "license",
+                "discard",
+                "reset",
+                "exit",
+                "quit",
+                "q"
+            };
+            auto it = possible_commands.find(expr->name.to_string());
+            if (it != possible_commands.end()) {
+                Logger::inst().log_note("Did you mean `:" + *it + "`?");
+            }
+        }
         return std::any();
     }
     if (!PTR_INSTANCEOF(*node, Node::FieldEntry)) {
