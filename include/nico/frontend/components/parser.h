@@ -89,6 +89,22 @@ class Parser {
      */
     void synchronize();
 
+    /**
+     * @brief Helper function to create a binary operator token from a compound
+     * assignment operator token.
+     *
+     * E.g., If you want to convert `a += b` into `a = a + b`, this function
+     * helps create the `+` token from the `+=` token.
+     *
+     * @param compound_op The compound assignment operator token.
+     * @return A shared pointer to the binary operator token.
+     *
+     * @warning If the provided token is not a compound assignment operator,
+     * the program will panic.
+     */
+    std::shared_ptr<Token>
+    binary_op_from_compound_op(const std::shared_ptr<Token>& compound_op);
+
     // MARK: Expressions
 
     /**

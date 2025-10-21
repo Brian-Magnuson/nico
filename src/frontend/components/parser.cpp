@@ -57,6 +57,38 @@ void Parser::synchronize() {
     }
 }
 
+std::shared_ptr<Token>
+Parser::binary_op_from_compound_op(const std::shared_ptr<Token>& compound_op) {
+    Tok binary_op_type;
+    switch (compound_op->tok_type) {
+    case Tok::PlusEq:
+        binary_op_type = Tok::Plus;
+        break;
+    case Tok::MinusEq:
+        binary_op_type = Tok::Minus;
+        break;
+    case Tok::StarEq:
+        binary_op_type = Tok::Star;
+        break;
+    case Tok::SlashEq:
+        binary_op_type = Tok::Slash;
+        break;
+    case Tok::PercentEq:
+        binary_op_type = Tok::Percent;
+        break;
+    default:
+        panic(
+            "Parser::binary_op_from_compound_op: Unknown compound assignment "
+            "operator."
+        );
+    }
+    // Create a new token for the binary operator, adjusting length to exclude
+    // '='
+    auto binary_op_loc = compound_op->location;
+    binary_op_loc.length -= 1;
+    return std::make_shared<Token>(binary_op_type, binary_op_loc);
+}
+
 // MARK: Expressions
 
 std::optional<std::shared_ptr<Expr>> Parser::block(Expr::Block::Kind kind) {
@@ -444,31 +476,8 @@ std::optional<std::shared_ptr<Expr>> Parser::assignment() {
         auto right = assignment();
         if (!right)
             return std::nullopt;
-        Tok binary_op_type;
-        switch (op->tok_type) {
-        case Tok::PlusEq:
-            binary_op_type = Tok::Plus;
-            break;
-        case Tok::MinusEq:
-            binary_op_type = Tok::Minus;
-            break;
-        case Tok::StarEq:
-            binary_op_type = Tok::Star;
-            break;
-        case Tok::SlashEq:
-            binary_op_type = Tok::Slash;
-            break;
-        case Tok::PercentEq:
-            binary_op_type = Tok::Percent;
-            break;
-        default:
-            panic("Parser::assignment: Unknown compound assignment operator.");
-        }
-        auto binary_op_loc = op->location;
-        // Adjust length to exclude the `=` character
-        binary_op_loc.length -= 1;
-        auto binary_op_token =
-            std::make_shared<Token>(binary_op_type, binary_op_loc);
+
+        auto binary_op_token = binary_op_from_compound_op(op);
         auto binary_expr =
             std::make_shared<Expr::Binary>(*left, binary_op_token, *right);
         return std::make_shared<Expr::Assign>(
