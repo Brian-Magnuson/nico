@@ -150,6 +150,13 @@ TEST_CASE("JIT integer operators", "[jit]") {
         );
     }
 
+    SECTION("Integer remainder") {
+        run_jit_test(
+            R"(printout 17 % 5, ",", 17 % -5, ",", -17 % 5, ",", -17 % -5)",
+            "2,2,-2,-2"
+        );
+    }
+
     SECTION("Integer comparison LT") {
         run_jit_test(R"(printout 1 < 2, 2 < 1, 1 < 1)", "truefalsefalse");
     }
@@ -584,6 +591,26 @@ TEST_CASE("JIT while loop expressions", "[jit]") {
             "5"
         );
     }
+
+    SECTION("FizzBuzz") {
+        run_jit_test(
+            R"(
+            let var i = 1
+            while i <= 15:
+                if i % 3 == 0 and i % 5 == 0:
+                    printout "FizzBuzz\n"
+                else if i % 3 == 0:
+                    printout "Fizz\n"
+                else if i % 5 == 0:
+                    printout "Buzz\n"
+                else:
+                    printout i, "\n"
+                i = i + 1
+            )",
+            "1\n2\nFizz\n4\nBuzz\nFizz\n7\n8\nFizz\nBuzz\n11\nFizz\n13\n14\n"
+            "FizzBuzz\n"
+        );
+    }
 }
 
 TEST_CASE("JIT do-while loop expressions", "[jit]") {
@@ -694,9 +721,7 @@ TEST_CASE("JIT non-conditional loop expressions", "[jit]") {
                 printout 5
             printout 6
             )",
-            "1246",
-            std::nullopt,
-            false
+            "1246"
         );
     }
 

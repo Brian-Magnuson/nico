@@ -333,6 +333,7 @@ std::any LocalChecker::visit(Expr::Binary* expr, bool as_lvalue) {
     case Tok::Minus:
     case Tok::Star:
     case Tok::Slash:
+    case Tok::Percent:
         // Types must inherit from `Type::INumeric`.
         if (!PTR_INSTANCEOF(l_type, Type::INumeric)) {
             Logger::inst().log_error(

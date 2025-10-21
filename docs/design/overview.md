@@ -526,6 +526,18 @@ a % b
 ```
 
 The forward-slash operator, `/`, will perform integer division if both operands are integers.
+We define integer division as:
+$$ a / b = trunc(a \div b) $$
+
+Where `a` is the dividend, `b` is the divisor, and $\div$ represents true division.
+
+The percent operator, `%`, is the remainder operator. 
+It is not to be confused with modulo, which behaves differently for negative numbers.
+Remainder is defined as:
+$$ r = a - (a / b) * b $$
+
+Where `a` is the dividend, `b` is the divisor, and `/` uses integer division as defined above.
+
 
 ### Comparison expressions
 
