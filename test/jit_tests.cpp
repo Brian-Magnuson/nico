@@ -586,7 +586,7 @@ TEST_CASE("JIT while loop expressions", "[jit]") {
     }
 }
 
-TEST_CASE("JIT loop and do-while loop expressions", "[jit]") {
+TEST_CASE("JIT do-while loop expressions", "[jit]") {
     SECTION("Simple do-while loop") {
         run_jit_test(
             R"(
@@ -649,8 +649,10 @@ TEST_CASE("JIT loop and do-while loop expressions", "[jit]") {
             "1"
         );
     }
+}
 
-    SECTION("Non-conditional loop with break") {
+TEST_CASE("JIT non-conditional loop expressions", "[jit]") {
+    SECTION("Non-conditional loop 1") {
         run_jit_test(
             R"(
             let x = loop:
@@ -658,6 +660,23 @@ TEST_CASE("JIT loop and do-while loop expressions", "[jit]") {
             printout x
             )",
             "1"
+        );
+    }
+
+    SECTION("Non-conditional loop 2") {
+        run_jit_test(
+            R"(
+            let var x = 1
+            let var i = 0
+            let y =
+            loop:
+                if i > 3:
+                    break x
+                x = x * 2
+                i = i + 1
+            printout x, ",", y
+            )",
+            "16,16"
         );
     }
 
@@ -678,6 +697,21 @@ TEST_CASE("JIT loop and do-while loop expressions", "[jit]") {
             "1246",
             std::nullopt,
             false
+        );
+    }
+
+    SECTION("Non-conditional loop break propagation") {
+        run_jit_test(
+            R"(
+            let x = loop:
+                let var i = 0
+                break loop:
+                    if i > 3:
+                        break i
+                    i = i + 1
+            printout x
+            )",
+            "4"
         );
     }
 }
