@@ -200,6 +200,23 @@ TEST_CASE("Parser expressions", "[parser]") {
              "(stmt:eof)"}
         );
     }
+
+    SECTION("Compound assignment 1") {
+        run_parser_expr_test(
+            "a += b",
+            {"(expr (assign (nameref a) (binary + (nameref a) (nameref b))))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Compound assignment 2") {
+        run_parser_expr_test(
+            "a *= b + c",
+            {"(expr (assign (nameref a) (binary * (nameref a) (binary + "
+             "(nameref b) (nameref c)))))",
+             "(stmt:eof)"}
+        );
+    }
 }
 
 TEST_CASE("Parser groupings and tuples", "[parser]") {

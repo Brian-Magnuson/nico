@@ -433,6 +433,50 @@ std::optional<std::shared_ptr<Expr>> Parser::assignment() {
             return std::nullopt;
         return std::make_shared<Expr::Assign>(*left, op, *right);
     }
+    else if (match(
+                 {Tok::PlusEq,
+                  Tok::MinusEq,
+                  Tok::StarEq,
+                  Tok::SlashEq,
+                  Tok::PercentEq}
+             )) {
+        auto op = previous();
+        auto right = assignment();
+        if (!right)
+            return std::nullopt;
+        Tok binary_op_type;
+        switch (op->tok_type) {
+        case Tok::PlusEq:
+            binary_op_type = Tok::Plus;
+            break;
+        case Tok::MinusEq:
+            binary_op_type = Tok::Minus;
+            break;
+        case Tok::StarEq:
+            binary_op_type = Tok::Star;
+            break;
+        case Tok::SlashEq:
+            binary_op_type = Tok::Slash;
+            break;
+        case Tok::PercentEq:
+            binary_op_type = Tok::Percent;
+            break;
+        default:
+            panic("Parser::assignment: Unknown compound assignment operator.");
+        }
+        auto binary_op_loc = op->location;
+        // Adjust length to exclude the `=` character
+        binary_op_loc.length -= 1;
+        auto binary_op_token =
+            std::make_shared<Token>(binary_op_type, binary_op_loc);
+        auto binary_expr =
+            std::make_shared<Expr::Binary>(*left, binary_op_token, *right);
+        return std::make_shared<Expr::Assign>(
+            *left,
+            std::make_shared<Token>(Tok::Eq, op->location),
+            binary_expr
+        );
+    }
     return left;
 }
 
