@@ -276,6 +276,19 @@ TEST_CASE("JIT assign expressions", "[jit]") {
             "3,3,3"
         );
     }
+
+    SECTION("Compound assignment") {
+        run_jit_test(
+            R"(let var x = 5 
+            x += 10 printout x 
+            x -= 3 printout ",", x 
+            x *= 2 printout ",", x 
+            x /= 4 printout ",", x
+            x %= 3 printout ",", x
+            )",
+            "15,12,24,6,0"
+        );
+    }
 }
 
 TEST_CASE("JIT block expressions", "[jit]") {
@@ -605,7 +618,7 @@ TEST_CASE("JIT while loop expressions", "[jit]") {
                     printout "Buzz\n"
                 else:
                     printout i, "\n"
-                i = i + 1
+                i += 1
             )",
             "1\n2\nFizz\n4\nBuzz\nFizz\n7\n8\nFizz\nBuzz\n11\nFizz\n13\n14\n"
             "FizzBuzz\n"
