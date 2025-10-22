@@ -9,31 +9,12 @@
 namespace nico {
 
 /**
- * @brief A basic node in the symbol tree.
- *
- * This class adds no additional members to Node.
- * Its purpose is to be the sole subclass of Node, thereby preventing Node from
- * being a diamond inheritance base class, which would otherwise result in
- * ambiguity when using `shared_from_this()`.
- */
-class Node::IBasicNode : public Node {
-protected:
-    IBasicNode(
-        std::weak_ptr<Node::IScope> parent_scope, const std::string& name
-    )
-        : Node(parent_scope, name) {}
-
-public:
-    virtual ~IBasicNode() = default;
-};
-
-/**
  * @brief A scope interface for nodes in the symbol tree.
  *
  * A scope may contain other nodes as children, allowing for a hierarchical
  * structure.
  */
-class Node::IScope : public virtual Node::IBasicNode {
+class Node::IScope : public virtual Node {
 public:
     // A dictionary of child nodes, indexed by their name parts.
     Dictionary<std::string, std::shared_ptr<Node>> children;
@@ -45,7 +26,7 @@ public:
 
 protected:
     IScope(std::weak_ptr<Node::IScope> parent_scope, const std::string& name)
-        : Node::IBasicNode(parent_scope, name) {}
+        : Node(parent_scope, name) {}
 };
 
 /**
@@ -62,7 +43,7 @@ public:
 
 protected:
     IGlobalScope()
-        : Node::IBasicNode(std::weak_ptr<Node::IScope>(), ""),
+        : Node(std::weak_ptr<Node::IScope>(), ""),
           Node::IScope(std::weak_ptr<Node::IScope>(), "")
     // Note: These values won't actually be used since only derived classes will
     // call this constructor.
@@ -76,7 +57,7 @@ protected:
  * This is because the type needs to be constructed from a weak pointer to this
  * node, which cannot be safely created in the constructor.
  */
-class Node::ITypeNode : public virtual Node::IBasicNode {
+class Node::ITypeNode : public virtual Node {
 public:
     std::shared_ptr<Type> type;
 
@@ -84,7 +65,7 @@ public:
 
 protected:
     ITypeNode()
-        : Node::IBasicNode(std::weak_ptr<Node::IScope>(), "") {}
+        : Node(std::weak_ptr<Node::IScope>(), "") {}
 };
 
 /**
@@ -97,7 +78,7 @@ protected:
  * This includes all node kinds except Node::RootScope, Node::PrimitiveType, and
  * Node::LocalScope.
  */
-class Node::ILocatable : public virtual Node::IBasicNode {
+class Node::ILocatable : public virtual Node {
 public:
     // The original token used to create this node.
     std::shared_ptr<Token> location_token;
@@ -106,8 +87,7 @@ public:
 
 protected:
     ILocatable(std::shared_ptr<Token> token)
-        : Node::IBasicNode(std::weak_ptr<Node::IScope>(), ""),
-          location_token(token) {}
+        : Node(std::weak_ptr<Node::IScope>(), ""), location_token(token) {}
 };
 
 /**
@@ -122,7 +102,7 @@ public:
     virtual ~RootScope() = default;
 
     RootScope()
-        : Node::IBasicNode(std::weak_ptr<Node::IScope>(), "::"),
+        : Node(std::weak_ptr<Node::IScope>(), "::"),
           Node::IScope(std::weak_ptr<Node::IScope>(), "::"),
           Node::IGlobalScope() {}
 };
@@ -148,7 +128,7 @@ public:
     Namespace(
         std::weak_ptr<Node::IScope> parent_scope, std::shared_ptr<Token> token
     )
-        : Node::IBasicNode(parent_scope, std::string(token->lexeme)),
+        : Node(parent_scope, std::string(token->lexeme)),
           Node::IScope(parent_scope, std::string(token->lexeme)),
           Node::IGlobalScope(),
           Node::ILocatable(token) {}
@@ -176,7 +156,7 @@ public:
         const std::string& name,
         std::shared_ptr<Type> type
     )
-        : Node::IBasicNode(parent_scope, name), Node::ITypeNode() {
+        : Node(parent_scope, name), Node::ITypeNode() {
         if (type == nullptr) {
             panic("Node::PrimitiveType: Type cannot be null.");
         }
@@ -218,7 +198,7 @@ public:
         std::shared_ptr<Token> token,
         bool is_class = false
     )
-        : Node::IBasicNode(parent_scope, std::string(token->lexeme)),
+        : Node(parent_scope, std::string(token->lexeme)),
           Node::IScope(parent_scope, std::string(token->lexeme)),
           Node::IGlobalScope(),
           Node::ITypeNode(),
@@ -255,7 +235,7 @@ public:
         std::weak_ptr<Node::IScope> parent_scope,
         std::shared_ptr<Expr::Block> block
     )
-        : Node::IBasicNode(parent_scope, std::to_string(next_scope_id++)),
+        : Node(parent_scope, std::to_string(next_scope_id++)),
           Node::IScope(parent_scope, std::to_string(next_scope_id++)),
           block(block) {}
 };
@@ -269,8 +249,7 @@ public:
  * Field objects carry a type object, and must therefore have their types
  * resolved before being constructed.
  */
-class Node::FieldEntry : public virtual Node::IBasicNode,
-                         public virtual Node::ILocatable {
+class Node::FieldEntry : public virtual Node::ILocatable {
 public:
     // Whether this field entry is declared in a global scope or not.
     const bool is_global;
@@ -282,7 +261,7 @@ public:
     virtual ~FieldEntry() = default;
 
     FieldEntry(std::weak_ptr<Node::IScope> parent_scope, const Field& field)
-        : Node::IBasicNode(parent_scope, std::string(field.token->lexeme)),
+        : Node(parent_scope, std::string(field.token->lexeme)),
           Node::ILocatable(field.token),
           is_global(PTR_INSTANCEOF(parent_scope.lock(), Node::IGlobalScope)),
           field(field) {}

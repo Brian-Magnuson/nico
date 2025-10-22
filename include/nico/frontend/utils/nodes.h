@@ -28,16 +28,12 @@ namespace nico {
  * Most subclasses of Node inherit from Node::IScope, meaning they have other
  * nodes as children.
  *
- * Do not extend this class directly; use Node::IBasicNode instead.
- *
  * Nodes may require additional initialization after construction to ensure
  * parent references are set up correctly. Please use `initialize_node()`
  * immediately after constructing nodes.
  */
 class Node : public std::enable_shared_from_this<Node> {
 public:
-    class IBasicNode;
-
     class IScope;
     class IGlobalScope;
     class ITypeNode;
