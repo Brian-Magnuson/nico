@@ -110,6 +110,20 @@ TEST_CASE("Parser let statements", "[parser]") {
             {"(stmt:let a i32)", "(stmt:let b (lit 2))", "(stmt:eof)"}
         );
     }
+
+    SECTION("Let statements 7") {
+        run_parser_stmt_test(
+            "let var a: *i32 = 10",
+            {"(stmt:let var a *i32 (lit 10))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Let statements 8") {
+        run_parser_stmt_test(
+            "let var ptr: var*f64",
+            {"(stmt:let var ptr var*f64)", "(stmt:eof)"}
+        );
+    }
 }
 
 TEST_CASE("Parser tuple annotations", "[parser]") {
@@ -212,11 +226,20 @@ TEST_CASE("Parser let stmt errors", "[parser]") {
         run_parser_stmt_error_test("let var", Err::NotAnIdentifier);
     }
 
+    SECTION("Let without type or value") {
+        run_parser_stmt_error_test("let a", Err::LetWithoutTypeOrValue);
+    }
+}
+
+TEST_CASE("Parser annotation errors", "[parser]") {
     SECTION("Let improper type") {
         run_parser_stmt_error_test("let a: 1 = 1", Err::NotAType);
     }
 
-    SECTION("Let without type or value") {
-        run_parser_stmt_error_test("let a", Err::LetWithoutTypeOrValue);
+    SECTION("Unexpected var in annotation") {
+        run_parser_stmt_error_test(
+            "let a: var i32 = 1",
+            Err::UnexpectedVarInAnnotation
+        );
     }
 }

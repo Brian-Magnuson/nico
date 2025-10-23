@@ -360,7 +360,7 @@ std::optional<std::shared_ptr<Expr>> Parser::postfix() {
 }
 
 std::optional<std::shared_ptr<Expr>> Parser::unary() {
-    if (match({Tok::Minus, Tok::KwNot, Tok::Bang})) {
+    if (match({Tok::Minus, Tok::KwNot, Tok::Bang, Tok::Amp})) {
         auto token = previous();
         auto right = unary();
         if (!right)
@@ -609,6 +609,34 @@ std::optional<std::shared_ptr<Stmt>> Parser::statement() {
 // MARK: Annotations
 
 std::optional<std::shared_ptr<Annotation>> Parser::annotation() {
+    bool has_var = false;
+    if (match({Tok::KwVar}))
+        has_var = true;
+
+    if (match({Tok::Star})) {
+        // Pointer annotation
+        auto inner_anno = annotation();
+        if (!inner_anno)
+            return std::nullopt;
+        return std::make_shared<Annotation::Pointer>(*inner_anno, has_var);
+    }
+    if (match({Tok::Amp})) {
+        // Reference annotation
+        auto inner_anno = annotation();
+        if (!inner_anno)
+            return std::nullopt;
+        return std::make_shared<Annotation::Reference>(*inner_anno, has_var);
+    }
+
+    if (has_var) {
+        Logger::inst().log_error(
+            Err::UnexpectedVarInAnnotation,
+            previous()->location,
+            "`var` is not allowed here. Use only with pointers or references."
+        );
+        return std::nullopt;
+    }
+
     if (match({Tok::Identifier})) {
         auto token = previous();
         return std::make_shared<Annotation::NameRef>(Name(token));

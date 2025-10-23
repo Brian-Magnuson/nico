@@ -75,6 +75,8 @@ enum class Err {
     WhileLoopWithoutDoOrBlock,
     // A do-while loop was found without a `while` keyword.
     DoWhileLoopWithoutWhile,
+    // A variable annotation contained an unexpected `var` keyword.
+    UnexpectedVarInAnnotation,
 
     // Parser warning
     ParserWarning = 3500,
