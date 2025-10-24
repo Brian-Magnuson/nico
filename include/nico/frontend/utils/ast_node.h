@@ -283,6 +283,35 @@ public:
 };
 
 /**
+ * @brief A cast expression.
+ *
+ * Cast expressions are used to cast an expression to a different type using
+ * the `as` keyword.
+ */
+class Expr::Cast : public Expr {
+public:
+    // The expression being cast.
+    std::shared_ptr<Expr> expression;
+    // The 'as' keyword token.
+    std::shared_ptr<Token> as_token;
+    // The target type annotation.
+    std::shared_ptr<Annotation> target_type;
+
+    Cast(
+        std::shared_ptr<Expr> expression,
+        std::shared_ptr<Token> as_token,
+        std::shared_ptr<Annotation> target_type
+    )
+        : expression(expression), as_token(as_token), target_type(target_type) {
+        location = &as_token->location;
+    }
+
+    std::any accept(Visitor* visitor, bool as_lvalue) override {
+        return visitor->visit(this, as_lvalue);
+    }
+};
+
+/**
  * @brief An access expression.
  *
  * Access expressions are used to access members of objects or elements of

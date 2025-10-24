@@ -407,6 +407,12 @@ std::any CodeGenerator::visit(Expr::Deref* expr, bool as_lvalue) {
     return std::any();
 }
 
+std::any CodeGenerator::visit(Expr::Cast* expr, bool as_lvalue) {
+    // TODO: Implement cast expressions.
+    panic("CodeGenerator::visit(Expr::Cast*): Not implemented yet.");
+    return std::any();
+}
+
 std::any CodeGenerator::visit(Expr::Access* expr, bool as_lvalue) {
     llvm::Value* result = nullptr;
 

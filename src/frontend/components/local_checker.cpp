@@ -440,6 +440,12 @@ std::any LocalChecker::visit(Expr::Deref* expr, bool as_lvalue) {
     return std::any();
 }
 
+std::any LocalChecker::visit(Expr::Cast* expr, bool as_lvalue) {
+    // TODO: Implement cast expressions.
+    panic("LocalChecker::visit(Expr::Cast*): Not implemented yet.");
+    return std::any();
+}
+
 std::any LocalChecker::visit(Expr::Access* expr, bool as_lvalue) {
     auto l_type = expr_check(expr->left, true);
     auto l_lvalue = std::dynamic_pointer_cast<Expr::IPLValue>(expr->left);

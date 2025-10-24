@@ -89,6 +89,14 @@ std::any AstPrinter::visit(Expr::Deref* expr, bool as_lvalue) {
     );
 }
 
+std::any AstPrinter::visit(Expr::Cast* expr, bool as_lvalue) {
+    auto inner =
+        std::any_cast<std::string>(expr->expression->accept(this, false));
+    return std::string(
+        "(cast " + inner + " as " + expr->target_type->to_string() + ")"
+    );
+}
+
 std::any AstPrinter::visit(Expr::Access* expr, bool as_lvalue) {
     auto left = std::any_cast<std::string>(expr->left->accept(this, false));
     return std::string(

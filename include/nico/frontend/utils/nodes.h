@@ -259,6 +259,7 @@ public:
     class Unary;
     class Deref;
     class Access;
+    class Cast;
     class NameRef;
     class Literal;
 
@@ -281,6 +282,7 @@ public:
         virtual std::any visit(Binary* expr, bool as_lvalue) = 0;
         virtual std::any visit(Unary* expr, bool as_lvalue) = 0;
         virtual std::any visit(Deref* expr, bool as_lvalue) = 0;
+        virtual std::any visit(Cast* expr, bool as_lvalue) = 0;
         virtual std::any visit(Access* expr, bool as_lvalue) = 0;
         virtual std::any visit(NameRef* expr, bool as_lvalue) = 0;
         virtual std::any visit(Literal* expr, bool as_lvalue) = 0;

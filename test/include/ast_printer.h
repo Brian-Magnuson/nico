@@ -30,6 +30,7 @@ class AstPrinter : public Stmt::Visitor, public Expr::Visitor {
     std::any visit(Expr::Binary* expr, bool as_lvalue) override;
     std::any visit(Expr::Unary* expr, bool as_lvalue) override;
     std::any visit(Expr::Deref* expr, bool as_lvalue) override;
+    std::any visit(Expr::Cast* expr, bool as_lvalue) override;
     std::any visit(Expr::Access* expr, bool as_lvalue) override;
     std::any visit(Expr::NameRef* expr, bool as_lvalue) override;
     std::any visit(Expr::Literal* expr, bool as_lvalue) override;
