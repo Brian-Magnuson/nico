@@ -73,26 +73,22 @@ A tuple may also have no elements. It is written as an empty pair of parentheses
 
 A tuple with no elements is called the unit type. It is used to represent the absence of a value.
 
-### Object type
+### Struct literal type
 
-An object type is a custom data type representing a mapping of identifiers to values. They are similar to complex types, but with several differences:
-- They are not defined using a class or struct; they are usually used when needed.
-- They are not identified by a name (except when using a type alias).
-- They use move semantics, regardless of the internal types, and are not directly copyable.
-- They can only contain properties; no shared variables or functions are allowed.
+A struct literal type is a custom data type representing a collection of named properties. They are the literal counterpart to named struct types, which are defined using struct declarations.
 
-Additionally, you cannot add more properties to an object after it is created.
+Struct literal types offer a flexible way to define custom data types without the overhead of defining a full class.
 
-Object types offer a flexible way to define custom data types without the overhead of defining a full class or struct.
+A struct literal type is written as `{ prop1: T1, prop2: T2, ... }`, where `prop1`, `prop2`, etc., are the names of the properties and `T1`, `T2`, etc., are the types of the properties. For example, a struct literal type with two properties, `x` and `y`, would be written as `{ x: i32, y: f64 }`.
 
-An object type is written as `{ prop1: T1, prop2: T2, ... }`, where `prop1`, `prop2`, etc., are the names of the properties and `T1`, `T2`, etc., are the types of the properties. For example, an object type with two properties, `x` and `y`, would be written as `{ x: i32, y: f64 }`.
+Only properties are allowed in struct literal types; no shared variables or functions are permitted.
 
-Object type properties are immutable unless explicitly marked as mutable. To declare a mutable property, use the `var` keyword:
+Struct literal type properties are immutable unless explicitly marked as mutable. To declare a mutable property, use the `var` keyword:
 ```
 { var x: i32, y: f64 }
 ```
 
-Object type properties may also have default values. This is done by using the `=` operator:
+Struct literal type properties may also have default values. This is done by using the `=` operator:
 ```
 { x: i32 = 42, y: f64 = 3.14 }
 ```
@@ -100,14 +96,18 @@ Object type properties may also have default values. This is done by using the `
 Type annotations for each property are still required, even if a default value is provided. The default value must match the type.
 The default value must also be a reference to a value with a static lifetime.
 
-Objects may be written as literals using curly braces:
+Struct literal values may be written using curly braces:
 ```
 { x: 42, y: 3.14 }
 ```
 
 Values are assigned to their corresponding properties. By the end of the object literal, all properties must be assigned a value.
 
-Objects always use braces; there is no indented form, and they are not considered blocks. Blocks always have some keyword signifying the opening of a block, such as `if`, `while`, or `block`.
+You cannot add more properties to a struct literal after it is created.
+
+Struct literal values always use braces; there is no indented form, and they are not considered blocks. Blocks always have some keyword signifying the opening of a block, such as `if`, `while`, or `block`.
+
+Struct literal values always use copy semantics. Use in combination with wrapper classes if different behavior is desired.
 
 ## Pointer and reference types
 
@@ -370,18 +370,18 @@ func f3() -> i32:
     pass // Bad
 ```
 
-### Complex types
+### Structs
 
-> [!WARNING]
-> This section is subject to change.
+Named structs are user-defined types that consist of a collection of named properties.
 
-Complex types are user-defined types that are composed of other types. There are two kinds of complex types:
-- **Structs**: Basic complex types that use copy semantics (but can be moved if needed). All properties must also be struct-types or primitive types.
-- **Classes**: Complex types that are not copyable (but can be referenced or moved).
+Structs are similar to classes, but they do not support all object-oriented programming features. Specifically:
+- They may only inherit from interfaces, not other structs or classes.
+- You cannot downcast to a struct pointer type from a base interface pointer type.
+- They do not support abstract methods.
 
-Struct-types are meant for complex types where copying is relatively quick and cheap.
+The lack of OOP features makes structs simpler and more lightweight than classes. Classes may have more overhead due to features like virtual method tables and inheritance.
 
-The syntax for declaring structs and classes is similar:
+They use the following syntax:
 ```
 struct MyStruct: // Indented form
     let x: i32 = 0
@@ -399,74 +399,29 @@ struct MyStruct { // Braced form
     method my_method(self):
         statement1
 }
-
-class MyClass: // Class
-    let x: i32 = 0
-    prop y: i32
-    func my_func():
-        statement1
-    method my_method(self):
-        statement1
 ```
 
-Complex type definitions may only consist of declarations. Expressions and non-declaring statements are not allowed.
+Despite using a similar syntax to blocks, struct definitions are not considered blocks. They are a separate kind of declaration.
 
-> [!WARNING]
-> This part is subject to change.
-
-Currently, inner complex types are not allowed. This may change in the future.
-
-In complex types, member variables declared with `let` and member functions declared with `func` are said to be *shared*. This is similar to static members in C++ and Java. Outside the complex type, they are accessed using the class/struct name:
-```
-struct MyStruct:
-    let x: i32 = 0
-    func my_func():
-        statement1
-
-func global_func():
-    let x = MyStruct.x // Accessing shared member
-    MyStruct.my_func() // Calling shared member
-```
-
-We reuse the `let` and `func` keywords, because they are stored in a similar manner as other scoped variables and functions.
-
-Shared variables, like local variables, must always be initialized to some value when declared. If no value is provided, a type annotation is required. The variable will be initialized to the default value for the specified type.
-
-Complex types may have properties (also known as instance member variables), which are declared with `prop`. Unlike shared variables, they are stored for each instance of the complex type. Properties are accessed using the instance name:
-```
-struct MyStruct:
-    prop x: i32
-
-func global_func():
-    let s = MyStruct()
-    let x = s.x // Accessing property
-```
+Properties, sometimes called instance member variables, are declared with the `prop` keyword. They are similar to variables, but they are stored for each instance of the struct.
 
 Properties may have default values. This is done by using the `=` operator:
 ```
 struct MyStruct:
     prop x: i32 = 0
-    prop y: i32 = 3.14
+    prop y: f64 = 3.14
 ```
 
-Type annotations for each property are still required, even if a default value is provided. The default value must match the type. If the type is a reference, any default value must be a reference to a value with a static lifetime.
-
-Complex types may also have methods (also known as instance member functions), which are declared with `method`. Methods are similar to functions, but they are called on an instance of the complex type. They also have access to the instance's properties and other methods through the instance parameter (named `self` in this example):
+Methods, sometimes called instance member functions, are declared with the `method` keyword. They are similar to functions, but they are called on an instance of the struct and have access to the instance's properties and other methods through the instance parameter (named `self` in this example).
 ```
 struct MyStruct:
     prop x: i32
-    method my_method(self):
-        let y = self.x // Accessing property
-        self.my_other_method() // Calling method
-    method my_other_method(self):
-        pass
 
-func global_func():
-    let s = new MyStruct { x = 0 }
-    s.my_method() // Calling method
+    method my_method(self):
+        let y = self.x + 1
 ```
 
-Method definitions require at least one parameter at the beginning of the parameter list, which will receive the instance of the complex type. Unlike other parameters, this parameter does not require a type annotation. If one is not provided, it is assumed to be `&T`, where `T` is the type of the complex type.
+Method definitions require at least one parameter at the beginning of the parameter list, which will receive the instance of the complex type. Unlike other parameters, this parameter does not require a type annotation. If one is not provided, it is assumed to be `&T`, where `T` is the name of the struct type.
 
 Arguments to the instance parameter cannot be passed in parentheses; the dot notation must be used instead:
 ```
@@ -487,31 +442,79 @@ method my_method_5(self: var&MyStruct) // Immutable reference, mutable object
 method my_method_6(var self: var&MyStruct) // Mutable reference, mutable object
 ```
 
-The instance parameter type may be changed to its non-pointer form. In such cases, the full object is passed to the method. Whether copy or move semantics are used depends on the kind of complex type. The dot notation is still used to call the method:
+The instance parameter type may be changed to its non-pointer form. In such cases, the full object is passed to the method. The dot notation is still used to call the method:
 ```
 method my_method(self: MyStruct) // Immutable object
 
 s.my_method() // OK
 ```
 
-To construct an instance of a complex type, use the `new` keyword followed by the type name and an object literal:
+In structs, member variables declared with `let` and member functions declared with `func` are said to be *shared*. This is similar to static members in C++ and Java.
+Because they don't have access to `self`, they cannot access instance properties or methods.
+Outside the complex type, they are accessed using the struct name:
 ```
-let s = new MyStruct { x: 0 }
+struct MyStruct:
+    let x: i32 = 0
+    func my_func():
+        statement1
+
+func global_func():
+    let x = MyStruct.x // Accessing shared member
+    MyStruct.my_func() // Calling shared member
 ```
 
-The braced part is not a true object literal, but the mapping syntax is the same.
+We reuse the `let` and `func` keywords, because they are stored in a similar manner as other scoped variables and functions.
 
-By the end of the object literal, all properties must be assigned a value.
+Shared variables, like local variables, must always be initialized to some value when declared. If no value is provided, a type annotation is required. The variable will be initialized to the default value for the specified type.
 
-There is no special way to define a constructor, but you can define shared functions that act as constructors:
+To construct an instance of a struct, use the `new` keyword followed by the struct name and a struct literal value:
+```
+let s = new MyStruct { x = 0, y = 3.14 }
+```
+
+There is no special syntax for defining constructors. Instead, use shared functions to create instances of the struct.
 ```
 struct MyStruct:
     prop x: i32
-    prop y: i32
+    prop y: f64
 
-    func init(x: i32, y: i32) -> MyStruct:
-        return new MyStruct { x: x, y: y }
+    func new() -> MyStruct:
+        return new MyStruct { x = 0, y = 3.14 }
 ```
+
+Structs use copy semantics. If other behavior is desired, use wrapper classes.
+
+### Classes
+
+Classes are user-defined types that consist of a collection of named properties. 
+
+Classes are similar to named structs. They use the same syntax, except they are declared with the `class` keyword instead of `struct`.
+```
+class MyStruct: // Indented form
+    let x: i32 = 0
+    prop y: i32
+    func my_func():
+        statement1
+    method my_method(self):
+        statement1
+
+class MyStruct { // Braced form
+    let x: i32 = 0
+    prop y: i32
+    func my_func():
+        statement1
+    method my_method(self):
+        statement1
+}
+```
+
+Classes differ from structs in the following ways:
+- They may optionally inherit from a single concrete class or struct, in addition to any number of interfaces.
+- They support downcasting to class pointer types from base class or interface pointer types.
+- They support abstract methods.
+
+Classes are designed to support object-oriented programming features, making them more suitable for complex data structures and behaviors.
+The drawback is that instances of classes require additional memory overhead due to features like virtual method tables and inheritance.
 
 ## Expressions
 
