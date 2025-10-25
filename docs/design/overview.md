@@ -109,65 +109,20 @@ Values are assigned to their corresponding properties. By the end of the object 
 
 Objects always use braces; there is no indented form, and they are not considered blocks. Blocks always have some keyword signifying the opening of a block, such as `if`, `while`, or `block`.
 
-## Reference and pointer types
+## Pointer and reference types
 
-### Reference type
+### Raw pointer types
 
-A reference is a safe pointer to a value. It is written as `&T`, where `T` is the type of the value. A reference can never be null and the referenced value must live at least as long as the reference.
+A raw pointer contains the memory address of a value. It is written as `@T`, where `T` is the type of the value being pointed to. Raw pointers can point to null or invalid memory locations. They do not have any lifetime restrictions; they simply store a memory address.
 
-A reference must be assigned some location in memory; you cannot use the address of a literal or a temporary value.
+To create a raw pointer, use the `@` operator:
 ```
 let x = 42
-let r = &x
+let p: @i32 = @x
 ```
 
-References can be mutable. Such references are written as `var&T`:
-```
-let var x = 42
-let r1 = var&x
-let var y = 64
-let r2: var&i32 = var&y
-```
-
-You cannot have a mutable reference to an immutable value.
-
-You can also have a mutable value containing a mutable reference:
-```
-let var x = 42
-let var y = 64
-let var r = var&x
-r = var&y
-```
-
-You can dereference a reference using the `*` operator:
-```
-let x = 42
-let r = &x
-let y = *r
-```
-
-However, a reference may be automatically dereferenced under these conditions:
-- When a reference is assigned/passed to a variable/argument where the referenced type is expected.
-- When accessing a field or method of the referenced type.
-
-If you wish to mutate the referenced value, you must use the `*` operator:
-```
-let var x = 42
-let r = var&x
-*r = 64
-```
-
-### Pointer type
-
-A pointer is a raw pointer to a value. It is written as `*T`, where `T` is the type of the value. A pointer can be null and does not have any lifetime restrictions.
-
-To create a raw pointer, use the address-of operator in conjunction with an explicit cast:
-```
-let x = 42
-let p = &x as *i32
-```
-
-This alone is safe to do. However, dereferencing a pointer is unsafe and must be done within an `unsafe` block:
+To dereference a raw pointer, use the `*` operator.
+Because raw pointers can potentially point to invalid memory locations, dereferencing a raw pointer is considered unsafe and must be done within an `unsafe` block:
 ```
 unsafe:
     let y = *p
@@ -175,12 +130,61 @@ unsafe:
 
 Raw pointers are never implicitly dereferenced. You must always use the `*` operator to access the value.
 
-You can also have a mutable pointer:
+The keyword `var` may be added to the `@` operator and pointer type to allow mutating the pointed-to value.
+This is separate from the mutability of the pointer itself, and you can use any combination of mutable and immutable pointers and pointed-to values:
+```
+let var a = 42
+let p1: @i32 = @a            // Immutable pointer with immutable value
+let p2: var@i32 = var@a      // Immutable pointer with mutable value
+let var p3: @i32 = @a        // Mutable pointer with immutable value
+let var p4: var@i32 = var@a  // Mutable pointer with mutable value
+```
+
+You cannot have a mutable pointer to a value that was not declared as mutable.
+```
+let a = 42
+let var p: @i32 = @a // Error: a is not mutable
+```
+
+### Reference types
+
+A reference is a safe pointer to a value. It is written as `&T`, where `T` is the type of the value. A reference can never be null and the referenced value must live at least as long as the reference.
+To create a reference, use the `&` operator:
+```
+let x = 42
+let r: &i32 = &x
+```
+
+References can be mutable. Such references are written as `var&T`. They follow the same rules as mutable variables.
 ```
 let var x = 42
-let p = var&x as var*i32
-unsafe:
-    *p = 64
+let r1 = var&x
+let var y = 64
+let r2: var&i32 = var&y
+```
+
+References are implicitly dereferenced when visited as r-values. This means you can use a reference just like the value it points to:
+```
+let x = 42
+let r: &i32 = &x
+let y = r + 1 // r is implicitly dereferenced
+```
+
+References are not implicitly dereferenced when visited as l-values. This allows the user to choose whether to reassign the reference or modify the referenced value:
+```
+let var x = 42
+let r: var&i32 = var&x
+let var y = 64
+*r = 64       // r is dereferenced to modify x
+r = var&y // r is assigned a new reference
+```
+
+If you attempt to use the `&` operator on a value that is already a reference, you will simply get the reference to the referenced value. This prevents "reference references" or self-referential references:
+```
+let x = 42
+let var r1: &i32 = &x
+let r2: &i32 = &r1 // r2 is simply a reference to x
+*r1 = &r1          // This will just create another reference to x
 ```
 
 # Statements
