@@ -596,7 +596,7 @@ public:
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 
     std::string to_string() const override {
-        return (is_mutable ? "var" : "") + std::string("*") + base->to_string();
+        return (is_mutable ? "var" : "") + std::string("@") + base->to_string();
     }
 };
 

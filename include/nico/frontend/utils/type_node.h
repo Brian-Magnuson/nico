@@ -180,7 +180,7 @@ public:
         : is_mutable(is_mutable), base(base) {}
 
     std::string to_string() const override {
-        return std::string(is_mutable ? "var" : "") + "*" + base->to_string();
+        return std::string(is_mutable ? "var" : "") + "@" + base->to_string();
     }
 
     bool operator==(const Type& other) const override {

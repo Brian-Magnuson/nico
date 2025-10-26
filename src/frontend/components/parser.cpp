@@ -613,7 +613,7 @@ std::optional<std::shared_ptr<Annotation>> Parser::annotation() {
     if (match({Tok::KwVar}))
         has_var = true;
 
-    if (match({Tok::Star})) {
+    if (match({Tok::At})) {
         // Pointer annotation
         auto inner_anno = annotation();
         if (!inner_anno)

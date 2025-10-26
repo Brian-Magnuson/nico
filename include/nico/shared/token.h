@@ -77,6 +77,7 @@ enum class Tok {
     Arrow,
     Colon,
     ColonColon,
+    At,
 
     Identifier,
 

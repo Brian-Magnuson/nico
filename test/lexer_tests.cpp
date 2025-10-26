@@ -84,7 +84,7 @@ TEST_CASE("Lexer single characters (run_lexer_test)", "[lexer]") {
     }
 
     SECTION("Other single character tokens") {
-        run_lexer_test(",;", {Tok::Comma, Tok::Semicolon, Tok::Eof});
+        run_lexer_test(",;@", {Tok::Comma, Tok::Semicolon, Tok::At, Tok::Eof});
     }
 }
 

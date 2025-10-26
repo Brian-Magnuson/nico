@@ -113,15 +113,15 @@ TEST_CASE("Parser let statements", "[parser]") {
 
     SECTION("Let statements 7") {
         run_parser_stmt_test(
-            "let var a: *i32 = 10",
-            {"(stmt:let var a *i32 (lit 10))", "(stmt:eof)"}
+            "let var a: @i32 = 10",
+            {"(stmt:let var a @i32 (lit 10))", "(stmt:eof)"}
         );
     }
 
     SECTION("Let statements 8") {
         run_parser_stmt_test(
-            "let var ptr: var*f64",
-            {"(stmt:let var ptr var*f64)", "(stmt:eof)"}
+            "let var ptr: var@f64",
+            {"(stmt:let var ptr var@f64)", "(stmt:eof)"}
         );
     }
 }

@@ -629,6 +629,9 @@ void Lexer::scan_token() {
     case ';':
         add_token(Tok::Semicolon);
         break;
+    case '@':
+        add_token(Tok::At);
+        break;
     case ':':
         add_token(match(':') ? Tok::ColonColon : Tok::Colon);
         break;
