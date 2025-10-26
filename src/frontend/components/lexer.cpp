@@ -632,6 +632,12 @@ void Lexer::scan_token() {
     case '@':
         add_token(Tok::At);
         break;
+    case '&':
+        add_token(Tok::Amp);
+        break;
+    case '^':
+        add_token(Tok::Caret);
+        break;
     case ':':
         add_token(match(':') ? Tok::ColonColon : Tok::Colon);
         break;
@@ -673,12 +679,6 @@ void Lexer::scan_token() {
         break;
     case '%':
         add_token(match('=') ? Tok::PercentEq : Tok::Percent);
-        break;
-    case '^':
-        add_token(match('=') ? Tok::CaretEq : Tok::Caret);
-        break;
-    case '&':
-        add_token(match('=') ? Tok::AmpEq : Tok::Amp);
         break;
     case '|':
         add_token(match('=') ? Tok::BarEq : Tok::Bar);

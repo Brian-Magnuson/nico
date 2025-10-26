@@ -82,6 +82,14 @@ std::any AstPrinter::visit(Expr::Unary* expr, bool as_lvalue) {
     );
 }
 
+std::any AstPrinter::visit(Expr::Address* expr, bool as_lvalue) {
+    return std::string(
+        std::string("(address ") + (expr->has_var ? "var" : "") +
+        std::string(expr->op->lexeme) + " " +
+        std::any_cast<std::string>(expr->right->accept(this, false)) + ")"
+    );
+}
+
 std::any AstPrinter::visit(Expr::Deref* expr, bool as_lvalue) {
     return std::string(
         "(deref " +

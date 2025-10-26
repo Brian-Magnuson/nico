@@ -97,12 +97,14 @@ TEST_CASE("Parser expressions", "[parser]") {
         );
     }
 
-    SECTION("Unary 3") {
+    SECTION("Address and Deref") {
         run_parser_expr_test(
-            "@x; &x; *p",
-            {"(expr (unary @ (nameref x)))",
-             "(expr (unary & (nameref x)))",
-             "(expr (unary * (nameref p)))",
+            "@x; var@x; &x; var&x; ^p",
+            {"(expr (address @ (nameref x)))",
+             "(expr (address var@ (nameref x)))",
+             "(expr (address & (nameref x)))",
+             "(expr (address var& (nameref x)))",
+             "(expr (unary ^ (nameref p)))",
              "(stmt:eof)"}
         );
     }

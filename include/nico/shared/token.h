@@ -57,10 +57,6 @@ enum class Tok {
     SlashEq,
     Percent,
     PercentEq,
-    Caret,
-    CaretEq,
-    Amp,
-    AmpEq,
     Bar,
     BarEq,
     Bang,
@@ -78,6 +74,8 @@ enum class Tok {
     Colon,
     ColonColon,
     At,
+    Amp,
+    Caret,
 
     Identifier,
 

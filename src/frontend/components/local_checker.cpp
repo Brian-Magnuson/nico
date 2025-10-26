@@ -434,6 +434,12 @@ std::any LocalChecker::visit(Expr::Unary* expr, bool as_lvalue) {
     }
 }
 
+std::any LocalChecker::visit(Expr::Address* expr, bool as_lvalue) {
+    // TODO: Implement address-of expressions.
+    panic("LocalChecker::visit(Expr::Address*): Not implemented yet.");
+    return std::any();
+}
+
 std::any LocalChecker::visit(Expr::Deref* expr, bool as_lvalue) {
     // TODO: Implement dereference expressions.
     panic("LocalChecker::visit(Expr::Deref*): Not implemented yet.");

@@ -401,6 +401,12 @@ std::any CodeGenerator::visit(Expr::Unary* expr, bool as_lvalue) {
     return result;
 }
 
+std::any CodeGenerator::visit(Expr::Address* expr, bool as_lvalue) {
+    // TODO: Implement address-of expressions.
+    panic("CodeGenerator::visit(Expr::Address*): Not implemented yet.");
+    return std::any();
+}
+
 std::any CodeGenerator::visit(Expr::Deref* expr, bool as_lvalue) {
     // TODO: Implement dereference expressions.
     panic("CodeGenerator::visit(Expr::Deref*): Not implemented yet.");

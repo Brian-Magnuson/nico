@@ -257,6 +257,7 @@ public:
     class Logical;
     class Binary;
     class Unary;
+    class Address;
     class Deref;
     class Access;
     class Cast;
@@ -281,6 +282,7 @@ public:
         virtual std::any visit(Logical* expr, bool as_lvalue) = 0;
         virtual std::any visit(Binary* expr, bool as_lvalue) = 0;
         virtual std::any visit(Unary* expr, bool as_lvalue) = 0;
+        virtual std::any visit(Address* expr, bool as_lvalue) = 0;
         virtual std::any visit(Deref* expr, bool as_lvalue) = 0;
         virtual std::any visit(Cast* expr, bool as_lvalue) = 0;
         virtual std::any visit(Access* expr, bool as_lvalue) = 0;

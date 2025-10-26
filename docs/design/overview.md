@@ -121,14 +121,14 @@ let x = 42
 let p: @i32 = @x
 ```
 
-To dereference a raw pointer, use the `*` operator.
+To dereference a raw pointer, use the `^` operator.
 Because raw pointers can potentially point to invalid memory locations, dereferencing a raw pointer is considered unsafe and must be done within an `unsafe` block:
 ```
 unsafe:
-    let y = *p
+    let y = ^p
 ```
 
-Raw pointers are never implicitly dereferenced. You must always use the `*` operator to access the value.
+Raw pointers are never implicitly dereferenced. You must always use the `^` operator to access the value.
 
 The keyword `var` may be added to the `@` operator and pointer type to allow mutating the pointed-to value.
 This is separate from the mutability of the pointer itself, and you can use any combination of mutable and immutable pointers and pointed-to values:
@@ -163,28 +163,34 @@ let var y = 64
 let r2: var&i32 = var&y
 ```
 
-References are implicitly dereferenced when visited as r-values. This means you can use a reference just like the value it points to:
-```
-let x = 42
-let r: &i32 = &x
-let y = r + 1 // r is implicitly dereferenced
-```
-
-References are not implicitly dereferenced when visited as l-values. This allows the user to choose whether to reassign the reference or modify the referenced value:
+Like raw pointers, references can be dereferenced using the `^` operator.
+References are not automatically dereferenced in any context. You must always use the `^` operator to access the value:
 ```
 let var x = 42
 let r: var&i32 = var&x
-let var y = 64
-*r = 64       // r is dereferenced to modify x
-r = var&y // r is assigned a new reference
+let y = ^r + 1
+^r = 64
 ```
 
-If you attempt to use the `&` operator on a value that is already a reference, you will simply get the reference to the referenced value. This prevents "reference references" or self-referential references:
+You can create references to references. The rule of the referent living at least as long as the reference still applies:
+```
+let var x = 42
+let r: var&i32 = var&x            // Must live at least as long as x
+let rr: &var&i32 = &r             // Must live at least as long as r
+let rrr: &&var&i32 = &rr          // Must live at least as long as rr
+^^^rrr = 64
+```
+
+Notice how `rr` and `rrr` use `&` and not `var&`. The only value that we are mutating is `x`, so only its reference needs to a `var&` type.
+
+You can also create references to raw pointers and raw pointers to references. The rule of requiring unsafe blocks for dereferencing raw pointers still applies:
 ```
 let x = 42
-let var r1: &i32 = &x
-let r2: &i32 = &r1 // r2 is simply a reference to x
-*r1 = &r1          // This will just create another reference to x
+let p: @i32 = @x
+let rp: &@i32 = &p
+^rp // Safe; this is just dereferencing a reference
+unsafe:
+    ^^rp // Unsafe; this is dereferencing a raw pointer
 ```
 
 # Statements

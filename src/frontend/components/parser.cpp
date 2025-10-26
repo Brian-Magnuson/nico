@@ -360,14 +360,28 @@ std::optional<std::shared_ptr<Expr>> Parser::postfix() {
 }
 
 std::optional<std::shared_ptr<Expr>> Parser::unary() {
-    if (match(
-            {Tok::Minus, Tok::KwNot, Tok::Bang, Tok::At, Tok::Amp, Tok::Star}
-        )) {
+    if (match({Tok::Minus, Tok::KwNot, Tok::Bang, Tok::Caret})) {
         auto token = previous();
         auto right = unary();
         if (!right)
             return std::nullopt;
         return std::make_shared<Expr::Unary>(token, *right);
+    }
+    bool has_var = match({Tok::KwVar});
+    if (match({Tok::At, Tok::Amp})) {
+        auto token = previous();
+        auto right = unary();
+        if (!right)
+            return std::nullopt;
+        return std::make_shared<Expr::Address>(token, *right, has_var);
+    }
+    else if (has_var) {
+        Logger::inst().log_error(
+            Err::UnexpectedVarInExpression,
+            peek()->location,
+            "`var` must be followed by address-of operator `@` or `&`."
+        );
+        return std::nullopt;
     }
     return postfix();
 }

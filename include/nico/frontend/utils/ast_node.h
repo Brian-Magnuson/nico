@@ -261,6 +261,36 @@ public:
 };
 
 /**
+ * @brief An address-of expression.
+ *
+ * Address-of expressions are used to get the address of a variable using
+ * the `@` or `&` operator.
+ * They are similar to unary expressions but specifically for address-of
+ * operations and carry an extra boolean field for when `var` is included in the
+ * expression.
+ */
+class Expr::Address : public Expr {
+public:
+    // The operator token.
+    std::shared_ptr<Token> op;
+    // The operand expression.
+    std::shared_ptr<Expr> right;
+    // Whether the address is of a variable.
+    bool has_var;
+
+    Address(
+        std::shared_ptr<Token> op, std::shared_ptr<Expr> right, bool has_var
+    )
+        : op(op), right(right), has_var(has_var) {
+        location = &op->location;
+    }
+
+    std::any accept(Visitor* visitor, bool as_lvalue) override {
+        return visitor->visit(this, as_lvalue);
+    }
+};
+
+/**
  * @brief A dereference expression.
  *
  * Dereference expressions are used to dereference pointer and reference types.

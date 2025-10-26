@@ -103,15 +103,13 @@ TEST_CASE("Lexer short tokens (run_lexer_test)", "[lexer]") {
 
     SECTION("Assignment operators") {
         run_lexer_test(
-            "+=-=*=/=%=&=|=^=",
+            "+=-=*=/=%=|=",
             {Tok::PlusEq,
              Tok::MinusEq,
              Tok::StarEq,
              Tok::SlashEq,
              Tok::PercentEq,
-             Tok::AmpEq,
              Tok::BarEq,
-             Tok::CaretEq,
              Tok::Eof}
         );
     }

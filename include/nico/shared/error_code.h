@@ -75,6 +75,8 @@ enum class Err {
     WhileLoopWithoutDoOrBlock,
     // A do-while loop was found without a `while` keyword.
     DoWhileLoopWithoutWhile,
+    // A `var` keyword was found without an address-of operator.
+    UnexpectedVarInExpression,
     // A variable annotation contained an unexpected `var` keyword.
     UnexpectedVarInAnnotation,
 
