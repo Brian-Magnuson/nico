@@ -88,6 +88,25 @@ TEST_CASE("Parser expressions", "[parser]") {
         );
     }
 
+    SECTION("Unary 2") {
+        run_parser_expr_test(
+            "not true !false",
+            {"(expr (unary not (lit true)))",
+             "(expr (unary ! (lit false)))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Unary 3") {
+        run_parser_expr_test(
+            "@x; &x; *p",
+            {"(expr (unary @ (nameref x)))",
+             "(expr (unary & (nameref x)))",
+             "(expr (unary * (nameref p)))",
+             "(stmt:eof)"}
+        );
+    }
+
     SECTION("Binary 1") {
         run_parser_expr_test(
             "1 + 2",
