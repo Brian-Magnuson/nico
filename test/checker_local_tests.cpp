@@ -157,6 +157,52 @@ TEST_CASE("Local address-of expressions", "[checker]") {
             Err::LetTypeMismatch
         );
     }
+
+    SECTION("Address-of not an lvalue") {
+        run_checker_test(
+            "let a = 1 let b: @i32 = @(a + 1)",
+            Err::NotAPossibleLValue
+        );
+    }
+
+    SECTION("Address-of immutable value as mutable") {
+        run_checker_test(
+            "let a = 1 let b: var@i32 = var@a",
+            Err::AddressOfImmutable
+        );
+    }
+}
+
+TEST_CASE("Local dereference expressions", "[checker]") {
+    SECTION("Dereference without unsafe") {
+        run_checker_test(
+            "let a = 1 let b: @i32 = @a let c = ^b",
+            Err::PtrDerefOutsideUnsafeBlock
+        );
+    }
+
+    SECTION("Valid dereference with unsafe") {
+        run_checker_test(
+            "let a = 1 let b: @i32 = @a let c: i32 = unsafe { yield ^b }"
+        );
+    }
+
+    SECTION("Dereference non-pointer") {
+        run_checker_test("let a = 1 let b = ^a", Err::DereferenceNonPointer);
+    }
+
+    SECTION("Valid mutable pointer") {
+        run_checker_test(
+            "let var a = 1 let b: var@i32 = var@a unsafe { ^b = 2 }"
+        );
+    }
+
+    SECTION("Assign to immutable via pointer") {
+        run_checker_test(
+            "let a = 1 let b: @i32 = @a unsafe { ^b = 2 }",
+            Err::AssignToImmutable
+        );
+    }
 }
 
 TEST_CASE("Local binary expressions", "[checker]") {

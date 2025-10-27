@@ -434,7 +434,8 @@ std::any LocalChecker::visit(Expr::Address* expr, bool as_lvalue) {
     }
 
     auto r_type = expr_check(expr->right, true);
-    if (!r_type)
+    auto r_lvalue = std::dynamic_pointer_cast<Expr::IPLValue>(expr->right);
+    if (!r_type || !r_lvalue)
         return std::any();
 
     if (expr->op->tok_type == Tok::At) {
@@ -457,13 +458,60 @@ std::any LocalChecker::visit(Expr::Address* expr, bool as_lvalue) {
         );
     }
 
+    if (expr->has_var && !r_lvalue->assignable) {
+        Logger::inst().log_error(
+            Err::AddressOfImmutable,
+            expr->op->location,
+            "Cannot create a mutable pointer/reference to an immutable value."
+        );
+        if (r_lvalue->error_location) {
+            Logger::inst().log_note(
+                *r_lvalue->error_location,
+                "This is not mutable."
+            );
+        }
+        return std::any();
+    }
+
     return std::any();
 }
 
 std::any LocalChecker::visit(Expr::Deref* expr, bool as_lvalue) {
-    // TODO: Implement dereference expressions.
-    panic("LocalChecker::visit(Expr::Deref*): Not implemented yet.");
-    return std::any();
+    // Dereference expressions *are* possible lvalues.
+    auto r_type = expr_check(expr->right, as_lvalue);
+    if (!r_type)
+        return std::any();
+
+    if (auto ptr_type = std::dynamic_pointer_cast<Type::Pointer>(r_type)) {
+        expr->type = ptr_type->base;
+        // Remember: pointers are not possible lvalues.
+        // For pointer dereference, the assignability is carried over from the
+        // mutability of the pointer.
+        expr->assignable = ptr_type->is_mutable;
+        expr->error_location = expr->right->location;
+
+        auto local_scope = std::dynamic_pointer_cast<Node::LocalScope>(
+            symbol_tree->current_scope
+        );
+        if (!local_scope || !local_scope->block->is_unsafe) {
+            Logger::inst().log_error(
+                Err::PtrDerefOutsideUnsafeBlock,
+                expr->op->location,
+                "Cannot dereference pointer outside of an unsafe block."
+            );
+            return std::any();
+        }
+
+        return std::any();
+    }
+    else {
+        Logger::inst().log_error(
+            Err::DereferenceNonPointer,
+            expr->op->location,
+            "Dereference operator is not valid for this kind of expression."
+        );
+        return std::any();
+    }
 }
 
 std::any LocalChecker::visit(Expr::Cast* expr, bool as_lvalue) {

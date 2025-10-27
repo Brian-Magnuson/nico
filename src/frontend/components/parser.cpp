@@ -366,12 +366,19 @@ std::optional<std::shared_ptr<Expr>> Parser::postfix() {
 }
 
 std::optional<std::shared_ptr<Expr>> Parser::unary() {
-    if (match({Tok::Minus, Tok::KwNot, Tok::Bang, Tok::Caret})) {
+    if (match({Tok::Minus, Tok::KwNot, Tok::Bang})) {
         auto token = previous();
         auto right = unary();
         if (!right)
             return std::nullopt;
         return std::make_shared<Expr::Unary>(token, *right);
+    }
+    if (match({Tok::Caret})) {
+        auto token = previous();
+        auto right = unary();
+        if (!right)
+            return std::nullopt;
+        return std::make_shared<Expr::Deref>(token, *right);
     }
     bool has_var = match({Tok::KwVar});
     if (match({Tok::At, Tok::Amp})) {

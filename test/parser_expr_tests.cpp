@@ -104,7 +104,7 @@ TEST_CASE("Parser expressions", "[parser]") {
              "(expr (address var@ (nameref x)))",
              "(expr (address & (nameref x)))",
              "(expr (address var& (nameref x)))",
-             "(expr (unary ^ (nameref p)))",
+             "(expr (deref (nameref p)))",
              "(stmt:eof)"}
         );
     }

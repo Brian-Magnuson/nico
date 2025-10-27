@@ -115,10 +115,15 @@ enum class Err {
     NotAVariable,
     // An name was visited as an lvalue, but was not declared with `var`.
     AssignToImmutable,
+    // An attempt was made to create a mutable pointer/reference to an
+    // immutable value.
+    AddressOfImmutable,
     // An operator was found that cannot be used with the given expression type.
     OperatorNotValidForExpr,
     // An operator was found that cannot be used with the given types.
     NoOperatorOverload,
+    // A pointer dereference was attempted on a non-pointer type.
+    DereferenceNonPointer,
     // A yield statement was found outside of a local scope.
     YieldOutsideLocalScope,
     // An attempt was made to declare a function in a local scope.
@@ -139,6 +144,8 @@ enum class Err {
     BreakOutsideLoop,
     // A return statement was found outside of a function.
     ReturnOutsideFunction,
+    // A pointer dereference was found outside of an unsafe block.
+    PtrDerefOutsideUnsafeBlock,
 
     // Local type check warning
     LocalTypeWarning = 5500,
@@ -146,6 +153,8 @@ enum class Err {
     UnreachableStatement,
     // A regular yield statement was found targeting a loop.
     YieldTargetingLoop,
+    // An unsafe block was found that does not contain any unsafe statements.
+    UnsafeBlockWithoutUnsafeStmt,
 
     // Backend error
     BackendError = 7000,
