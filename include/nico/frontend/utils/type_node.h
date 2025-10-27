@@ -185,7 +185,8 @@ public:
 
     bool operator==(const Type& other) const override {
         if (const auto* other_pointer = dynamic_cast<const Pointer*>(&other)) {
-            return *base == *other_pointer->base;
+            return *base == *other_pointer->base &&
+                   is_mutable == other_pointer->is_mutable;
         }
         return false;
     }
@@ -201,6 +202,22 @@ public:
         bool include_quotes = false
     ) const override {
         return {"%p", {value}};
+    }
+
+    virtual bool is_assignable_to(const Type& other) const override {
+        if (const auto* other_pointer = dynamic_cast<const Pointer*>(&other)) {
+            // You can assign to a pointer if the base types are the same and
+            // the mutability is compatible.
+
+            // not (not this->is_mutable and target->is_mutable)
+            // !(!A & B) == A | !B
+            return base->is_assignable_to(*other_pointer->base) &&
+                   (is_mutable || !other_pointer->is_mutable);
+            // If this pointer is mutable or the other pointer is not mutable,
+            // we either have an equivalent type or a loss of mutability.
+            // We explicitly allow a loss of mutability.
+        }
+        return false;
     }
 };
 
@@ -228,7 +245,8 @@ public:
     bool operator==(const Type& other) const override {
         if (const auto* other_reference =
                 dynamic_cast<const Reference*>(&other)) {
-            return *base == *other_reference->base;
+            return *base == *other_reference->base &&
+                   is_mutable == other_reference->is_mutable;
         }
         return false;
     }
@@ -245,6 +263,14 @@ public:
     ) const override {
         auto val = builder->CreateLoad(base->get_llvm_type(builder), value);
         return base->to_print_args(builder, val, include_quotes);
+    }
+
+    virtual bool is_assignable_to(const Type& other) const override {
+        if (const auto* other_pointer = dynamic_cast<const Pointer*>(&other)) {
+            return base->is_assignable_to(*other_pointer->base) &&
+                   (is_mutable || !other_pointer->is_mutable);
+        }
+        return false;
     }
 };
 

@@ -41,7 +41,7 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
         if (!anno_any.has_value())
             return std::any();
         auto annotation_type = std::any_cast<std::shared_ptr<Type>>(anno_any);
-        if (*expr_type != *annotation_type) {
+        if (!expr_type->is_assignable_to(*annotation_type)) {
             Logger::inst().log_error(
                 Err::LetTypeMismatch,
                 *stmt->expression.value()->location,
@@ -225,7 +225,8 @@ std::any LocalChecker::visit(Expr::Assign* expr, bool as_lvalue) {
         return std::any();
 
     // The types of the left and right sides must match.
-    if (*l_type != *r_type) {
+    // if (*l_type != *r_type) {
+    if (!r_type->is_assignable_to(*l_type)) {
         Logger::inst().log_error(
             Err::AssignmentTypeMismatch,
             expr->op->location,
@@ -423,8 +424,39 @@ std::any LocalChecker::visit(Expr::Unary* expr, bool as_lvalue) {
 }
 
 std::any LocalChecker::visit(Expr::Address* expr, bool as_lvalue) {
-    // TODO: Implement address-of expressions.
-    panic("LocalChecker::visit(Expr::Address*): Not implemented yet.");
+    if (as_lvalue) {
+        Logger::inst().log_error(
+            Err::NotAPossibleLValue,
+            expr->op->location,
+            "Address-of expression cannot be an lvalue."
+        );
+        return std::any();
+    }
+
+    auto r_type = expr_check(expr->right, true);
+    if (!r_type)
+        return std::any();
+
+    if (expr->op->tok_type == Tok::At) {
+        expr->type = std::make_shared<Type::Pointer>(r_type, expr->has_var);
+    }
+    else if (expr->op->tok_type == Tok::Amp) {
+        // expr->type = std::make_shared<Type::Reference>(r_type,
+        // expr->has_var);
+
+        // Note: References have a lot of rules that we can't enforce yet, so we
+        // disallow them for now.
+        panic(
+            "LocalChecker::visit(Expr::Address*): References are not supported "
+            "yet."
+        );
+    }
+    else {
+        panic(
+            "LocalChecker::visit(Expr::Address*): Unknown address-of operator."
+        );
+    }
+
     return std::any();
 }
 

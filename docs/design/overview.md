@@ -146,6 +146,15 @@ let a = 42
 let var p: @i32 = @a // Error: a is not mutable
 ```
 
+You cannot assign an immutable pointer to a mutable pointer.
+```
+let var a = 42
+let p1: @i32 = @a
+let p2: var@i32 = var@a // OK
+p1 = p2                 // OK; p2 is mutable, but p1 is not
+let p3: var@i32 = p1    // Error: p1 is not mutable
+```
+
 ### Reference types
 
 A reference is a safe pointer to a value. It is written as `&T`, where `T` is the type of the value. A reference can never be null and the referenced value must live at least as long as the reference.
@@ -791,14 +800,14 @@ Although the expression yields the value of `x`, the do-while loop will continue
 
 A move expression is used to move a value from one location to another. It is written as follows:
 ```
-^value
+mv value
 ```
 
 When a value is moved, the original location is invalidated along with all references to it. This is useful for transferring ownership of a value to a function or another variable.
 
 A mutable value may be moved as mutable:
 ```
-var^value
+var mv value
 ```
 
 ### Unsafe blocks and expressions

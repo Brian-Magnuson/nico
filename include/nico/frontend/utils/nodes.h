@@ -194,6 +194,24 @@ public:
     ) const {
         return {"[object]", {}};
     }
+
+    /**
+     * @brief Check if this type is assignable a binding of the target type.
+     *
+     * For clarification, for the assignment `a = b`, this checks if the type of
+     * `b` (this) is assignable to the type of `a` (other).
+     *
+     * For most cases, this is equivalent to checking for equality.
+     * For pointer types, assigning a mutable pointer to an immutable pointer is
+     * allowed.
+     *
+     * @param target_type The target type to check assignability against.
+     * @return True if this type is assignable to the target type. False
+     * otherwise.
+     */
+    virtual bool is_assignable_to(const Type& target_type) const {
+        return *this == target_type;
+    }
 };
 
 // MARK: Stmt

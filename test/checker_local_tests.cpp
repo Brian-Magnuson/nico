@@ -124,6 +124,41 @@ TEST_CASE("Local unary expressions", "[checker]") {
     }
 }
 
+TEST_CASE("Local address-of expressions", "[checker]") {
+    SECTION("Valid address-of expression 1") {
+        run_checker_test("let a = 1 let b: @i32 = @a");
+    }
+
+    SECTION("Valid address-of expression 2") {
+        run_checker_test("let var a = 1 let b: var@i32 = var@a");
+    }
+
+    SECTION("Valid address-of expression 3") {
+        run_checker_test("let var a = 1 let b: @i32 = var@a");
+    }
+
+    SECTION("Address-of mutability gain") {
+        run_checker_test("let a = 1 let b: var@i32 = @a", Err::LetTypeMismatch);
+    }
+
+    SECTION("Valid pointer pointer 1") {
+        run_checker_test("let a = 1 let b: @i32 = @a let c: @@i32 = @b");
+    }
+
+    SECTION("Valid pointer pointer 2") {
+        run_checker_test(
+            "let var a = 1 let b: var@i32 = var@a let c: @var@i32 = @b"
+        );
+    }
+
+    SECTION("Pointer pointer mutability gain") {
+        run_checker_test(
+            "let var a = 1 let b: @i32 = @a let c: @var@i32 = @b",
+            Err::LetTypeMismatch
+        );
+    }
+}
+
 TEST_CASE("Local binary expressions", "[checker]") {
     SECTION("Valid binary expressions 1") {
         run_checker_test("let a = 1 + 2");
