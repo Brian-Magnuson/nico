@@ -12,18 +12,6 @@ namespace nico {
 std::shared_ptr<Type>
 LocalChecker::expr_check(std::shared_ptr<Expr>& expr, bool as_lvalue) {
     expr->accept(this, as_lvalue);
-    if (auto ref_type =
-            std::dynamic_pointer_cast<Type::Reference>(expr->type)) {
-        // If the expression is a reference type, modify the expression to be a
-        // dereference expression.
-        auto deref_expr = std::make_shared<Expr::Deref>(
-            std::make_shared<Token>(Tok::Star, *expr->location),
-            expr
-        );
-        deref_expr->type = ref_type->base;
-        deref_expr->assignable = ref_type->is_mutable;
-        expr = deref_expr;
-    }
     return expr->type;
 }
 

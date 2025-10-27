@@ -32,16 +32,11 @@ class LocalChecker : public Stmt::Visitor,
         : symbol_tree(symbol_tree), repl_mode(repl_mode) {};
 
     /**
-     * @brief Checks the type of the expression, dereferencing any references.
+     * @brief Checks the type of the expression and returns its type.
      *
-     * If the type of the expression is a reference type, this function will
-     * modify the expression to be a dereference expression, and return the base
-     * type of the reference. Otherwise, it will leave the expression unchanged
-     * and return its type, even if it is nullptr.
-     *
-     * @param expr The expression to check. May be modified by this function.
+     * @param expr The expression to check.
      * @param as_lvalue Whether the expression is being checked as an lvalue.
-     * @return The type of the expression, with references dereferenced. Can be
+     * @return The type of the expression. Can be
      * nullptr.
      */
     std::shared_ptr<Type>
