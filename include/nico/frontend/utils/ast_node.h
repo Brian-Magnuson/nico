@@ -497,15 +497,19 @@ public:
     std::optional<std::string> label;
     // The kind of block.
     Kind kind;
+    // Whether this block is an unsafe block.
+    bool is_unsafe;
 
     Block(
         std::shared_ptr<Token> opening_tok,
         std::vector<std::shared_ptr<Stmt>> statements,
-        Kind kind
+        Kind kind,
+        bool is_unsafe = false
     )
         : opening_tok(opening_tok),
           statements(std::move(statements)),
-          kind(kind) {
+          kind(kind),
+          is_unsafe(is_unsafe) {
         location = &opening_tok->location;
     }
 

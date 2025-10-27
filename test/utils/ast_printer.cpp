@@ -132,6 +132,9 @@ std::any AstPrinter::visit(Expr::Tuple* expr, bool as_lvalue) {
 
 std::any AstPrinter::visit(Expr::Block* expr, bool as_lvalue) {
     std::string str = "(block";
+    if (expr->is_unsafe) {
+        str += " unsafe";
+    }
     for (const auto& stmt : expr->statements) {
         str += " " + std::any_cast<std::string>(stmt->accept(this));
     }

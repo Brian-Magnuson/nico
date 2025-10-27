@@ -93,6 +93,7 @@ Parser::binary_op_from_compound_op(const std::shared_ptr<Token>& compound_op) {
 
 std::optional<std::shared_ptr<Expr>> Parser::block(Expr::Block::Kind kind) {
     Tok closing_token_type;
+    bool is_unsafe = previous()->tok_type == Tok::KwUnsafe;
 
     if (peek()->tok_type == Tok::Indent) {
         closing_token_type = Tok::Dedent;
@@ -118,7 +119,12 @@ std::optional<std::shared_ptr<Expr>> Parser::block(Expr::Block::Kind kind) {
         statements.push_back(*stmt);
     }
 
-    return std::make_shared<Expr::Block>(opening_tok, statements, kind);
+    return std::make_shared<Expr::Block>(
+        opening_tok,
+        statements,
+        kind,
+        is_unsafe
+    );
 }
 
 std::optional<std::shared_ptr<Expr>> Parser::conditional() {
@@ -279,7 +285,7 @@ std::optional<std::shared_ptr<Expr>> Parser::primary() {
     if (match({Tok::Identifier})) {
         return std::make_shared<Expr::NameRef>(previous());
     }
-    if (match({Tok::KwBlock})) {
+    if (match({Tok::KwBlock, Tok::KwUnsafe})) {
         return block(Expr::Block::Kind::Plain);
     }
     if (match({Tok::KwIf})) {

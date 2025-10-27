@@ -349,6 +349,20 @@ TEST_CASE("Parser blocks", "[parser]") {
     SECTION("Empty block") {
         run_parser_expr_test("block { }", {"(expr (block))", "(stmt:eof)"});
     }
+
+    SECTION("Braced unsafe block") {
+        run_parser_expr_test(
+            "unsafe { 123 }",
+            {"(expr (block unsafe (expr (lit 123))))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Indented unsafe block") {
+        run_parser_expr_test(
+            "unsafe:\n    123\n",
+            {"(expr (block unsafe (expr (lit 123))))", "(stmt:eof)"}
+        );
+    }
 }
 
 TEST_CASE("Parser tuples", "[parser]") {
