@@ -222,6 +222,31 @@ public:
 };
 
 /**
+ * @brief A null pointer type.
+ *
+ * The type and its only value are both written as `nullptr`.
+ * It extends the pointer type and behaves similarly, except it has no base type
+ * and can be assigned to any pointer type.
+ * It is only considered equal to other `Nullptr` types.
+ */
+class Type::Nullptr : public Type::Pointer {
+public:
+    Nullptr()
+        : Type::Pointer(nullptr, false) {}
+
+    std::string to_string() const override { return "nullptr"; }
+
+    bool operator==(const Type& other) const override {
+        return dynamic_cast<const Nullptr*>(&other) != nullptr;
+    }
+
+    virtual bool is_assignable_to(const Type& other) const override {
+        // nullptr can be assigned to any pointer type.
+        return dynamic_cast<const Type::Pointer*>(&other) != nullptr;
+    }
+};
+
+/**
  * @brief A reference type.
  *
  * References are pointers with special semantics.

@@ -670,6 +670,9 @@ std::optional<std::shared_ptr<Annotation>> Parser::annotation() {
         auto token = previous();
         return std::make_shared<Annotation::NameRef>(Name(token));
     }
+    if (match({Tok::Nullptr})) {
+        return std::make_shared<Annotation::Nullptr>();
+    }
     if (match({Tok::LParen})) {
         // Tuple annotation
         std::vector<std::shared_ptr<Annotation>> elements;

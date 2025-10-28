@@ -124,6 +124,8 @@ enum class Err {
     NoOperatorOverload,
     // A pointer dereference was attempted on a non-pointer type.
     DereferenceNonPointer,
+    // An attempt was made to dereference a pointer whose type is `nullptr`.
+    DereferenceNullptr,
     // A yield statement was found outside of a local scope.
     YieldOutsideLocalScope,
     // An attempt was made to declare a function in a local scope.

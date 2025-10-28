@@ -124,6 +124,13 @@ TEST_CASE("Parser let statements", "[parser]") {
             {"(stmt:let var ptr var@f64)", "(stmt:eof)"}
         );
     }
+
+    SECTION("Let statements 9") {
+        run_parser_stmt_test(
+            "let data: nullptr = nullptr",
+            {"(stmt:let data nullptr (lit nullptr))", "(stmt:eof)"}
+        );
+    }
 }
 
 TEST_CASE("Parser tuple annotations", "[parser]") {

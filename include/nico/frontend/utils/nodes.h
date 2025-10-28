@@ -108,6 +108,7 @@ public:
 
     // Pointer types
     class Pointer;
+    class Nullptr;
     class Reference;
     class Str;
 
@@ -347,6 +348,7 @@ public:
     class NameRef;
 
     class Pointer;
+    class Nullptr;
     class Reference;
 
     class Array;
@@ -362,6 +364,7 @@ public:
     public:
         virtual std::any visit(NameRef* annotation) = 0;
         virtual std::any visit(Pointer* annotation) = 0;
+        virtual std::any visit(Nullptr* annotation) = 0;
         virtual std::any visit(Reference* annotation) = 0;
         virtual std::any visit(Array* annotation) = 0;
         virtual std::any visit(Object* annotation) = 0;

@@ -210,6 +210,17 @@ TEST_CASE("Local dereference expressions", "[checker]") {
             Err::AssignToImmutable
         );
     }
+
+    SECTION("Dereference raw pointer with nullptr value") {
+        run_checker_test("let b: @i32 = nullptr unsafe { ^b }");
+    }
+
+    SECTION("Dereference nullptr type pointer") {
+        run_checker_test(
+            "let p = nullptr unsafe { ^p }",
+            Err::DereferenceNullptr
+        );
+    }
 }
 
 TEST_CASE("Local binary expressions", "[checker]") {

@@ -51,6 +51,10 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
             );
             return std::any();
         }
+        // On occassion, two different types are compatible with each other.
+        // E.g., the annotation is @i32, but the expression is nullptr.
+        // In such cases, the annotated type takes precedence.
+        expr_type = annotation_type;
     }
 
     // Create the field entry.
@@ -478,10 +482,18 @@ std::any LocalChecker::visit(Expr::Address* expr, bool as_lvalue) {
 
 std::any LocalChecker::visit(Expr::Deref* expr, bool as_lvalue) {
     // Dereference expressions *are* possible lvalues.
-    auto r_type = expr_check(expr->right, as_lvalue);
+    auto r_type = expr_check(expr->right, false);
     if (!r_type)
         return std::any();
 
+    if (PTR_INSTANCEOF(r_type, Type::Nullptr)) {
+        Logger::inst().log_error(
+            Err::DereferenceNullptr,
+            expr->op->location,
+            "Cannot dereference a pointer of type `nullptr`."
+        );
+        return std::any();
+    }
     if (auto ptr_type = std::dynamic_pointer_cast<Type::Pointer>(r_type)) {
         expr->type = ptr_type->base;
         // Remember: pointers are not possible lvalues.
@@ -644,6 +656,9 @@ std::any LocalChecker::visit(Expr::Literal* expr, bool as_lvalue) {
         break;
     case Tok::Str:
         expr->type = std::make_shared<Type::Str>();
+        break;
+    case Tok::Nullptr:
+        expr->type = std::make_shared<Type::Nullptr>();
         break;
     default:
         panic(
@@ -874,6 +889,11 @@ std::any LocalChecker::visit(Annotation::Pointer* annotation) {
         return std::any();
     auto base_type = std::any_cast<std::shared_ptr<Type>>(base_any);
     type = std::make_shared<Type::Pointer>(base_type, annotation->is_mutable);
+    return type;
+}
+
+std::any LocalChecker::visit(Annotation::Nullptr* /*annotation*/) {
+    std::shared_ptr<Type> type = std::make_shared<Type::Nullptr>();
     return type;
 }
 

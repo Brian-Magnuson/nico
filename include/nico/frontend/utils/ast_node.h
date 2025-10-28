@@ -635,6 +635,22 @@ public:
 };
 
 /**
+ * @brief An annotation representing a nullptr type.
+ *
+ * This annotation is used to represent the nullptr type. It is separate from
+ * named annotations because `nullptr` is not an identifier. It is separate from
+ * pointer annotations because it does not point to any type.
+ */
+class Annotation::Nullptr : public Annotation {
+public:
+    Nullptr() = default;
+
+    std::any accept(Visitor* visitor) override { return visitor->visit(this); }
+
+    std::string to_string() const override { return "nullptr"; }
+};
+
+/**
  * @brief An annotation representing a reference type.
  *
  * This annotation is used to represent reference types, which can be either
