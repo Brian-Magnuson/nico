@@ -85,6 +85,7 @@ enum class Tok {
     Float,
     Bool,
     Str,
+    Nullptr,
 
     // Keywords
 

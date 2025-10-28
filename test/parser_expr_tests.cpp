@@ -78,6 +78,10 @@ TEST_CASE("Parser basic", "[parser]") {
     SECTION("Basic 2") {
         run_parser_expr_test("123", {"(expr (lit 123))", "(stmt:eof)"});
     }
+
+    SECTION("Nullptr") {
+        run_parser_expr_test("nullptr", {"(expr (lit nullptr))", "(stmt:eof)"});
+    }
 }
 
 TEST_CASE("Parser expressions", "[parser]") {

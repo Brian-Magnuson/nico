@@ -279,7 +279,7 @@ std::optional<std::shared_ptr<Expr>> Parser::loop() {
 }
 
 std::optional<std::shared_ptr<Expr>> Parser::primary() {
-    if (match({Tok::Int, Tok::Float, Tok::Bool, Tok::Str})) {
+    if (match({Tok::Int, Tok::Float, Tok::Bool, Tok::Str, Tok::Nullptr})) {
         return std::make_shared<Expr::Literal>(previous());
     }
     if (match({Tok::Identifier})) {

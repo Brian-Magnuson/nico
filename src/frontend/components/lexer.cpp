@@ -17,6 +17,7 @@ std::unordered_map<std::string_view, Tok> Lexer::keywords = {
     {"NaN", Tok::Float},
     {"true", Tok::Bool},
     {"false", Tok::Bool},
+    {"nullptr", Tok::Nullptr},
 
     // Keywords
 
