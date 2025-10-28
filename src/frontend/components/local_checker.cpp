@@ -310,17 +310,6 @@ std::any LocalChecker::visit(Expr::Binary* expr, bool as_lvalue) {
     if (has_error)
         return std::any();
 
-    // Both operands must be of the same type.
-    if (*l_type != *r_type) {
-        Logger::inst().log_error(
-            Err::NoOperatorOverload,
-            expr->op->location,
-            std::string("Type `") + r_type->to_string() +
-                "` is not compatible with type `" + l_type->to_string() + "`."
-        );
-        return std::any();
-    }
-
     switch (expr->op->tok_type) {
     case Tok::Plus:
     case Tok::Minus:
@@ -336,17 +325,44 @@ std::any LocalChecker::visit(Expr::Binary* expr, bool as_lvalue) {
             );
             return std::any();
         }
+        // Both operands must be of the same type.
+        if (*l_type != *r_type) {
+            Logger::inst().log_error(
+                Err::NoOperatorOverload,
+                expr->op->location,
+                std::string("Type `") + r_type->to_string() +
+                    "` is not compatible with type `" + l_type->to_string() +
+                    "`."
+            );
+            return std::any();
+        }
         expr->type = l_type; // The result type is the same as the operand type.
         break;
     case Tok::EqEq:
     case Tok::BangEq:
-        // Types must inherit from `Type::INumeric` or be `Type::Bool`.
+        // Types must inherit from `Type::INumeric` or be `Type::Bool` or
+        // `Type::Pointer`.
         if (!PTR_INSTANCEOF(l_type, Type::INumeric) &&
-            !PTR_INSTANCEOF(l_type, Type::Bool)) {
+            !PTR_INSTANCEOF(l_type, Type::Bool) &&
+            !PTR_INSTANCEOF(l_type, Type::Pointer)) {
             Logger::inst().log_error(
                 Err::NoOperatorOverload,
                 expr->op->location,
-                "Operands must be of a numeric type or boolean."
+                "Operands must be of a numeric, boolean, or pointer type."
+            );
+            return std::any();
+        }
+        // Both operands must be of the same type, OR both operands must be
+        // pointers.
+        // NOT (A == B OR (isptr(A) AND isptr(B)))
+        if (!(*l_type == *r_type || (PTR_INSTANCEOF(l_type, Type::Pointer) &&
+                                     PTR_INSTANCEOF(r_type, Type::Pointer)))) {
+            Logger::inst().log_error(
+                Err::NoOperatorOverload,
+                expr->op->location,
+                std::string("Type `") + r_type->to_string() +
+                    "` is not compatible with type `" + l_type->to_string() +
+                    "`."
             );
             return std::any();
         }
@@ -362,6 +378,17 @@ std::any LocalChecker::visit(Expr::Binary* expr, bool as_lvalue) {
                 Err::NoOperatorOverload,
                 expr->op->location,
                 "Operands must be of a numeric type."
+            );
+            return std::any();
+        }
+        // Both operands must be of the same type.
+        if (*l_type != *r_type) {
+            Logger::inst().log_error(
+                Err::NoOperatorOverload,
+                expr->op->location,
+                std::string("Type `") + r_type->to_string() +
+                    "` is not compatible with type `" + l_type->to_string() +
+                    "`."
             );
             return std::any();
         }

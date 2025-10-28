@@ -202,6 +202,9 @@ public:
      * For clarification, for the assignment `a = b`, this checks if the type of
      * `b` (this) is assignable to the type of `a` (other).
      *
+     * This function is assymmetric; that is, `a.is_assignable_to(b)` may not
+     * return the same result as `b.is_assignable_to(a)`.
+     *
      * For most cases, this is equivalent to checking for equality.
      * For pointer types, assigning a mutable pointer to an immutable pointer is
      * allowed.

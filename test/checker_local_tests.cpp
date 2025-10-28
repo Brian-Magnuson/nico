@@ -266,6 +266,18 @@ TEST_CASE("Local comparison expressions", "[checker]") {
         run_checker_test("let a = true == false");
     }
 
+    SECTION("Valid comparison expressions 6") {
+        run_checker_test(
+            "let a: @i32 = nullptr let b = a == nullptr let c = a != nullptr"
+        );
+    }
+
+    SECTION("Valid comparison expressions 7") {
+        run_checker_test(
+            "let a: @i32 = nullptr let b: @@i32 = @a let c = b == a"
+        );
+    }
+
     SECTION("Comparison type mismatch 1") {
         run_checker_test("let a = 1 < true", Err::NoOperatorOverload);
     }

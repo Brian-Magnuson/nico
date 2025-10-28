@@ -297,7 +297,8 @@ std::any CodeGenerator::visit(Expr::Binary* expr, bool as_lvalue) {
         }
     }
     else if (PTR_INSTANCEOF(expr->left->type, Type::Int) ||
-             PTR_INSTANCEOF(expr->left->type, Type::Bool)) {
+             PTR_INSTANCEOF(expr->left->type, Type::Bool) ||
+             PTR_INSTANCEOF(expr->left->type, Type::Pointer)) {
         switch (expr->op->tok_type) {
         case Tok::Plus:
             result = builder->CreateAdd(left, right);
@@ -513,6 +514,11 @@ std::any CodeGenerator::visit(Expr::Literal* expr, bool as_lvalue) {
     case Tok::Str:
         result = builder->CreateGlobalStringPtr(
             std::any_cast<std::string>(expr->token->literal)
+        );
+        break;
+    case Tok::Nullptr:
+        result = llvm::ConstantPointerNull::get(
+            llvm::PointerType::get(*mod_ctx.llvm_context, 0)
         );
         break;
     default:
