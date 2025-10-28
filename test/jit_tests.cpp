@@ -753,3 +753,57 @@ TEST_CASE("JIT non-conditional loop expressions", "[jit]") {
         );
     }
 }
+
+TEST_CASE("JIT pointers", "[jit]") {
+    SECTION("Pointer read") {
+        run_jit_test(
+            R"(
+            let x = 10
+            let p = @x
+            printout unsafe { yield ^p }
+            )",
+            "10"
+        );
+    }
+
+    SECTION("Pointer write") {
+        run_jit_test(
+            R"(
+            let var x = 10
+            let p = var@x
+            unsafe { ^p = 20 }
+            printout x
+            )",
+            "20"
+        );
+    }
+
+    SECTION("Pointer reassignment") {
+        run_jit_test(
+            R"(
+            let var x = 10
+            let var y = 20
+            let var p = var@x
+            unsafe { ^p = 30 }
+            printout x, ",", y, ","
+            p = var@y
+            unsafe { ^p = 40 }
+            printout x, ",", y
+            )",
+            "30,20,30,40"
+        );
+    }
+
+    SECTION("Pointer to pointer") {
+        run_jit_test(
+            R"(
+            let var x = 10
+            let p1 = var@x
+            let p2 = @p1
+            unsafe { ^^p2 = 20 }
+            printout x
+            )",
+            "20"
+        );
+    }
+}

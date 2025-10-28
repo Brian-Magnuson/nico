@@ -402,15 +402,21 @@ std::any CodeGenerator::visit(Expr::Unary* expr, bool as_lvalue) {
 }
 
 std::any CodeGenerator::visit(Expr::Address* expr, bool as_lvalue) {
-    // TODO: Implement address-of expressions.
-    panic("CodeGenerator::visit(Expr::Address*): Not implemented yet.");
-    return std::any();
+    return std::any_cast<llvm::Value*>(expr->right->accept(this, true));
 }
 
 std::any CodeGenerator::visit(Expr::Deref* expr, bool as_lvalue) {
-    // TODO: Implement dereference expressions.
-    panic("CodeGenerator::visit(Expr::Deref*): Not implemented yet.");
-    return std::any();
+    llvm::Value* result =
+        std::any_cast<llvm::Value*>(expr->right->accept(this, false));
+
+    if (as_lvalue) {
+        return result;
+    }
+    else {
+        result =
+            builder->CreateLoad(expr->type->get_llvm_type(builder), result);
+        return result;
+    }
 }
 
 std::any CodeGenerator::visit(Expr::Cast* expr, bool as_lvalue) {

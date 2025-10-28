@@ -197,6 +197,13 @@ TEST_CASE("Local dereference expressions", "[checker]") {
         );
     }
 
+    SECTION("Valid mutable pointer pointer") {
+        run_checker_test(
+            "let var a = 1 let b = var@a let c = @b "
+            "unsafe { ^^c = 2 }"
+        );
+    }
+
     SECTION("Assign to immutable via pointer") {
         run_checker_test(
             "let a = 1 let b: @i32 = @a unsafe { ^b = 2 }",
