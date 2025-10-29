@@ -62,6 +62,17 @@ public:
     ) const;
 
     /**
+     * @brief Gets the continue block for the nearest loop or loop with the
+     * specified label.
+     *
+     * @param label An optional label to identify the loop block.
+     * @return The continue block for the specified loop.
+     * @warning This method will panic if the requested loop is not found.
+     */
+    llvm::BasicBlock*
+    get_continue_block(std::optional<std::string> label = std::nullopt) const;
+
+    /**
      * @brief Gets the exit block for the specified block kind and label.
      *
      * @param kind The kind of block (Function or Loop; Plain blocks have no

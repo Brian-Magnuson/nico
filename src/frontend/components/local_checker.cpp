@@ -178,6 +178,20 @@ std::any LocalChecker::visit(Stmt::Yield* stmt) {
     return std::any();
 }
 
+std::any LocalChecker::visit(Stmt::Continue* stmt) {
+    auto target_scope =
+        symbol_tree->get_local_scope_of_kind(Expr::Block::Kind::Loop);
+    if (!target_scope) {
+        Logger::inst().log_error(
+            Err::ContinueOutsideLoop,
+            stmt->continue_token->location,
+            "Cannot use continue outside of a loop."
+        );
+        return std::any();
+    }
+    return std::any();
+}
+
 std::any LocalChecker::visit(Stmt::Print* stmt) {
     // Visit each expression in the print statement.
     for (auto& expr : stmt->expressions) {

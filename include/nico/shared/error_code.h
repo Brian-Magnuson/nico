@@ -126,10 +126,6 @@ enum class Err {
     DereferenceNonPointer,
     // An attempt was made to dereference a pointer whose type is `nullptr`.
     DereferenceNullptr,
-    // A yield statement was found outside of a local scope.
-    YieldOutsideLocalScope,
-    // An attempt was made to declare a function in a local scope.
-    FunctionScopeInLocalScope,
     // An access expression on a tuple had an index that was out of bounds.
     TupleIndexOutOfBounds,
     // An access expression was found where the right side was not an integer
@@ -142,8 +138,12 @@ enum class Err {
     WhileLoopYieldingNonUnit,
     // The branches of a conditional expression have mismatched types.
     ConditionalBranchTypeMismatch,
+    // A yield statement was found outside of a local scope.
+    YieldOutsideLocalScope,
     // A break statement was found outside of a loop.
     BreakOutsideLoop,
+    // A continue statement was found outside of a loop.
+    ContinueOutsideLoop,
     // A return statement was found outside of a function.
     ReturnOutsideFunction,
     // A pointer dereference was found outside of an unsafe block.

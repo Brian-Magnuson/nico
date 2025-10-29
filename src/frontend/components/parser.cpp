@@ -632,6 +632,9 @@ std::optional<std::shared_ptr<Stmt>> Parser::statement() {
     else if (match({Tok::KwYield, Tok::KwBreak})) {
         return yield_statement();
     }
+    else if (match({Tok::KwContinue})) {
+        return std::make_shared<Stmt::Continue>(previous());
+    }
     return expression_statement();
 }
 

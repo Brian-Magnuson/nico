@@ -42,9 +42,14 @@ std::any AstPrinter::visit(Stmt::Pass* /*stmt*/) {
 
 std::any AstPrinter::visit(Stmt::Yield* stmt) {
     std::string str = "(stmt:yield ";
+    str += std::string(stmt->yield_token->lexeme) + " ";
     str += std::any_cast<std::string>(stmt->expression->accept(this, false));
     str += ")";
     return str;
+}
+
+std::any AstPrinter::visit(Stmt::Continue* /*stmt*/) {
+    return std::string("(stmt:continue)");
 }
 
 std::any AstPrinter::visit(Stmt::Eof* /*stmt*/) {

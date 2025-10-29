@@ -171,6 +171,18 @@ std::any CodeGenerator::visit(Stmt::Yield* stmt) {
     return std::any();
 }
 
+std::any CodeGenerator::visit(Stmt::Continue* /*stmt*/) {
+    // Generate code for the continue statement
+    builder->CreateBr(control_stack.get_continue_block());
+    auto unreachable_block = llvm::BasicBlock::Create(
+        *mod_ctx.llvm_context,
+        "unreachable",
+        builder->GetInsertBlock()->getParent()
+    );
+    builder->SetInsertPoint(unreachable_block);
+    return std::any();
+}
+
 std::any CodeGenerator::visit(Stmt::Eof* stmt) {
     // Generate code for the end-of-file (EOF) statement
     return std::any();

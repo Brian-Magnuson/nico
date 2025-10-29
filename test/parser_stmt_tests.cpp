@@ -222,6 +222,26 @@ TEST_CASE("Parser statement separation", "[parser]") {
     }
 }
 
+TEST_CASE("Parser non-declaring statements", "[parser]") {
+    SECTION("Yield statement") {
+        run_parser_stmt_test(
+            "yield 42",
+            {"(stmt:yield yield (lit 42))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Continue statement") {
+        run_parser_stmt_test("continue", {"(stmt:continue)", "(stmt:eof)"});
+    }
+
+    SECTION("Break statement") {
+        run_parser_stmt_test(
+            "break 10",
+            {"(stmt:yield break (lit 10))", "(stmt:eof)"}
+        );
+    }
+}
+
 // MARK: Error tests
 
 TEST_CASE("Parser let stmt errors", "[parser]") {
@@ -248,5 +268,15 @@ TEST_CASE("Parser annotation errors", "[parser]") {
             "let a: var i32 = 1",
             Err::UnexpectedVarInAnnotation
         );
+    }
+}
+
+TEST_CASE("Parser yield without expression", "[parser]") {
+    SECTION("Yield missing expression") {
+        run_parser_stmt_error_test("yield", Err::NotAnExpression);
+    }
+
+    SECTION("Break missing expression") {
+        run_parser_stmt_error_test("break", Err::NotAnExpression);
     }
 }

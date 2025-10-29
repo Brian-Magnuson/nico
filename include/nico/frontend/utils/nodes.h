@@ -237,6 +237,7 @@ public:
 
     class Pass;
     class Yield;
+    class Continue;
 
     class Eof;
 
@@ -252,6 +253,7 @@ public:
         virtual std::any visit(Print* stmt) = 0;
         virtual std::any visit(Pass* stmt) = 0;
         virtual std::any visit(Yield* stmt) = 0;
+        virtual std::any visit(Continue* stmt) = 0;
         virtual std::any visit(Eof* stmt) = 0;
     };
 

@@ -113,6 +113,23 @@ public:
 };
 
 /**
+ * @brief A continue statement.
+ *
+ * Continue statements skip the current iteration of a loop and proceed to the
+ * next iteration.
+ */
+class Stmt::Continue : public Stmt {
+public:
+    // The token representing the continue statement.
+    std::shared_ptr<Token> continue_token;
+
+    Continue(std::shared_ptr<Token> continue_token)
+        : continue_token(continue_token) {}
+
+    std::any accept(Visitor* visitor) override { return visitor->visit(this); }
+};
+
+/**
  * @brief An EOF statement.
  *
  * The EOF statement represents the end of the file.

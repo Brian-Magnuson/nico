@@ -41,6 +41,18 @@ llvm::AllocaInst* ControlStack::get_yield_allocation(
     );
 }
 
+llvm::BasicBlock*
+ControlStack::get_continue_block(std::optional<std::string> label) const {
+    if (!top_block) {
+        panic("ControlStack::get_continue_block: No block in stack.");
+    }
+    auto loop = top_block->get_loop(label);
+    if (loop) {
+        return loop->continue_block;
+    }
+    panic("ControlStack::get_continue_block: Target loop not found in stack.");
+}
+
 llvm::BasicBlock* ControlStack::get_exit_block(
     Expr::Block::Kind kind, std::optional<std::string> label
 ) const {

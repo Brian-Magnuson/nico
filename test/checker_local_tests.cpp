@@ -662,4 +662,12 @@ TEST_CASE("Local loop expressions", "[checker]") {
             Err::WhileLoopYieldingNonUnit
         );
     }
+
+    SECTION("Break outside loop") {
+        run_checker_test("break ()", Err::BreakOutsideLoop);
+    }
+
+    SECTION("Continue outside loop") {
+        run_checker_test("continue", Err::ContinueOutsideLoop);
+    }
 }
