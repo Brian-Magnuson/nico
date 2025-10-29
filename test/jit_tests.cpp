@@ -605,6 +605,20 @@ TEST_CASE("JIT while loop expressions", "[jit]") {
         );
     }
 
+    SECTION("While loop with continue") {
+        run_jit_test(
+            R"(
+            let var x = 0
+            while x < 10:
+                x = x + 1
+                if x % 2 == 0:
+                    continue
+                printout x
+            )",
+            "13579"
+        );
+    }
+
     SECTION("FizzBuzz") {
         run_jit_test(
             R"(
@@ -689,6 +703,21 @@ TEST_CASE("JIT do-while loop expressions", "[jit]") {
             "1"
         );
     }
+
+    SECTION("Do-while loop with continue") {
+        run_jit_test(
+            R"(
+            let var x = 0
+            do:
+                x = x + 1
+                if x % 2 == 0:
+                    continue
+                printout x
+            while x < 10
+            )",
+            "13579"
+        );
+    }
 }
 
 TEST_CASE("JIT non-conditional loop expressions", "[jit]") {
@@ -750,6 +779,22 @@ TEST_CASE("JIT non-conditional loop expressions", "[jit]") {
             printout x
             )",
             "4"
+        );
+    }
+
+    SECTION("Non-conditional loop with continue") {
+        run_jit_test(
+            R"(
+            let var i = 0
+            loop:
+                i = i + 1
+                if i % 2 == 0:
+                    continue
+                printout i
+                if i > 5:
+                    break i
+            )",
+            "1357"
         );
     }
 }

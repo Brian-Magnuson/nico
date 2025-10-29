@@ -673,8 +673,6 @@ std::any CodeGenerator::visit(Expr::Loop* expr, bool as_lvalue) {
         current_function
     );
 
-    control_stack.add_loop_block(yield_allocation, merge_block, do_block);
-
     if (expr->condition.has_value()) {
         // Conditional loops, as the name implies, have a condition block.
         llvm::BasicBlock* condition_block = llvm::BasicBlock::Create(
@@ -682,6 +680,9 @@ std::any CodeGenerator::visit(Expr::Loop* expr, bool as_lvalue) {
             "loop_cond",
             current_function
         );
+        control_stack
+            .add_loop_block(yield_allocation, merge_block, condition_block);
+
         // Conditional loops include while loops and do-while loops.
         // The flow is the same: cond->do->cond->do...
         if (expr->loops_once) {
@@ -709,6 +710,8 @@ std::any CodeGenerator::visit(Expr::Loop* expr, bool as_lvalue) {
         builder->CreateBr(condition_block);
     }
     else {
+        control_stack.add_loop_block(yield_allocation, merge_block, do_block);
+
         // Non-conditional loops have no condition block.
         // The flow is simply: do->do->do...
         // The only way to exit the loop is with a break statement, which is
