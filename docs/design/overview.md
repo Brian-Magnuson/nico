@@ -155,6 +155,32 @@ p1 = p2                 // OK; p2 is mutable, but p1 is not
 let p3: var@i32 = p1    // Error: p1 is not mutable
 ```
 
+### Null pointer type
+
+There is a special pointer type called the null pointer type, written as `nullptr`. It has only one value, which is also written as `nullptr`.
+```
+let p1: nullptr = nullptr
+let p2 = nullptr // Type inferred as nullptr
+```
+
+The null pointer stores the address `0`. It is often used to indicate that a pointer does not point to any valid memory location. It can be said that `nullptr` is a "pointer to nothing" or "null".
+
+You are not allowed to dereference a pointer whose type is `nullptr`. Attempting to do so will result in a compile-time error.
+```
+let p = nullptr
+unsafe:
+    ^p // Error: cannot dereference nullptr
+```
+
+This does not mean you are safe from dereferencing null pointers. A raw pointer of any other type may still point to null. We add this check because the only value of the `nullptr` type is `nullptr`, so dereferencing it is never valid.
+
+The `nullptr` type is special in that pointers of this type may be assigned to any other pointer type without requiring an explicit cast.
+```
+let p1: @i32 = nullptr
+```
+
+Here, we specified the type of `@i32`. If we had not, the type would have been inferred as `nullptr`.
+
 ### Reference types
 
 A reference is a safe pointer to a value. It is written as `&T`, where `T` is the type of the value. A reference can never be null and the referenced value must live at least as long as the reference.
