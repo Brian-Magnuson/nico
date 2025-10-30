@@ -103,12 +103,12 @@ public:
     Func(
         std::shared_ptr<Token> identifier,
         std::optional<std::shared_ptr<Annotation>> annotation,
-        std::vector<Param> parameters,
+        std::vector<Param>&& parameters,
         std::shared_ptr<Expr> body
     )
         : identifier(identifier),
           annotation(annotation),
-          parameters(parameters),
+          parameters(std::move(parameters)),
           body(body) {}
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
@@ -125,8 +125,8 @@ public:
     // The expressions to print.
     std::vector<std::shared_ptr<Expr>> expressions;
 
-    Print(std::vector<std::shared_ptr<Expr>> expressions)
-        : expressions(expressions) {}
+    Print(std::vector<std::shared_ptr<Expr>>&& expressions)
+        : expressions(std::move(expressions)) {}
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };
@@ -552,7 +552,7 @@ public:
 
     Tuple(
         std::shared_ptr<Token> lparen,
-        std::vector<std::shared_ptr<Expr>> elements
+        std::vector<std::shared_ptr<Expr>>&& elements
     )
         : lparen(lparen), elements(std::move(elements)) {
         location = &lparen->location;
@@ -611,7 +611,7 @@ public:
 
     Block(
         std::shared_ptr<Token> opening_tok,
-        std::vector<std::shared_ptr<Stmt>> statements,
+        std::vector<std::shared_ptr<Stmt>>&& statements,
         Kind kind,
         bool is_unsafe = false
     )
@@ -821,7 +821,7 @@ public:
     // are annotations.
     const Dictionary<std::string, std::shared_ptr<Annotation>> properties;
 
-    Object(Dictionary<std::string, std::shared_ptr<Annotation>> properties)
+    Object(Dictionary<std::string, std::shared_ptr<Annotation>>&& properties)
         : properties(std::move(properties)) {}
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
@@ -852,7 +852,7 @@ public:
     // A vector of annotations representing the elements of the tuple.
     const std::vector<std::shared_ptr<Annotation>> elements;
 
-    Tuple(std::vector<std::shared_ptr<Annotation>> elements)
+    Tuple(std::vector<std::shared_ptr<Annotation>>&& elements)
         : elements(std::move(elements)) {}
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }

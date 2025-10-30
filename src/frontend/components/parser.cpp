@@ -121,7 +121,7 @@ std::optional<std::shared_ptr<Expr>> Parser::block(Expr::Block::Kind kind) {
 
     return std::make_shared<Expr::Block>(
         opening_tok,
-        statements,
+        std::move(statements),
         kind,
         is_unsafe
     );
@@ -300,7 +300,7 @@ std::optional<std::shared_ptr<Expr>> Parser::primary() {
         std::vector<std::shared_ptr<Expr>> elements;
         if (match({Tok::RParen})) {
             // Empty tuple
-            return std::make_shared<Expr::Tuple>(lparen, elements);
+            return std::make_shared<Expr::Tuple>(lparen, std::move(elements));
         }
         bool comma_matched = false;
         do {
@@ -325,7 +325,7 @@ std::optional<std::shared_ptr<Expr>> Parser::primary() {
             return elements[0];
         }
         else {
-            return std::make_shared<Expr::Tuple>(lparen, elements);
+            return std::make_shared<Expr::Tuple>(lparen, std::move(elements));
         }
     }
 
@@ -686,7 +686,7 @@ std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
     return std::make_shared<Stmt::Func>(
         identifier,
         return_type,
-        parameters,
+        std::move(parameters),
         *body_expr
     );
 }
@@ -705,7 +705,7 @@ std::optional<std::shared_ptr<Stmt>> Parser::print_statement() {
         expressions.push_back(*expr);
     }
 
-    return std::make_shared<Stmt::Print>(expressions);
+    return std::make_shared<Stmt::Print>(std::move(expressions));
 }
 
 std::optional<std::shared_ptr<Stmt>> Parser::yield_statement() {
@@ -817,7 +817,7 @@ std::optional<std::shared_ptr<Annotation>> Parser::annotation() {
             panic("Parser::annotation: Missing ')' while parsing tuple.");
         }
 
-        return std::make_shared<Annotation::Tuple>(elements);
+        return std::make_shared<Annotation::Tuple>(std::move(elements));
     }
     Logger::inst()
         .log_error(Err::NotAType, peek()->location, "Not a valid type.");
