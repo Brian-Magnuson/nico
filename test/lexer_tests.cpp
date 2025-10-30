@@ -116,7 +116,7 @@ TEST_CASE("Lexer short tokens (run_lexer_test)", "[lexer]") {
 
     SECTION("Comparison operators") {
         run_lexer_test(
-            "==!=>=<=><",
+            "== != >= <= ><",
             {Tok::EqEq,
              Tok::BangEq,
              Tok::GtEq,
@@ -131,6 +131,19 @@ TEST_CASE("Lexer short tokens (run_lexer_test)", "[lexer]") {
         run_lexer_test(
             ": :: :::",
             {Tok::Colon, Tok::ColonColon, Tok::ColonColon, Tok::Colon, Tok::Eof}
+        );
+    }
+
+    SECTION("Other operators") {
+        run_lexer_test(
+            ". @ & ^ -> =>",
+            {Tok::Dot,
+             Tok::At,
+             Tok::Amp,
+             Tok::Caret,
+             Tok::Arrow,
+             Tok::DoubleArrow,
+             Tok::Eof}
         );
     }
 }

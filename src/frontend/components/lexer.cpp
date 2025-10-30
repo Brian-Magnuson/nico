@@ -37,11 +37,13 @@ std::unordered_map<std::string_view, Tok> Lexer::keywords = {
 
     {"let", Tok::KwLet},
     {"var", Tok::KwVar},
+    {"func", Tok::KwFunc},
 
     {"pass", Tok::KwPass},
     {"yield", Tok::KwYield},
     {"break", Tok::KwBreak},
     {"continue", Tok::KwContinue},
+    {"return", Tok::KwReturn},
 
     {"printout", Tok::KwPrintout},
 };
@@ -691,6 +693,8 @@ void Lexer::scan_token() {
     case '=':
         if (match('='))
             add_token(Tok::EqEq);
+        else if (match('>'))
+            add_token(Tok::DoubleArrow);
         else
             add_token(Tok::Eq);
         break;

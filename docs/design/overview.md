@@ -337,7 +337,7 @@ let var x = 42
 
 ### Functions
 
-Functions are used to encapsulate code and allow it to be reused. The `func` keyword declares a function:
+Functions are used to encapsulate code and allow it to be reused. The `func` keyword declares a function. It may be written in indented form, braced form, or short form:
 ```
 func my_function(): // Indented form
     statement1
@@ -345,6 +345,8 @@ func my_function(): // Indented form
 func my_function() { // Braced form
     statement1
 }
+
+func my_function() => expression // Short form
 ```
 
 Functions may accept arguments by listing parameters in parentheses. Types are always required when listing parameters (except for the instance parameter in methods):
@@ -379,10 +381,12 @@ func my_function(a: i32, b: &str = "Hello, world!"):
     statement1
 ```
 
-Functions may also return values. The return type is specified after the parameter list:
+Functions may also return values. The return type is specified using a single arrow `->` after the parameter list and before the block/double-arrow:
 ```
 func my_function(a: i32, b: i32) -> i32:
     yield a + b
+
+func my_function(a: i32, b: i32) -> i32 => a + b // Short form
 ```
 
 Similar to blocks, the `yield` statement may be used to set the return value of the function. The function will return the value from the last yield statement executed within the function.

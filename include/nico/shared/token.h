@@ -71,6 +71,7 @@ enum class Tok {
     Eq,
     Dot,
     Arrow,
+    DoubleArrow,
     Colon,
     ColonColon,
     At,
