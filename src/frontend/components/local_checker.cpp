@@ -100,6 +100,12 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
     return std::any();
 }
 
+std::any LocalChecker::visit(Stmt::Func* stmt) {
+    // TODO: Implement local checking for function declarations.
+    panic("LocalChecker::visit(Stmt::Func*): Not implemented yet.");
+    return std::any();
+}
+
 std::any LocalChecker::visit(Stmt::Pass* /*stmt*/) {
     // A pass statement does nothing.
     return std::any();

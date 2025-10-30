@@ -82,6 +82,12 @@ std::any CodeGenerator::visit(Stmt::Let* stmt) {
     return std::any();
 }
 
+std::any CodeGenerator::visit(Stmt::Func* stmt) {
+    // TODO: Implement code generation for function declarations.
+    panic("CodeGenerator::visit(Stmt::Func*): Not implemented yet.");
+    return std::any();
+}
+
 std::any CodeGenerator::visit(Stmt::Print* stmt) {
     llvm::Function* printf_fn = mod_ctx.ir_module->getFunction("printf");
 

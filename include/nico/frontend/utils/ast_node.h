@@ -61,6 +61,49 @@ public:
 };
 
 /**
+ * @brief A function declaration statement.
+ *
+ * Function declarations introduce a new function into the current scope.
+ */
+class Stmt::Func : public Stmt {
+public:
+    /**
+     * @brief A parameter in a function declaration.
+     */
+    struct Param {
+        // Whether the parameter is declared with `var` or not.
+        bool has_var;
+        // The identifier token.
+        std::shared_ptr<Token> identifier;
+        // The type annotation, always required.
+        std::shared_ptr<Annotation> annotation;
+        // An optional expression for the default value.
+        std::optional<std::shared_ptr<Expr>> expression;
+    };
+    // The function name token.
+    std::shared_ptr<Token> identifier;
+    // The annotation for the return type.
+    std::optional<std::shared_ptr<Annotation>> annotation;
+    // The parameters of the function.
+    std::vector<Param> parameters;
+    // The body of the function.
+    std::shared_ptr<Expr> body;
+
+    Func(
+        std::shared_ptr<Token> identifier,
+        std::optional<std::shared_ptr<Annotation>> annotation,
+        std::vector<Param> parameters,
+        std::shared_ptr<Expr> body
+    )
+        : identifier(identifier),
+          annotation(annotation),
+          parameters(parameters),
+          body(body) {}
+
+    std::any accept(Visitor* visitor) override { return visitor->visit(this); }
+};
+
+/**
  * @brief A print statement.
  *
  * Since a proper print function is not yet implemented, this is a temporary

@@ -27,6 +27,36 @@ std::any AstPrinter::visit(Stmt::Let* stmt) {
     return str;
 }
 
+std::any AstPrinter::visit(Stmt::Func* stmt) {
+    /*
+    (stmt:func func_name ret_type (var param1 type1 default1) (param2 type2) =>
+    body_expr)
+    */
+    std::string str =
+        "(stmt:func " + std::string(stmt->identifier->lexeme) + " ";
+    if (stmt->annotation.has_value()) {
+        str += stmt->annotation.value()->to_string() + " ";
+    }
+    for (const auto& param : stmt->parameters) {
+        str += "(";
+        if (param.has_var) {
+            str += "var ";
+        }
+        str += std::string(param.identifier->lexeme) + " " +
+               param.annotation->to_string();
+
+        if (param.expression.has_value()) {
+            str += " " + std::any_cast<std::string>(
+                             param.expression.value()->accept(this, false)
+                         );
+        }
+        str += ") ";
+    }
+    str += "=> " + std::any_cast<std::string>(stmt->body->accept(this, false));
+    str += ")";
+    return str;
+}
+
 std::any AstPrinter::visit(Stmt::Print* stmt) {
     std::string str = "(stmt:print";
     for (const auto& expr : stmt->expressions) {
