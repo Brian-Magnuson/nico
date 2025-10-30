@@ -478,6 +478,12 @@ std::any CodeGenerator::visit(Expr::Access* expr, bool as_lvalue) {
     return result;
 }
 
+std::any CodeGenerator::visit(Expr::Call* expr, bool as_lvalue) {
+    // TODO: Implement codegen for call expressions.
+    panic("CodeGenerator::visit(Expr::Call*): Not implemented yet.");
+    return std::any();
+}
+
 std::any CodeGenerator::visit(Expr::NameRef* expr, bool as_lvalue) {
     llvm::Value* result = nullptr;
     llvm::Value* ptr = expr->field_entry.lock()->get_llvm_allocation(builder);

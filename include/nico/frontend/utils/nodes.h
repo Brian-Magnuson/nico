@@ -285,8 +285,9 @@ public:
     class Unary;
     class Address;
     class Deref;
-    class Access;
     class Cast;
+    class Access;
+    class Call;
     class NameRef;
     class Literal;
 
@@ -312,6 +313,7 @@ public:
         virtual std::any visit(Deref* expr, bool as_lvalue) = 0;
         virtual std::any visit(Cast* expr, bool as_lvalue) = 0;
         virtual std::any visit(Access* expr, bool as_lvalue) = 0;
+        virtual std::any visit(Call* expr, bool as_lvalue) = 0;
         virtual std::any visit(NameRef* expr, bool as_lvalue) = 0;
         virtual std::any visit(Literal* expr, bool as_lvalue) = 0;
         virtual std::any visit(Tuple* expr, bool as_lvalue) = 0;

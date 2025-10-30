@@ -630,6 +630,12 @@ std::any LocalChecker::visit(Expr::Access* expr, bool as_lvalue) {
     }
 }
 
+std::any LocalChecker::visit(Expr::Call* expr, bool as_lvalue) {
+    // TODO: Implement local checking for call expressions.
+    panic("LocalChecker::visit(Expr::Call*): Not implemented yet.");
+    return std::any();
+}
+
 std::any LocalChecker::visit(Expr::NameRef* expr, bool as_lvalue) {
     auto node = symbol_tree->search_name(expr->name);
 

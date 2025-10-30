@@ -39,6 +39,11 @@ public:
     Dictionary(const Dictionary& other) = default;
 
     /**
+     * @brief Move constructs a dictionary.
+     */
+    Dictionary(Dictionary&& other) noexcept = default;
+
+    /**
      * @brief Constructs a dictionary from a list of keys.
      *
      * Enables the use of initializer lists to construct a dictionary.

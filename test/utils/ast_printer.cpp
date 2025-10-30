@@ -149,6 +149,20 @@ std::any AstPrinter::visit(Expr::Access* expr, bool as_lvalue) {
     );
 }
 
+std::any AstPrinter::visit(Expr::Call* expr, bool as_lvalue) {
+    std::string str = "(call ";
+    str += std::any_cast<std::string>(expr->callee->accept(this, false));
+    for (const auto& arg : expr->provided_pos_args) {
+        str += " " + std::any_cast<std::string>(arg->accept(this, false));
+    }
+    for (const auto& [name, arg] : expr->provided_named_args) {
+        str += " (" + name + " = " +
+               std::any_cast<std::string>(arg->accept(this, false)) + ")";
+    }
+    str += ")";
+    return str;
+}
+
 std::any AstPrinter::visit(Expr::NameRef* expr, bool as_lvalue) {
     return std::string("(nameref " + expr->name.to_string() + ")");
 }

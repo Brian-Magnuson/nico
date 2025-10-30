@@ -447,6 +447,44 @@ public:
 };
 
 /**
+ * @brief A call expression.
+ *
+ * Call expressions are used to make function calls.
+ *
+ * They consist of a callee (the callable object) and a list of arguments.
+ * Arguments can be either positional or named as long as there are no
+ * positional arguments after any named arguments.
+ */
+class Expr::Call : public Expr {
+public:
+    // The callee expression, usually a NameRef for a function.
+    std::shared_ptr<Expr> callee;
+    // The positional arguments that were provided for the call.
+    std::vector<std::shared_ptr<Expr>> provided_pos_args;
+    // The named arguments that were provided for the call.
+    Dictionary<std::string, std::shared_ptr<Expr>> provided_named_args;
+
+    // The actual arguments to be used in the call; to be filled in by the type
+    // checker.
+    Dictionary<std::string, std::weak_ptr<Expr>> actual_args;
+
+    Call(
+        std::shared_ptr<Expr> callee,
+        std::vector<std::shared_ptr<Expr>>&& provided_pos_args,
+        Dictionary<std::string, std::shared_ptr<Expr>>&& provided_named_args
+    )
+        : callee(callee),
+          provided_pos_args(std::move(provided_pos_args)),
+          provided_named_args(std::move(provided_named_args)) {
+        location = callee->location;
+    }
+
+    std::any accept(Visitor* visitor, bool as_lvalue) override {
+        return visitor->visit(this, as_lvalue);
+    }
+};
+
+/**
  * @brief A name reference expression.
  *
  * Name reference expressions refer to variables or functions by name.
