@@ -272,6 +272,16 @@ class Parser {
     std::optional<std::shared_ptr<Stmt>> let_statement();
 
     /**
+     * @brief Parses a function statement.
+     *
+     * A function statement introduces a new function into the current scope.
+     *
+     * @return A shared pointer to the parsed statement, or nullopt if the
+     * statement could not be parsed.
+     */
+    std::optional<std::shared_ptr<Stmt>> func_statement();
+
+    /**
      * @brief Parses a print statement.
      *
      * Print statements print a series of expressions to the console.

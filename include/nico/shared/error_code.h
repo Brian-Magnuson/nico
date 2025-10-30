@@ -63,6 +63,8 @@ enum class Err {
     NotAType,
     // A let statement was found without a type or value.
     LetWithoutTypeOrValue,
+    // A function statement was found without an opening parenthesis.
+    FuncWithoutOpeningParen,
     // A closing parenthesis was found without a matching opening parenthesis.
     UnexpectedClosingParen,
     // A block keyword was found without a proper opening token.
@@ -75,6 +77,8 @@ enum class Err {
     WhileLoopWithoutDoOrBlock,
     // A do-while loop was found without a `while` keyword.
     DoWhileLoopWithoutWhile,
+    // A function declaration was found without an arrow or block.
+    FuncWithoutArrowOrBlock,
     // A `var` keyword was found without an address-of operator.
     UnexpectedVarInExpression,
     // A variable annotation contained an unexpected `var` keyword.

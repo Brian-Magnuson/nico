@@ -133,6 +133,63 @@ TEST_CASE("Parser let statements", "[parser]") {
     }
 }
 
+TEST_CASE("Parser function statements", "[parser]") {
+    SECTION("Func statement 1") {
+        run_parser_stmt_test(
+            "func f1() {}",
+            {"(stmt:func f1 () => (block))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Func statement 2") {
+        run_parser_stmt_test(
+            "func f2():\n    pass",
+            {"(stmt:func f2 () => (block (stmt:pass)))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Func statement 3") {
+        run_parser_stmt_test(
+            "func f3() -> i32 => 10",
+            {"(stmt:func f3 i32 () => (lit 10))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Func statement 4") {
+        run_parser_stmt_test(
+            "func f4(x: i32) -> i32 => x + 1",
+            {"(stmt:func f4 i32 (x i32) => (binary + (nameref x) (lit 1)))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Func statement 5") {
+        run_parser_stmt_test(
+            "func f5(var y: f64) { y += 1.0 }",
+            {"(stmt:func f5 (var y f64) => (block (expr (assign (nameref y) "
+             "(binary + (nameref y) (lit 1.0))))))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Func statement 6") {
+        run_parser_stmt_test(
+            "func f6(a: i32 = 0) -> i32 => a * 2",
+            {"(stmt:func f6 i32 (a i32 (lit 0)) => (binary * (nameref a) "
+             "(lit 2)))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Func statement 7") {
+        run_parser_stmt_test(
+            "func f7() { pass pass pass }",
+            {"(stmt:func f7 () => (block (stmt:pass) (stmt:pass) (stmt:pass)))",
+             "(stmt:eof)"}
+        );
+    }
+}
+
 TEST_CASE("Parser tuple annotations", "[parser]") {
     SECTION("Tuple annotation 1") {
         run_parser_stmt_test(
@@ -255,6 +312,39 @@ TEST_CASE("Parser let stmt errors", "[parser]") {
 
     SECTION("Let without type or value") {
         run_parser_stmt_error_test("let a", Err::LetWithoutTypeOrValue);
+    }
+}
+
+TEST_CASE("Parser func stmt errors", "[parser]") {
+    SECTION("Func missing identifier") {
+        run_parser_stmt_error_test("func {}", Err::NotAnIdentifier);
+    }
+
+    SECTION("Func missing opening parenthesis") {
+        run_parser_stmt_error_test("func f1 {}", Err::FuncWithoutOpeningParen);
+    }
+
+    SECTION("Func missing annotation after arrow") {
+        run_parser_stmt_error_test("func f() -> {}", Err::NotAType);
+    }
+
+    SECTION("Func missing arrow or block") {
+        run_parser_stmt_error_test("func f() 10", Err::FuncWithoutArrowOrBlock);
+    }
+
+    SECTION("Func missing parameter type") {
+        run_parser_stmt_error_test("func f(x) {}", Err::NotAType);
+    }
+
+    SECTION("Func missing parameter identifier") {
+        run_parser_stmt_error_test("func f(: i32) {}", Err::NotAnIdentifier);
+    }
+
+    SECTION("Func parameter missing expr after equals") {
+        run_parser_stmt_error_test(
+            "func f(x: i32 = ) {}",
+            Err::NotAnExpression
+        );
     }
 }
 

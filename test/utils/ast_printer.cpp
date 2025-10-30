@@ -37,8 +37,9 @@ std::any AstPrinter::visit(Stmt::Func* stmt) {
     if (stmt->annotation.has_value()) {
         str += stmt->annotation.value()->to_string() + " ";
     }
+    str += "(";
     for (const auto& param : stmt->parameters) {
-        str += "(";
+
         if (param.has_var) {
             str += "var ";
         }
@@ -50,9 +51,9 @@ std::any AstPrinter::visit(Stmt::Func* stmt) {
                              param.expression.value()->accept(this, false)
                          );
         }
-        str += ") ";
     }
-    str += "=> " + std::any_cast<std::string>(stmt->body->accept(this, false));
+    str +=
+        ") => " + std::any_cast<std::string>(stmt->body->accept(this, false));
     str += ")";
     return str;
 }

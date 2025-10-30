@@ -572,6 +572,125 @@ std::optional<std::shared_ptr<Stmt>> Parser::let_statement() {
     return std::make_shared<Stmt::Let>(identifier, expr, has_var, anno);
 }
 
+std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
+    // Identifier
+    if (!match({Tok::Identifier})) {
+        Logger::inst().log_error(
+            Err::NotAnIdentifier,
+            peek()->location,
+            "Expected identifier in let statement."
+        );
+        return std::nullopt;
+    }
+    auto identifier = previous();
+
+    // Open parenthesis
+    if (!match({Tok::LParen})) {
+        Logger::inst().log_error(
+            Err::FuncWithoutOpeningParen,
+            peek()->location,
+            "Expected '(' after function name."
+        );
+        return std::nullopt;
+    }
+
+    // Parameters
+    std::vector<Stmt::Func::Param> parameters;
+    do {
+        // Closing parenthesis?
+        if (peek()->tok_type == Tok::RParen) {
+            // We allow trailing commas.
+            break;
+        }
+        // Has var?
+        bool has_var = match({Tok::KwVar});
+        // Parameter name
+        if (!match({Tok::Identifier})) {
+            Logger::inst().log_error(
+                Err::NotAnIdentifier,
+                peek()->location,
+                "Expected identifier in function parameter."
+            );
+            return std::nullopt;
+        }
+        auto param_name = previous();
+        // Annotation (always required)
+        if (!match({Tok::Colon})) {
+            Logger::inst().log_error(
+                Err::NotAType,
+                peek()->location,
+                "Expected type annotation in function parameter."
+            );
+            return std::nullopt;
+        }
+        auto param_type = annotation();
+        if (!param_type) {
+            // At this point, an error has already been logged.
+            return std::nullopt;
+        }
+        // Optional default value
+        std::optional<std::shared_ptr<Expr>> default_value = std::nullopt;
+        if (match({Tok::Eq})) {
+            default_value = expression();
+            if (!default_value) {
+                // At this point, an error has already been logged.
+                return std::nullopt;
+            }
+        }
+        parameters.push_back(
+            Stmt::Func::Param(has_var, param_name, *param_type, default_value)
+        );
+    } while (match({Tok::Comma}));
+
+    // Closing parenthesis
+    if (!match({Tok::RParen})) {
+        // This error should already be caught in the lexer.
+        panic("Parser::func_statement: Missing ')' while parsing parameters.");
+    }
+
+    // Return type (optional)
+    std::optional<std::shared_ptr<Annotation>> return_type = std::nullopt;
+    if (match({Tok::Arrow})) {
+        return_type = annotation();
+        if (!return_type) {
+            // At this point, an error has already been logged.
+            return std::nullopt;
+        }
+    }
+
+    std::optional<std::shared_ptr<Expr>> body_expr;
+    // Function body
+    if (match({Tok::DoubleArrow})) {
+        // Single-expression function
+        body_expr = expression();
+    }
+    else if (peek()->tok_type == Tok::Indent ||
+             peek()->tok_type == Tok::LBrace) {
+        // Block function
+        body_expr = block(Expr::Block::Kind::Function);
+    }
+    else {
+        Logger::inst().log_error(
+            Err::FuncWithoutArrowOrBlock,
+            peek()->location,
+            "Expected '=>' or a block for function body."
+        );
+        return std::nullopt;
+    }
+    if (!body_expr) {
+        // At this point, an error has already been logged.
+        return std::nullopt;
+    }
+
+    // Put it all together
+    return std::make_shared<Stmt::Func>(
+        identifier,
+        return_type,
+        parameters,
+        *body_expr
+    );
+}
+
 std::optional<std::shared_ptr<Stmt>> Parser::print_statement() {
     std::vector<std::shared_ptr<Expr>> expressions;
     auto expr = expression();
@@ -619,6 +738,9 @@ std::optional<std::shared_ptr<Stmt>> Parser::statement() {
 
     if (match({Tok::KwLet})) {
         return let_statement();
+    }
+    else if (match({Tok::KwFunc})) {
+        return func_statement();
     }
     else if (match({Tok::Eof})) {
         return std::make_shared<Stmt::Eof>();

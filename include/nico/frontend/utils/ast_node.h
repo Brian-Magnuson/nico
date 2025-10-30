@@ -79,6 +79,17 @@ public:
         std::shared_ptr<Annotation> annotation;
         // An optional expression for the default value.
         std::optional<std::shared_ptr<Expr>> expression;
+
+        Param(
+            bool has_var,
+            std::shared_ptr<Token> identifier,
+            std::shared_ptr<Annotation> annotation,
+            std::optional<std::shared_ptr<Expr>> expression
+        )
+            : has_var(has_var),
+              identifier(identifier),
+              annotation(annotation),
+              expression(expression) {}
     };
     // The function name token.
     std::shared_ptr<Token> identifier;
