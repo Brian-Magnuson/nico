@@ -565,7 +565,7 @@ The drawback is that instances of classes require additional memory overhead due
 
 An expression is a piece of code that produces a value. Expressions may be simple literals or more complex combinations of literals, operators, and other expressions.
 
-### Artithmetic expressions
+### Arithmetic expressions
 
 The following arithmetic operators are supported:
 ```
