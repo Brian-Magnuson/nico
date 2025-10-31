@@ -143,22 +143,6 @@ public:
     std::pair<std::shared_ptr<Node>, Err>
     add_struct_def(std::shared_ptr<Token> token, bool is_class = false);
 
-    // /**
-    //  * @brief Adds a new function scope to the symbol tree, then enters the
-    //  * function scope.
-    //  *
-    //  * Function scopes may not be added if the current scope is a local
-    //  scope.
-    //  * This may change in the future if support for closures is added.
-    //  *
-    //  * @param token The token representing the function; should be the
-    //  * function's name.
-    //  * @return std::pair<std::shared_ptr<Node::FunctionScope>, Err> The
-    //  * function scope if added successfully (first), or nullptr and an error.
-    //  */
-    // std::pair<std::shared_ptr<Node::FunctionScope>, Err>
-    // add_function_scope(std::shared_ptr<Token> token);
-
     /**
      * @brief Adds a new local scope to the symbol tree, then enters the local
      * scope.
