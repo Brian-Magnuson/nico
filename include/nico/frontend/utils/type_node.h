@@ -537,6 +537,98 @@ public:
     }
 };
 
+// MARK: Callable types
+
+class Type::ICallable : public Type {
+public:
+    virtual std::pair<std::string, std::vector<llvm::Value*>> to_print_args(
+        std::unique_ptr<llvm::IRBuilder<>>& builder,
+        llvm::Value* value,
+        bool include_quotes = false
+    ) const override {
+        return {"[function]", {}};
+    }
+};
+
+/**
+ * @brief A function type.
+ *
+ * Used to represent functions with parameters and return types.
+ */
+class Type::Function : public Type::ICallable {
+public:
+    // The parameters of the function.
+    std::vector<Field> parameters;
+    // The return type of the function.
+    const std::shared_ptr<Type> return_type;
+
+    Function(std::vector<Field> parameters, std::shared_ptr<Type> return_type)
+        : parameters(std::move(parameters)),
+          return_type(std::move(return_type)) {}
+
+    std::string to_string() const override {
+        std::string result = "func(";
+        for (const auto& param : parameters) {
+            result += param.to_string() + ", ";
+        }
+        if (!parameters.empty()) {
+            result.pop_back();
+            result.pop_back();
+        }
+        result += ") -> " + return_type->to_string();
+        return result;
+    }
+
+    bool operator==(const Type& other) const override {
+        if (const auto* other_function =
+                dynamic_cast<const Function*>(&other)) {
+            return parameters == other_function->parameters &&
+                   *return_type == *other_function->return_type;
+        }
+        return false;
+    }
+
+    virtual llvm::Type*
+    get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
+        std::vector<llvm::Type*> param_types;
+        for (const auto& param : parameters) {
+            param_types.push_back(param.type->get_llvm_type(builder));
+        }
+        llvm::Type* return_llvm_type = return_type->get_llvm_type(builder);
+        return llvm::FunctionType::get(return_llvm_type, param_types, false);
+    }
+};
+
+/**
+ * @brief A special function type representing an overloaded function.
+ *
+ * Used to represent a group of overloaded functions.
+ *
+ * When compared against any type, it is always considered not equal.
+ *
+ * Cannot be converted to an LLVM type, as overloaded functions must be
+ * resolved to a specific function before code generation.
+ */
+class Type::OverloadedFn : public Type::ICallable {
+public:
+    // The overload group this overloaded function belongs to.
+    std::weak_ptr<Node::OverloadGroup> overload_group;
+
+    OverloadedFn() = default;
+
+    std::string to_string() const override { return "overloadedfn"; }
+
+    bool operator==(const Type& other) const override { return false; }
+
+    virtual llvm::Type*
+    get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
+        panic(
+            "Type::OverloadedFn::get_llvm_type: Cannot generate LLVM type for "
+            "overloaded function."
+        );
+    }
+};
+
 // MARK: Special types
 
 /**
@@ -592,63 +684,6 @@ public:
             return struct_ty;
         }
         panic("Type::Named: Node is expired; LLVM type cannot be generated.");
-    }
-};
-
-/**
- * @brief A function type.
- *
- * Used to represent functions with parameters and return types.
- */
-class Type::Function : public Type {
-public:
-    // The parameters of the function.
-    std::vector<Field> parameters;
-    // The return type of the function.
-    const std::shared_ptr<Type> return_type;
-
-    Function(std::vector<Field> parameters, std::shared_ptr<Type> return_type)
-        : parameters(std::move(parameters)),
-          return_type(std::move(return_type)) {}
-
-    std::string to_string() const override {
-        std::string result = "func(";
-        for (const auto& param : parameters) {
-            result += param.to_string() + ", ";
-        }
-        if (!parameters.empty()) {
-            result.pop_back();
-            result.pop_back();
-        }
-        result += ") -> " + return_type->to_string();
-        return result;
-    }
-
-    bool operator==(const Type& other) const override {
-        if (const auto* other_function =
-                dynamic_cast<const Function*>(&other)) {
-            return parameters == other_function->parameters &&
-                   *return_type == *other_function->return_type;
-        }
-        return false;
-    }
-
-    virtual llvm::Type*
-    get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
-        std::vector<llvm::Type*> param_types;
-        for (const auto& param : parameters) {
-            param_types.push_back(param.type->get_llvm_type(builder));
-        }
-        llvm::Type* return_llvm_type = return_type->get_llvm_type(builder);
-        return llvm::FunctionType::get(return_llvm_type, param_types, false);
-    }
-
-    virtual std::pair<std::string, std::vector<llvm::Value*>> to_print_args(
-        std::unique_ptr<llvm::IRBuilder<>>& builder,
-        llvm::Value* value,
-        bool include_quotes = false
-    ) const override {
-        return {"[function]", {}};
     }
 };
 

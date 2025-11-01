@@ -26,6 +26,15 @@ void Node::initialize_node() {
             std::dynamic_pointer_cast<Node::StructDef>(shared_this)) {
         type_node->type = std::make_shared<Type::Named>(type_node);
     }
+    // If this is an overload group...
+    if (auto overload_group_node =
+            std::dynamic_pointer_cast<Node::OverloadGroup>(shared_this)) {
+        // Set the overload group's type's back-reference to this node.
+        auto overloaded_fn_type = std::dynamic_pointer_cast<Type::OverloadedFn>(
+            overload_group_node->field.type
+        );
+        overloaded_fn_type->overload_group = overload_group_node;
+    }
     if (parent.expired()) {
         panic("Node::initialize_node: Parent scope is expired.");
     }

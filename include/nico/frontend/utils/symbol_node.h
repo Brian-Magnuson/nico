@@ -243,8 +243,7 @@ public:
 /**
  * @brief A field entry in the symbol tree.
  *
- * Field entries are any variable declared with `let` or any function declared
- * with `func`.
+ * Field entries are any variable declared with `let`.
  *
  * Field objects carry a type object, and must therefore have their types
  * resolved before being constructed.
@@ -305,6 +304,42 @@ public:
         }
         return ptr;
     }
+};
+
+/**
+ * @brief An overload group in the symbol tree.
+ *
+ * Overload groups are used to group related function overloads together under
+ * a single name. They are represented as field entries with a type of
+ * `Type::OverloadedFn`.
+ *
+ *
+ * Since they are field entries, they are also locatable nodes.
+ * The location token should be set to the first overload's token.
+ */
+class Node::OverloadGroup : public virtual Node::FieldEntry {
+public:
+    // A list of overloads in this group.
+    std::vector<std::shared_ptr<Node::FieldEntry>> overloads;
+
+    virtual ~OverloadGroup() = default;
+
+    OverloadGroup(
+        std::weak_ptr<Node::IScope> parent_scope,
+        std::shared_ptr<Token> first_overload_token
+    )
+        : Node(parent_scope, std::string(first_overload_token->lexeme)),
+          Node::ILocatable(first_overload_token),
+          Node::FieldEntry(
+              parent_scope,
+              Field(
+                  false,
+                  first_overload_token,
+                  std::dynamic_pointer_cast<Type>(
+                      std::make_shared<Type::OverloadedFn>()
+                  )
+              )
+          ) {}
 };
 
 } // namespace nico

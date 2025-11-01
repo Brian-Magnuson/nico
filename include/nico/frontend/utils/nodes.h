@@ -45,6 +45,7 @@ public:
     class StructDef;
     class LocalScope;
     class FieldEntry;
+    class OverloadGroup;
 
     // This node's parent scope, if it exists.
     std::weak_ptr<Node::IScope> parent;
@@ -118,9 +119,13 @@ public:
     class Unit;
     class Object;
 
+    // Callable types
+    class ICallable;
+    class Function;
+    class OverloadedFn;
+
     // Special types
     class Named;
-    class Function;
 
     Type() = default;
     virtual ~Type() = default;

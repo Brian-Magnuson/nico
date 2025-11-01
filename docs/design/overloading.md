@@ -178,12 +178,12 @@ This section addresses two problems:
 
 We try to solve these problems by introducing two new nodes:
 - A symbol node called `OverloadGroup`, which represents a collection of function overloads.
-- A type node called `DynamicFunction`, which represents a function type that could refer to multiple overloads.
+- A type node called `OverloadedFn`, which represents a function type that could refer to multiple overloads.
 
 An `OverloadGroup` is a special kind of field entry in a symbol table. Normally, when we look up a name in a symbol table, we get back a single field entry. If we look up the name of an overloaded function, we get back an `OverloadGroup` entry instead. This entry contains a list of all overloads for that function name.
 
-The type object for an `OverloadGroup` is always an instance of `DynamicFunction`.
-A `DynamicFunction` is a special type that indicates the expression is callable, but does not specify *how* it is callable. It contains a pointer back to the overload group it represents. We call it "dynamic" because the exact function type is resolved later when the expression is called with arguments. This still happens at compile-time.
+The type object for an `OverloadGroup` is always an instance of `OverloadedFn`.
+An `OverloadedFn` is a special type that indicates the expression is callable, but does not specify *how* it is callable. It contains a pointer back to the overload group it represents. We call it "dynamic" because the exact function type is resolved later when the expression is called with arguments. This still happens at compile-time.
 
 The reason we have this separate type is to allow cases like this:
 ```
@@ -195,22 +195,22 @@ let greeter = greet
 
 In other programming languages, this assignment would be ambiguous and the compiler would raise an error. 
 This is where Nico differs from other languages. 
-In Nico, we allow this assignment to succeed by giving `greeter` a `DynamicFunction` type. 
+In Nico, we allow this assignment to succeed by giving `greeter` a `OverloadedFn` type. 
 This allows `greeter` to encompass all overloads of `greet`.
 ```
 greeter()           // Calls greet()
 greeter(name="Bob") // Calls greet(name: String)
 ```
 
-The `DynamicFunction` type has two very important rules:
+The `OverloadedFn` type has two very important rules:
 - The user is *not allowed* to write this type explicitly; it can only be inferred by the compiler.
-- When compared to any other type, including other `DynamicFunction` types, it is always considered *not equal*.
+- When compared to any other type, including other `OverloadedFn` types, it is always considered *not equal*.
 
-The `DynamicFunction` type can be considered one of the few times we *defer* type checking for later. The reason we allow this is because there are only a few ways to use a function pointer, especially since function pointers are immutable.
+The `OverloadedFn` type can be considered one of the few times we *defer* type checking for later. The reason we allow this is because there are only a few ways to use a function pointer, especially since function pointers are immutable.
 Because of this, there are only a few situations where we need to resolve the exact function type.
 
 Let's assume that the only time we need to resolve the exact function type is when the function pointer is called.
-When type checking the call expression, we combine the information from the `DynamicFunction` type and the provided arguments to perform overload resolution, resulting in an exact function type.
+When type checking the call expression, we combine the information from the `OverloadedFn` type and the provided arguments to perform overload resolution, resulting in an exact function type.
 We then reassign function type and field entry of the callee expression, allowing the IR to be generated as normal.
 
 Going back to our earlier example:
@@ -232,10 +232,10 @@ The type checker will follow these steps:
 1. Visit the `(expr ...)` node:
    1. Visit the `(call ...)` node:
        1. Visit the `(nameref greeter)` node:
-          1. Look up `greeter` in the symbol table, getting back an overload group with type `DynamicFunction` pointing to the overload group for `greet`.
-          2. Assign the type of the `(nameref greeter)` node to be this `DynamicFunction` type.
+          1. Look up `greeter` in the symbol table, getting back an overload group with type `OverloadedFn` pointing to the overload group for `greet`.
+          2. Assign the type of the `(nameref greeter)` node to be this `OverloadedFn` type.
           3. Return.
-       2. See that the callee has type `DynamicFunction`.
+       2. See that the callee has type `OverloadedFn`.
        3. Perform overload resolution using the overload group and the provided arguments (none in this case).
        4. Find a match with the `greet()` overload.
        5. Assign the field entry of `(nameref greeter)` to be the field entry for `greet()`.
