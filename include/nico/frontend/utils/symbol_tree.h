@@ -206,6 +206,9 @@ public:
     /**
      * @brief Adds a field entry to the symbol tree in the current scope.
      *
+     * This function is for variables, properties, and non-overloadable
+     * functions. For overloadable functions, use add_overloadable_func instead.
+     *
      * If the field name already exists in the current scope, this function does
      * not add the field and returns the existing node and an error.
      *
@@ -217,6 +220,32 @@ public:
      * successfully, or the existing node and an error (second).
      */
     std::pair<std::shared_ptr<Node>, Err> add_field_entry(const Field& field);
+
+    /**
+     * @brief Adds an overloadable function to the symbol tree in the current
+     * scope.
+     *
+     * This function is for overloadable functions. For other field entries, use
+     * add_field_entry instead.
+     *
+     * If the function name does not exist, a new overload group will be created
+     * and the function will be added to it.
+     *
+     * If the function name already exists, but does not refer to an overload
+     * group, this function does not add the function and returns the existing
+     * node and an error.
+     *
+     * If the function overload group is found, but the new function conflicts
+     * with an existing function, the function is not added and the existing
+     * function's field entry is returned along with an error.
+     *
+     *
+     * @param field The field to add.
+     * @return std::pair<std::shared_ptr<Node>, Err> The field entry if added
+     * successfully, or the existing node and an error (second).
+     */
+    std::pair<std::shared_ptr<Node>, Err>
+    add_overloadable_func(const Field& field);
 };
 
 } // namespace nico

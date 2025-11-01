@@ -113,6 +113,12 @@ enum class Err {
     LetTypeMismatch,
     // A type mismatch was found in an assignment expression.
     AssignmentTypeMismatch,
+    // A type mismatch was found between a function's default argument and its
+    // declared parameter type.
+    DefaultArgTypeMismatch,
+    // A type mismatch was found between a function's body expression and its
+    // declared return type.
+    FunctionReturnTypeMismatch,
     // An name was not found in the symbol table.
     UndeclaredName,
     // An name was matched to a non-FieldEntry node where one was expected.
@@ -152,6 +158,9 @@ enum class Err {
     ReturnOutsideFunction,
     // A pointer dereference was found outside of an unsafe block.
     PtrDerefOutsideUnsafeBlock,
+    // An attempt was made to declare a function that conflicts with an existing
+    // overload.
+    FunctionOverloadConflict,
 
     // Local type check warning
     LocalTypeWarning = 5500,

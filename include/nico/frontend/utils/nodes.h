@@ -499,11 +499,18 @@ public:
     const std::shared_ptr<Token> token;
     // The type of the field.
     const std::shared_ptr<Type> type;
+    // The default expression for the field, if any.
+    const std::optional<std::weak_ptr<Expr>> default_expr;
 
     virtual ~Field() = default;
 
-    Field(bool is_var, std::shared_ptr<Token> token, std::shared_ptr<Type> type)
-        : is_var(is_var), token(token), type(type) {
+    Field(
+        bool is_var,
+        std::shared_ptr<Token> token,
+        std::shared_ptr<Type> type,
+        std::optional<std::weak_ptr<Expr>> default_expr = std::nullopt
+    )
+        : is_var(is_var), token(token), type(type), default_expr(default_expr) {
         if (type == nullptr) {
             panic("Field::Field: Type cannot be null.");
         }

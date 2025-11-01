@@ -99,6 +99,8 @@ public:
     std::vector<Param> parameters;
     // The body of the function.
     std::shared_ptr<Expr> body;
+    // A weak pointer to the field entry in the symbol table.
+    std::weak_ptr<Node::FieldEntry> field_entry;
 
     Func(
         std::shared_ptr<Token> identifier,

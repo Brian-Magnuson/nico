@@ -101,8 +101,122 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
 }
 
 std::any LocalChecker::visit(Stmt::Func* stmt) {
-    // TODO: Implement local checking for function declarations.
-    panic("LocalChecker::visit(Stmt::Func*): Not implemented yet.");
+    // Start with the parameters.
+    std::vector<Field> parameter_fields;
+    for (auto& param : stmt->parameters) {
+        // Get the type from the annotation (which is always present).
+        auto anno_any = param.annotation->accept(this);
+        if (!anno_any.has_value())
+            return std::any();
+        auto annotation_type = std::any_cast<std::shared_ptr<Type>>(anno_any);
+        // If a default expression is present, check it.
+        if (param.expression.has_value()) {
+            auto default_expr_type =
+                expr_check(param.expression.value(), false);
+            if (!default_expr_type)
+                return std::any();
+            if (!default_expr_type->is_assignable_to(*annotation_type)) {
+                Logger::inst().log_error(
+                    Err::DefaultArgTypeMismatch,
+                    *param.expression.value()->location,
+                    std::string("Type `") + default_expr_type->to_string() +
+                        "` is not compatible with type `" +
+                        annotation_type->to_string() + "`."
+                );
+                return std::any();
+            }
+        }
+        Field param_field(
+            param.has_var,
+            param.identifier,
+            annotation_type,
+            param.expression
+        );
+        parameter_fields.push_back(param_field);
+    }
+    // Next, get the return type.
+    std::shared_ptr<Type> return_type = nullptr;
+    if (stmt->annotation.has_value()) {
+        auto return_anno_any = stmt->annotation.value()->accept(this);
+        if (!return_anno_any.has_value())
+            return std::any();
+        return_type = std::any_cast<std::shared_ptr<Type>>(return_anno_any);
+    }
+    else {
+        // If no return annotation is present, the return type is Unit.
+        return_type = std::make_shared<Type::Unit>();
+    }
+    // Next, visit the function body, verifying that the return types match.
+    auto body_type = expr_check(stmt->body, false);
+    if (!body_type)
+        return std::any();
+    // Body type must be assignable to the return type.
+    if (!body_type->is_assignable_to(*return_type)) {
+        Logger::inst().log_error(
+            Err::FunctionReturnTypeMismatch,
+            *stmt->body->location,
+            std::string("Function body type `") + body_type->to_string() +
+                "` is not compatible with declared return type `" +
+                return_type->to_string() + "`."
+        );
+        return std::any();
+    }
+
+    // Create the function type.
+    auto func_type =
+        std::make_shared<Type::Function>(parameter_fields, return_type);
+
+    // Create the field entry.
+    Field field(false, stmt->identifier, func_type);
+    // Functions are always immutable.
+
+    auto [node, err] = symbol_tree->add_overloadable_func(field);
+    if (err == Err::NameAlreadyExists) {
+        Logger::inst().log_error(
+            err,
+            stmt->identifier->location,
+            "Name `" + std::string(stmt->identifier->lexeme) +
+                "` already exists in this scope."
+        );
+        if (auto locatable =
+                std::dynamic_pointer_cast<Node::ILocatable>(node)) {
+            Logger::inst().log_note(
+                locatable->location_token->location,
+                "Previous declaration here."
+            );
+        }
+        return std::any();
+    }
+    else if (err == Err::NameIsReserved) {
+        Logger::inst().log_error(
+            err,
+            stmt->identifier->location,
+            "Name `" + std::string(stmt->identifier->lexeme) + "` is reserved."
+        );
+        return std::any();
+    }
+    else if (err == Err::FunctionOverloadConflict) {
+        Logger::inst().log_error(
+            err,
+            stmt->identifier->location,
+            "Function declaration for `" +
+                std::string(stmt->identifier->lexeme) +
+                "` conflicts with an existing overload."
+        );
+        return std::any();
+    }
+    else if (auto field_entry =
+                 std::dynamic_pointer_cast<Node::FieldEntry>(node)) {
+        stmt->field_entry = field_entry;
+        return std::any();
+    }
+    else {
+        panic(
+            "LocalChecker::visit(Stmt::Func*): Symbol tree returned a "
+            "non-field entry for a field entry."
+        );
+    }
+
     return std::any();
 }
 

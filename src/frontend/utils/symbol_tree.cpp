@@ -173,11 +173,23 @@ std::optional<std::shared_ptr<Node::IScope>> SymbolTree::exit_scope() {
 std::optional<std::shared_ptr<Node>>
 SymbolTree::search_name(const Name& name) const {
     // First, search the reserved scope.
-    if (auto node = search_name_from_scope(name, reserved_scope)) {
-        return node;
+    auto node = search_name_from_scope(name, reserved_scope);
+    // If not found, search from the current scope.
+    if (!node.has_value()) {
+        node = search_name_from_scope(name, current_scope);
     }
-    // Next, search the current scope.
-    return search_name_from_scope(name, current_scope);
+    // If the found node is an OverloadGroup with exactly one overload, return
+    // the single overload instead.
+    if (node.has_value()) {
+        if (auto overload_group =
+                std::dynamic_pointer_cast<Node::OverloadGroup>(node.value())) {
+            if (overload_group->overloads.size() == 1) {
+                return overload_group->overloads.at(0);
+            }
+        }
+    }
+
+    return node;
 }
 
 std::optional<std::shared_ptr<Node::LocalScope>>
@@ -202,6 +214,7 @@ SymbolTree::get_local_scope_of_kind(Expr::Block::Kind kind) const {
 
 std::pair<std::shared_ptr<Node>, Err>
 SymbolTree::add_field_entry(const Field& field) {
+    // Make sure the name is not reserved.
     if (auto node =
             reserved_scope->children.at(std::string(field.token->lexeme))) {
         return std::make_pair(node.value(), Err::NameIsReserved);
@@ -219,6 +232,55 @@ SymbolTree::add_field_entry(const Field& field) {
     modified = true;
 
     return std::make_pair(new_field_entry, Err::Null);
+}
+
+std::pair<std::shared_ptr<Node>, Err>
+SymbolTree::add_overloadable_func(const Field& field) {
+    // Make sure the name is not reserved.
+    if (auto node =
+            reserved_scope->children.at(std::string(field.token->lexeme))) {
+        return std::make_pair(node.value(), Err::NameIsReserved);
+    }
+
+    // Check if the name already exists.
+    std::shared_ptr<Node::OverloadGroup> overload_group;
+    if (auto node =
+            current_scope->children.at(std::string(field.token->lexeme))) {
+        if (auto existing_overload_group =
+                std::dynamic_pointer_cast<Node::OverloadGroup>(node.value())) {
+            // If existing name is an overload group, add to it.
+            overload_group = existing_overload_group;
+        }
+        else {
+            // If existing name is not an overload group...
+            return std::make_pair(node.value(), Err::NameAlreadyExists);
+        }
+    }
+    else {
+        // If name does not exist, create a new overload group.
+        overload_group =
+            std::make_shared<Node::OverloadGroup>(current_scope, field.token);
+        overload_group->initialize_node();
+        modified = true;
+    }
+
+    // Add the new overload to the overload group.
+    auto new_overload =
+        std::make_shared<Node::FieldEntry>(current_scope, field);
+    new_overload->initialize_node();
+
+    // TODO: TEMPORARY SOLUTION: We only allow one overload for now.
+    if (overload_group->overloads.size() == 1) {
+        return std::make_pair(
+            overload_group->overloads.at(0),
+            Err::FunctionOverloadConflict
+        );
+    }
+
+    overload_group->overloads.push_back(new_overload);
+    modified = true;
+
+    return std::make_pair(new_overload, Err::Null);
 }
 
 } // namespace nico
