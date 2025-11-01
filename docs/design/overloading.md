@@ -101,16 +101,16 @@ This introduces the idea that every function definition has a possible call that
 
 We now present our formal rules for overload conflict resolution:
 1. Let $f_i$ be one of multiple overloads of a function $f$.
-2. A parameter's *parameter string* is a string that includes both the name of the parameter and its type, but not its default value. 
-   - E.g., for a parameter `a: i32 = 5`, the parameter string is `"a: i32"`.
-3. Let $M(f_i)$ be the set of parameter strings for *all* parameters in function $f_i$.
-4. Let $D(f_i)$ be the set of parameter strings for *all* parameters in function $f_i$ that have default values.
-5. WLOG, let $f_1$ and $f_2$ be two overloads of function $f$.
-6. If $M(f_1) = M(f_2)$, then $f_1$ and $f_2$ are in conflict, and we are done.
-7. If $M(f_1) \supset M(f_2)$ and $M(f_1) - M(f_2) \subseteq D(f_1)$, then $f_1$ and $f_2$ are in conflict, and we are done.
-   - That is, if the only difference between the two functions are optional parameters, then they are in conflict.
-8. If $M(f_2) \supset M(f_1)$ and $M(f_2) - M(f_1) \subseteq D(f_2)$, then $f_1$ and $f_2$ are in conflict, and we are done.
-9. Otherwise, $f_1$ and $f_2$ are not in conflict.
+2. A **parameter string** is the concatenation of a parameter's name and type, excluding any default value.
+   - E.g., for `a: i32 = 5`, the parameter string is `"a: i32"`.
+3. Let $M(f_i)$ be the set of parameter strings for *all* parameters of $f_i$.
+4. Let $D(f_i)$ be the subset of $M(f_i)$ consisting of parameter strings for parameters that have default values.
+5. Consider two overloads $f_1$ and $f_2$ of $f$.
+6. If $M(f_1) = M(f_2)$, then $f_1$ and $f_2$ conflict.
+7. If $M(f_1) \supset M(f_2)$ and $M(f_1) - M(f_2) \subseteq D(f_1)$, then $f_1$ and $f_2$ conflict.
+   - Intuitively, this occurs when the only difference between $f_1$ and $f_2$ is that $f_1$ declares additional optional parameters.
+8. If $M(f_2) \supset M(f_1)$ and $M(f_2) - M(f_1) \subseteq D(f_2)$, then $f_1$ and $f_2$ conflict.
+9. Otherwise, $f_1$ and $f_2$ do not conflict.
 
 We only check for conflicts in pairs of overloads. When a new overload is defined, we check it against all existing overloads using the above rules.
 
@@ -244,3 +244,51 @@ The type checker will follow these steps:
        8. Return.
    2. Return (the `(expr ...)` node is an expression statement and has no type).
 2. Done.
+
+## Non-Overloaded Functions
+
+In this last section, we address how non-overloaded functions are represented in this design.
+This is important because our system for overload resolution interferes with how we would "normally" look up function names in the symbol table.
+
+There are two possible approaches:
+
+**Approach 1: Use Overload Groups for Non-Overloaded Functions**
+
+An overload group is a collection of overloads for a function name.
+When a function is *not overloaded*, we can think of the sole definition as a single overload in an overload group.
+Thus, we can represent all functions, whether overloaded or not, as overload groups.
+
+When looking up a function name in the symbol table, if the function exists, we will always find an overload group.
+The search function will check to see if the overload group contains only one overload.
+If so, it will return the field entry for that single overload.
+Otherwise, it will return the overload group itself.
+
+When a new overload is defined, we will check if an overload group already exists for that name.
+If so, we will add the new overload to the existing group.
+
+**Approach 2: Do Not Use Overload Groups for Non-Overloaded Functions**
+
+All function definitions, whether part of an overload group or not, will have their own field entry in the symbol table.
+If a function is not overloaded, then there is no reason to create an overload group for it.
+
+When looking up a function name in the symbol table, if the function exists and is not overloaded, we will find its field entry directly.
+
+When a new overload is defined, we will check if a function with that name already exists in the symbol table.
+If so, we create a new overload group, add the existing function's field entry to it, and then add the new overload's field entry to it.
+
+---
+
+Our decision is to use **Approach 1**.
+
+The drawbacks of this approach are:
+- Slightly more memory usage, as every function now has an overload group, even if it only contains one overload.
+- Slightly more complexity in the symbol table lookup logic, as we always have to check if the overload group contains only one overload.
+
+The benefits of this approach are:
+- Simpler implementation, as we do not need to handle two different cases when looking up function names.
+- Consistent representation of functions, as all functions are treated uniformly as overload groups.
+- Easier future extension, as we can easily add overloads to any function without needing to change its representation in the symbol table.
+
+It is worth noting that this approach can work with possible *non-overloadable* functions in the future. 
+An example of this is closures. These can exist as a single field entry outside of an overload group.
+The presence of an overload group may even be used to indicate whether a function is overloadable or not.
