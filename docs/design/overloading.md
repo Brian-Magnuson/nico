@@ -114,6 +114,9 @@ We now present our formal rules for overload conflict resolution:
 
 We only check for conflicts in pairs of overloads. When a new overload is defined, we check it against all existing overloads using the above rules.
 
+When reporting errors, we can briefly describe these rules like this:
+> Two function overloads conflict if they have the same set of parameters, or if one set of parameters is a superset of the other, differing only by optional parameters.
+
 ### Examples
 
 Let us use the above rules to analyze some examples.
@@ -166,3 +169,78 @@ func f(b: i32) { ... }
 - $M(f_1) = \{"a: i32"\}$
 - $M(f_2) = \{"b: i32"\}$
 - None of the rules apply, so these definitions are *not* in conflict.
+
+## Function Name Reference and Call Resolution
+
+This section addresses two problems:
+1. When multiple function overloads are defined, where do we store them such that they can be retrieved later?
+2. If all we have is a name reference expression (e.g., just `f`), how do we resolve its type?
+
+We try to solve these problems by introducing two new nodes:
+- A symbol node called `OverloadGroup`, which represents a collection of function overloads.
+- A type node called `DynamicFunction`, which represents a function type that could refer to multiple overloads.
+
+An `OverloadGroup` is a special kind of field entry in a symbol table. Normally, when we look up a name in a symbol table, we get back a single field entry. If we look up the name of an overloaded function, we get back an `OverloadGroup` entry instead. This entry contains a list of all overloads for that function name.
+
+The type object for an `OverloadGroup` is always an instance of `DynamicFunction`.
+A `DynamicFunction` is a special type that indicates the expression is callable, but does not specify *how* it is callable. It contains a pointer back to the overload group it represents. We call it "dynamic" because the exact function type is resolved later when the expression is called with arguments. This still happens at compile-time.
+
+The reason we have this separate type is to allow cases like this:
+```
+func greet() { printout "Hello!" }
+func greet(name: String) { printout "Hello, ", name, "!" }
+
+let greeter = greet
+```
+
+In other programming languages, this assignment would be ambiguous and the compiler would raise an error. 
+This is where Nico differs from other languages. 
+In Nico, we allow this assignment to succeed by giving `greeter` a `DynamicFunction` type. 
+This allows `greeter` to encompass all overloads of `greet`.
+```
+greeter()           // Calls greet()
+greeter(name="Bob") // Calls greet(name: String)
+```
+
+The `DynamicFunction` type has two very important rules:
+- The user is *not allowed* to write this type explicitly; it can only be inferred by the compiler.
+- When compared to any other type, including other `DynamicFunction` types, it is always considered *not equal*.
+
+The `DynamicFunction` type can be considered one of the few times we *defer* type checking for later. The reason we allow this is because there are only a few ways to use a function pointer, especially since function pointers are immutable.
+Because of this, there are only a few situations where we need to resolve the exact function type.
+
+Let's assume that the only time we need to resolve the exact function type is when the function pointer is called.
+When type checking the call expression, we combine the information from the `DynamicFunction` type and the provided arguments to perform overload resolution, resulting in an exact function type.
+We then reassign function type and field entry of the callee expression, allowing the IR to be generated as normal.
+
+Going back to our earlier example:
+```
+func greet() { printout "Hello!" }
+func greet(name: String) { printout "Hello, ", name, "!" }
+
+let greeter = greet
+
+greeter() 
+```
+
+The AST of this last statement is this:
+```
+(expr (call (nameref greeter)))
+```
+
+The type checker will follow these steps:
+1. Visit the `(expr ...)` node:
+   1. Visit the `(call ...)` node:
+       1. Visit the `(nameref greeter)` node:
+          1. Look up `greeter` in the symbol table, getting back an overload group with type `DynamicFunction` pointing to the overload group for `greet`.
+          2. Assign the type of the `(nameref greeter)` node to be this `DynamicFunction` type.
+          3. Return.
+       2. See that the callee has type `DynamicFunction`.
+       3. Perform overload resolution using the overload group and the provided arguments (none in this case).
+       4. Find a match with the `greet()` overload.
+       5. Assign the field entry of `(nameref greeter)` to be the field entry for `greet()`.
+       6. Reassign the type of `(nameref greeter)` to be the exact function type `func() -> ()`.
+       7. Assign the type of the `(call ...)` node to be `()`, the return type of `greet()`.
+       8. Return.
+   2. Return (the `(expr ...)` node is an expression statement and has no type).
+2. Done.
