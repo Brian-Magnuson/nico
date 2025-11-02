@@ -362,6 +362,54 @@ std::optional<std::shared_ptr<Expr>> Parser::postfix() {
             }
         } while (match({Tok::Dot}));
     }
+    if (match({Tok::LParen})) {
+        std::vector<std::shared_ptr<Expr>> pos_args;
+        Dictionary<std::string, std::shared_ptr<Expr>> named_args;
+        bool has_named_args = false;
+        do {
+            if (peek()->tok_type == Tok::RParen) {
+                // Allow trailing commas.
+                break;
+            }
+            if (peek()->tok_type == Tok::Identifier &&
+                tokens.at(current + 1)->tok_type == Tok::Colon) {
+                // This token definitely exists because there is a
+                // guaranteed `)` from the lexer.
+                has_named_args = true;
+                // Definitely a named argument.
+                auto name_token = advance(); // Consume identifier
+                advance();                   // Consume ':'
+                auto expr = expression();
+                if (!expr)
+                    return std::nullopt;
+                named_args.insert(std::string(name_token->lexeme), *expr);
+            }
+            else {
+                // Not a named argument, just a normal positional argument.
+                auto expr = expression();
+                if (!expr)
+                    return std::nullopt;
+                pos_args.push_back(*expr);
+                if (has_named_args) {
+                    Logger::inst().log_error(
+                        Err::PosArgumentAfterNamedArgument,
+                        *expr->get()->location,
+                        "Positional arguments cannot follow named arguments."
+                    );
+                    return std::nullopt;
+                }
+            }
+        } while (match({Tok::Comma}));
+        if (!match({Tok::RParen})) {
+            // This error should already be caught in the lexer.
+            panic("Parser::postfix: Missing ')' while parsing function call.");
+        }
+        left = std::make_shared<Expr::Call>(
+            *left,
+            std::move(pos_args),
+            std::move(named_args)
+        );
+    }
     return left;
 }
 
@@ -751,7 +799,7 @@ std::optional<std::shared_ptr<Stmt>> Parser::statement() {
     else if (match({Tok::KwPass})) {
         return std::make_shared<Stmt::Pass>();
     }
-    else if (match({Tok::KwYield, Tok::KwBreak})) {
+    else if (match({Tok::KwYield, Tok::KwBreak, Tok::KwReturn})) {
         return yield_statement();
     }
     else if (match({Tok::KwContinue})) {

@@ -83,6 +83,8 @@ enum class Err {
     UnexpectedVarInExpression,
     // A variable annotation contained an unexpected `var` keyword.
     UnexpectedVarInAnnotation,
+    // A positional argument was found after a named argument.
+    PosArgumentAfterNamedArgument,
 
     // Parser warning
     ParserWarning = 3500,

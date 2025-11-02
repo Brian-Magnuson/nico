@@ -46,6 +46,8 @@ class LocalChecker : public Stmt::Visitor,
      * @brief Attempts to match the provided arguments to the function
      * parameters.
      *
+     * The arguments should be type checked *before* calling this function.
+     *
      * If the arguments match the parameters, this function returns a complete
      * mapping of parameter names to argument expressions.
      *

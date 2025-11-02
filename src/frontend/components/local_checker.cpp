@@ -36,14 +36,25 @@ LocalChecker::try_match_args_to_params(
         return std::nullopt;
     }
     for (size_t i = 0; i < pos_args.size(); i++) {
-        const auto param_pair = func_type->parameters.get_pair_at(i);
-        arg_mapping.insert(param_pair->first, pos_args[i]);
-        assigned_params.insert(param_pair->first);
+        const auto param_optional = func_type->parameters.get_pair_at(i);
+        const auto [param_name, param_field] = *param_optional;
+        if (!pos_args[i]->type->is_assignable_to(*param_field.type)) {
+            // Positional argument type does not match parameter type.
+            return std::nullopt;
+        }
+        arg_mapping.insert(param_name, pos_args[i]);
+        assigned_params.insert(param_name);
     }
     // Next, apply named arguments.
     for (const auto& [arg_name, arg_expr] : named_args) {
         if (!func_type->parameters.contains(arg_name)) {
             // Named argument does not match any parameter.
+            return std::nullopt;
+        }
+        if (!arg_expr->type->is_assignable_to(
+                *func_type->parameters.at(arg_name)->type
+            )) {
+            // Named argument type does not match parameter type.
             return std::nullopt;
         }
         // if (assigned_params.find(arg_name) != assigned_params.end()) {
@@ -110,28 +121,7 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
     Field field(stmt->has_var, stmt->identifier, expr_type);
 
     auto [node, err] = symbol_tree->add_field_entry(field);
-    if (err == Err::NameAlreadyExists) {
-        Logger::inst().log_error(
-            err,
-            stmt->identifier->location,
-            "Name `" + std::string(stmt->identifier->lexeme) +
-                "` already exists in this scope."
-        );
-        if (auto locatable =
-                std::dynamic_pointer_cast<Node::ILocatable>(node)) {
-            Logger::inst().log_note(
-                locatable->location_token->location,
-                "Previous declaration here."
-            );
-        }
-        return std::any();
-    }
-    else if (err == Err::NameIsReserved) {
-        Logger::inst().log_error(
-            err,
-            stmt->identifier->location,
-            "Name `" + std::string(stmt->identifier->lexeme) + "` is reserved."
-        );
+    if (err != Err::Null) {
         return std::any();
     }
     else if (auto field_node =
@@ -152,14 +142,23 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
 std::any LocalChecker::visit(Stmt::Func* stmt) {
     // Start with the parameters.
     Dictionary<std::string, Field> parameter_fields;
+    bool has_error = false;
+    // Start new local scope.
+    symbol_tree->add_local_scope(nullptr);
+
     for (auto& param : stmt->parameters) {
         auto param_string = std::string(param.identifier->lexeme);
         // Check for duplicate parameter names.
-        if (parameter_fields.contains(param_string)) {
+        if (auto it = parameter_fields.find(param_string);
+            it != parameter_fields.end()) {
             Logger::inst().log_error(
                 Err::DuplicateFunctionParameterName,
                 param.identifier->location,
                 "Duplicate parameter name `" + param_string + "`."
+            );
+            Logger::inst().log_note(
+                it->second.token->location,
+                "Previous declaration of parameter `" + param_string + "` here."
             );
             return std::any();
         }
@@ -192,6 +191,10 @@ std::any LocalChecker::visit(Stmt::Func* stmt) {
             param.expression
         );
         parameter_fields.insert(param_string, param_field);
+        auto [node, err] = symbol_tree->add_field_entry(param_field);
+        if (err != Err::Null) {
+            has_error = true;
+        }
     }
     // Next, get the return type.
     std::shared_ptr<Type> return_type = nullptr;
@@ -205,10 +208,14 @@ std::any LocalChecker::visit(Stmt::Func* stmt) {
         // If no return annotation is present, the return type is Unit.
         return_type = std::make_shared<Type::Unit>();
     }
+    // Create the function type.
+    auto func_type =
+        std::make_shared<Type::Function>(parameter_fields, return_type);
+
     // Next, visit the function body, verifying that the return types match.
     auto body_type = expr_check(stmt->body, false);
     if (!body_type)
-        return std::any();
+        has_error = true;
     // Body type must be assignable to the return type.
     if (!body_type->is_assignable_to(*return_type)) {
         Logger::inst().log_error(
@@ -220,48 +227,17 @@ std::any LocalChecker::visit(Stmt::Func* stmt) {
         );
         return std::any();
     }
-
-    // Create the function type.
-    auto func_type =
-        std::make_shared<Type::Function>(parameter_fields, return_type);
+    // Exit the parameter local scope.
+    symbol_tree->exit_scope();
+    if (has_error)
+        return std::any();
 
     // Create the field entry.
     Field field(false, stmt->identifier, func_type);
     // Functions are always immutable.
 
     auto [node, err] = symbol_tree->add_overloadable_func(field);
-    if (err == Err::NameAlreadyExists) {
-        Logger::inst().log_error(
-            err,
-            stmt->identifier->location,
-            "Name `" + std::string(stmt->identifier->lexeme) +
-                "` already exists in this scope."
-        );
-        if (auto locatable =
-                std::dynamic_pointer_cast<Node::ILocatable>(node)) {
-            Logger::inst().log_note(
-                locatable->location_token->location,
-                "Previous declaration here."
-            );
-        }
-        return std::any();
-    }
-    else if (err == Err::NameIsReserved) {
-        Logger::inst().log_error(
-            err,
-            stmt->identifier->location,
-            "Name `" + std::string(stmt->identifier->lexeme) + "` is reserved."
-        );
-        return std::any();
-    }
-    else if (err == Err::FunctionOverloadConflict) {
-        Logger::inst().log_error(
-            err,
-            stmt->identifier->location,
-            "Function declaration for `" +
-                std::string(stmt->identifier->lexeme) +
-                "` conflicts with an existing overload."
-        );
+    if (err != Err::Null) {
         return std::any();
     }
     else if (auto field_entry =
@@ -835,6 +811,18 @@ std::any LocalChecker::visit(Expr::Call* expr, bool as_lvalue) {
         return std::any();
     }
 
+    // Check each argument once
+    bool has_error = false;
+    for (auto& arg : expr->provided_pos_args) {
+        has_error |= expr_check(arg, false) == nullptr;
+    }
+    for (auto& [_, arg] : expr->provided_named_args) {
+        has_error |= expr_check(arg, false) == nullptr;
+    }
+    if (has_error)
+        return std::any();
+    // Don't worry about the types right now; we'll check them during matching.
+
     std::optional<Dictionary<std::string, std::weak_ptr<Expr>>> matched_args;
     std::vector<size_t> matched_candidate_indices;
     for (size_t i = 0; i < candidate_funcs.size(); i++) {
@@ -1029,6 +1017,7 @@ std::any LocalChecker::visit(Expr::Block* expr, bool as_lvalue) {
     }
     for (auto& stmt : expr->statements) {
         stmt->accept(this);
+        // If the statement has an error, we continue as normal.
     }
     auto yield_type =
         local_scope->yield_type.value_or(std::make_shared<Type::Unit>());

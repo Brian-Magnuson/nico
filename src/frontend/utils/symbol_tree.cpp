@@ -1,5 +1,6 @@
 #include "nico/frontend/utils/symbol_tree.h"
 
+#include "nico/shared/logger.h"
 #include "nico/shared/utils.h"
 
 namespace nico {
@@ -199,7 +200,7 @@ SymbolTree::get_local_scope_of_kind(Expr::Block::Kind kind) const {
         if (auto local_scope =
                 std::dynamic_pointer_cast<Node::LocalScope>(current)) {
             // If this is a local scope, check if it matches the kind.
-            if (local_scope->block->kind == kind) {
+            if (local_scope->block && local_scope->block->kind == kind) {
                 return local_scope;
             }
         }
@@ -217,11 +218,30 @@ SymbolTree::add_field_entry(const Field& field) {
     // Make sure the name is not reserved.
     if (auto node =
             reserved_scope->children.at(std::string(field.token->lexeme))) {
+        Logger::inst().log_error(
+            Err::NameIsReserved,
+            field.token->location,
+            "Name `" + std::string(field.token->lexeme) +
+                "` is reserved and cannot be used."
+        );
         return std::make_pair(node.value(), Err::NameIsReserved);
     }
 
     if (auto node =
             current_scope->children.at(std::string(field.token->lexeme))) {
+        Logger::inst().log_error(
+            Err::NameAlreadyExists,
+            field.token->location,
+            "Name `" + std::string(field.token->lexeme) +
+                "` already exists in the current scope."
+        );
+        if (auto locatable =
+                std::dynamic_pointer_cast<Node::ILocatable>(node.value())) {
+            Logger::inst().log_note(
+                locatable->location_token->location,
+                "Previous declaration here."
+            );
+        }
         return std::make_pair(node.value(), Err::NameAlreadyExists);
     }
 
@@ -239,6 +259,12 @@ SymbolTree::add_overloadable_func(const Field& field) {
     // Make sure the name is not reserved.
     if (auto node =
             reserved_scope->children.at(std::string(field.token->lexeme))) {
+        Logger::inst().log_error(
+            Err::NameIsReserved,
+            field.token->location,
+            "Name `" + std::string(field.token->lexeme) +
+                "` is reserved and cannot be used."
+        );
         return std::make_pair(node.value(), Err::NameIsReserved);
     }
 
@@ -253,6 +279,20 @@ SymbolTree::add_overloadable_func(const Field& field) {
         }
         else {
             // If existing name is not an overload group...
+            Logger::inst().log_error(
+                Err::NameAlreadyExists,
+                field.token->location,
+                "Name `" + std::string(field.token->lexeme) +
+                    "` already exists in the current scope and is not an "
+                    "overloadable function."
+            );
+            if (auto locatable =
+                    std::dynamic_pointer_cast<Node::ILocatable>(node.value())) {
+                Logger::inst().log_note(
+                    locatable->location_token->location,
+                    "Previous declaration here."
+                );
+            }
             return std::make_pair(node.value(), Err::NameAlreadyExists);
         }
     }
@@ -271,6 +311,12 @@ SymbolTree::add_overloadable_func(const Field& field) {
 
     // TODO: TEMPORARY SOLUTION: We only allow one overload for now.
     if (overload_group->overloads.size() == 1) {
+        Logger::inst().log_error(
+            Err::FunctionOverloadConflict,
+            field.token->location,
+            "Function overloading is not yet supported; only one overload is "
+            "allowed."
+        );
         return std::make_pair(
             overload_group->overloads.at(0),
             Err::FunctionOverloadConflict

@@ -156,7 +156,7 @@ std::any AstPrinter::visit(Expr::Call* expr, bool as_lvalue) {
         str += " " + std::any_cast<std::string>(arg->accept(this, false));
     }
     for (const auto& [name, arg] : expr->provided_named_args) {
-        str += " (" + name + " = " +
+        str += " (" + name + ": " +
                std::any_cast<std::string>(arg->accept(this, false)) + ")";
     }
     str += ")";

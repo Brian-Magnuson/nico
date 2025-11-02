@@ -619,6 +619,67 @@ TEST_CASE("Parser loop expressions", "[parser]") {
     }
 }
 
+TEST_CASE("Parser call expressions", "[parser]") {
+    SECTION("Call with no arguments") {
+        run_parser_expr_test(
+            "f()",
+            {"(expr (call (nameref f)))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Call with one argument") {
+        run_parser_expr_test(
+            "f(123)",
+            {"(expr (call (nameref f) (lit 123)))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Call with trailing comma") {
+        run_parser_expr_test(
+            "f(123,)",
+            {"(expr (call (nameref f) (lit 123)))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Call with multiple arguments") {
+        run_parser_expr_test(
+            "f(1, 2, 3)",
+            {"(expr (call (nameref f) (lit 1) (lit 2) (lit 3)))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Call with complex arguments") {
+        run_parser_expr_test(
+            "f(a + b, c * d)",
+            {"(expr (call (nameref f) (binary + (nameref a) (nameref b)) "
+             "(binary * (nameref c) (nameref d))))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Call with named arguments") {
+        run_parser_expr_test(
+            "f(x: 1, y: 2)",
+            {"(expr (call (nameref f) (x: (lit 1)) (y: (lit 2))))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Call with identifier argument") {
+        run_parser_expr_test(
+            "f(y)",
+            {"(expr (call (nameref f) (nameref y)))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Call with mixed arguments") {
+        run_parser_expr_test(
+            "f(1, y: 2)",
+            {"(expr (call (nameref f) (lit 1) (y: (lit 2))))", "(stmt:eof)"}
+        );
+    }
+}
+
 // MARK: Error tests
 
 TEST_CASE("Parser block errors", "[parser]") {
@@ -641,5 +702,14 @@ TEST_CASE("Parser access errors", "[parser]") {
 
     SECTION("Unexpected token after dot 2") {
         run_parser_expr_error_test("a.(b)", Err::UnexpectedTokenAfterDot);
+    }
+}
+
+TEST_CASE("Parser call errors", "[parser]") {
+    SECTION("Positional argument after named argument") {
+        run_parser_expr_error_test(
+            "f(x: 1, 2)",
+            Err::PosArgumentAfterNamedArgument
+        );
     }
 }

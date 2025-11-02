@@ -357,7 +357,7 @@ TEST_CASE("Local assignment expressions", "[checker]") {
     }
 
     SECTION("Assignment not an lvalue 3") {
-        run_checker_test("let var a = 1 (a = 1) = 2", Err::NotAPossibleLValue);
+        run_checker_test("let var a = 1; (a = 1) = 2", Err::NotAPossibleLValue);
     }
 
     SECTION("Assignment not an lvalue 4") {
@@ -669,5 +669,115 @@ TEST_CASE("Local loop expressions", "[checker]") {
 
     SECTION("Continue outside loop") {
         run_checker_test("continue", Err::ContinueOutsideLoop);
+    }
+}
+
+TEST_CASE("Local function declarations", "[checker]") {
+    SECTION("Valid function declaration braced form") {
+        run_checker_test(R"(
+        func add(a: i32, b: i32) -> i32 {
+            return a + b
+        }
+        )");
+    }
+
+    SECTION("Valid function declaration indented form") {
+        run_checker_test(R"(
+        func add(a: i32, b: i32) -> i32:
+            return a + b
+        )");
+    }
+
+    SECTION("Valid function declaration short form") {
+        run_checker_test("func add(a: i32, b: i32) -> i32 => a + b");
+    }
+
+    SECTION("Function with reserved name") {
+        run_checker_test(
+            "func bool(a: i32) -> i32 { return a }",
+            Err::NameIsReserved
+        );
+    }
+
+    SECTION("Function name already exists") {
+        run_checker_test(
+            "let add = 1 "
+            "func add(a: i32, b: i32) -> i32 { return a + b }",
+            Err::NameAlreadyExists
+        );
+    }
+
+    SECTION("Duplicate function parameter name") {
+        run_checker_test(
+            "func add(a: i32, a: i32) -> i32 { return a + a }",
+            Err::DuplicateFunctionParameterName
+        );
+    }
+
+    SECTION("Function parameter default argument type mismatch") {
+        run_checker_test(
+            "func add(a: i32 = true, b: i32) -> i32 { return a + b }",
+            Err::DefaultArgTypeMismatch
+        );
+    }
+
+    SECTION("Function return type mismatch") {
+        run_checker_test(
+            "func add(a: i32, b: i32) -> i32 { return true }",
+            Err::FunctionReturnTypeMismatch
+        );
+    }
+}
+
+TEST_CASE("Local function call", "[checker]") {
+    SECTION("Valid function call") {
+        run_checker_test(R"(
+        func add(a: i32, b: i32) -> i32 => a + b
+        let result: i32 = add(1, 2)
+        )");
+    }
+
+    SECTION("Function call undeclared name") {
+        run_checker_test("let result = add(1, 2)", Err::UndeclaredName);
+    }
+
+    SECTION("Function call wrong number of arguments") {
+        run_checker_test(
+            R"(
+        func add(a: i32, b: i32) -> i32 => a + b
+        let result: i32 = add(1)
+        )",
+            Err::NoMatchingFunctionOverload
+        );
+    }
+
+    SECTION("Not a callable") {
+        run_checker_test(
+            R"(
+        let add = 1
+        let result = add(1, 2)
+        )",
+            Err::NotACallable
+        );
+    }
+
+    SECTION("Function parameter type mismatch") {
+        run_checker_test(
+            R"(
+        func add(a: i32, b: i32) -> i32 => a + b
+        let result: i32 = add(1, true)
+        )",
+            Err::NoMatchingFunctionOverload
+        );
+    }
+
+    SECTION("Function call error in argument") {
+        run_checker_test(
+            R"(
+        func add(a: i32, b: i32) -> i32 => a + b
+        let result: i32 = add(1, undeclared_var)
+        )",
+            Err::UndeclaredName
+        );
     }
 }
