@@ -737,6 +737,13 @@ TEST_CASE("Local function call", "[checker]") {
         )");
     }
 
+    SECTION("Function call no arguments") {
+        run_checker_test(R"(
+        func get_five() -> i32 => 5
+        let result: i32 = get_five()
+        )");
+    }
+
     SECTION("Function call undeclared name") {
         run_checker_test("let result = add(1, 2)", Err::UndeclaredName);
     }
@@ -746,6 +753,16 @@ TEST_CASE("Local function call", "[checker]") {
             R"(
         func add(a: i32, b: i32) -> i32 => a + b
         let result: i32 = add(1)
+        )",
+            Err::NoMatchingFunctionOverload
+        );
+    }
+
+    SECTION("Function call too many arguments") {
+        run_checker_test(
+            R"(
+        func add(a: i32, b: i32) -> i32 => a + b
+        let result: i32 = add(1, 2, 3)
         )",
             Err::NoMatchingFunctionOverload
         );
@@ -778,6 +795,39 @@ TEST_CASE("Local function call", "[checker]") {
         let result: i32 = add(1, undeclared_var)
         )",
             Err::UndeclaredName
+        );
+    }
+
+    SECTION("Function call with default arguments") {
+        run_checker_test(R"(
+        func add(a: i32, b: i32 = 2) -> i32 => a + b
+        let result1: i32 = add(3)
+        let result2: i32 = add(3, 4)
+        )");
+    }
+
+    SECTION("Function call with named arguments") {
+        run_checker_test(R"(
+        func add(a: i32, b: i32, c: i32) -> i32 => a + b + c
+        let result1: i32 = add(a: 1, b: 2, c: 3)
+        let result2: i32 = add(c: 3, a: 1, b: 2)
+        )");
+    }
+
+    SECTION("Function call with named arguments and defaults") {
+        run_checker_test(R"(
+        func add(a: i32, b: i32 = 2, c: i32) -> i32 => a + b + c
+        let result: i32 = add(1, c: 3)
+        )");
+    }
+
+    SECTION("Function call with invalid named argument") {
+        run_checker_test(
+            R"(
+        func add(a: i32, b: i32) -> i32 => a + b
+        let result: i32 = add(a: 1, c: 2)
+        )",
+            Err::NoMatchingFunctionOverload
         );
     }
 }
