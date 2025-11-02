@@ -15,6 +15,55 @@ LocalChecker::expr_check(std::shared_ptr<Expr>& expr, bool as_lvalue) {
     return expr->type;
 }
 
+std::optional<Dictionary<std::string, std::weak_ptr<Expr>>>
+LocalChecker::try_match_args_to_params(
+    std::shared_ptr<Type::Function> func_type,
+    const std::vector<std::shared_ptr<Expr>>& pos_args,
+    const Dictionary<std::string, std::shared_ptr<Expr>>& named_args
+) {
+    Dictionary<std::string, std::weak_ptr<Expr>> arg_mapping;
+    std::unordered_set<std::string> assigned_params;
+
+    // First, apply default arguments.
+    for (const auto& [param_string, param_field] : func_type->parameters) {
+        if (param_field.default_expr.has_value()) {
+            arg_mapping.insert(param_string, param_field.default_expr.value());
+        }
+    }
+    // Next, apply positional arguments.
+    if (pos_args.size() > func_type->parameters.size()) {
+        // Too many positional arguments.
+        return std::nullopt;
+    }
+    for (size_t i = 0; i < pos_args.size(); i++) {
+        const auto param_pair = func_type->parameters.get_pair_at(i);
+        arg_mapping.insert(param_pair->first, pos_args[i]);
+        assigned_params.insert(param_pair->first);
+    }
+    // Next, apply named arguments.
+    for (const auto& [arg_name, arg_expr] : named_args) {
+        if (!func_type->parameters.contains(arg_name)) {
+            // Named argument does not match any parameter.
+            return std::nullopt;
+        }
+        // if (assigned_params.find(arg_name) != assigned_params.end()) {
+        // Parameter already assigned.
+        // We *could* issue a warning here, but we'll just ignore for now.
+        // }
+        arg_mapping.insert(arg_name, arg_expr);
+        assigned_params.insert(arg_name);
+    }
+    // Finally, check that all parameters have been assigned.
+    for (const auto& [param_string, _] : func_type->parameters) {
+        if (!arg_mapping.contains(param_string)) {
+            // Parameter not assigned.
+            return std::nullopt;
+        }
+    }
+
+    return arg_mapping;
+}
+
 // MARK: Statements
 
 std::any LocalChecker::visit(Stmt::Expression* stmt) {
@@ -102,8 +151,18 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
 
 std::any LocalChecker::visit(Stmt::Func* stmt) {
     // Start with the parameters.
-    std::vector<Field> parameter_fields;
+    Dictionary<std::string, Field> parameter_fields;
     for (auto& param : stmt->parameters) {
+        auto param_string = std::string(param.identifier->lexeme);
+        // Check for duplicate parameter names.
+        if (parameter_fields.contains(param_string)) {
+            Logger::inst().log_error(
+                Err::DuplicateFunctionParameterName,
+                param.identifier->location,
+                "Duplicate parameter name `" + param_string + "`."
+            );
+            return std::any();
+        }
         // Get the type from the annotation (which is always present).
         auto anno_any = param.annotation->accept(this);
         if (!anno_any.has_value())
@@ -132,7 +191,7 @@ std::any LocalChecker::visit(Stmt::Func* stmt) {
             annotation_type,
             param.expression
         );
-        parameter_fields.push_back(param_field);
+        parameter_fields.insert(param_string, param_field);
     }
     // Next, get the return type.
     std::shared_ptr<Type> return_type = nullptr;
@@ -745,8 +804,94 @@ std::any LocalChecker::visit(Expr::Access* expr, bool as_lvalue) {
 }
 
 std::any LocalChecker::visit(Expr::Call* expr, bool as_lvalue) {
-    // TODO: Implement local checking for call expressions.
-    panic("LocalChecker::visit(Expr::Call*): Not implemented yet.");
+    std::vector<std::shared_ptr<Type::Function>> candidate_funcs;
+    std::vector<std::shared_ptr<Node::FieldEntry>> overload_field_entries;
+
+    auto callee_type = expr_check(expr->callee, false);
+    if (!callee_type)
+        return std::any();
+    // If the callee is an exact function, add it to the candidate list.
+    if (auto func_type =
+            std::dynamic_pointer_cast<Type::Function>(callee_type)) {
+        candidate_funcs.push_back(func_type);
+    }
+    // If the callee is an overloaded function, add all overloads to the
+    // candidate list.
+    else if (auto overload_type =
+                 std::dynamic_pointer_cast<Type::OverloadedFn>(callee_type)) {
+        for (auto overload : overload_type->overload_group.lock()->overloads) {
+            auto func_type =
+                std::dynamic_pointer_cast<Type::Function>(overload->field.type);
+            candidate_funcs.push_back(func_type);
+            overload_field_entries.push_back(overload);
+        }
+    }
+    else {
+        Logger::inst().log_error(
+            Err::NotACallable,
+            *expr->callee->location,
+            "Callee expression is not callable."
+        );
+        return std::any();
+    }
+
+    std::optional<Dictionary<std::string, std::weak_ptr<Expr>>> matched_args;
+    std::vector<size_t> matched_candidate_indices;
+    for (size_t i = 0; i < candidate_funcs.size(); i++) {
+        // Try to match the arguments to the parameters.
+        matched_args = try_match_args_to_params(
+            candidate_funcs[i],
+            expr->provided_pos_args,
+            expr->provided_named_args
+        );
+        if (matched_args.has_value()) {
+            matched_candidate_indices.push_back(i);
+        }
+    }
+
+    if (matched_candidate_indices.size() == 1) {
+        // Exactly one candidate matched.
+        auto matched_func = candidate_funcs[matched_candidate_indices[0]];
+        expr->type = matched_func->return_type;
+        expr->actual_args = matched_args.value();
+        // If the callee is an overloaded function...
+        if (!overload_field_entries.empty()) {
+            auto name_ref =
+                std::dynamic_pointer_cast<Expr::NameRef>(expr->callee);
+            // Due to the semantics of the overloadedfn type, the callee must be
+            // a name reference.
+            if (name_ref) {
+                name_ref->field_entry =
+                    overload_field_entries[matched_candidate_indices[0]];
+            }
+        }
+        return std::any();
+    }
+    else if (matched_candidate_indices.size() > 1) {
+        // More than one candidate matched.
+        Logger::inst().log_error(
+            Err::MultipleMatchingFunctionOverloads,
+            *expr->callee->location,
+            "Function call matched multiple overloads."
+        );
+        for (auto index : matched_candidate_indices) {
+            Logger::inst().log_note(
+                overload_field_entries[index]->location_token->location,
+                "Matching overload declared here."
+            );
+        }
+        return std::any();
+    }
+    else {
+        // No candidates matched.
+        Logger::inst().log_error(
+            Err::NoMatchingFunctionOverload,
+            *expr->callee->location,
+            "No matching function overload found for the provided arguments."
+        );
+        return std::any();
+    }
+
     return std::any();
 }
 

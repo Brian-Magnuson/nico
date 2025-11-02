@@ -44,6 +44,16 @@ public:
     Dictionary(Dictionary&& other) noexcept = default;
 
     /**
+     * @brief Copy assigns a dictionary.
+     */
+    Dictionary& operator=(const Dictionary& other) = default;
+
+    /**
+     * @brief Move assigns a dictionary.
+     */
+    Dictionary& operator=(Dictionary&& other) noexcept = default;
+
+    /**
      * @brief Constructs a dictionary from a list of keys.
      *
      * Enables the use of initializer lists to construct a dictionary.

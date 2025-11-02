@@ -494,13 +494,13 @@ public:
 class Field {
 public:
     // Whether the field is declared with `var` or not.
-    const bool is_var;
+    bool is_var;
     // The name of the field.
-    const std::shared_ptr<Token> token;
+    std::shared_ptr<Token> token;
     // The type of the field.
-    const std::shared_ptr<Type> type;
+    std::shared_ptr<Type> type;
     // The default expression for the field, if any.
-    const std::optional<std::weak_ptr<Expr>> default_expr;
+    std::optional<std::weak_ptr<Expr>> default_expr;
 
     virtual ~Field() = default;
 

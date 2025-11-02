@@ -558,18 +558,21 @@ public:
 class Type::Function : public Type::ICallable {
 public:
     // The parameters of the function.
-    std::vector<Field> parameters;
+    Dictionary<std::string, Field> parameters;
     // The return type of the function.
     const std::shared_ptr<Type> return_type;
 
-    Function(std::vector<Field> parameters, std::shared_ptr<Type> return_type)
+    Function(
+        Dictionary<std::string, Field> parameters,
+        std::shared_ptr<Type> return_type
+    )
         : parameters(std::move(parameters)),
           return_type(std::move(return_type)) {}
 
     std::string to_string() const override {
         std::string result = "func(";
         for (const auto& param : parameters) {
-            result += param.to_string() + ", ";
+            result += param.second.to_string() + ", ";
         }
         if (!parameters.empty()) {
             result.pop_back();
@@ -592,7 +595,7 @@ public:
     get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
         std::vector<llvm::Type*> param_types;
         for (const auto& param : parameters) {
-            param_types.push_back(param.type->get_llvm_type(builder));
+            param_types.push_back(param.second.type->get_llvm_type(builder));
         }
         llvm::Type* return_llvm_type = return_type->get_llvm_type(builder);
         return llvm::FunctionType::get(return_llvm_type, param_types, false);

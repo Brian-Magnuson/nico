@@ -123,6 +123,8 @@ enum class Err {
     UndeclaredName,
     // An name was matched to a non-FieldEntry node where one was expected.
     NotAVariable,
+    // An attempt was made to call a non-callable type.
+    NotACallable,
     // An name was visited as an lvalue, but was not declared with `var`.
     AssignToImmutable,
     // An attempt was made to create a mutable pointer/reference to an
@@ -158,9 +160,15 @@ enum class Err {
     ReturnOutsideFunction,
     // A pointer dereference was found outside of an unsafe block.
     PtrDerefOutsideUnsafeBlock,
+    // A function declaration contained duplicate parameter names.
+    DuplicateFunctionParameterName,
     // An attempt was made to declare a function that conflicts with an existing
     // overload.
     FunctionOverloadConflict,
+
+    NoMatchingFunctionOverload,
+
+    MultipleMatchingFunctionOverloads,
 
     // Local type check warning
     LocalTypeWarning = 5500,

@@ -42,6 +42,26 @@ class LocalChecker : public Stmt::Visitor,
     std::shared_ptr<Type>
     expr_check(std::shared_ptr<Expr>& expr, bool as_lvalue = false);
 
+    /**
+     * @brief Attempts to match the provided arguments to the function
+     * parameters.
+     *
+     * If the arguments match the parameters, this function returns a complete
+     * mapping of parameter names to argument expressions.
+     *
+     * @param func_type The function type to match against.
+     * @param pos_args The positional arguments to match.
+     * @param named_args The named arguments to match.
+     * @return A mapping of parameter names to argument expressions, or an empty
+     * optional if the arguments do not match.
+     */
+    std::optional<Dictionary<std::string, std::weak_ptr<Expr>>>
+    try_match_args_to_params(
+        std::shared_ptr<Type::Function> func_type,
+        const std::vector<std::shared_ptr<Expr>>& pos_args,
+        const Dictionary<std::string, std::shared_ptr<Expr>>& named_args
+    );
+
     std::any visit(Stmt::Expression* stmt) override;
     std::any visit(Stmt::Let* stmt) override;
     std::any visit(Stmt::Func* stmt) override;
