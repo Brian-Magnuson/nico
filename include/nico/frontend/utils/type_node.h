@@ -1,6 +1,8 @@
 #ifndef NICO_TYPE_NODE_H
 #define NICO_TYPE_NODE_H
 
+#include <string>
+#include <unordered_set>
 #include <utility>
 
 #include <llvm/IR/IRBuilder.h>
@@ -556,6 +558,14 @@ public:
  * Used to represent functions with parameters and return types.
  */
 class Type::Function : public Type::ICallable {
+    // The set of all parameter strings for this function; used for overload
+    // conflict resolution; lazily initialized.
+    mutable std::optional<std::unordered_set<std::string>> param_strings;
+    // The set of all default parameter strings for this function; used for
+    // overload conflict resolution; lazily initialized.
+    mutable std::optional<std::unordered_set<std::string>>
+        default_param_strings;
+
 public:
     // The parameters of the function.
     Dictionary<std::string, Field> parameters;
@@ -599,6 +609,35 @@ public:
         }
         llvm::Type* return_llvm_type = return_type->get_llvm_type(builder);
         return llvm::FunctionType::get(return_llvm_type, param_types, false);
+    }
+
+    /**
+     * @brief Get the sets of parameter strings for this function.
+     *
+     * These sets are used for overload conflict resolution.
+     * The first set is the set of all parameter strings.
+     * The second set is the set of all parameter strings for parameters with
+     * default values.
+     *
+     * These sets are lazily initialized and cached for future use.
+     *
+     * @return The pair of parameter string set references (see description).
+     */
+    std::
+        pair<std::unordered_set<std::string>&, std::unordered_set<std::string>&>
+        get_param_sets() {
+        if (!param_strings.has_value() || !default_param_strings.has_value()) {
+            param_strings.emplace();
+            default_param_strings.emplace();
+            for (const auto& [name, field] : parameters) {
+                auto param_str = name + ": " + field.type->to_string();
+                param_strings->insert(param_str);
+                if (field.default_expr.has_value()) {
+                    default_param_strings->insert(param_str);
+                }
+            }
+        }
+        return {*param_strings, *default_param_strings};
     }
 };
 

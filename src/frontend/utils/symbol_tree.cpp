@@ -1,6 +1,7 @@
 #include "nico/frontend/utils/symbol_tree.h"
 
 #include "nico/shared/logger.h"
+#include "nico/shared/sets.h"
 #include "nico/shared/utils.h"
 
 namespace nico {
@@ -270,6 +271,7 @@ SymbolTree::add_overloadable_func(const Field& field) {
 
     // Check if the name already exists.
     std::shared_ptr<Node::OverloadGroup> overload_group;
+
     if (auto node =
             current_scope->children.at(std::string(field.token->lexeme))) {
         if (auto existing_overload_group =
@@ -304,23 +306,54 @@ SymbolTree::add_overloadable_func(const Field& field) {
         modified = true;
     }
 
-    // Add the new overload to the overload group.
     auto new_overload =
         std::make_shared<Node::FieldEntry>(current_scope, field);
-    new_overload->initialize_node();
+    // We *cannot* use `initialize_node` here because it would overwrite the
+    // overload group entry in the parent scope.
 
-    // TODO: TEMPORARY SOLUTION: We only allow one overload for now.
-    if (overload_group->overloads.size() == 1) {
+    auto func_type =
+        std::dynamic_pointer_cast<Type::Function>(new_overload->field.type);
+    if (!func_type)
+        panic("Field added as overloadable function is not a function.");
+    auto [m_f1, d_f1] = func_type->get_param_sets();
+
+    // Check for overload conflicts.
+    std::vector<std::shared_ptr<Node::FieldEntry>> conflicts;
+    for (const auto& existing_overload : overload_group->overloads) {
+        auto existing_func_type = std::dynamic_pointer_cast<Type::Function>(
+            existing_overload->field.type
+        );
+        if (!existing_func_type)
+            panic("Existing overload in overload group is not a function.");
+        auto [m_f2, d_f2] = existing_func_type->get_param_sets();
+        auto conflict_found =
+            sets::equals(m_f1, m_f2) ||
+            (sets::subset(m_f2, m_f1) &&
+             sets::subseteq(sets::difference(m_f1, m_f2), d_f1)) ||
+            (sets::subset(m_f1, m_f2) &&
+             sets::subseteq(sets::difference(m_f2, m_f1), d_f2));
+
+        if (conflict_found) {
+            conflicts.push_back(existing_overload);
+        }
+    }
+    if (!conflicts.empty()) {
         Logger::inst().log_error(
             Err::FunctionOverloadConflict,
             field.token->location,
-            "Function overloading is not yet supported; only one overload is "
-            "allowed."
+            "Function overload conflict for function `" +
+                std::string(field.token->lexeme) + "`."
         );
-        return std::make_pair(
-            overload_group->overloads.at(0),
-            Err::FunctionOverloadConflict
-        );
+        for (const auto& conflict : conflicts) {
+            if (auto locatable =
+                    std::dynamic_pointer_cast<Node::ILocatable>(conflict)) {
+                Logger::inst().log_note(
+                    locatable->location_token->location,
+                    "Conflicting overload declared here."
+                );
+            }
+        }
+        return std::make_pair(conflicts.at(0), Err::FunctionOverloadConflict);
     }
 
     overload_group->overloads.push_back(new_overload);

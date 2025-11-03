@@ -170,6 +170,16 @@ func f(b: i32) { ... }
 - $M(f_2) = \{"b: i32"\}$
 - None of the rules apply, so these definitions are *not* in conflict.
 
+**Example 6**
+```
+func f(a: i32, b: i32 = 0) { ... }
+func f(a: i32, c: i32 = 0) { ... }
+```
+- $M(f_1) = \{"a: i32", "b: i32"\}$
+- $M(f_2) = \{"a: i32", "c: i32"\}$
+- $M(f_1)$ and $M(f_2)$ are neither equal nor subsets of each other.
+- None of the rules apply, so these definitions are *not* in conflict.
+
 ## Function Name Reference and Call Resolution
 
 This section addresses two problems:

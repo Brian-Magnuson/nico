@@ -699,10 +699,18 @@ TEST_CASE("Local function declarations", "[checker]") {
         );
     }
 
-    SECTION("Function name already exists") {
+    SECTION("Variable name already exists") {
         run_checker_test(
             "let add = 1 "
             "func add(a: i32, b: i32) -> i32 { return a + b }",
+            Err::NameAlreadyExists
+        );
+    }
+
+    SECTION("Function name already exists") {
+        run_checker_test(
+            "func add(a: i32, b: i32) -> i32 { return a + b } "
+            "let add = 1",
             Err::NameAlreadyExists
         );
     }
@@ -725,6 +733,118 @@ TEST_CASE("Local function declarations", "[checker]") {
         run_checker_test(
             "func add(a: i32, b: i32) -> i32 { return true }",
             Err::FunctionReturnTypeMismatch
+        );
+    }
+}
+
+TEST_CASE("Local function overload declarations", "[checker]") {
+    SECTION("Valid overloads 1") {
+        run_checker_test(R"(
+        func add(a: i32, b: i32) -> i32 => a + b
+        func add(a: f64, b: f64) -> f64 => a + b
+        )");
+    }
+
+    SECTION("Valid overloads 2") {
+        run_checker_test(R"(
+        func add(a: i32, b: i32, c: i32) -> i32 => a + b + c
+        func add(a: i32, b: i32) -> i32 => a + b
+        )");
+    }
+
+    SECTION("Valid overloads 3") {
+        run_checker_test(R"(
+        func add(b: i32) -> i32 => b + 1
+        func add(a: i32) -> i32 => a + 1
+        )");
+    }
+
+    SECTION("Valid overloads 4") {
+        run_checker_test(R"(
+        func add(a: i32, b: i32, c: i32 = 0) -> i32 => a + b + c
+        func add(a: i32) -> i32 => a + 1
+        )");
+    }
+
+    SECTION("Valid overloads 5") {
+        run_checker_test(R"(
+            func add(a: i32, b: i32, c: i32 = 0) -> i32 => a + b + c
+            func add(a: i32, b: f64) -> i32 => 0
+        )");
+    }
+
+    SECTION("Valid overloads 6") {
+        run_checker_test(
+            R"(
+        func add(a: i32, b: i32 = 0, c: i32 = 0) -> i32 => a + b + c
+        func add(a: i32, d: i32 = 0) -> i32 => a + d
+        )"
+        );
+    }
+
+    SECTION("Many valid overloads") {
+        run_checker_test(
+            R"(
+        func add() -> i32 => 0
+        func add(a: i32) -> i32 => a + 1
+        func add(a: i32, b: i32) -> i32 => a + b
+        func add(a: i32, b: i32, c: i32) -> i32 => a + b + c
+        func add(a: i32, b: i32, c: i32, d: i32) -> i32 => a + b + c + d
+        func add(a: f64, b: f64) -> f64 => a + b
+        func add(a: f64, b: f64, c: f64) -> f64 => a + b + c
+        func add(a: f64, b: f64, c: f64, d: f64) -> f64 => a + b + c + d
+        )"
+        );
+    }
+
+    SECTION("Overload conflicts 1") {
+        run_checker_test(
+            R"(
+        func add(a: i32, b: i32) -> i32 => a + b
+        func add(a: i32, b: i32) -> i32 => a - b
+        )",
+            Err::FunctionOverloadConflict
+        );
+    }
+
+    SECTION("Overload conflicts 2") {
+        run_checker_test(
+            R"(
+        func add(a: i32, b: i32, c: i32 = 0) -> i32 => a + b + c
+        func add(a: i32, b: i32) -> i32 => a + b
+        )",
+            Err::FunctionOverloadConflict
+        );
+    }
+
+    SECTION("Overload conflicts 3") {
+        run_checker_test(
+            R"(
+        func add(a: i32, b: f64) -> i32 => 0
+        func add(b: f64, a: i32) -> i32 => 0
+        )",
+            Err::FunctionOverloadConflict
+        );
+    }
+
+    SECTION("Overload conflicts 4") {
+        run_checker_test(
+            R"(
+        func add(a: i32) -> i32 => a + 1
+        func add(a: i32, b: i32) -> i32 => a + b
+        func add(a: i32, b: i32 = 0) -> i32 => a + b
+        )",
+            Err::FunctionOverloadConflict
+        );
+    }
+
+    SECTION("Overload conflicts 5") {
+        run_checker_test(
+            R"(
+        func add() -> i32 => 0
+        func add(a: i32 = 0) -> i32 => a + 1
+        )",
+            Err::FunctionOverloadConflict
         );
     }
 }
