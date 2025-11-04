@@ -152,12 +152,29 @@ struct Location {
     )
         : file(file), start(start), length(length), line(line) {}
 
+    /**
+     * @brief Convert the location to a 3-tuple of (file path, line number,
+     * column number).
+     * @return A 3-tuple containing the file path, line number, and column
+     * number.
+     */
     std::tuple<std::string, size_t, size_t> to_tuple() const {
         size_t line_start = file->src_code.rfind('\n', start);
         if (line_start == std::string::npos) {
             line_start = 0;
         }
         return {file->path_string, line, start - line_start + 1};
+    }
+
+    /**
+     * @brief Convert the location to a string in the format
+     * "file_path:line_number:column_number".
+     * @return A string representation of the location.
+     */
+    std::string to_string() const {
+        auto [file_path, line_num, col_num] = to_tuple();
+        return file_path + ":" + std::to_string(line_num) + ":" +
+               std::to_string(col_num);
     }
 };
 

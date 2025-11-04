@@ -951,3 +951,137 @@ TEST_CASE("Local function call", "[checker]") {
         );
     }
 }
+
+TEST_CASE("Local function overload calls", "[checker]") {
+    SECTION("Valid overload call 1") {
+        run_checker_test(R"(
+        func add(a: i32, b: i32) -> i32 => a + b
+        func add(a: f64, b: f64) -> f64 => a + b
+        let result1: i32 = add(1, 2)
+        let result2: f64 = add(1.0, 2.0)
+        )");
+    }
+
+    SECTION("Valid overload call 2") {
+        run_checker_test(R"(
+            func f() -> bool => true
+            func f(p1: i32) -> i32 => 1
+            func f(p1: i32, p2: i32) -> f64 => 2.0
+            let a: bool = f()
+            let b: i32 = f(10)
+            let c: f64 = f(10, 20)
+        )");
+    }
+
+    SECTION("Valid overload call 3") {
+        run_checker_test(R"(
+        func f(a: i32) -> i32 => 0
+        func f(b: i32) -> f64 => 0.0
+        let a: i32 = f(a: 10)
+        let b: f64 = f(b: 20)
+        )");
+    }
+
+    SECTION("Valid overload call 4") {
+        run_checker_test(R"(
+        func f(a: i32, b: i32) -> i32 => 0
+        func f(a: i32, c: i32) -> f64 => 0.0
+        let a: i32 = f(a: 10, b: 20)
+        let b: f64 = f(a: 30, c: 40)
+        )");
+    }
+
+    SECTION("Valid overload call 5") {
+        run_checker_test(R"(
+        func f(a: i32, b: i32) -> i32 => 0
+        func f(a: i32) -> f64 => 0.0
+        let a: i32 = f(a: 10, b: 20)
+        let b: f64 = f(a: 30)
+        )");
+    }
+
+    SECTION("Ambiguous call 1") {
+        run_checker_test(
+            R"(
+        func add(a: i32, b: i32 = 2) -> i32 => a + b
+        func add(a: i32, c: i32 = 3) -> i32 => a + c
+        let result: i32 = add(1)
+        )",
+            Err::MultipleMatchingFunctionOverloads
+        );
+    }
+
+    SECTION("Ambiguous call 2") {
+        run_checker_test(
+            R"(
+        func f(a: i32, b: i32) -> i32 => 0
+        func f(a: i32, c: i32) -> f64 => 0.0
+        let result: i32 = f(1, 2)
+        )",
+            Err::MultipleMatchingFunctionOverloads
+        );
+    }
+
+    SECTION("Many matching overloads") {
+        run_checker_test(
+            R"(
+        func f(a: i32) -> i32 => 0
+        func f(b: i32) -> i32 => 0
+        func f(c: i32) -> i32 => 0
+        func f(d: i32) -> i32 => 0
+        func f(e: i32) -> i32 => 0
+        func f(g: i32) -> i32 => 0
+        let result: i32 = f(0)
+        )",
+            Err::MultipleMatchingFunctionOverloads
+        );
+    }
+
+    SECTION("No matching overload 1") {
+        run_checker_test(
+            R"(
+        func add(a: i32, b: i32) -> i32 => a + b
+        func add(a: f64, b: f64) -> f64 => a + b
+        let result: i32 = add(1, 2.0)
+        )",
+            Err::NoMatchingFunctionOverload
+        );
+    }
+
+    SECTION("No matching overload 2") {
+        run_checker_test(
+            R"(
+        func f() -> i32 => 0
+        func f(a: i32) -> i32 => 0
+        let result: i32 = f(1, 2)
+        )",
+            Err::NoMatchingFunctionOverload
+        );
+    }
+
+    SECTION("No matching overload 3") {
+        run_checker_test(
+            R"(
+        func f(a: i32) -> i32 => 0
+        func f(b: i32) -> i32 => 0
+        let result: i32 = f(c: 1)
+        )",
+            Err::NoMatchingFunctionOverload
+        );
+    }
+
+    SECTION("Many non-matching overloads") {
+        run_checker_test(
+            R"(
+        func f(a: i32) -> i32 => 0
+        func f(b: i32) -> i32 => 0
+        func f(c: i32) -> i32 => 0
+        func f(d: i32) -> i32 => 0
+        func f(e: i32) -> i32 => 0
+        func f(g: i32) -> i32 => 0
+        let result: i32 = f(n: 1)
+        )",
+            Err::NoMatchingFunctionOverload
+        );
+    }
+}

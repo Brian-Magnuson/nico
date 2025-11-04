@@ -167,9 +167,9 @@ enum class Err {
     // An attempt was made to declare a function that conflicts with an existing
     // overload.
     FunctionOverloadConflict,
-
+    // No matching function overload was found for a function call.
     NoMatchingFunctionOverload,
-
+    // Multiple matching function overloads were found for a function call.
     MultipleMatchingFunctionOverloads,
 
     // Local type check warning

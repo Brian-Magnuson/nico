@@ -827,13 +827,15 @@ std::any LocalChecker::visit(Expr::Call* expr, bool as_lvalue) {
     std::vector<size_t> matched_candidate_indices;
     for (size_t i = 0; i < candidate_funcs.size(); i++) {
         // Try to match the arguments to the parameters.
-        matched_args = try_match_args_to_params(
+        auto match_attempt = try_match_args_to_params(
             candidate_funcs[i],
             expr->provided_pos_args,
             expr->provided_named_args
         );
-        if (matched_args.has_value()) {
+
+        if (match_attempt.has_value()) {
             matched_candidate_indices.push_back(i);
+            matched_args = match_attempt;
         }
     }
 
@@ -877,6 +879,11 @@ std::any LocalChecker::visit(Expr::Call* expr, bool as_lvalue) {
             *expr->callee->location,
             "No matching function overload found for the provided arguments."
         );
+        for (auto& candidate_func : candidate_funcs) {
+            Logger::inst().log_note(
+                "Possible candidate: " + candidate_func->to_string()
+            );
+        }
         return std::any();
     }
 
