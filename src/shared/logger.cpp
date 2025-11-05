@@ -1,5 +1,6 @@
 #include "nico/shared/logger.h"
 
+#include <cctype>
 namespace nico {
 
 void Logger::print_code_at_location(

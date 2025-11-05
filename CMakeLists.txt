@@ -76,6 +76,7 @@ set(DRIVER_SRC
 # Shared files
 set(SHARED_SRC
     src/shared/logger.cpp
+    src/shared/utils.cpp
 )
 
 # Core source files
@@ -105,6 +106,7 @@ set(TEST_SRC
     test/parser_stmt_tests.cpp
     test/checker_local_tests.cpp
     test/jit_tests.cpp
+    test/utils_tests.cpp
 )
 
 # Main executable

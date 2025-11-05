@@ -6,6 +6,7 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #if defined(_WIN32) || defined(_WIN64)
 #include <io.h>
@@ -77,6 +78,25 @@ inline std::string project_version() {
     return "<unknown version>";
 #endif
 }
+
+/**
+ * @brief Breaks a string view into multiple string views based on a maximum
+ * length.
+ *
+ * This function is useful for breaking long error messages into multiple
+ * lines.
+ * The message will be split at whitespace characters whenever possible.
+ * If a single word exceeds the maximum length, the word will be broken.
+ *
+ * For safety, the minimum value for `max_length` is 10. Values less than 10
+ * are set to 10.
+ *
+ * @param message The message to break.
+ * @param max_length The max length of each line. Default is 72.
+ * @return A vector of string views representing the broken lines.
+ */
+std::vector<std::string_view>
+break_message(std::string_view message, size_t max_length = 72);
 
 } // namespace nico
 
