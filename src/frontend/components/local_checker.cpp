@@ -864,12 +864,11 @@ std::any LocalChecker::visit(Expr::Call* expr, bool as_lvalue) {
             *expr->callee->location,
             "Function call matched multiple overloads."
         );
+        std::string note_msg = "Matched candidates:\n";
         for (auto index : matched_candidate_indices) {
-            Logger::inst().log_note(
-                overload_field_entries[index]->location_token->location,
-                "Matching overload declared here."
-            );
+            note_msg += " - " + candidate_funcs[index]->to_string() + "\n";
         }
+        Logger::inst().log_note(note_msg);
         return std::any();
     }
     else {
@@ -879,11 +878,11 @@ std::any LocalChecker::visit(Expr::Call* expr, bool as_lvalue) {
             *expr->callee->location,
             "No matching function overload found for the provided arguments."
         );
+        std::string note_msg = "Possible candidates:\n";
         for (auto& candidate_func : candidate_funcs) {
-            Logger::inst().log_note(
-                "Possible candidate: " + candidate_func->to_string()
-            );
+            note_msg += " - " + candidate_func->to_string() + "\n";
         }
+        Logger::inst().log_note(note_msg);
         return std::any();
     }
 
