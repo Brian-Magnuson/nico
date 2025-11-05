@@ -44,6 +44,25 @@ class Logger {
         std::ostream& (*color_manip)(std::ostream& o) = colorize::red
     );
 
+    /**
+     * @brief Prints a message with line breaks at a specified indentation
+     * level.
+     *
+     * Indents are applied to each line after the first line.
+     *
+     * The line breaks will be based on a terminal width of 80 characters.
+     * If stdout is known not to be a terminal or if the terminal width cannot
+     * be determined, then no line breaks will be applied.
+     *
+     * If the terminal width is less than 40 characters, indents will not be
+     * applied.
+     *
+     * @param message The message to print.
+     * @param indent The number of spaces to indent each line after the first.
+     * Default is 0.
+     */
+    void print_message_with_breaks(std::string_view message, size_t indent = 0);
+
 public:
     /**
      * @brief Get the instance of the Logger singleton.

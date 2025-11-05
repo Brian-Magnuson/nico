@@ -352,6 +352,11 @@ SymbolTree::add_overloadable_func(const Field& field) {
                     "Conflicting overload declared here."
                 );
             }
+            Logger::inst().log_note(
+                "Two function overloads conflict if they have the same set of "
+                "parameters, or if one set of parameters is a superset of the "
+                "other, differing only by optional parameters."
+            );
         }
         return std::make_pair(conflicts.at(0), Err::FunctionOverloadConflict);
     }

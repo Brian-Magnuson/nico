@@ -10,8 +10,10 @@
 
 #if defined(_WIN32) || defined(_WIN64)
 #include <io.h>
+#include <windows.h>
 #elif defined(__unix__) || defined(__unix) ||                                  \
     (defined(__APPLE__) && defined(__MACH__))
+#include <sys/ioctl.h>
 #include <unistd.h>
 #endif
 
@@ -57,6 +59,50 @@ inline bool is_stdout_terminal() {
 #else
     return false;
 #endif
+}
+
+/**
+ * @brief Gets the width, in number of characters, of the terminal associated
+ * with stdout.
+ *
+ * This function uses platform-specific methods to determine the terminal width.
+ * It is designed to work on Unix-like systems and Windows.
+ *
+ * If stdout is known not to be a terminal, then 0 will be returned instead.
+ * If the terminal width cannot be determined, then -1 will be returned.
+ *
+ * @return The width of the terminal in characters, or 0 is stdout is not a
+ * terminal, or -1 if the width cannot be determined.
+ */
+inline int get_terminal_width() {
+#if defined(_WIN32) || defined(_WIN64)
+    // Windows implementation
+    if (_isatty(_fileno(stdout))) {
+        CONSOLE_SCREEN_BUFFER_INFO csbi;
+        if (GetConsoleScreenBufferInfo(
+                GetStdHandle(STD_OUTPUT_HANDLE),
+                &csbi
+            )) {
+            return csbi.srWindow.Right - csbi.srWindow.Left + 1;
+        }
+    }
+    else {
+        return 0; // Not a terminal
+    }
+#elif defined(__unix__) || defined(__unix) ||                                  \
+    (defined(__APPLE__) && defined(__MACH__))
+    // Unix-like implementation
+    if (isatty(STDOUT_FILENO)) {
+        struct winsize w;
+        if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) == 0) {
+            return w.ws_col;
+        }
+    }
+    else {
+        return 0; // Not a terminal
+    }
+#endif
+    return -1; // Unable to determine
 }
 
 /**

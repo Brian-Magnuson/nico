@@ -1,6 +1,9 @@
 #include "nico/shared/logger.h"
 
 #include <cctype>
+
+#include "nico/shared/utils.h"
+
 namespace nico {
 
 void Logger::print_code_at_location(
@@ -44,6 +47,39 @@ void Logger::print_code_at_location(
     */
 }
 
+void Logger::print_message_with_breaks(
+    std::string_view message, size_t indent
+) {
+    int terminal_width = get_terminal_width();
+    if (terminal_width < 1) {
+        // Not a terminal or unable to determine; print without breaks.
+        *out << message << "\n";
+        return;
+    }
+    if (terminal_width > 80) {
+        // Cap at 80 for readability.
+        terminal_width = 80;
+    }
+    else if (terminal_width < 40) {
+        // Terminal too narrow; print without indents.
+        indent = 0;
+    }
+    if (indent >= static_cast<size_t>(terminal_width)) {
+        // Indent too large; adjust to fit.
+        indent = static_cast<size_t>(terminal_width) - 1;
+    }
+    size_t max_length = static_cast<size_t>(terminal_width) - indent;
+    auto lines = break_message(message, max_length);
+    for (size_t i = 0; i < lines.size(); ++i) {
+        if (i == 0) {
+            *out << lines[i] << "\n";
+        }
+        else {
+            *out << std::string(indent, ' ') << lines[i] << "\n";
+        }
+    }
+}
+
 void Logger::reset() {
     out = &std::cerr;
     errors.clear();
@@ -56,7 +92,10 @@ void Logger::log_error(
     errors.push_back(ec);
     if (printing_enabled) {
         *out << colorize::red << "Error " << errors.size() << ": "
-             << colorize::reset << (int)ec << " " << message << "\n";
+             << colorize::reset << (int)ec << " ";
+        // 14 to 16 characters before the error message.
+        // 80 - 15 = 65 characters per line for code display.
+        print_message_with_breaks(message, 15);
         print_code_at_location(location);
     }
 }
@@ -71,16 +110,16 @@ void Logger::log_error(Err ec, std::string_view message) {
 
 void Logger::log_note(const Location& location, std::string_view message) {
     if (printing_enabled) {
-        *out << colorize::cyan << "⤷ Note: " << colorize::reset << message
-             << "\n  ";
+        *out << colorize::cyan << "⤷ Note: " << colorize::reset;
+        print_message_with_breaks(message, 8);
         print_code_at_location(location, colorize::cyan);
     }
 }
 
 void Logger::log_note(std::string_view message) {
     if (printing_enabled) {
-        *out << colorize::cyan << "⤷ Note: " << colorize::reset << message
-             << "\n";
+        *out << colorize::cyan << "⤷ Note: " << colorize::reset;
+        print_message_with_breaks(message, 8);
     }
 }
 
