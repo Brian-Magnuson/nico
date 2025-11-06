@@ -14,7 +14,7 @@ Frontend::compile(const std::shared_ptr<CodeFile>& file, bool repl_mode) {
     if (!IS_VARIANT(context->status, Status::Ok))
         return context;
 
-    GlobalChecker::check(context);
+    GlobalChecker::check(context, repl_mode);
     if (!IS_VARIANT(context->status, Status::Ok))
         return context;
 
