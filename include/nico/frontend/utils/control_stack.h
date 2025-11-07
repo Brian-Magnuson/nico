@@ -109,6 +109,21 @@ public:
     );
 
     /**
+     * @brief Adds a function block to the control stack.
+     *
+     * @param yield_allocation The yield value allocation for the block.
+     * @param exit_block The exit block for the function.
+     * @param function_name The name of the function.
+     * @param label An optional label for the block.
+     */
+    void add_function_block(
+        llvm::AllocaInst* yield_allocation,
+        llvm::BasicBlock* exit_block,
+        std::string_view function_name,
+        std::optional<std::string> label = std::nullopt
+    );
+
+    /**
      * @brief Adds a script block to the control stack.
      *
      * The script block cannot have a label and must be at the bottom of the

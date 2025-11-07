@@ -709,8 +709,17 @@ std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
     std::optional<std::shared_ptr<Expr>> body_expr;
     // Function body
     if (match({Tok::DoubleArrow})) {
-        // Single-expression function
-        body_expr = expression();
+        // Single-expression function.
+        // For simplicity, wrap it in a block.
+        body_expr = std::make_shared<Expr::Block>(
+            previous(),
+            std::vector<std::shared_ptr<Stmt>>{std::make_shared<Stmt::Yield>(
+                std::make_shared<Token>(Tok::KwReturn, previous()->location),
+                *expression()
+            )},
+            Expr::Block::Kind::Function,
+            false
+        );
     }
     else if (peek()->tok_type == Tok::Indent ||
              peek()->tok_type == Tok::LBrace) {

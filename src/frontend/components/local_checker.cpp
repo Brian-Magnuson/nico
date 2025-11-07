@@ -199,6 +199,10 @@ std::any LocalChecker::visit(Stmt::Func* stmt) {
         if (err != Err::Null) {
             has_error = true;
         }
+        else {
+            param.field_entry =
+                std::dynamic_pointer_cast<Node::FieldEntry>(node);
+        }
     }
     // Next, get the return type.
     std::shared_ptr<Type> return_type = nullptr;

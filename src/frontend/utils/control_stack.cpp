@@ -96,6 +96,21 @@ void ControlStack::add_block(
     );
 }
 
+void ControlStack::add_function_block(
+    llvm::AllocaInst* yield_allocation,
+    llvm::BasicBlock* exit_block,
+    std::string_view function_name,
+    std::optional<std::string> label
+) {
+    top_block = std::make_shared<ControlStack::Function>(
+        top_block,
+        yield_allocation,
+        exit_block,
+        function_name,
+        label
+    );
+}
+
 void ControlStack::add_script_block(
     llvm::AllocaInst* yield_allocation, llvm::BasicBlock* exit_block
 ) {

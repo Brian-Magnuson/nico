@@ -79,6 +79,8 @@ public:
         std::shared_ptr<Annotation> annotation;
         // An optional expression for the default value.
         std::optional<std::shared_ptr<Expr>> expression;
+        // A weak pointer to the parameter's field entry in the symbol table.
+        std::weak_ptr<Node::FieldEntry> field_entry;
 
         Param(
             bool has_var,

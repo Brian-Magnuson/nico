@@ -556,6 +556,9 @@ public:
  * @brief A function type.
  *
  * Used to represent functions with parameters and return types.
+ *
+ * Note: Functions are special kinds of pointers. They cannot be directly
+ * dereferenced, but they can be passed around and called.
  */
 class Type::Function : public Type::ICallable {
     // The set of all parameter strings for this function; used for overload
@@ -603,6 +606,11 @@ public:
 
     virtual llvm::Type*
     get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
+        return llvm::PointerType::get(builder->getContext(), 0);
+    }
+
+    llvm::FunctionType*
+    get_llvm_function_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const {
         std::vector<llvm::Type*> param_types;
         for (const auto& param : parameters) {
             param_types.push_back(param.second.type->get_llvm_type(builder));

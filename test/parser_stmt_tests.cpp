@@ -151,14 +151,16 @@ TEST_CASE("Parser function statements", "[parser]") {
     SECTION("Func statement 3") {
         run_parser_stmt_test(
             "func f3() -> i32 => 10",
-            {"(stmt:func f3 i32 () => (lit 10))", "(stmt:eof)"}
+            {"(stmt:func f3 i32 () => (block (stmt:yield => (lit 10))))",
+             "(stmt:eof)"}
         );
     }
 
     SECTION("Func statement 4") {
         run_parser_stmt_test(
             "func f4(x: i32) -> i32 => x + 1",
-            {"(stmt:func f4 i32 (x i32) => (binary + (nameref x) (lit 1)))",
+            {"(stmt:func f4 i32 (x i32) => (block (stmt:yield => (binary + "
+             "(nameref x) (lit 1)))))",
              "(stmt:eof)"}
         );
     }
@@ -175,8 +177,8 @@ TEST_CASE("Parser function statements", "[parser]") {
     SECTION("Func statement 6") {
         run_parser_stmt_test(
             "func f6(a: i32 = 0) -> i32 => a * 2",
-            {"(stmt:func f6 i32 (a i32 (lit 0)) => (binary * (nameref a) "
-             "(lit 2)))",
+            {"(stmt:func f6 i32 (a i32 (lit 0)) => (block (stmt:yield => "
+             "(binary * (nameref a) (lit 2)))))",
              "(stmt:eof)"}
         );
     }
