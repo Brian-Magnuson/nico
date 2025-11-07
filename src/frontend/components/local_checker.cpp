@@ -26,9 +26,13 @@ LocalChecker::try_match_args_to_params(
 
     // First, apply default arguments.
     for (const auto& [param_string, param_field] : func_type->parameters) {
-        if (param_field.default_expr.has_value()) {
-            arg_mapping.insert(param_string, param_field.default_expr.value());
-        }
+        arg_mapping.insert(
+            param_string,
+            param_field.default_expr.value_or(std::weak_ptr<Expr>())
+        );
+        // We insert an empty pointer if there is no default expression.
+        // This ensures the dictionary has an entry for every parameter in the
+        // correct order.
     }
     // Next, apply positional arguments.
     if (pos_args.size() > func_type->parameters.size()) {
@@ -66,8 +70,8 @@ LocalChecker::try_match_args_to_params(
     }
     // Finally, check that all parameters have been assigned.
     for (const auto& [param_string, _] : func_type->parameters) {
-        if (!arg_mapping.contains(param_string)) {
-            // Parameter not assigned.
+        if (arg_mapping.at(param_string)->lock() == nullptr) {
+            // Parameter not assigned
             return std::nullopt;
         }
     }
