@@ -362,6 +362,10 @@ SymbolTree::add_overloadable_func(const Field& field) {
     }
 
     overload_group->overloads.push_back(new_overload);
+    // Change the new overload's symbol to include a $N suffix to make it
+    // unique.
+    new_overload->symbol +=
+        "$" + std::to_string(overload_group->overloads.size());
     modified = true;
 
     return std::make_pair(new_overload, Err::Null);

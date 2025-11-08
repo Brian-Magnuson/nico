@@ -102,8 +102,8 @@ public:
     virtual ~RootScope() = default;
 
     RootScope()
-        : Node(std::weak_ptr<Node::IScope>(), "::"),
-          Node::IScope(std::weak_ptr<Node::IScope>(), "::"),
+        : Node(std::weak_ptr<Node::IScope>(), ""),
+          Node::IScope(std::weak_ptr<Node::IScope>(), ""),
           Node::IGlobalScope() {}
 };
 
@@ -280,7 +280,7 @@ public:
         if (is_global) {
             auto ir_module = builder->GetInsertBlock()->getModule();
             // Attempt to get the global variable.
-            ptr = ir_module->getGlobalVariable(field.token->lexeme, true);
+            ptr = ir_module->getGlobalVariable(symbol, true);
             // If it doesn't exist, declare it.
             if (ptr == nullptr) {
                 ptr = new llvm::GlobalVariable(

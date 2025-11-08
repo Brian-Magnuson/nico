@@ -50,7 +50,7 @@ public:
     // This node's parent scope, if it exists.
     std::weak_ptr<Node::IScope> parent;
     // This node's unique symbol, assigned upon construction.
-    const std::string symbol;
+    std::string symbol;
     // A short name for this node, used for adding this node to the parent
     // node's children.
     const std::string short_name;

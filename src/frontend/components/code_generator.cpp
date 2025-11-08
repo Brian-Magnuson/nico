@@ -40,8 +40,10 @@ std::any CodeGenerator::visit(Stmt::Expression* stmt) {
 }
 
 std::any CodeGenerator::visit(Stmt::Let* stmt) {
-    auto llvm_type =
-        stmt->field_entry.lock()->field.type->get_llvm_type(builder);
+    auto field_entry = stmt->field_entry.lock();
+    auto llvm_type = field_entry->field.type->get_llvm_type(builder);
+    auto symbol = field_entry->symbol;
+
     llvm::Value* allocation = nullptr;
 
     if (control_stack.top_block_is_script()) {
@@ -59,12 +61,11 @@ std::any CodeGenerator::visit(Stmt::Let* stmt) {
             llvm::Constant::getNullValue(
                 llvm_type
             ), // We cannot assign non-constants here, so we use this instead
-            stmt->identifier->lexeme
+            symbol
         );
     }
     else {
-        auto alloca_inst =
-            builder->CreateAlloca(llvm_type, nullptr, stmt->identifier->lexeme);
+        auto alloca_inst = builder->CreateAlloca(llvm_type, nullptr, symbol);
 
         stmt->field_entry.lock()->llvm_ptr = alloca_inst;
         allocation = alloca_inst;
