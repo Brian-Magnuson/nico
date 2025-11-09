@@ -326,7 +326,7 @@ std::any LocalChecker::visit(Stmt::Yield* stmt) {
         // If this local scope does not currently have a yield type...
         local_scope->yield_type = expr_type;
     }
-    else if (local_scope->yield_type.value() != expr_type) {
+    else if (*local_scope->yield_type.value() != *expr_type) {
         // If this local scope has a yield type, check that the new yield
         // expression is compatible with it.
         Logger::inst().log_error(
@@ -854,6 +854,7 @@ std::any LocalChecker::visit(Expr::Call* expr, bool as_lvalue) {
         expr->actual_args = matched_args.value();
         // If the callee is an overloaded function...
         if (!overload_field_entries.empty()) {
+            expr->callee->type = matched_func;
             auto name_ref =
                 std::dynamic_pointer_cast<Expr::NameRef>(expr->callee);
             // Due to the semantics of the overloadedfn type, the callee must be

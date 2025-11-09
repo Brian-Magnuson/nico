@@ -388,6 +388,10 @@ TEST_CASE("Local block expressions", "[checker]") {
         run_checker_test("let var a = 1 a = block { yield block { yield 2 } }");
     }
 
+    SECTION("Block expression multiple yields") {
+        run_checker_test("let var a = 1 a = block { yield 2 yield 3 }");
+    }
+
     SECTION("Yield outside local scope") {
         run_checker_test("yield 1", Err::YieldOutsideLocalScope);
     }
@@ -726,6 +730,13 @@ TEST_CASE("Local function declarations", "[checker]") {
         run_checker_test(
             "func add(a: i32 = true, b: i32) -> i32 { return a + b }",
             Err::DefaultArgTypeMismatch
+        );
+    }
+
+    SECTION("Function immutable parameter assignment") {
+        run_checker_test(
+            "func add(a: i32, b: i32) -> i32 { a = 2 return a + b }",
+            Err::AssignToImmutable
         );
     }
 

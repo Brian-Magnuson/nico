@@ -84,6 +84,9 @@ std::any CodeGenerator::visit(Stmt::Let* stmt) {
 }
 
 std::any CodeGenerator::visit(Stmt::Func* stmt) {
+
+    auto script_block = builder->GetInsertBlock();
+
     auto field_entry_type = stmt->field_entry.lock()->field.type;
     auto func_type =
         std::dynamic_pointer_cast<Type::Function>(field_entry_type);
@@ -93,7 +96,7 @@ std::any CodeGenerator::visit(Stmt::Func* stmt) {
     llvm::Function* function = llvm::Function::Create(
         llvm_func_type,
         llvm::Function::ExternalLinkage,
-        stmt->identifier->lexeme,
+        stmt->field_entry.lock()->symbol + "$func",
         mod_ctx.ir_module.get()
     );
 
@@ -113,7 +116,7 @@ std::any CodeGenerator::visit(Stmt::Func* stmt) {
         llvm::AllocaInst* param_alloca = builder->CreateAlloca(
             llvm_param->getType(),
             nullptr,
-            param.identifier->lexeme
+            param.field_entry.lock()->symbol
         );
         builder->CreateStore(llvm_param, param_alloca);
         param.field_entry.lock()->llvm_ptr = param_alloca;
@@ -147,6 +150,21 @@ std::any CodeGenerator::visit(Stmt::Func* stmt) {
 
     // Pop the function block from the control stack.
     control_stack.pop_block();
+
+    // Create a global variable to hold the function pointer.
+    new llvm::GlobalVariable(
+        *mod_ctx.ir_module,
+        function->getType(),
+        false,
+        llvm::GlobalValue::ExternalLinkage,
+        function,
+        stmt->field_entry.lock()->symbol
+    );
+    // `new` is safe here because the module manages the memory.
+    // Also, we don't store this in the field entry; we reference global
+    // variables by name.
+
+    builder->SetInsertPoint(script_block);
 
     return std::any();
 }
@@ -542,9 +560,38 @@ std::any CodeGenerator::visit(Expr::Access* expr, bool as_lvalue) {
 }
 
 std::any CodeGenerator::visit(Expr::Call* expr, bool as_lvalue) {
-    // TODO: Implement codegen for call expressions.
-    panic("CodeGenerator::visit(Expr::Call*): Not implemented yet.");
-    return std::any();
+    // Visit the callee.
+    auto callee =
+        std::any_cast<llvm::Value*>(expr->callee->accept(this, false));
+    auto callee_fn_type =
+        std::dynamic_pointer_cast<Type::Function>(expr->callee->type);
+    if (!callee_fn_type) {
+        panic(
+            "Codegenerator::visit(Expr::Call*): Callee is not a function type. "
+            "Found: " +
+            expr->callee->type->to_string()
+        );
+    }
+    // callee is a global variable containing a function pointer.
+
+    // Visit each argument.
+    std::vector<llvm::Value*> args;
+    for (const auto& [_, arg_weak_ptr] : expr->actual_args) {
+        args.push_back(
+            std::any_cast<llvm::Value*>(
+                arg_weak_ptr.lock()->accept(this, false)
+            )
+        );
+    }
+
+    // Make the call.
+    llvm::Value* result = builder->CreateCall(
+        callee_fn_type->get_llvm_function_type(builder),
+        callee,
+        args
+    );
+
+    return result;
 }
 
 std::any CodeGenerator::visit(Expr::NameRef* expr, bool as_lvalue) {

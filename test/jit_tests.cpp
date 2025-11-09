@@ -852,3 +852,140 @@ TEST_CASE("JIT pointers", "[jit]") {
         );
     }
 }
+
+TEST_CASE("JIT functions", "[jit]") {
+    SECTION("Simple function") {
+        run_jit_test(
+            R"(
+            func answer() -> i32 => 42
+            )"
+        );
+    }
+
+    SECTION("Function call") {
+        run_jit_test(
+            R"(
+            func answer() -> i32 => 42
+            printout answer()
+            )",
+            "42"
+        );
+    }
+
+    SECTION("Function braced form") {
+        run_jit_test(
+            R"(
+            func answer() -> i32 {
+                return 42
+            }
+            printout answer()
+            )",
+            "42"
+        );
+    }
+
+    SECTION("Function braced form with yield") {
+        run_jit_test(
+            R"(
+            func answer() -> i32 {
+                yield 42
+            }
+            printout answer()
+            )",
+            "42"
+        );
+    }
+
+    SECTION("Function indented form") {
+        run_jit_test(
+            R"(
+            func answer() -> i32:
+                return 42
+            printout answer()
+            )",
+            "42"
+        );
+    }
+
+    SECTION("Function with multiple yields") {
+        run_jit_test(
+            R"(
+            func answer() -> i32 {
+                yield 17
+                yield 42
+                yield 37
+            }
+            printout answer()
+            )",
+            "37"
+        );
+    }
+
+    SECTION("Function with no return value") {
+        run_jit_test(
+            R"(
+            func greet() {
+                printout "Hello!"
+            }
+            greet()
+            )",
+            "Hello!"
+        );
+    }
+
+    SECTION("Function with parameters 1") {
+        run_jit_test(
+            R"(
+            func increment(x: i32) -> i32 {
+                return x + 1
+            }
+            printout increment(5)
+            )",
+            "6"
+        );
+    }
+
+    SECTION("Function with parameters 2") {
+        run_jit_test(
+            R"(
+            func add(x: i32, y: i32) -> i32 {
+                return x + y
+            }
+            printout add(5, 10)
+            )",
+            "15"
+        );
+    }
+
+    SECTION("Function overloading 1") {
+        run_jit_test(
+            R"(
+            func greet() {
+                printout "Hello, World!"
+            }
+            func greet(name: str) {
+                printout "Hello, ", name, "!"
+            }
+            greet()
+            printout "\n"
+            greet("Alice")
+            )",
+            "Hello, World!\nHello, Alice!"
+        );
+    }
+
+    SECTION("Function overloading 2") {
+        run_jit_test(
+            R"(
+            func increment(x: i32) -> i32 {
+                return x + 1
+            }
+            func increment(x: f64) -> f64 {
+                return x + 1.0
+            }
+            printout increment(5), ",", increment(5.5)
+            )",
+            "6,6.5"
+        );
+    }
+}

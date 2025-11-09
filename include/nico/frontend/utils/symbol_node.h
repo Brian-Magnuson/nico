@@ -274,7 +274,7 @@ public:
      *
      * @param builder The IRBuilder used to create the allocation if needed.
      */
-    llvm::Value*
+    virtual llvm::Value*
     get_llvm_allocation(std::unique_ptr<llvm::IRBuilder<>>& builder) {
         llvm::Value* ptr;
         if (is_global) {
