@@ -988,4 +988,42 @@ TEST_CASE("JIT functions", "[jit]") {
             "6,6.5"
         );
     }
+
+    SECTION("Function with pointer parameter") {
+        run_jit_test(
+            R"(
+            func set_to_ten(x: var@i32) {
+                unsafe { ^x = 10 }
+            }
+            let var y = 0
+            set_to_ten(var@y)
+            printout y
+            )",
+            "10"
+        );
+    }
+
+    SECTION("Function pointer call") {
+        run_jit_test(
+            R"(
+        func add(a: i32, b: i32) -> i32 => a + b
+        let func_ptr = add
+        let result: i32 = func_ptr(1, 2)
+        printout result
+        )",
+            "3"
+        );
+    }
+
+    SECTION("Overloaded function pointer call") {
+        run_jit_test(
+            R"(
+        func add(a: i32, b: i32) -> i32 => a + b
+        func add(a: f64, b: f64) -> f64 => a + b
+        let func_ptr = add
+        printout func_ptr(1, 3), ", ", func_ptr(2.5, 2.5)
+        )",
+            "4, 5"
+        );
+    }
 }

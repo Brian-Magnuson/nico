@@ -289,7 +289,7 @@ public:
                     false, // isConstant
                     llvm::GlobalValue::ExternalLinkage,
                     nullptr, // Initializer
-                    field.token->lexeme
+                    symbol
                 );
             }
         }
@@ -340,6 +340,21 @@ public:
                   )
               )
           ) {}
+
+    virtual llvm::Value*
+    get_llvm_allocation(std::unique_ptr<llvm::IRBuilder<>>& builder) override {
+        return llvm::UndefValue::get(
+            llvm::PointerType::get(builder->getContext(), 0)
+        );
+        // When the code generator encounters a name reference, it requires the
+        // LLVM allocation of the field entry. Overload groups do not have a
+        // meaningful LLVM allocation, but we need to return something.
+
+        // This value will never actually be used. This is because when you
+        // "use" a name reference to an overload group, the type checker
+        // replaces the field entry with the correct function overload before
+        // code generation.
+    }
 };
 
 } // namespace nico

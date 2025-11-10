@@ -961,6 +961,14 @@ TEST_CASE("Local function call", "[checker]") {
             Err::NoMatchingFunctionOverload
         );
     }
+
+    SECTION("Function pointer call") {
+        run_checker_test(R"(
+        func add(a: i32, b: i32) -> i32 => a + b
+        let func_ptr = add
+        let result: i32 = func_ptr(1, 2)
+        )");
+    }
 }
 
 TEST_CASE("Local function overload calls", "[checker]") {
@@ -1093,6 +1101,18 @@ TEST_CASE("Local function overload calls", "[checker]") {
         let result: i32 = f(n: 1)
         )",
             Err::NoMatchingFunctionOverload
+        );
+    }
+
+    SECTION("Function pointer overload call") {
+        run_checker_test(
+            R"(
+        func add(a: i32, b: i32) -> i32 => a + b
+        func add(a: f64, b: f64) -> f64 => a + b
+        let func_ptr = add
+        let result1: i32 = func_ptr(1, 2)
+        let result2: f64 = func_ptr(1.0, 2.0)
+        )"
         );
     }
 }

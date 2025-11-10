@@ -17,7 +17,10 @@ IJit::run_main_func(int argc, char** argv, std::string_view main_fn_name) {
                 "' function in JIT module: " +
                 llvm::toString(symbol.takeError())
         );
-        return symbol.takeError();
+        return llvm::make_error<llvm::StringError>(
+            "Failed to find entry point",
+            llvm::inconvertibleErrorCode()
+        );
     }
     auto addr = symbol->getValue();
     if (!addr) {

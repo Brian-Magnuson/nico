@@ -550,6 +550,11 @@ public:
     ) const override {
         return {"[function]", {}};
     }
+
+    virtual llvm::Type*
+    get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
+        return llvm::PointerType::get(builder->getContext(), 0);
+    }
 };
 
 /**
@@ -602,11 +607,6 @@ public:
                    *return_type == *other_function->return_type;
         }
         return false;
-    }
-
-    virtual llvm::Type*
-    get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
-        return llvm::PointerType::get(builder->getContext(), 0);
     }
 
     llvm::FunctionType*
@@ -669,14 +669,6 @@ public:
     std::string to_string() const override { return "overloadedfn"; }
 
     bool operator==(const Type& other) const override { return false; }
-
-    virtual llvm::Type*
-    get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
-        panic(
-            "Type::OverloadedFn::get_llvm_type: Cannot generate LLVM type for "
-            "overloaded function."
-        );
-    }
 };
 
 // MARK: Special types
