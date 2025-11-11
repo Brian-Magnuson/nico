@@ -1,3 +1,4 @@
+#include <iostream>
 #include <memory>
 #include <optional>
 #include <utility>
@@ -36,13 +37,13 @@ using nico::Err;
 void run_checker_test(
     std::string_view src_code,
     std::optional<Err> expected_error = std::nullopt,
-    std::optional<bool> print_errors = std::nullopt
+    std::optional<bool> print_errors = std::nullopt,
+    bool print_tree = false
 ) {
     // If there is no expected error, we enable printing to look for unexpected
     // errors.
-    nico::Logger::inst().set_printing_enabled(
-        print_errors.value_or(!expected_error.has_value())
-    );
+    bool printing_enabled = print_errors.value_or(!expected_error.has_value());
+    nico::Logger::inst().set_printing_enabled(printing_enabled);
 
     auto context = std::make_unique<nico::FrontendContext>();
     auto file = nico::make_test_code_file(src_code);
@@ -50,6 +51,10 @@ void run_checker_test(
     nico::Parser::parse(context);
     nico::GlobalChecker::check(context);
     nico::LocalChecker::check(context);
+
+    if (print_tree) {
+        std::cout << context->symbol_tree->to_tree_string() << "\n";
+    }
 
     if (expected_error.has_value()) {
         auto& errors = nico::Logger::inst().get_errors();
@@ -1104,7 +1109,7 @@ TEST_CASE("Local function overload calls", "[checker]") {
         );
     }
 
-    SECTION("Function pointer overload call") {
+    SECTION("Function pointer overload call 1") {
         run_checker_test(
             R"(
         func add(a: i32, b: i32) -> i32 => a + b
@@ -1113,6 +1118,27 @@ TEST_CASE("Local function overload calls", "[checker]") {
         let result1: i32 = func_ptr(1, 2)
         let result2: f64 = func_ptr(1.0, 2.0)
         )"
+        );
+    }
+
+    SECTION("Function pointer overload call 2") {
+        run_checker_test(
+            R"(
+        func f(a: i32) -> i32 {
+            let b = a + 1
+            return b
+        }
+        func f(a: f64) -> f64 {
+            let b = a + 1.0
+            return b
+        }
+        let func_ptr = f
+        let result1: i32 = func_ptr(10)
+        let result2: f64 = func_ptr(10.0)
+        )",
+            std::nullopt,
+            std::nullopt,
+            true
         );
     }
 }

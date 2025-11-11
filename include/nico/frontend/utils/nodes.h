@@ -76,6 +76,25 @@ public:
      * scope.
      */
     void initialize_node();
+
+    /**
+     * @brief Returns a string representation of this node.
+     *
+     * @return A string representation of this node.
+     */
+    virtual std::string to_string() const = 0;
+
+    /**
+     * @brief Returns a string representation of the subtree rooted at this
+     * node.
+     *
+     * @param indent The current indentation level. Defaults to 0.
+     * @return A string representation of the subtree rooted at this node.
+     */
+    virtual std::string to_tree_string(size_t indent = 0) const {
+        std::string indent_str(indent, ' ');
+        return indent_str + to_string() + "\n";
+    };
 };
 
 // MARK: Type

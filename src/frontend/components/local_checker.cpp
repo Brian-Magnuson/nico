@@ -10,7 +10,7 @@
 namespace nico {
 
 std::shared_ptr<Type>
-LocalChecker::expr_check(std::shared_ptr<Expr>& expr, bool as_lvalue) {
+LocalChecker::expr_check(std::shared_ptr<Expr> expr, bool as_lvalue) {
     expr->accept(this, as_lvalue);
     return expr->type;
 }
@@ -148,7 +148,7 @@ std::any LocalChecker::visit(Stmt::Func* stmt) {
     Dictionary<std::string, Field> parameter_fields;
     bool has_error = false;
     // Start new local scope.
-    symbol_tree->add_local_scope(nullptr);
+    symbol_tree->add_local_scope(stmt->body);
 
     for (auto& param : stmt->parameters) {
         auto param_string = std::string(param.identifier->lexeme);

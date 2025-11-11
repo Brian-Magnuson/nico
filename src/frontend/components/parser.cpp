@@ -706,7 +706,7 @@ std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
         }
     }
 
-    std::optional<std::shared_ptr<Expr>> body_expr;
+    std::shared_ptr<Expr::Block> body_expr;
     // Function body
     if (match({Tok::DoubleArrow})) {
         // Single-expression function.
@@ -724,7 +724,12 @@ std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
     else if (peek()->tok_type == Tok::Indent ||
              peek()->tok_type == Tok::LBrace) {
         // Block function
-        body_expr = block(Expr::Block::Kind::Function);
+        auto block_expr = block(Expr::Block::Kind::Function);
+        if (!block_expr) {
+            // At this point, an error has already been logged.
+            return std::nullopt;
+        }
+        body_expr = std::dynamic_pointer_cast<Expr::Block>(*block_expr);
     }
     else {
         Logger::inst().log_error(
@@ -734,17 +739,13 @@ std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
         );
         return std::nullopt;
     }
-    if (!body_expr) {
-        // At this point, an error has already been logged.
-        return std::nullopt;
-    }
 
     // Put it all together
     return std::make_shared<Stmt::Func>(
         identifier,
         return_type,
         std::move(parameters),
-        *body_expr
+        body_expr
     );
 }
 

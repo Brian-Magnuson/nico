@@ -50,4 +50,16 @@ void Node::initialize_node() {
     }
 }
 
+std::string Node::IScope::to_tree_string(size_t indent) const {
+    std::string indent_str(indent, ' ');
+    std::string result = indent_str + to_string() + "\n";
+    for (const auto& [name, child] : children) {
+        result += child->to_tree_string(indent + 2);
+    }
+    for (const auto& local_scope : local_scopes) {
+        result += local_scope->to_tree_string(indent + 2);
+    }
+    return result;
+}
+
 } // namespace nico

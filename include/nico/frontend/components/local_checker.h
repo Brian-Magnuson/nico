@@ -40,7 +40,7 @@ class LocalChecker : public Stmt::Visitor,
      * nullptr.
      */
     std::shared_ptr<Type>
-    expr_check(std::shared_ptr<Expr>& expr, bool as_lvalue = false);
+    expr_check(std::shared_ptr<Expr> expr, bool as_lvalue = false);
 
     /**
      * @brief Attempts to match the provided arguments to the function

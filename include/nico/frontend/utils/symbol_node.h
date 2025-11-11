@@ -27,6 +27,9 @@ public:
 protected:
     IScope(std::weak_ptr<Node::IScope> parent_scope, const std::string& name)
         : Node(parent_scope, name) {}
+
+public:
+    virtual std::string to_tree_string(size_t indent = 0) const override;
 };
 
 /**
@@ -105,20 +108,23 @@ public:
         : Node(std::weak_ptr<Node::IScope>(), ""),
           Node::IScope(std::weak_ptr<Node::IScope>(), ""),
           Node::IGlobalScope() {}
+
+    virtual std::string to_string() const override { return "ROOT " + symbol; }
 };
 
 /**
  * @brief A namespace scope in the symbol tree.
  *
- * Namespace scopes are used to group related symbols together and avoid naming
- * conflicts. It is a kind of global scope.
+ * Namespace scopes are used to group related symbols together and avoid
+ * naming conflicts. It is a kind of global scope.
  *
- * Unlike struct definitions, namespaces may be closed and reopened in another
- * location. They may also be nested within other namespaces, including
- * namespaces with the same name (though not recommended; name resolution will
- * be done based on the searching algorithm).
+ * Unlike struct definitions, namespaces may be closed and reopened in
+ * another location. They may also be nested within other namespaces,
+ * including namespaces with the same name (though not recommended; name
+ * resolution will be done based on the searching algorithm).
  *
- * A namespace may not be declared within a local scope or a struct definition.
+ * A namespace may not be declared within a local scope or a struct
+ * definition.
  */
 class Node::Namespace : public virtual Node::IGlobalScope,
                         public virtual Node::ILocatable {
@@ -132,20 +138,23 @@ public:
           Node::IScope(parent_scope, std::string(token->lexeme)),
           Node::IGlobalScope(),
           Node::ILocatable(token) {}
+
+    virtual std::string to_string() const override { return "NS " + symbol; }
 };
 
 /**
  * @brief A primitive type in the symbol tree.
  *
  * A primitive type node references a basic type object instead of a custom
- * type. This allows the type checker to look up basic types as if they were any
- * other named type.
+ * type. This allows the type checker to look up basic types as if they were
+ * any other named type.
  *
  * Unlike Node::StructDef, the type object is constructed *before* the node
  * rather than after. This is possible since the basic types do not need to
  * reference any nodes in the symbol tree.
  *
- * Ideally, the symbol tree should install primitive types in the root scope.
+ * Ideally, the symbol tree should install primitive types in the root
+ * scope.
  */
 class Node::PrimitiveType : public virtual Node::ITypeNode {
 public:
@@ -162,6 +171,8 @@ public:
         }
         this->type = type;
     }
+
+    virtual std::string to_string() const override { return "PTYPE " + symbol; }
 };
 
 /**
@@ -180,15 +191,16 @@ class Node::StructDef : public virtual Node::IGlobalScope,
                         public virtual Node::ITypeNode,
                         public virtual Node::ILocatable {
 public:
-    // Whether this struct is declared with `class` or not. Classes may follow
-    // different semantic rules than structs, such as memory management.
+    // Whether this struct is declared with `class` or not. Classes may
+    // follow different semantic rules than structs, such as memory
+    // management.
     const bool is_class = false;
     // A dictionary of properties (fields) in this struct, indexed by their
     // names.
     Dictionary<std::string, Field> properties;
-    // A dictionary of methods in this struct, indexed by their names. Methods
-    // are also stored as fields, but are never `var` and always have a type of
-    // `Function`.
+    // A dictionary of methods in this struct, indexed by their names.
+    // Methods are also stored as fields, but are never `var` and always
+    // have a type of `Function`.
     Dictionary<std::string, Field> methods;
 
     virtual ~StructDef() = default;
@@ -204,6 +216,10 @@ public:
           Node::ITypeNode(),
           Node::ILocatable(token),
           is_class(is_class) {}
+
+    virtual std::string to_string() const override {
+        return "STRUCT " + symbol;
+    }
 };
 
 /**
@@ -211,13 +227,13 @@ public:
  *
  * Local scopes are used to define variables and functions that are only
  * accessible within a specific block of code. They do not have names; their
- * unique identifiers are generated using numbers, which increment with each new
- * local scope created. They are not global scopes and cannot contain other
- * global scopes.
+ * unique identifiers are generated using numbers, which increment with each
+ * new local scope created. They are not global scopes and cannot contain
+ * other global scopes.
  *
- * As a side effect of having only numbers as identifiers, it is impossible to
- * reference a variable declared in a local scope from outside that scope (since
- * an identifier expression cannot start with a number).
+ * As a side effect of having only numbers as identifiers, it is impossible
+ * to reference a variable declared in a local scope from outside that scope
+ * (since an identifier expression cannot start with a number).
  */
 class Node::LocalScope : public virtual Node::IScope {
 public:
@@ -236,8 +252,12 @@ public:
         std::shared_ptr<Expr::Block> block
     )
         : Node(parent_scope, std::to_string(next_scope_id++)),
-          Node::IScope(parent_scope, std::to_string(next_scope_id++)),
+          Node::IScope(parent_scope, std::to_string(next_scope_id - 1)),
           block(block) {}
+
+    virtual std::string to_string() const override {
+        return "LSCOPE " + symbol;
+    }
 };
 
 /**
@@ -254,7 +274,8 @@ public:
     const bool is_global;
     // The field object that this entry represents.
     Field field;
-    // If this field is a local variable, the pointer to the LLVM allocation.
+    // If this field is a local variable, the pointer to the LLVM
+    // allocation.
     llvm::AllocaInst* llvm_ptr = nullptr;
 
     virtual ~FieldEntry() = default;
@@ -269,8 +290,8 @@ public:
      * @brief Gets the LLVM allocation for this field entry.
      *
      * If the field is global, this function will attempt to get the global
-     * variable. If the field is local, it will return the LLVM pointer stored
-     * in the node.
+     * variable. If the field is local, it will return the LLVM pointer
+     * stored in the node.
      *
      * @param builder The IRBuilder used to create the allocation if needed.
      */
@@ -297,20 +318,25 @@ public:
             ptr = llvm_ptr;
             if (ptr == nullptr) {
                 panic(
-                    "Node::FieldEntry::get_llvm_allocation: Local variable has "
+                    "Node::FieldEntry::get_llvm_allocation: Local variable "
+                    "has "
                     "no LLVM allocation."
                 );
             }
         }
         return ptr;
     }
+
+    virtual std::string to_string() const override {
+        return "FIELD " + symbol + " : " + field.type->to_string();
+    }
 };
 
 /**
  * @brief An overload group in the symbol tree.
  *
- * Overload groups are used to group related function overloads together under
- * a single name. They are represented as field entries with a type of
+ * Overload groups are used to group related function overloads together
+ * under a single name. They are represented as field entries with a type of
  * `Type::OverloadedFn`.
  *
  *
@@ -346,14 +372,28 @@ public:
         return llvm::UndefValue::get(
             llvm::PointerType::get(builder->getContext(), 0)
         );
-        // When the code generator encounters a name reference, it requires the
-        // LLVM allocation of the field entry. Overload groups do not have a
-        // meaningful LLVM allocation, but we need to return something.
+        // When the code generator encounters a name reference, it requires
+        // the LLVM allocation of the field entry. Overload groups do not
+        // have a meaningful LLVM allocation, but we need to return
+        // something.
 
         // This value will never actually be used. This is because when you
         // "use" a name reference to an overload group, the type checker
-        // replaces the field entry with the correct function overload before
-        // code generation.
+        // replaces the field entry with the correct function overload
+        // before code generation.
+    }
+
+    virtual std::string to_string() const override {
+        return "OVERLOAD " + symbol;
+    }
+
+    virtual std::string to_tree_string(size_t indent = 0) const override {
+        std::string indent_str(indent, ' ');
+        std::string result = indent_str + to_string() + "\n";
+        for (const auto& overload : overloads) {
+            result += overload->to_tree_string(indent + 2);
+        }
+        return result;
     }
 };
 

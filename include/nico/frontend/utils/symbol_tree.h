@@ -246,6 +246,16 @@ public:
      */
     std::pair<std::shared_ptr<Node>, Err>
     add_overloadable_func(const Field& field);
+
+    /**
+     * @brief Returns a string representation of the symbol tree.
+     *
+     * The string representation uses indentation to represent the tree
+     * structure.
+     *
+     * @return std::string A string representation of the symbol tree.
+     */
+    std::string to_tree_string() const;
 };
 
 } // namespace nico

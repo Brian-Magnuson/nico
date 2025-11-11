@@ -371,4 +371,13 @@ SymbolTree::add_overloadable_func(const Field& field) {
     return std::make_pair(new_overload, Err::Null);
 }
 
+std::string SymbolTree::to_tree_string() const {
+    std::string result;
+    result += "Reserved Scope:\n";
+    result += reserved_scope->to_tree_string(2);
+    result += "Main Tree:\n";
+    result += root_scope->to_tree_string(2);
+    return result;
+}
+
 } // namespace nico

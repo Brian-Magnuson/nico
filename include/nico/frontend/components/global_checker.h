@@ -1,6 +1,7 @@
 #ifndef NICO_GLOBAL_CHECKER_H
 #define NICO_GLOBAL_CHECKER_H
 
+#include <any>
 #include <memory>
 #include <vector>
 
