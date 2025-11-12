@@ -172,7 +172,9 @@ public:
         this->type = type;
     }
 
-    virtual std::string to_string() const override { return "PTYPE " + symbol; }
+    virtual std::string to_string() const override {
+        return "PTYPE " + symbol + " : " + type->to_string();
+    }
 };
 
 /**
@@ -328,7 +330,7 @@ public:
     }
 
     virtual std::string to_string() const override {
-        return "FIELD " + symbol + " : " + field.type->to_string();
+        return "ENTRY " + symbol + " : " + field.type->to_string();
     }
 };
 
@@ -383,9 +385,7 @@ public:
         // before code generation.
     }
 
-    virtual std::string to_string() const override {
-        return "OVERLOAD " + symbol;
-    }
+    virtual std::string to_string() const override { return "FUNC " + symbol; }
 
     virtual std::string to_tree_string(size_t indent = 0) const override {
         std::string indent_str(indent, ' ');

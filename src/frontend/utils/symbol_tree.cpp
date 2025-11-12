@@ -373,9 +373,9 @@ SymbolTree::add_overloadable_func(const Field& field) {
 
 std::string SymbolTree::to_tree_string() const {
     std::string result;
-    result += "Reserved Scope:\n";
+    result += "RESERVED SCOPE:\n";
     result += reserved_scope->to_tree_string(2);
-    result += "Main Tree:\n";
+    result += "\nMAIN TREE:\n";
     result += root_scope->to_tree_string(2);
     return result;
 }

@@ -1135,10 +1135,7 @@ TEST_CASE("Local function overload calls", "[checker]") {
         let func_ptr = f
         let result1: i32 = func_ptr(10)
         let result2: f64 = func_ptr(10.0)
-        )",
-            std::nullopt,
-            std::nullopt,
-            true
+        )"
         );
     }
 }
