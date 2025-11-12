@@ -5,6 +5,7 @@
 #include <memory>
 #include <vector>
 
+#include "nico/frontend/utils/annotation_checker.h"
 #include "nico/frontend/utils/ast_node.h"
 #include "nico/frontend/utils/frontend_context.h"
 #include "nico/frontend/utils/symbol_tree.h"
@@ -18,18 +19,20 @@ namespace nico {
  * The local type checker checks statements and expressions at the local level,
  * i.e., within functions, blocks, and the main script.
  */
-class LocalChecker : public Stmt::Visitor,
-                     public Expr::Visitor,
-                     public Annotation::Visitor {
+class LocalChecker : public Stmt::Visitor, public Expr::Visitor {
     // The symbol tree used for type checking.
     const std::shared_ptr<SymbolTree> symbol_tree;
     // Whether or not the checker is running in REPL mode.
     const bool repl_mode = false;
+    // The annotation checker used for checking type annotations.
+    AnnotationChecker annotation_checker;
 
     LocalChecker(
         std::shared_ptr<SymbolTree> symbol_tree, bool repl_mode = false
     )
-        : symbol_tree(symbol_tree), repl_mode(repl_mode) {};
+        : symbol_tree(symbol_tree),
+          repl_mode(repl_mode),
+          annotation_checker(AnnotationChecker(symbol_tree)) {};
 
     /**
      * @brief Checks the type of the expression and returns its type.
@@ -88,14 +91,6 @@ class LocalChecker : public Stmt::Visitor,
     std::any visit(Expr::Block* expr, bool as_lvalue) override;
     std::any visit(Expr::Conditional* expr, bool as_lvalue) override;
     std::any visit(Expr::Loop* expr, bool as_lvalue) override;
-
-    std::any visit(Annotation::NameRef* annotation) override;
-    std::any visit(Annotation::Pointer* annotation) override;
-    std::any visit(Annotation::Nullptr* annotation) override;
-    std::any visit(Annotation::Reference* annotation) override;
-    std::any visit(Annotation::Array* annotation) override;
-    std::any visit(Annotation::Object* annotation) override;
-    std::any visit(Annotation::Tuple* annotation) override;
 
     /**
      * @brief Type checks the given context at the local level.

@@ -101,7 +101,7 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
 
     // If the type annotation is present, check that it matches the initializer.
     if (expr_type != nullptr && stmt->annotation.has_value()) {
-        auto anno_any = stmt->annotation.value()->accept(this);
+        auto anno_any = stmt->annotation.value()->accept(&annotation_checker);
         if (!anno_any.has_value())
             return std::any();
         auto annotation_type = std::any_cast<std::shared_ptr<Type>>(anno_any);
@@ -167,7 +167,7 @@ std::any LocalChecker::visit(Stmt::Func* stmt) {
             return std::any();
         }
         // Get the type from the annotation (which is always present).
-        auto anno_any = param.annotation->accept(this);
+        auto anno_any = param.annotation->accept(&annotation_checker);
         if (!anno_any.has_value())
             return std::any();
         auto annotation_type = std::any_cast<std::shared_ptr<Type>>(anno_any);
@@ -207,7 +207,8 @@ std::any LocalChecker::visit(Stmt::Func* stmt) {
     // Next, get the return type.
     std::shared_ptr<Type> return_type = nullptr;
     if (stmt->annotation.has_value()) {
-        auto return_anno_any = stmt->annotation.value()->accept(this);
+        auto return_anno_any =
+            stmt->annotation.value()->accept(&annotation_checker);
         if (!return_anno_any.has_value())
             return std::any();
         return_type = std::any_cast<std::shared_ptr<Type>>(return_anno_any);
@@ -1176,77 +1177,6 @@ std::any LocalChecker::visit(Expr::Loop* expr, bool as_lvalue) {
     }
 
     return std::any();
-}
-
-// MARK: Annotations
-
-std::any LocalChecker::visit(Annotation::NameRef* annotation) {
-    std::shared_ptr<Type> type = nullptr;
-    // Temporary solution: only allow primitive types.
-    if (annotation->name.to_string() == "i32") {
-        type = std::make_shared<Type::Int>(true, 32);
-    }
-    else if (annotation->name.to_string() == "f64") {
-        type = std::make_shared<Type::Float>(64);
-    }
-    else if (annotation->name.to_string() == "bool") {
-        type = std::make_shared<Type::Bool>();
-    }
-    else if (annotation->name.to_string() == "str") {
-        type = std::make_shared<Type::Str>();
-    }
-    return type;
-}
-
-std::any LocalChecker::visit(Annotation::Pointer* annotation) {
-    std::shared_ptr<Type> type = nullptr;
-    auto base_any = annotation->base->accept(this);
-    if (!base_any.has_value())
-        return std::any();
-    auto base_type = std::any_cast<std::shared_ptr<Type>>(base_any);
-    type = std::make_shared<Type::Pointer>(base_type, annotation->is_mutable);
-    return type;
-}
-
-std::any LocalChecker::visit(Annotation::Nullptr* /*annotation*/) {
-    std::shared_ptr<Type> type = std::make_shared<Type::Nullptr>();
-    return type;
-}
-
-std::any LocalChecker::visit(Annotation::Reference* annotation) {
-    std::shared_ptr<Type> type = nullptr;
-    auto base_any = annotation->base->accept(this);
-    if (!base_any.has_value())
-        return std::any();
-    auto base_type = std::any_cast<std::shared_ptr<Type>>(base_any);
-    type = std::make_shared<Type::Reference>(base_type, annotation->is_mutable);
-    return type;
-}
-
-std::any LocalChecker::visit(Annotation::Array* annotation) {
-    return std::any();
-}
-
-std::any LocalChecker::visit(Annotation::Object* annotation) {
-    return std::any();
-}
-
-std::any LocalChecker::visit(Annotation::Tuple* annotation) {
-    std::shared_ptr<Type> type = nullptr;
-    std::vector<std::shared_ptr<Type>> element_types;
-    for (const auto& element : annotation->elements) {
-        auto elem_any = element->accept(this);
-        if (!elem_any.has_value())
-            return std::any();
-        element_types.push_back(std::any_cast<std::shared_ptr<Type>>(elem_any));
-    }
-    if (element_types.empty()) {
-        type = std::make_shared<Type::Unit>();
-    }
-    else {
-        type = std::make_shared<Type::Tuple>(element_types);
-    }
-    return type;
 }
 
 void LocalChecker::run_check(std::unique_ptr<FrontendContext>& context) {
