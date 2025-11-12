@@ -5,6 +5,7 @@
 #include <memory>
 #include <vector>
 
+#include "nico/frontend/utils/annotation_checker.h"
 #include "nico/frontend/utils/ast_node.h"
 #include "nico/frontend/utils/frontend_context.h"
 #include "nico/frontend/utils/symbol_tree.h"
@@ -23,11 +24,15 @@ class GlobalChecker : public Stmt::Visitor {
     const std::shared_ptr<SymbolTree> symbol_tree;
     // Whether or not the checker is running in REPL mode.
     const bool repl_mode = false;
+    // The annotation checker used for checking type annotations.
+    AnnotationChecker annotation_checker;
 
     GlobalChecker(
         std::shared_ptr<SymbolTree> symbol_tree, bool repl_mode = false
     )
-        : symbol_tree(symbol_tree), repl_mode(repl_mode) {};
+        : symbol_tree(symbol_tree),
+          repl_mode(repl_mode),
+          annotation_checker(symbol_tree) {};
 
     std::any visit(Stmt::Expression* stmt) override;
     std::any visit(Stmt::Let* stmt) override;

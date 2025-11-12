@@ -45,24 +45,25 @@ void run_checker_test(
     bool printing_enabled = print_errors.value_or(!expected_error.has_value());
     nico::Logger::inst().set_printing_enabled(printing_enabled);
 
+    auto& errors = nico::Logger::inst().get_errors();
     auto context = std::make_unique<nico::FrontendContext>();
     auto file = nico::make_test_code_file(src_code);
     nico::Lexer::scan(context, file);
     nico::Parser::parse(context);
     nico::GlobalChecker::check(context);
-    nico::LocalChecker::check(context);
+    if (errors.empty())
+        nico::LocalChecker::check(context);
 
     if (print_tree) {
         std::cout << context->symbol_tree->to_tree_string() << "\n";
     }
 
     if (expected_error.has_value()) {
-        auto& errors = nico::Logger::inst().get_errors();
         REQUIRE(errors.size() >= 1);
         CHECK(errors.at(0) == expected_error.value());
     }
     else {
-        CHECK(nico::Logger::inst().get_errors().empty());
+        CHECK(errors.empty());
     }
 
     context->reset();
@@ -716,6 +717,14 @@ TEST_CASE("Local function declarations", "[checker]") {
         );
     }
 
+    SECTION("Variable name OK") {
+        run_checker_test(
+            "block { let add = 1 } "
+            "func add(a: i32, b: i32) -> i32 => a + b "
+            "block { let add = 1 }"
+        );
+    }
+
     SECTION("Function name already exists") {
         run_checker_test(
             "func add(a: i32, b: i32) -> i32 { return a + b } "
@@ -973,6 +982,15 @@ TEST_CASE("Local function call", "[checker]") {
         let func_ptr = add
         let result: i32 = func_ptr(1, 2)
         )");
+    }
+
+    SECTION("Function call before declaration") {
+        run_checker_test(
+            R"(
+        let result: i32 = add(1, 2)
+        func add(a: i32, b: i32) -> i32 => a + b
+        )"
+        );
     }
 }
 

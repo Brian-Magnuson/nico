@@ -144,57 +144,44 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
 }
 
 std::any LocalChecker::visit(Stmt::Func* stmt) {
-    // Start with the parameters.
-    Dictionary<std::string, Field> parameter_fields;
-    bool has_error = false;
-    // Start new local scope.
+    // Get the function's type
+    auto func_type = std::dynamic_pointer_cast<Type::Function>(
+        stmt->field_entry.lock()->field.type
+    );
+    if (!func_type) {
+        panic(
+            "LocalChecker::visit(Stmt::Func*): Field entry does not have a "
+            "function type."
+        );
+    }
+
     symbol_tree->add_local_scope(stmt->body);
 
+    bool has_error = false;
+    // Check the parameters.
     for (auto& param : stmt->parameters) {
-        auto param_string = std::string(param.identifier->lexeme);
-        // Check for duplicate parameter names.
-        if (auto it = parameter_fields.find(param_string);
-            it != parameter_fields.end()) {
-            Logger::inst().log_error(
-                Err::DuplicateFunctionParameterName,
-                param.identifier->location,
-                "Duplicate parameter name `" + param_string + "`."
-            );
-            Logger::inst().log_note(
-                it->second.token->location,
-                "Previous declaration of parameter `" + param_string + "` here."
-            );
-            return std::any();
-        }
-        // Get the type from the annotation (which is always present).
-        auto anno_any = param.annotation->accept(&annotation_checker);
-        if (!anno_any.has_value())
-            return std::any();
-        auto annotation_type = std::any_cast<std::shared_ptr<Type>>(anno_any);
-        // If a default expression is present, check it.
-        if (param.expression.has_value()) {
-            auto default_expr_type =
-                expr_check(param.expression.value(), false);
-            if (!default_expr_type)
-                return std::any();
-            if (!default_expr_type->is_assignable_to(*annotation_type)) {
+        auto param_field =
+            func_type->parameters.at(std::string(param.identifier->lexeme))
+                .value();
+
+        // If the parameter has a default expression, check it.
+        if (param_field.default_expr.has_value()) {
+            auto default_expr_ptr = param_field.default_expr.value().lock();
+            auto default_expr_type = expr_check(default_expr_ptr, false);
+            if (!default_expr_type) {
+                has_error = true;
+            }
+            else if (!default_expr_type->is_assignable_to(*param_field.type)) {
                 Logger::inst().log_error(
                     Err::DefaultArgTypeMismatch,
-                    *param.expression.value()->location,
+                    *default_expr_ptr->location,
                     std::string("Type `") + default_expr_type->to_string() +
-                        "` is not compatible with type `" +
-                        annotation_type->to_string() + "`."
+                        "` is not compatible with parameter type `" +
+                        param_field.type->to_string() + "`."
                 );
-                return std::any();
+                has_error = true;
             }
         }
-        Field param_field(
-            param.has_var,
-            param.identifier,
-            annotation_type,
-            param.expression
-        );
-        parameter_fields.insert(param_string, param_field);
         auto [node, err] = symbol_tree->add_field_entry(param_field);
         if (err != Err::Null) {
             has_error = true;
@@ -204,62 +191,30 @@ std::any LocalChecker::visit(Stmt::Func* stmt) {
                 std::dynamic_pointer_cast<Node::FieldEntry>(node);
         }
     }
-    // Next, get the return type.
-    std::shared_ptr<Type> return_type = nullptr;
-    if (stmt->annotation.has_value()) {
-        auto return_anno_any =
-            stmt->annotation.value()->accept(&annotation_checker);
-        if (!return_anno_any.has_value())
-            return std::any();
-        return_type = std::any_cast<std::shared_ptr<Type>>(return_anno_any);
+    // If there was an error in the parameters, avoid checking the body.
+    if (has_error) {
+        symbol_tree->exit_scope();
+        return std::any();
     }
-    else {
-        // If no return annotation is present, the return type is Unit.
-        return_type = std::make_shared<Type::Unit>();
-    }
-    // Create the function type.
-    auto func_type =
-        std::make_shared<Type::Function>(parameter_fields, return_type);
 
-    // Next, visit the function body, verifying that the return types match.
+    // Check the body.
     auto body_type = expr_check(stmt->body, false);
-    if (!body_type)
-        has_error = true;
+    if (!body_type) {
+        // Ignore error, already reported.
+    }
     // Body type must be assignable to the return type.
-    if (!body_type->is_assignable_to(*return_type)) {
+    else if (!body_type->is_assignable_to(*func_type->return_type)) {
         Logger::inst().log_error(
             Err::FunctionReturnTypeMismatch,
             *stmt->body->location,
             std::string("Function body type `") + body_type->to_string() +
                 "` is not compatible with declared return type `" +
-                return_type->to_string() + "`."
+                func_type->return_type->to_string() + "`."
         );
         return std::any();
     }
     // Exit the parameter local scope.
     symbol_tree->exit_scope();
-    if (has_error)
-        return std::any();
-
-    // Create the field entry.
-    Field field(false, stmt->identifier, func_type);
-    // Functions are always immutable.
-
-    auto [node, err] = symbol_tree->add_overloadable_func(field);
-    if (err != Err::Null) {
-        return std::any();
-    }
-    else if (auto field_entry =
-                 std::dynamic_pointer_cast<Node::FieldEntry>(node)) {
-        stmt->field_entry = field_entry;
-        return std::any();
-    }
-    else {
-        panic(
-            "LocalChecker::visit(Stmt::Func*): Symbol tree returned a "
-            "non-field entry for a field entry."
-        );
-    }
 
     return std::any();
 }
