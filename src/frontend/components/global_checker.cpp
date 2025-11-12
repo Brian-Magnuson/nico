@@ -19,9 +19,6 @@ std::any GlobalChecker::visit(Stmt::Let*) {
 std::any GlobalChecker::visit(Stmt::Func* stmt) {
     // Start with the parameters.
     Dictionary<std::string, Field> parameter_fields;
-    // bool has_error = false;
-    // Start new local scope.
-    // symbol_tree->add_local_scope(stmt->body);
 
     for (auto& param : stmt->parameters) {
         auto param_string = std::string(param.identifier->lexeme);
@@ -44,23 +41,7 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
         if (!anno_any.has_value())
             return std::any();
         auto annotation_type = std::any_cast<std::shared_ptr<Type>>(anno_any);
-        // If a default expression is present, check it.
-        // if (param.expression.has_value()) {
-        //     auto default_expr_type =
-        //         expr_check(param.expression.value(), false);
-        //     if (!default_expr_type)
-        //         return std::any();
-        //     if (!default_expr_type->is_assignable_to(*annotation_type)) {
-        //         Logger::inst().log_error(
-        //             Err::DefaultArgTypeMismatch,
-        //             *param.expression.value()->location,
-        //             std::string("Type `") + default_expr_type->to_string() +
-        //                 "` is not compatible with type `" +
-        //                 annotation_type->to_string() + "`."
-        //         );
-        //         return std::any();
-        //     }
-        // }
+
         Field param_field(
             param.has_var,
             param.identifier,
@@ -68,14 +49,6 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
             param.expression
         );
         parameter_fields.insert(param_string, param_field);
-        // auto [node, err] = symbol_tree->add_field_entry(param_field);
-        // if (err != Err::Null) {
-        //     has_error = true;
-        // }
-        // else {
-        //     param.field_entry =
-        //         std::dynamic_pointer_cast<Node::FieldEntry>(node);
-        // }
     }
     // Next, get the return type.
     std::shared_ptr<Type> return_type = nullptr;
@@ -93,26 +66,6 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
     // Create the function type.
     auto func_type =
         std::make_shared<Type::Function>(parameter_fields, return_type);
-
-    // Next, visit the function body, verifying that the return types match.
-    // auto body_type = expr_check(stmt->body, false);
-    // if (!body_type)
-    //     has_error = true;
-    // // Body type must be assignable to the return type.
-    // if (!body_type->is_assignable_to(*return_type)) {
-    //     Logger::inst().log_error(
-    //         Err::FunctionReturnTypeMismatch,
-    //         *stmt->body->location,
-    //         std::string("Function body type `") + body_type->to_string() +
-    //             "` is not compatible with declared return type `" +
-    //             return_type->to_string() + "`."
-    //     );
-    //     return std::any();
-    // }
-    // Exit the parameter local scope.
-    // symbol_tree->exit_scope();
-    // if (has_error)
-    //     return std::any();
 
     // Create the field entry.
     Field field(false, stmt->identifier, func_type);

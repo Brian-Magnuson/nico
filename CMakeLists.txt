@@ -105,7 +105,7 @@ set(TEST_SRC
     test/lexer_tests.cpp
     test/parser_expr_tests.cpp
     test/parser_stmt_tests.cpp
-    test/checker_local_tests.cpp
+    test/type_checker_tests.cpp
     test/jit_tests.cpp
     test/utils_tests.cpp
 )
