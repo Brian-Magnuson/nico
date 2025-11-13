@@ -360,7 +360,7 @@ public:
 
     std::string to_string() const override {
         return "[" + base->to_string() + "; " +
-               (size ? std::to_string(*size) : "unknown") + "]";
+               (size ? std::to_string(*size) : "?") + "]";
     }
 
     bool operator==(const Type& other) const override {

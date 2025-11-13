@@ -45,12 +45,32 @@ Unlike the previous types, strings vary in size and cannot be stored directly on
 
 ### Array type
 
-An array is a fixed-size collection of elements of the same type. The type is written as `[T; N]`, where `T` is the type of the elements and `N` is the number of elements. For example, an array of 3 integers would be written as `[i32; 3]`.
+An array is a collection of elements of the same type. Arrays come in two varieties: sized arrays and unsized arrays.
+
+For sized arrays, the type is written as `[T; N]`, where `T` is the type of the elements and `N` is the number of elements. For example, an array of 3 integers would be written as `[i32; 3]`.
 
 Arrays are zero-indexed and may be written as literals using square brackets:
 ```
 [1, 2, 3]
 ```
+
+For array literals, the size is inferred from the number of elements provided.
+
+For unsized arrays, the type is written as `[T; ?]`, where `T` is the type of the elements.
+
+The unsized array type can never be used directly. It can only be used as the base type of a raw pointer, written as `@[T; ?]`.
+
+The type can be obtained by casting a sized array pointer to an unsized array pointer:
+```
+let arr: [i32; 3] = [1, 2, 3]
+let p: @[i32; ?] = @arr as @[i32; ?]
+```
+
+Implicit bounds checking is not performed on unsized arrays. Accessing the elements of an unsized array is considered unsafe and must be done within an `unsafe` block.
+
+The unsized array type should not be confused with the data structure commonly known as a "dynamic array". Dynamic arrays are implemented using classes and provide additional functionality, such as resizing and automatic memory management.
+
+It is worth noting that arrays are not pointers, do not decay to pointers, and cannot be casted to pointers. Dereferencing can only be done on pointers and array access can only be done on arrays. 
 
 ### Tuple type and unit type
 
@@ -709,15 +729,16 @@ Logical `and` and `or` operators are short-circuiting, meaning the right side of
 
 The following bitwise operators are supported:
 ```
-~a
-a & b
-a | b
-a ^ b
+bitnot a
+a bitand b
+a bitor b
+a bitxor b
 a << b
 a >> b
 ```
 
-These perform the same operations as in C.
+The bitwise not, and, or, and xor operators use the keywords `bitnot`, `bitand`, `bitor`, and `bitxor` respectively.
+The bit shift operators use the symbols `<<` and `>>`.
 
 ### Access expressions
 
@@ -733,11 +754,109 @@ Methods can also be called using the class/struct name:
 MyClass.method(object)
 ```
 
+If the left side of the dot operator is a pointer type, it is automatically and fully dereferenced.
+```
+let var p1: &MyClass = &my_object
+let x = (^p1).field // Explicit dereference
+let y = p1.field   // Automatic dereference
+
+let var p2: &&MyClass = &p1
+let z = p2.field   // Automatic full dereference
+```
+
+If the pointer is a raw pointer, dereferencing is still implicit, but must be done within an `unsafe` block:
+```
+let var p: @MyClass = @my_object
+unsafe:
+    let x = (^p).field // Explicit dereference
+    let y = p.field    // Automatic dereference
+```
+
 ### Index expressions
 
 Index expressions are used to access elements of arrays. These use square brackets:
 ```
 array[0]
+```
+
+Similar to access expressions, if the left side of the square brackets is a pointer type, it is automatically and fully dereferenced.
+```
+let var p1: &[i32; 3] = &my_array
+let x = (^p1)[0] // Explicit dereference
+let y = p1[0]   // Automatic dereference
+```
+
+If the pointer is a raw pointer, dereferencing is still implicit, but must be done within an `unsafe` block:
+```
+let var p: @[i32; 3] = @my_array
+unsafe:
+    let x = (^p)[0] // Explicit dereference
+    let y = p[0]    // Automatic dereference
+```
+
+### Cast expressions
+
+A cast expression is used to convert a value from one type to another. This uses the `as` keyword:
+```
+let x = 42 as f64
+```
+
+Only certain casts are allowed and the exact effects of the cast may differ based on the types involved.
+
+You are allowed to cast a value to its own type. This will have no effect and may result in a warning.
+
+**Numeric casts**
+
+All numeric types may be cast to any other numeric type or boolean. 
+Such casts must always be explicit; there are no implicit numeric casts.
+
+The following rules apply:
+- Character types, for the purposes of casting, are treated as `u32` types.
+- When casting to a boolean, the value becomes true if the original value is non-zero, and false if the original value is zero.
+- When casting from a floating-point type to an integer type, the value is truncated toward zero.
+- When casting from a wide type to a narrower type, the higher bits are discarded to fit the narrower type.
+- When casting from a narrower type to a wider type, the value is sign-extended for signed types and zero-extended for unsigned types.
+- When casting from a floating-point type to another floating-point type, the value is rounded to the nearest representable value in the target type.
+
+There are no checks for overflow, underflow, truncation, or loss of precision when performing numeric casts. It is the programmer's responsibility to ensure the cast is valid.
+
+**Nullptr casts**
+
+You are allowed to cast `nullptr` to any pointer type:
+```
+let p: @i32 = nullptr as @i32
+```
+
+This is usually not necessary, as `nullptr` may be assigned to any pointer type without requiring an explicit cast.
+
+**Array pointer casts**
+
+When casting between array pointer types, the types must either be equivalent, or the target type must be a pointer to an unsized array with the same element types.
+```
+let p1: @[i32; 3] = @my_array
+let p2: @[i32; ?] = p1 as @[i32; ?] // OK
+```
+
+**Class casts**
+
+You can cast between class pointer types if there is an inheritance relationship between the classes. This is called an upcast or downcast.
+Upcasts (casting to a base class) are always safe and may be done implicitly. Downcasts (casting to a derived class) must be done explicitly.
+```
+let p1: @DerivedClass = @my_derived_object
+let p2: @BaseClass = p1 // Upcast (implicitly allowed)
+let p3: @DerivedClass = p2 as @DerivedClass // Downcast (explicitly required)
+```
+
+Downcasting is allowed in safe contexts. However, if the object being pointed to is not actually of the target derived class type, the pointer will become nullptr.
+
+**Reinterpret casts**
+
+You can cast between raw pointer types if their base types have the same size. This is called a reinterpret cast. It is an unsafe operation and must be done within an `unsafe` block:
+```
+let f = 3.14
+let p1: @f64 = @f
+unsafe:
+    let p2: @i64 = p1 reinterpret @i64 // Reinterpret cast
 ```
 
 ### Function call expressions
@@ -776,6 +895,7 @@ let x = block:
 ```
 
 Any block can be given a label. The label must be written first, inside the block:
+```
 block:
   label "my_block"
 
@@ -786,6 +906,7 @@ block {
 
   statement1
 }
+```
 
 Blocks may not have more than one label. The label does not need to be globally unique.
 
@@ -928,7 +1049,13 @@ var mv value
 
 ### Unsafe blocks and expressions
 
-An unsafe block is like a regular block, but allows the use of unsafe operations. Unsafe operations include dereferencing raw pointers, performing pointer arithmetic, calling unsafe functions, and using `alloc` and `dealloc`.
+An unsafe block is like a regular block, but allows the use of unsafe operations. Unsafe operations include:
+- Dereferencing raw pointers
+- Accessing elements of an unsized array
+- Performing pointer arithmetic
+- Perform a reinterpret cast
+- Calling unsafe functions
+- Using `alloc` and `dealloc`
 
 Unsafe blocks are used to encapsulate unsafe operations and prevent them from leaking into safe code. They are written as follows:
 ```
