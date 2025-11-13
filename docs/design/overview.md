@@ -228,6 +228,31 @@ unsafe:
     ^^rp // Unsafe; this is dereferencing a raw pointer
 ```
 
+### Function pointer types
+
+For every function, its name can be used as a pointer to that function. Function pointers are written as `func(p1: T1, p2: T2, ...) -> TR`. 
+```
+func my_function(a: i32, b: i32) -> i32:
+    yield a + b
+
+let f: func(a: i32, b: i32) -> i32 = my_function
+```
+
+If a function is overloaded, attempting to use its name will result in a special function pointer written as `overloadedfn`. This type is tied to the set of function overloads with that name.
+
+When calling an `overloadedfn`, the compiler will attempt to resolve the correct overload based on the argument types provided.
+```
+func my_function(a: i32) -> i32 { ... }
+func my_function(a: f64) -> f64 { ... }
+
+let f = my_function // has type overloadedfn
+f(42)      // calls the i32 overload
+f(3.14)    // calls the f64 overload
+```
+
+The type `overloadedfn` cannot be written as a type annotation; it must be inferred by the compiler.
+Additionally, `overloadedfn` is considered incompatible with all other function pointer types, including other `overloadedfn` types.
+
 # Statements
 
 All programs consist of statements. Statements fall into three categories:
@@ -406,13 +431,74 @@ With return types, there are several rules to follow:
 
 ```
 func f1():
-    pass // Okay
+    pass // OK
 
 func f2():
     yield 42 // Bad
 
 func f3() -> i32:
     pass // Bad
+```
+
+Functions can be called before they are declared. This is because the compiler checks all function declarations before checking other statements.
+```
+let x = my_function(1, 2)
+func my_function(a: i32, b: i32) -> i32:
+    yield a + b
+```
+
+This has the side effect of disallowing top-level declarations if their identifiers are used to declare functions *later* in the code.
+```
+block { let x = 64 } // OK - x is scoped to the block.
+let x = 42 // Error: x is the name of a function.
+func x() -> i32:
+    yield 0
+```
+
+You can declare a function in the same scope with the same name as another function. This is called function overloading.
+Function overloading has rules that must be followed:
+- When a new overload is declared, and
+- When an overloaded function is called.
+
+When a new overload is declared, the new overload must be "sufficiently different" from all existing overloads to avoid potential ambiguity.
+
+Two function overloads conflict if they have the same set of parameters, or if one set of parameters is a superset of the other, differing only by optional parameters.
+
+The formal rules for this are defined below:
+1. Let $f_i$ be one of multiple overloads of a function $f$.
+2. A **parameter string** is the concatenation of a parameter's name and type, excluding any default value.
+   - E.g., for `a: i32 = 5`, the parameter string is `"a: i32"`.
+3. Let $M(f_i)$ be the set of parameter strings for *all* parameters of $f_i$.
+4. Let $D(f_i)$ be the subset of $M(f_i)$ consisting of parameter strings for parameters that have default values.
+5. Consider two overloads $f_1$ and $f_2$ of $f$.
+6. If $M(f_1) = M(f_2)$, then $f_1$ and $f_2$ conflict.
+7. If $M(f_1) \supset M(f_2)$ and $M(f_1) - M(f_2) \subseteq D(f_1)$, then $f_1$ and $f_2$ conflict.
+8. If $M(f_2) \supset M(f_1)$ and $M(f_2) - M(f_1) \subseteq D(f_2)$, then $f_1$ and $f_2$ conflict.
+9. Otherwise, $f_1$ and $f_2$ do not conflict.
+
+```
+func my_function(a: i32, b: i32): // OK - first overload
+    statement1
+
+func my_function(c: i32, d: i32): // OK - different parameter strings
+    statement1
+
+func my_function(a: i32, b: i32 = 3): // Error - conflicts with first overload
+    statement1
+```
+
+Based on these rules, two functions also cannot differ by only their return types.
+
+When an overloaded function is called, the compiler will attempt to match the provided arguments to one of the overloads. If no overload matches, or if multiple overloads match, a compile-time error will occur.
+```
+func my_function(a: i32): // First overload
+    statement1
+func my_function(b: i32): // Second overload
+    statement1
+
+my_function(a: 37) // OK - calls first overload
+my_function(c: 42) // Error - no matching overload
+my_function(64)    // Error - multiple matching overloads
 ```
 
 ### Structs
