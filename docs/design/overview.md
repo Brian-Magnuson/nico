@@ -794,6 +794,19 @@ unsafe:
     let y = p[0]    // Automatic dereference
 ```
 
+### Type-test expression
+
+A type-test expression is used to check if two pointers to related class types point to the same type. The expression yields a boolean value indicated the result of the type test.
+This uses the `is` keyword:
+```
+if p1 is @DerivedClass:
+    // p1 points to an object of type DerivedClass
+```
+
+The `is` operator may only be used with pointers to related class types. Any other usage will result in a compile-time error.
+
+Type-test expressions do not modify the pointer. However, they are generally used in conjunction with downcasting to ensure the downcast is valid.
+
 ### Cast expressions
 
 A cast expression is used to convert a value from one type to another. This uses the `as` keyword:
@@ -847,16 +860,29 @@ let p2: @BaseClass = p1 // Upcast (implicitly allowed)
 let p3: @DerivedClass = p2 as @DerivedClass // Downcast (explicitly required)
 ```
 
-Downcasting is allowed in safe contexts. However, if the object being pointed to is not actually of the target derived class type, the pointer will become nullptr.
+If the pointer base types are unrelated, the cast will result in a compile-time error.
+
+Downcasting is allowed in safe contexts. However, if the object being pointed to is not actually of the target derived class type, the expression will panic at runtime.
+
+Because of this, it is recommended to use type-test expressions to verify the type before downcasting.
+```
+if p2 is @DerivedClass:
+    let p3: @DerivedClass = p2 as @DerivedClass
+    // Safe to use p3 here
+else:
+    // Handle the case where p2 is not a DerivedClass
+```
 
 **Reinterpret casts**
 
-You can cast between raw pointer types if their base types have the same size. This is called a reinterpret cast. It is an unsafe operation and must be done within an `unsafe` block:
+Reinterpret casts allow you to reinterpret the bits of any value as another type as long as the source and target types have the same size. The bits are left unchanged during the cast.
+
+The most raw form of a reinterpret cast is the transmute cast, which checks that the source and target types have the same size and nothing else.
+It is an unsafe operation and must be done within an `unsafe` block:
 ```
 let f = 3.14
-let p1: @f64 = @f
 unsafe:
-    let p2: @i64 = p1 reinterpret @i64 // Reinterpret cast
+    let i: i64 = f transmute i64 // Reinterpret cast
 ```
 
 ### Function call expressions
