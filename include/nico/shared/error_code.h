@@ -63,8 +63,12 @@ enum class Err {
     NotAnIdentifier,
     // A type was expected but not found.
     NotAType,
+    // An unexpected token was found where specific token was expected.
+    UnexpectedToken,
     // A let statement was found without a type or value.
     LetWithoutTypeOrValue,
+    // A typeof annotation was found without an opening parenthesis.
+    TypeofWithoutOpeningParen,
     // A function statement was found without an opening parenthesis.
     FuncWithoutOpeningParen,
     // A closing parenthesis was found without a matching opening parenthesis.

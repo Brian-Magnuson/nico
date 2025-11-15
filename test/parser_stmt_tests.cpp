@@ -361,6 +361,41 @@ TEST_CASE("Parser annotation errors", "[parser]") {
             Err::UnexpectedVarInAnnotation
         );
     }
+
+    SECTION("Typeof missing opening parenthesis") {
+        run_parser_stmt_error_test(
+            "let a: typeof x = 1",
+            Err::TypeofWithoutOpeningParen
+        );
+    }
+}
+
+TEST_CASE("Parser unexpected token errors", "[parser]") {
+    SECTION("Comma in typeof annotation") {
+        run_parser_stmt_error_test(
+            "let a: typeof(x,) = 1",
+            Err::UnexpectedToken
+        );
+    }
+
+    SECTION("Semicolon in grouping") {
+        run_parser_stmt_error_test("(1;)", Err::UnexpectedToken);
+    }
+
+    SECTION("Semicolon in func declaration parameters") {
+        run_parser_stmt_error_test(
+            "func f(a: i32; b: i32) {}",
+            Err::UnexpectedToken
+        );
+    }
+
+    SECTION("Semicolon in func call arguments") {
+        run_parser_stmt_error_test("f(1; 2)", Err::UnexpectedToken);
+    }
+
+    SECTION("Semicolon in tuple annotation") {
+        run_parser_stmt_error_test("let a: (i32; f64)", Err::UnexpectedToken);
+    }
 }
 
 TEST_CASE("Parser yield without expression", "[parser]") {

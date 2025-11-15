@@ -598,3 +598,9 @@ TEST_CASE("Lexer comment scanning errors", "[lexer]") {
         run_lexer_error_test("*/", Err::ClosingUnopenedComment);
     }
 }
+
+TEST_CASE("Lexer reserved word errors", "[lexer]") {
+    SECTION("Using reserved word anywhere") {
+        run_lexer_error_test("overloadedfn", Err::WordIsReserved);
+    }
+}

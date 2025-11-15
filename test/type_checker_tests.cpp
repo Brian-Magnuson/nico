@@ -71,8 +71,16 @@ void run_checker_test(
 }
 
 TEST_CASE("Local variable declarations", "[checker]") {
-    SECTION("Valid local variable declarations") {
+    SECTION("Valid local variable declarations 1") {
         run_checker_test("let a = 1");
+    }
+
+    SECTION("Valid local variable declarations 2") {
+        run_checker_test("let a: i32 = 1");
+    }
+
+    SECTION("Typeof annotation") {
+        run_checker_test("let a = 1 let b: typeof (a) = 2");
     }
 
     SECTION("Let type mismatch 1") {

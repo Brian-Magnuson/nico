@@ -275,24 +275,30 @@ Additionally, `overloadedfn` is considered incompatible with all other function 
 
 ## Type-of annotation
 
-The type-of annotation is used to refer to the type of an expression. It is written as `typeof expression`.
+The type-of annotation is used to refer to the type of an expression. It is written as `typeof(expression)`.
 ```
 let x = 42
-let y: typeof x = 64
+let y: typeof(x) = 64
+```
+
+The parentheses around the expression are part of the type-of annotation syntax and are always required.
+If a 1-tuple is desired, another set of parentheses must be used:
+```
+let x: typeof((42,));
 ```
 
 The type-of annotation is an annotation, not an expression. It cannot be used in places where an expression is expected, such as the right side of an assignment or in function arguments.
 
 Because the type-of annotation requires an expression, it can only be used in places where the expression's type is known. For example, you cannot use `typeof` to refer to the type of a variable that has not yet been declared.
 ```
-let y: typeof x = 64 // Error: x is not declared yet
+let y: typeof(x) = 64 // Error: x is not declared yet
 let x = 42
 ```
 
 Note that, although `typeof` requires an expression, the expression is NOT evaluated. It is only used to determine the type.
 ```
-let x: typeof my_function() = 37 // OK; my_function is not called
-let y: typeof (1 / 0) = 42 // OK; type is i32, no division by zero occurs
+let x: typeof(my_function()) = 37 // OK; my_function is not called
+let y: typeof(1 / 0) = 42 // OK; type is i32, no division by zero occurs
 ```
 
 # Statements
@@ -826,12 +832,12 @@ let size = sizeof i32
 The `sizeof` operator requires an annotation, not an expression. However, you can use it in conjunction with the type-of annotation to get the size of an expression's type:
 ```
 let x = 42
-let size = sizeof typeof x
+let size = sizeof typeof(x)
 ```
 
 Note that the expression under `typeof` is not evaluated; it is only used to determine the type.
 ```
-let size = sizeof typeof (1 / 0) // OK; type is i32, no division by zero occurs
+let size = sizeof typeof(1 / 0) // OK; type is i32, no division by zero occurs
 ```
 
 ### Type-test expression

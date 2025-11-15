@@ -27,6 +27,7 @@ std::any AnnotationChecker::visit(Annotation::NameRef* annotation) {
             *annotation->location,
             "Unknown type annotation: `" + annotation->name.to_string() + "`."
         );
+        return std::any();
     }
 
     return type;
@@ -91,9 +92,15 @@ std::any AnnotationChecker::visit(Annotation::TypeOf* annotation) {
             *annotation->location,
             "Expression after 'typeof' cannot be checked here."
         );
-        return nullptr;
+        return std::any();
     }
     annotation->expression->accept(expr_visitor, false);
+    if (!annotation->expression->type) {
+        panic(
+            "Annotation::TypeOf::visit: expression has no type after checking."
+        );
+        return std::any();
+    }
     return annotation->expression->type;
 }
 

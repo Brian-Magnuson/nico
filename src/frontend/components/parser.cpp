@@ -316,8 +316,12 @@ std::optional<std::shared_ptr<Expr>> Parser::primary() {
         } while (comma_matched);
 
         if (!match({Tok::RParen})) {
-            // This error should already be caught in the lexer.
-            panic("Parser::primary: Missing ')' while parsing grouping.");
+            Logger::inst().log_error(
+                Err::UnexpectedToken,
+                peek()->location,
+                "Expected ')' after expression grouping."
+            );
+            return std::nullopt;
         }
 
         if (elements.size() == 1 && !comma_matched) {
@@ -401,8 +405,12 @@ std::optional<std::shared_ptr<Expr>> Parser::postfix() {
             }
         } while (match({Tok::Comma}));
         if (!match({Tok::RParen})) {
-            // This error should already be caught in the lexer.
-            panic("Parser::postfix: Missing ')' while parsing function call.");
+            Logger::inst().log_error(
+                Err::UnexpectedToken,
+                peek()->location,
+                "Expected ')' after arguments in function call."
+            );
+            return std::nullopt;
         }
         left = std::make_shared<Expr::Call>(
             *left,
@@ -692,8 +700,12 @@ std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
 
     // Closing parenthesis
     if (!match({Tok::RParen})) {
-        // This error should already be caught in the lexer.
-        panic("Parser::func_statement: Missing ')' while parsing parameters.");
+        Logger::inst().log_error(
+            Err::UnexpectedToken,
+            peek()->location,
+            "Expected ')' after parsing parameters."
+        );
+        return std::nullopt;
     }
 
     // Return type (optional)
@@ -821,6 +833,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::statement() {
 // MARK: Annotations
 
 std::optional<std::shared_ptr<Annotation>> Parser::annotation() {
+    // First, check for annotations that can have 'var': pointers and
+    // references.
     bool has_var = false;
     if (match({Tok::KwVar}))
         has_var = true;
@@ -858,7 +872,35 @@ std::optional<std::shared_ptr<Annotation>> Parser::annotation() {
         );
         return std::nullopt;
     }
+    // Now check for other annotation types.
 
+    if (match({Tok::KwTypeof})) {
+        auto typeof_token = previous();
+        if (!match({Tok::LParen})) {
+            Logger::inst().log_error(
+                Err::TypeofWithoutOpeningParen,
+                peek()->location,
+                "Expected '(' after 'typeof'."
+            );
+            return std::nullopt;
+        }
+        auto expr = expression();
+        if (!match({Tok::RParen})) {
+            Logger::inst().log_error(
+                Err::UnexpectedToken,
+                peek()->location,
+                "Expected ')' after expression in "
+                "typeof annotation."
+            );
+            return std::nullopt;
+        }
+        if (!expr) {
+            // At this point, an error has already been logged.
+            return std::nullopt;
+        }
+
+        return std::make_shared<Annotation::TypeOf>(typeof_token, *expr);
+    }
     if (match({Tok::Identifier})) {
         auto token = previous();
         return std::make_shared<Annotation::NameRef>(Name(token));
@@ -882,8 +924,13 @@ std::optional<std::shared_ptr<Annotation>> Parser::annotation() {
         } while (match({Tok::Comma}));
 
         if (!match({Tok::RParen})) {
-            // This error should already be caught in the lexer.
-            panic("Parser::annotation: Missing ')' while parsing tuple.");
+            Logger::inst().log_error(
+                Err::UnexpectedToken,
+                peek()->location,
+                "Expected ')' after expression in "
+                "tuple annotation."
+            );
+            return std::nullopt;
         }
 
         return std::make_shared<Annotation::Tuple>(
