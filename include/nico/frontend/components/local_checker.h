@@ -32,7 +32,7 @@ class LocalChecker : public Stmt::Visitor, public Expr::Visitor {
     )
         : symbol_tree(symbol_tree),
           repl_mode(repl_mode),
-          annotation_checker(symbol_tree) {};
+          annotation_checker(symbol_tree, this) {};
 
     /**
      * @brief Checks the type of the expression and returns its type.

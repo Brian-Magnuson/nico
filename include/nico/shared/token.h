@@ -119,6 +119,9 @@ enum class Tok {
 
     KwAs,
     KwIs,
+    KwSizeof,
+    KwTypeof,
+    KwTransmute,
     KwAlloc,
     KwDealloc,
 

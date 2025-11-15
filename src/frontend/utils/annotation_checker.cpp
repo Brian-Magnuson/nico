@@ -21,6 +21,14 @@ std::any AnnotationChecker::visit(Annotation::NameRef* annotation) {
     else if (annotation->name.to_string() == "str") {
         type = std::make_shared<Type::Str>();
     }
+    else {
+        Logger::inst().log_error(
+            Err::UnknownAnnotationName,
+            *annotation->location,
+            "Unknown type annotation: `" + annotation->name.to_string() + "`."
+        );
+    }
+
     return type;
 }
 
@@ -72,7 +80,21 @@ std::any AnnotationChecker::visit(Annotation::Tuple* annotation) {
     else {
         type = std::make_shared<Type::Tuple>(element_types);
     }
+
     return type;
+}
+
+std::any AnnotationChecker::visit(Annotation::TypeOf* annotation) {
+    if (!expr_visitor) {
+        Logger::inst().log_error(
+            Err::UncheckableTypeofAnnotation,
+            *annotation->location,
+            "Expression after 'typeof' cannot be checked here."
+        );
+        return nullptr;
+    }
+    annotation->expression->accept(expr_visitor, false);
+    return annotation->expression->type;
 }
 
 } // namespace nico

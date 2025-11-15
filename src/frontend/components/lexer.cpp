@@ -25,6 +25,7 @@ std::unordered_map<std::string_view, Tok> Lexer::keywords = {
     {"or", Tok::KwOr},
     {"not", Tok::KwNot},
     {"as", Tok::KwAs},
+    {"is", Tok::KwIs},
 
     {"block", Tok::KwBlock},
     {"unsafe", Tok::KwUnsafe},
@@ -34,6 +35,10 @@ std::unordered_map<std::string_view, Tok> Lexer::keywords = {
     {"loop", Tok::KwLoop},
     {"while", Tok::KwWhile},
     {"do", Tok::KwDo},
+    {"sizeof", Tok::KwSizeof},
+    {"transmute", Tok::KwTransmute},
+
+    {"typeof", Tok::KwTypeof},
 
     {"let", Tok::KwLet},
     {"var", Tok::KwVar},
@@ -46,6 +51,18 @@ std::unordered_map<std::string_view, Tok> Lexer::keywords = {
     {"return", Tok::KwReturn},
 
     {"printout", Tok::KwPrintout},
+};
+
+std::unordered_set<std::string_view> Lexer::reserved_words = {
+    "module",
+    "import",
+    "public",
+    "private",
+    "using",
+    "from",
+    "async",
+    "await",
+    "overloadedfn"
 };
 
 bool Lexer::is_at_end() const {
@@ -249,9 +266,16 @@ void Lexer::identifier() {
     auto token = make_token(Tok::Identifier);
     std::string_view text = token->lexeme;
 
-    auto it = keywords.find(text);
-    if (it != keywords.end()) {
+    if (auto it = keywords.find(text); it != keywords.end()) {
         token->tok_type = it->second;
+    }
+    else if (reserved_words.find(text) != reserved_words.end()) {
+        Logger::inst().log_error(
+            Err::WordIsReserved,
+            token->location,
+            "'" + std::string(token->lexeme) +
+                "' is a reserved word and cannot be used as an identifier."
+        );
     }
 
     tokens.push_back(token);

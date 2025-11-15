@@ -826,18 +826,28 @@ std::optional<std::shared_ptr<Annotation>> Parser::annotation() {
         has_var = true;
 
     if (match({Tok::At})) {
+        auto at_token = previous();
         // Pointer annotation
         auto inner_anno = annotation();
         if (!inner_anno)
             return std::nullopt;
-        return std::make_shared<Annotation::Pointer>(*inner_anno, has_var);
+        return std::make_shared<Annotation::Pointer>(
+            *inner_anno,
+            at_token,
+            has_var
+        );
     }
     if (match({Tok::Amp})) {
+        auto amp_token = previous();
         // Reference annotation
         auto inner_anno = annotation();
         if (!inner_anno)
             return std::nullopt;
-        return std::make_shared<Annotation::Reference>(*inner_anno, has_var);
+        return std::make_shared<Annotation::Reference>(
+            *inner_anno,
+            amp_token,
+            has_var
+        );
     }
 
     if (has_var) {
@@ -854,9 +864,10 @@ std::optional<std::shared_ptr<Annotation>> Parser::annotation() {
         return std::make_shared<Annotation::NameRef>(Name(token));
     }
     if (match({Tok::Nullptr})) {
-        return std::make_shared<Annotation::Nullptr>();
+        return std::make_shared<Annotation::Nullptr>(previous());
     }
     if (match({Tok::LParen})) {
+        auto lparen_token = previous();
         // Tuple annotation
         std::vector<std::shared_ptr<Annotation>> elements;
         do {
@@ -875,7 +886,10 @@ std::optional<std::shared_ptr<Annotation>> Parser::annotation() {
             panic("Parser::annotation: Missing ')' while parsing tuple.");
         }
 
-        return std::make_shared<Annotation::Tuple>(std::move(elements));
+        return std::make_shared<Annotation::Tuple>(
+            lparen_token,
+            std::move(elements)
+        );
     }
     Logger::inst()
         .log_error(Err::NotAType, peek()->location, "Not a valid type.");

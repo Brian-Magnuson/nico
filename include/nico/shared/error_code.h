@@ -52,6 +52,8 @@ enum class Err {
     UnterminatedStr,
     // An escape sequence was found that is not valid.
     InvalidEscSeq,
+    // An identifier was found that matches a reserved word.
+    WordIsReserved,
 
     // Parser error
     ParserError = 3000,
@@ -104,6 +106,15 @@ enum class Err {
     NameAlreadyExists,
     // An attempt was made to shadow a reserved name.
     NameIsReserved,
+    // An annotation referenced a name that could not be found.
+    UnknownAnnotationName,
+    // A type-of annotation has no way to type-check the inner expression.
+    UncheckableTypeofAnnotation,
+    // A function declaration contained duplicate parameter names.
+    DuplicateFunctionParameterName,
+    // An attempt was made to declare a function that conflicts with an existing
+    // overload.
+    FunctionOverloadConflict,
 
     // Local type check error
     LocalTypeError = 5000,
@@ -162,11 +173,6 @@ enum class Err {
     ReturnOutsideFunction,
     // A pointer dereference was found outside of an unsafe block.
     PtrDerefOutsideUnsafeBlock,
-    // A function declaration contained duplicate parameter names.
-    DuplicateFunctionParameterName,
-    // An attempt was made to declare a function that conflicts with an existing
-    // overload.
-    FunctionOverloadConflict,
     // No matching function overload was found for a function call.
     NoMatchingFunctionOverload,
     // Multiple matching function overloads were found for a function call.

@@ -5,6 +5,7 @@
 #include <memory>
 #include <string_view>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "nico/frontend/utils/frontend_context.h"
@@ -19,6 +20,8 @@ namespace nico {
 class Lexer {
     // A map of keywords to their respective token types.
     static std::unordered_map<std::string_view, Tok> keywords;
+    // A set of reserved words that cannot be used as identifiers.
+    static std::unordered_set<std::string_view> reserved_words;
 
     // The file being scanned.
     const std::shared_ptr<CodeFile> file;

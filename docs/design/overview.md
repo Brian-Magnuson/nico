@@ -273,6 +273,28 @@ f(3.14)    // calls the f64 overload
 The type `overloadedfn` cannot be written as a type annotation; it must be inferred by the compiler.
 Additionally, `overloadedfn` is considered incompatible with all other function pointer types, including other `overloadedfn` types.
 
+## Type-of annotation
+
+The type-of annotation is used to refer to the type of an expression. It is written as `typeof expression`.
+```
+let x = 42
+let y: typeof x = 64
+```
+
+The type-of annotation is an annotation, not an expression. It cannot be used in places where an expression is expected, such as the right side of an assignment or in function arguments.
+
+Because the type-of annotation requires an expression, it can only be used in places where the expression's type is known. For example, you cannot use `typeof` to refer to the type of a variable that has not yet been declared.
+```
+let y: typeof x = 64 // Error: x is not declared yet
+let x = 42
+```
+
+Note that, although `typeof` requires an expression, the expression is NOT evaluated. It is only used to determine the type.
+```
+let x: typeof my_function() = 37 // OK; my_function is not called
+let y: typeof (1 / 0) = 42 // OK; type is i32, no division by zero occurs
+```
+
 # Statements
 
 All programs consist of statements. Statements fall into three categories:
@@ -794,6 +816,24 @@ unsafe:
     let y = p[0]    // Automatic dereference
 ```
 
+### Size-of expression
+
+The size-of expression is used to get the size, in bytes, of a type. This uses the `sizeof` keyword:
+```
+let size = sizeof i32
+```
+
+The `sizeof` operator requires an annotation, not an expression. However, you can use it in conjunction with the type-of annotation to get the size of an expression's type:
+```
+let x = 42
+let size = sizeof typeof x
+```
+
+Note that the expression under `typeof` is not evaluated; it is only used to determine the type.
+```
+let size = sizeof typeof (1 / 0) // OK; type is i32, no division by zero occurs
+```
+
 ### Type-test expression
 
 A type-test expression is used to check if two pointers to related class types point to the same type. The expression yields a boolean value indicated the result of the type test.
@@ -882,7 +922,7 @@ It is an unsafe operation and must be done within an `unsafe` block:
 ```
 let f = 3.14
 unsafe:
-    let i: i64 = f transmute i64 // Reinterpret cast
+    let i: i64 = transmute f as i64 // Reinterpret cast
 ```
 
 ### Function call expressions

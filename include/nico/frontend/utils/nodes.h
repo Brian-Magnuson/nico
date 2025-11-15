@@ -388,6 +388,8 @@ public:
     class Object;
     class Tuple;
 
+    class TypeOf;
+
     virtual ~Annotation() = default;
 
     /**
@@ -402,7 +404,11 @@ public:
         virtual std::any visit(Array* annotation) = 0;
         virtual std::any visit(Object* annotation) = 0;
         virtual std::any visit(Tuple* annotation) = 0;
+        virtual std::any visit(TypeOf* annotation) = 0;
     };
+
+    // The location of the expression.
+    const Location* location;
 
     /**
      * @brief Accept a visitor.
@@ -421,7 +427,7 @@ public:
      *
      * @return A string representation of the annotation.
      */
-    virtual std::string to_string() const = 0;
+    virtual std::string to_string() const { return "[unknown]"; }
 };
 
 // MARK: Name

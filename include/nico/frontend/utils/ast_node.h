@@ -717,7 +717,12 @@ public:
     const Name name;
 
     NameRef(Name name)
-        : name(std::move(name)) {}
+        : name(std::move(name)) {
+        if (this->name.parts.empty()) {
+            panic("Annotation::NameRef::NameRef: name has no parts.");
+        }
+        location = &this->name.parts.back().token->location;
+    }
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 
@@ -737,8 +742,14 @@ public:
     // Whether the object pointed to by this pointer is mutable.
     const bool is_mutable;
 
-    Pointer(std::shared_ptr<Annotation> base, bool is_mutable = false)
-        : base(std::move(base)), is_mutable(is_mutable) {}
+    Pointer(
+        std::shared_ptr<Annotation> base,
+        std::shared_ptr<Token> at_token,
+        bool is_mutable = false
+    )
+        : base(std::move(base)), is_mutable(is_mutable) {
+        location = &at_token->location;
+    }
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 
@@ -756,7 +767,9 @@ public:
  */
 class Annotation::Nullptr : public Annotation {
 public:
-    Nullptr() = default;
+    Nullptr(std::shared_ptr<Token> nullptr_token) {
+        location = &nullptr_token->location;
+    }
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 
@@ -776,8 +789,14 @@ public:
     // Whether the object pointed to by this reference is mutable.
     const bool is_mutable;
 
-    Reference(std::shared_ptr<Annotation> base, bool is_mutable = false)
-        : base(std::move(base)), is_mutable(is_mutable) {}
+    Reference(
+        std::shared_ptr<Annotation> base,
+        std::shared_ptr<Token> amp_token,
+        bool is_mutable = false
+    )
+        : base(std::move(base)), is_mutable(is_mutable) {
+        location = &amp_token->location;
+    }
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 
@@ -800,10 +819,13 @@ public:
     const std::optional<size_t> size;
 
     Array(
+        std::shared_ptr<Token> l_bracket_token,
         std::shared_ptr<Annotation> base,
         std::optional<size_t> size = std::nullopt
     )
-        : base(std::move(base)), size(size) {}
+        : base(std::move(base)), size(size) {
+        location = &l_bracket_token->location;
+    }
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 
@@ -825,8 +847,13 @@ public:
     // are annotations.
     const Dictionary<std::string, std::shared_ptr<Annotation>> properties;
 
-    Object(Dictionary<std::string, std::shared_ptr<Annotation>>&& properties)
-        : properties(std::move(properties)) {}
+    Object(
+        std::shared_ptr<Token> l_brace_token,
+        Dictionary<std::string, std::shared_ptr<Annotation>>&& properties
+    )
+        : properties(std::move(properties)) {
+        location = &l_brace_token->location;
+    }
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 
@@ -856,8 +883,13 @@ public:
     // A vector of annotations representing the elements of the tuple.
     const std::vector<std::shared_ptr<Annotation>> elements;
 
-    Tuple(std::vector<std::shared_ptr<Annotation>>&& elements)
-        : elements(std::move(elements)) {}
+    Tuple(
+        std::shared_ptr<Token> l_paren_token,
+        std::vector<std::shared_ptr<Annotation>>&& elements
+    )
+        : elements(std::move(elements)) {
+        location = &l_paren_token->location;
+    }
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 
@@ -873,6 +905,20 @@ public:
         result += ")";
         return result;
     }
+};
+
+class Annotation::TypeOf : public Annotation {
+public:
+    // The expression whose type is being referenced.
+    const std::shared_ptr<Expr> expression;
+
+    TypeOf(
+        std::shared_ptr<Token> typeof_token, std::shared_ptr<Expr> expression
+    )
+        : expression(std::move(expression)) {
+        location = &typeof_token->location;
+    }
+    std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };
 
 } // namespace nico

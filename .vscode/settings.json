@@ -1,5 +1,6 @@
 {
     "files.associations": {
+        ".clang-format": "yaml",
         "any": "cpp",
         "array": "cpp",
         "atomic": "cpp",
@@ -69,6 +70,7 @@
         "semaphore": "cpp",
         "shared_mutex": "cpp",
         "stop_token": "cpp",
-        "thread": "cpp"
+        "thread": "cpp",
+        "*.def": "cpp"
     }
 }

@@ -21,10 +21,16 @@ namespace nico {
 class AnnotationChecker : public Annotation::Visitor {
     // The symbol tree used for type checking.
     const std::shared_ptr<SymbolTree> symbol_tree;
+    // An expression visitor to use for checking expressions within typeof
+    // annotations.
+    Expr::Visitor* expr_visitor;
 
 public:
-    AnnotationChecker(std::shared_ptr<SymbolTree> symbol_tree)
-        : symbol_tree(symbol_tree) {};
+    AnnotationChecker(
+        std::shared_ptr<SymbolTree> symbol_tree,
+        Expr::Visitor* expr_visitor = nullptr
+    )
+        : symbol_tree(symbol_tree), expr_visitor(expr_visitor) {};
 
     std::any visit(Annotation::NameRef* annotation) override;
     std::any visit(Annotation::Pointer* annotation) override;
@@ -33,6 +39,7 @@ public:
     std::any visit(Annotation::Array* annotation) override;
     std::any visit(Annotation::Object* annotation) override;
     std::any visit(Annotation::Tuple* annotation) override;
+    std::any visit(Annotation::TypeOf* annotation) override;
 };
 
 } // namespace nico
