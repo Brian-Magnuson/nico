@@ -9,15 +9,87 @@ The following is an overview of the Nico programming language design. This docum
 
 ## Primitive types
 
-### Numeric types
+### Integer types
 
-> [!WARNING]
-> This part is subject to change.
+The integer types are signed and unsigned integers of various sizes. The following integer types are supported:
+- Signed integers: `i8`, `i16`, `i32`, `i64`
+- Unsigned integers: `u8`, `u16`, `u32`, `u64`
 
-Currently, only two numeric types are supported: `i32` and `f64`. The `i32` type is a 32-bit signed integer, and the `f64` type is a 64-bit IEEE-754 floating-point number. They may be written as literals in the following ways:
+Integer literals are assumed to be written in base 10 unless otherwise specified by a base prefix: `0b` for binary, `0o` for octal, and `0x` for hexadecimal.
 ```
-42
-3.14
+42          // Decimal
+042         // Decimal (not octal)
+0b101010    // Binary
+0o52        // Octal
+0x2A        // Hexadecimal
+```
+
+Integer literals may include underscores (`_`) to improve readability. These underscores are ignored by the compiler.
+```
+1_000_000  // One million
+```
+
+All integers are assumed to be of type `i32` unless otherwise specified by a type suffix. The type suffix is written as the type name after the literal.
+```
+42i8       // 8-bit signed integer
+42_i8      // Same as above with an underscore for readability
+42_u64     // 64-bit unsigned integer
+```
+
+For convenience, the following special suffixes are also supported:
+- `l` or `L`: Equivalent to `i64`
+- `u` or `U`: Equivalent to `u32`
+- `ul` or `UL`: Equivalent to `u64`
+
+It is recommended to use the full type names for clarity.
+
+If the integer cannot be parsed as the specified type, a lexer error will occur.
+
+Note that the type of an integer will never be inferred from the surrounding context. Only type suffixes are used to determine the type of an integer literal.
+```
+let x: i16 = 42      // Error: 42 is of type i32, not i16
+```
+
+### Floating-point types
+
+The floating-point types are `f32` and `f64`, representing 32-bit and 64-bit IEEE-754 floating-point numbers respectively.
+
+Floating-point literals may be written in decimal or scientific notation:
+```
+3.14        // Decimal notation
+2.5e3       // Scientific notation (2.5 * 10^3)
+2.5E+3      // Same as above
+```
+
+Base prefixes are not allowed for floating-point literals.
+
+FP literals with no fractional part require a `.0` to distinguish them from integer literals. FP literals less than 1 require a leading `0` before the decimal point to be recognized as numbers.
+```
+42.0
+0.5
+```
+
+Floating-point literals may include underscores (`_`) to improve readability. These underscores are ignored by the compiler.
+```
+1_000.000_1  // One thousand and one ten-thousandth
+```
+
+All floating-point literals are assumed to be of type `f64` unless otherwise specified by a type suffix. The type suffix is written as the type name after the literal.
+```
+3.14f32       // 32-bit floating-point number
+3.14_f32      // Same as above with an underscore for readability
+```
+
+For convenience, the following special suffix is also supported:
+- `f` or `F`: Equivalent to `f32`
+
+It is recommended to use the full type names for clarity.
+
+If the floating-point number cannot be accurately represented as the specified type, the lexer will try to round it to the nearest representable value.
+
+Note that the type of a floating-point number will never be inferred from the surrounding context. Only type suffixes are used to determine the type of a floating-point literal.
+```
+let x: f32 = 3.14      // Error: 3.14 is of type f64, not f32
 ```
 
 ### Boolean type
@@ -298,8 +370,21 @@ let x = 42
 Note that, although `typeof` requires an expression, the expression is NOT evaluated. It is only used to determine the type.
 ```
 let x: typeof(my_function()) = 37 // OK; my_function is not called
-let y: typeof(1 / 0) = 42 // OK; type is i32, no division by zero occurs
+let zero = 0
+let y: typeof(1 / zero) = 42 // OK; type is i32, no division by zero occurs
 ```
+
+Type-of annotations are designed to work with almost any expression, including block expressions.
+This means it is possible to write entire statements in an annotation.
+These statements can potentially modify the symbol tree, but will never be executed.
+```
+let x: typeof(block {
+    let y = 0
+    yield y
+}) = 0
+```
+
+This code will compile without warnings, but it can be potentially confusing.
 
 # Statements
 
