@@ -614,14 +614,14 @@ std::any CodeGenerator::visit(Expr::Literal* expr, bool as_lvalue) {
     llvm::Value* result = nullptr;
 
     switch (expr->token->tok_type) {
-    case Tok::Int: {
+    case Tok::IntAny: {
         result = llvm::ConstantInt::get(
             llvm::Type::getInt32Ty(*mod_ctx.llvm_context),
             std::any_cast<int32_t>(expr->token->literal)
         );
         break;
     }
-    case Tok::Float:
+    case Tok::FloatAny:
         if (expr->token->lexeme == "inf") {
             result = llvm::ConstantFP::getInfinity(
                 llvm::Type::getDoubleTy(*mod_ctx.llvm_context)

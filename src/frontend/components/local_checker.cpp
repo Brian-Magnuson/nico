@@ -699,7 +699,7 @@ std::any LocalChecker::visit(Expr::Access* expr, bool as_lvalue) {
         return std::any();
 
     if (auto tuple_l_type = std::dynamic_pointer_cast<Type::Tuple>(l_type)) {
-        if (expr->right_token->tok_type == Tok::Int) {
+        if (expr->right_token->tok_type == Tok::IntAny) {
             size_t index = std::any_cast<size_t>(expr->right_token->literal);
             if (index >= tuple_l_type->elements.size()) {
                 Logger::inst().log_error(
@@ -916,10 +916,40 @@ std::any LocalChecker::visit(Expr::Literal* expr, bool as_lvalue) {
         return std::any();
     }
     switch (expr->token->tok_type) {
-    case Tok::Int:
+    case Tok::IntAny:
         expr->type = std::make_shared<Type::Int>(true, 32);
         break;
-    case Tok::Float:
+    case Tok::FloatAny:
+        expr->type = std::make_shared<Type::Float>(64);
+        break;
+    case Tok::Int8:
+        expr->type = std::make_shared<Type::Int>(true, 8);
+        break;
+    case Tok::Int16:
+        expr->type = std::make_shared<Type::Int>(true, 16);
+        break;
+    case Tok::Int32:
+        expr->type = std::make_shared<Type::Int>(true, 32);
+        break;
+    case Tok::Int64:
+        expr->type = std::make_shared<Type::Int>(true, 64);
+        break;
+    case Tok::UInt8:
+        expr->type = std::make_shared<Type::Int>(false, 8);
+        break;
+    case Tok::UInt16:
+        expr->type = std::make_shared<Type::Int>(false, 16);
+        break;
+    case Tok::UInt32:
+        expr->type = std::make_shared<Type::Int>(false, 32);
+        break;
+    case Tok::UInt64:
+        expr->type = std::make_shared<Type::Int>(false, 64);
+        break;
+    case Tok::Float32:
+        expr->type = std::make_shared<Type::Float>(32);
+        break;
+    case Tok::Float64:
         expr->type = std::make_shared<Type::Float>(64);
         break;
     case Tok::Bool:

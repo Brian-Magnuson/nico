@@ -279,7 +279,9 @@ std::optional<std::shared_ptr<Expr>> Parser::loop() {
 }
 
 std::optional<std::shared_ptr<Expr>> Parser::primary() {
-    if (match({Tok::Int, Tok::Float, Tok::Bool, Tok::Str, Tok::Nullptr})) {
+    if (match(
+            {Tok::IntAny, Tok::FloatAny, Tok::Bool, Tok::Str, Tok::Nullptr}
+        )) {
         return std::make_shared<Expr::Literal>(previous());
     }
     if (match({Tok::Identifier})) {
@@ -353,7 +355,7 @@ std::optional<std::shared_ptr<Expr>> Parser::postfix() {
     if (match({Tok::Dot})) {
         do {
             auto op = previous();
-            if (match({Tok::Int, Tok::Identifier})) {
+            if (match({Tok::IntAny, Tok::Identifier})) {
                 left = std::make_shared<Expr::Access>(*left, op, previous());
             }
             else {

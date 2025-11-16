@@ -382,28 +382,28 @@ TEST_CASE("Lexer basic keywords (run_lexer_test)", "[lexer]") {
 
 TEST_CASE("Lexer numbers (run_lexer_test)", "[lexer]") {
     SECTION("Numbers 1") {
-        run_lexer_test("123 123f", {Tok::Int, Tok::Float, Tok::Eof});
+        run_lexer_test("123 123f", {Tok::IntAny, Tok::FloatAny, Tok::Eof});
     }
 
     SECTION("Numbers 2") {
         run_lexer_test(
             "0x1A 0o17 0b101",
-            {Tok::Int, Tok::Int, Tok::Int, Tok::Eof}
+            {Tok::IntAny, Tok::IntAny, Tok::IntAny, Tok::Eof}
         );
     }
 
     SECTION("Numbers 3") {
-        run_lexer_test("1.23 1.23f", {Tok::Float, Tok::Float, Tok::Eof});
+        run_lexer_test("1.23 1.23f", {Tok::FloatAny, Tok::FloatAny, Tok::Eof});
     }
 
     SECTION("Numbers 4") {
         run_lexer_test(
             "1.23e10 1.23e-10 1.23E10 1.23E-10 123E+10",
-            {Tok::Float,
-             Tok::Float,
-             Tok::Float,
-             Tok::Float,
-             Tok::Float,
+            {Tok::FloatAny,
+             Tok::FloatAny,
+             Tok::FloatAny,
+             Tok::FloatAny,
+             Tok::FloatAny,
              Tok::Eof}
         );
     }
@@ -411,35 +411,40 @@ TEST_CASE("Lexer numbers (run_lexer_test)", "[lexer]") {
     SECTION("Numbers 5") {
         run_lexer_test(
             "0 0.0 0.0 0 0",
-            {Tok::Int, Tok::Float, Tok::Float, Tok::Int, Tok::Int, Tok::Eof}
+            {Tok::IntAny,
+             Tok::FloatAny,
+             Tok::FloatAny,
+             Tok::IntAny,
+             Tok::IntAny,
+             Tok::Eof}
         );
     }
 
     SECTION("Numbers 6") {
         run_lexer_test(
             "0xAbCdEf 0x0 0x00",
-            {Tok::Int, Tok::Int, Tok::Int, Tok::Eof}
+            {Tok::IntAny, Tok::IntAny, Tok::IntAny, Tok::Eof}
         );
     }
 
     SECTION("Numbers 7") {
         run_lexer_test(
             "0o123 0123 0o0",
-            {Tok::Int, Tok::Int, Tok::Int, Tok::Eof}
+            {Tok::IntAny, Tok::IntAny, Tok::IntAny, Tok::Eof}
         );
     }
 
     SECTION("Numbers with underscores 1") {
         run_lexer_test(
             "1_000 0b1010_1010 0o_755 0xFF_FF",
-            {Tok::Int, Tok::Int, Tok::Int, Tok::Int, Tok::Eof}
+            {Tok::IntAny, Tok::IntAny, Tok::IntAny, Tok::IntAny, Tok::Eof}
         );
     }
 
     SECTION("Numbers with underscores 2") {
         run_lexer_test(
             "1_00_00 1__0 1_0_",
-            {Tok::Int, Tok::Int, Tok::Int, Tok::Eof}
+            {Tok::IntAny, Tok::IntAny, Tok::IntAny, Tok::Eof}
         );
     }
 }

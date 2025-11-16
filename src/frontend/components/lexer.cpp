@@ -13,8 +13,8 @@ namespace nico {
 std::unordered_map<std::string_view, Tok> Lexer::keywords = {
     // Literals
 
-    {"inf", Tok::Float},
-    {"NaN", Tok::Float},
+    {"inf", Tok::FloatAny},
+    {"NaN", Tok::FloatAny},
     {"true", Tok::Bool},
     {"false", Tok::Bool},
     {"nullptr", Tok::Nullptr},
@@ -301,7 +301,7 @@ void Lexer::numeric_literal(bool integer_only) {
             );
             return;
         }
-        add_token(Tok::Int, value);
+        add_token(Tok::IntAny, value);
         return;
     }
 
@@ -435,7 +435,7 @@ void Lexer::numeric_literal(bool integer_only) {
             );
             return;
         }
-        add_token(Tok::Float, value);
+        add_token(Tok::FloatAny, value);
     }
     else {
         int32_t value;
@@ -451,7 +451,7 @@ void Lexer::numeric_literal(bool integer_only) {
             );
             return;
         }
-        add_token(Tok::Int, value);
+        add_token(Tok::IntAny, value);
     }
 }
 

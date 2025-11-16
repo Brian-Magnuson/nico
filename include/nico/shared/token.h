@@ -48,25 +48,31 @@ enum class Tok {
     Semicolon,
 
     Plus,
-    PlusEq,
     Minus,
-    MinusEq,
     Star,
-    StarEq,
     Slash,
-    SlashEq,
     Percent,
-    PercentEq,
     Bar,
-    BarEq,
     Bang,
+
+    _CompoundOperatorsStart,
+    PlusEq,
+    MinusEq,
+    StarEq,
+    SlashEq,
+    PercentEq,
+    BarEq,
+    _CompoundOperatorsEnd,
 
     BangEq,
     EqEq,
+
+    _ComparisonsStart,
     Gt,
     GtEq,
     Lt,
     LtEq,
+    _ComparisonsEnd,
 
     Eq,
     Dot,
@@ -82,14 +88,27 @@ enum class Tok {
 
     // Literals
 
-    Int,
-    Float,
+    _LiteralsStart,
+    IntAny,
+    Int8,
+    Int16,
+    Int32,
+    Int64,
+    UInt8,
+    UInt16,
+    UInt32,
+    UInt64,
+    FloatAny,
+    Float32,
+    Float64,
     Bool,
     Str,
     Nullptr,
+    _LiteralsEnd,
 
     // Keywords
 
+    _KeywordsStart,
     KwAnd,
     KwOr,
     KwNot,
@@ -126,7 +145,77 @@ enum class Tok {
     KwDealloc,
 
     KwPrintout, // Temporary print keyword for development.
+
+    _KeywordsEnd,
 };
+
+namespace tokens {
+
+/**
+ * @brief Checks if a token type is for a literal value.
+ *
+ * Examples of literal token types are Int32, Float64, Bool, Str, etc.
+ *
+ * This function tests if the token type is within the range of defined literal
+ * token types, making it more efficient than testing each type individually.
+ *
+ * @param tok The token type to check.
+ * @return True if the token type is a literal, false otherwise.
+ */
+inline bool is_literal(Tok tok) {
+    return tok > Tok::_LiteralsStart && tok < Tok::_LiteralsEnd;
+}
+
+/**
+ * @brief Checks if a token type is a keyword.
+ *
+ * Examples of keyword token types are KwIf, KwWhile, KwReturn, etc. All keyword
+ * token types have the "Kw" prefix.
+ *
+ * This function tests if the token type is within the range of defined keyword
+ * token types, making it more efficient than testing each type individually.
+ *
+ * @param tok The token type to check.
+ * @return True if the token type is a keyword, false otherwise.
+ */
+inline bool is_keyword(Tok tok) {
+    return tok > Tok::_KeywordsStart && tok < Tok::_KeywordsEnd;
+}
+
+/**
+ * @brief Checks if a token type is a compound operator.
+ *
+ * Examples of compound operator token types are PlusEq, MinusEq, StarEq, etc.
+ *
+ * This function tests if the token type is within the range of defined compound
+ * operator token types, making it more efficient than testing each type
+ * individually.
+ *
+ * @param tok The token type to check.
+ * @return True if the token type is a compound operator, false otherwise.
+ */
+inline bool is_compound_operator(Tok tok) {
+    return tok > Tok::_CompoundOperatorsStart &&
+           tok < Tok::_CompoundOperatorsEnd;
+}
+
+/**
+ * @brief Checks if a token type is a comparison operator.
+ *
+ * Examples of comparison operator token types are Gt, GtEq, Lt, LtEq, etc.
+ *
+ * This function tests if the token type is within the range of defined
+ * comparison operator token types, making it more efficient than testing each
+ * type individually.
+ *
+ * @param tok The token type to check.
+ * @return True if the token type is a comparison operator, false otherwise.
+ */
+inline bool is_comparison_operator(Tok tok) {
+    return tok > Tok::_ComparisonsStart && tok < Tok::_ComparisonsEnd;
+}
+
+} // namespace tokens
 
 /**
  * @brief A location of a token within a code file.
