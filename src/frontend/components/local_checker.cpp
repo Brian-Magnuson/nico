@@ -699,7 +699,7 @@ std::any LocalChecker::visit(Expr::Access* expr, bool as_lvalue) {
         return std::any();
 
     if (auto tuple_l_type = std::dynamic_pointer_cast<Type::Tuple>(l_type)) {
-        if (expr->right_token->tok_type == Tok::IntAny) {
+        if (expr->right_token->tok_type == Tok::IntSize) {
             size_t index = std::any_cast<size_t>(expr->right_token->literal);
             if (index >= tuple_l_type->elements.size()) {
                 Logger::inst().log_error(

@@ -447,6 +447,10 @@ TEST_CASE("Lexer numbers (run_lexer_test)", "[lexer]") {
             {Tok::IntAny, Tok::IntAny, Tok::IntAny, Tok::Eof}
         );
     }
+
+    SECTION("Number with negative sign") {
+        run_lexer_test("-123", {Tok::Minus, Tok::IntAny, Tok::Eof});
+    }
 }
 
 TEST_CASE("Lexer str literals (run_lexer_test)", "[lexer]") {

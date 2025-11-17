@@ -2,6 +2,7 @@
 #define NICO_LEXER_H
 
 #include <any>
+#include <cstdint>
 #include <memory>
 #include <string_view>
 #include <unordered_map>
@@ -88,16 +89,6 @@ class Lexer {
     void add_token(Tok tok_type, std::any literal = std::any());
 
     /**
-     * @brief Peeks at the current character without advancing the lexer.
-     *
-     * If the lexer is at the end of the source code, '\0' will be returned
-     * instead.
-     *
-     * @return The current character. '\0' if the lexer is at the end of the
-     * source code.
-     */
-
-    /**
      * @brief Peeks at the next character, plus lookahead, without advancing the
      * lexer.
      *
@@ -136,6 +127,22 @@ class Lexer {
      * False otherwise.
      */
     bool match(char expected);
+
+    /**
+     * @brief Safely checks if the next characters match the expected string and
+     * advances the lexer that many characters if they do.
+     *
+     * The lexer will only advance if *all* characters match the expected
+     * string.
+     *
+     * If the lexer reaches the end of the source code before matching all
+     * characters, this function will return false.
+     *
+     * @param expected The string to match.
+     * @return True if the next characters match the expected string. False
+     * otherwise.
+     */
+    bool match_all(std::string_view expected);
 
     /**
      * @brief Checks if the given character is a whitespace character.
@@ -199,9 +206,6 @@ class Lexer {
     /**
      * @brief Consumes whitespace characters, handling indentation.
      *
-     * This function is for JIT and AOT compilation modes only. For REPL mode,
-     * use `consume_repl_whitespace` instead.
-     *
      * The lexer should have advanced at least one character before calling this
      * function. All whitespace characters will be consumed until a
      * non-whitespace character is found. If the lexer is within grouping
@@ -215,14 +219,6 @@ class Lexer {
     void consume_whitespace();
 
     /**
-     * @brief Consumes whitespace characters in REPL mode, handling indentation.
-     *
-     * This function is for REPL mode only. For JIT and AOT compilation modes,
-     * use `consume_whitespace` instead.
-     */
-    void consume_repl_whitespace();
-
-    /**
      * @brief Scans an identifier from the source code and adds it to the list
      * of tokens.
      *
@@ -232,6 +228,26 @@ class Lexer {
      * type will be set to the corresponding keyword.
      */
     void identifier();
+
+    /**
+     * @brief Parses a number string and adds the appropriate token to the list
+     * of tokens.
+     *
+     * There are different numeric token types, including Int32, UInt64, and
+     * Float64.
+     *
+     * Based on the token type provided, this function will call the appropriate
+     * parsing function to convert the number string into its literal value and
+     * store it in the token.
+     *
+     * @param number_str The string representation of the number.
+     * @param token_type The type of token to create.
+     * @param base The base of the number. Defaults to 10. Should be 2, 8, 10,
+     * or 16. Will be ignored for float types.
+     */
+    void parse_number_string(
+        std::string_view number_str, Tok token_type, uint8_t base = 10
+    );
 
     /**
      * @brief Scans a number from the source code and adds it to the list of

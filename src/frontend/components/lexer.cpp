@@ -1,7 +1,7 @@
 #include "nico/frontend/components/lexer.h"
 
-#include <cstdint>
 #include <string>
+#include <system_error>
 
 #include "nico/shared/error_code.h"
 #include "nico/shared/logger.h"
@@ -98,6 +98,19 @@ bool Lexer::match(char expected) {
     if (file->src_code[current] != expected)
         return false;
     current++;
+    return true;
+}
+
+bool Lexer::match_all(std::string_view expected) {
+    if (current + expected.length() > file->src_code.length()) {
+        return false;
+    }
+    for (size_t i = 0; i < expected.length(); i++) {
+        if (file->src_code[current + i] != expected[i]) {
+            return false;
+        }
+    }
+    current += expected.length();
     return true;
 }
 
@@ -281,6 +294,77 @@ void Lexer::identifier() {
     tokens.push_back(token);
 }
 
+void Lexer::parse_number_string(
+    std::string_view number_str, Tok token_type, uint8_t base
+) {
+    std::pair<std::any, std::errc> result;
+    switch (token_type) {
+    case Tok::Int8:
+        result = parse_number<int8_t>(number_str, base);
+        break;
+    case Tok::Int16:
+        result = parse_number<int16_t>(number_str, base);
+        break;
+    case Tok::Int32:
+        result = parse_number<int32_t>(number_str, base);
+        break;
+    case Tok::Int64:
+        result = parse_number<int64_t>(number_str, base);
+        break;
+    case Tok::UInt8:
+        result = parse_number<uint8_t>(number_str, base);
+        break;
+    case Tok::UInt16:
+        result = parse_number<uint16_t>(number_str, base);
+        break;
+    case Tok::UInt32:
+        result = parse_number<uint32_t>(number_str, base);
+        break;
+    case Tok::UInt64:
+        result = parse_number<uint64_t>(number_str, base);
+        break;
+    case Tok::Float32:
+        result = parse_number<float>(number_str);
+        break;
+    case Tok::Float64:
+        result = parse_number<double>(number_str);
+        break;
+    case Tok::IntAny:
+        // Temporary; will remove later.
+        result = parse_number<int32_t>(number_str, base);
+        break;
+    case Tok::IntSize:
+        // Temporary; will remove later.
+        result = parse_number<size_t>(number_str, base);
+        break;
+    case Tok::FloatAny:
+        // Temporary; will remove later.
+        result = parse_number<double>(number_str);
+        break;
+    default:
+        panic(
+            "Lexer::parse_number_string: Invalid token type for number parsing."
+        );
+    }
+    if (result.second == std::errc::result_out_of_range) {
+        Logger::inst().log_error(
+            Err::NumberOutOfRange,
+            make_token(Tok::Unknown)->location,
+            "Numeric literal is out of range for specified type."
+        );
+        return;
+    }
+    else if (result.second != std::errc()) {
+        panic(
+            "Lexer::parse_number_string: Unable to properly parse number "
+            "string \"" +
+            std::string(number_str) + "\"."
+        );
+        return;
+    }
+    add_token(token_type, result.first);
+}
+
 void Lexer::numeric_literal(bool integer_only) {
     current--;
     std::string numeric_string;
@@ -289,19 +373,7 @@ void Lexer::numeric_literal(bool integer_only) {
         while (is_digit(peek())) {
             numeric_string += advance();
         }
-        size_t value;
-        try {
-            value = std::stoul(numeric_string);
-        }
-        catch (...) {
-            Logger::inst().log_error(
-                Err::NumberOutOfRange,
-                make_token(Tok::Unknown)->location,
-                "Numeric literal is out of range."
-            );
-            return;
-        }
-        add_token(Tok::IntAny, value);
+        parse_number_string(numeric_string, Tok::IntSize);
         return;
     }
 
@@ -309,22 +381,14 @@ void Lexer::numeric_literal(bool integer_only) {
     bool has_dot = false;
     bool has_exp = false;
 
-    if (peek() == '0') {
-        if (peek(1) == 'b') {
-            base = 2;
-            advance();
-            advance();
-        }
-        else if (peek(1) == 'o') {
-            base = 8;
-            advance();
-            advance();
-        }
-        else if (peek(1) == 'x') {
-            base = 16;
-            advance();
-            advance();
-        }
+    if (match_all("0b")) {
+        base = 2;
+    }
+    else if (match_all("0o")) {
+        base = 8;
+    }
+    else if (match_all("0x")) {
+        base = 16;
     }
 
     while (is_digit(peek(), base, true)) {
@@ -423,35 +487,10 @@ void Lexer::numeric_literal(bool integer_only) {
     }
 
     if (has_dot || has_exp) {
-        double value;
-        try {
-            value = std::stod(numeric_string);
-        }
-        catch (...) {
-            Logger::inst().log_error(
-                Err::NumberOutOfRange,
-                make_token(Tok::Unknown)->location,
-                "Numeric literal is out of range."
-            );
-            return;
-        }
-        add_token(Tok::FloatAny, value);
+        parse_number_string(numeric_string, Tok::FloatAny);
     }
     else {
-        int32_t value;
-        try {
-            value =
-                static_cast<int32_t>(std::stoll(numeric_string, nullptr, base));
-        }
-        catch (...) {
-            Logger::inst().log_error(
-                Err::NumberOutOfRange,
-                make_token(Tok::Unknown)->location,
-                "Numeric literal is out of range."
-            );
-            return;
-        }
-        add_token(Tok::IntAny, value);
+        parse_number_string(numeric_string, Tok::IntAny, base);
     }
 }
 

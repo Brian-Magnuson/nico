@@ -90,6 +90,7 @@ enum class Tok {
 
     _LiteralsStart,
     IntAny,
+    IntSize,
     Int8,
     Int16,
     Int32,
