@@ -567,17 +567,6 @@ TEST_CASE("Lexer number scanning errors", "[lexer]") {
     SECTION("Dot in exp part") {
         run_lexer_error_test("1.2e1.2", Err::UnexpectedDotInNumber);
     }
-
-    // SECTION("Number out of range") {
-    //     run_lexer_error_test(
-    //         "99999999999999999999999999",
-    //         Err::NumberOutOfRange
-    //     );
-    // }
-
-    // SECTION("Float out of range") {
-    //     run_lexer_error_test("1e9999999", Err::NumberOutOfRange);
-    // }
 }
 
 TEST_CASE("Lexer str scanning errors", "[lexer]") {

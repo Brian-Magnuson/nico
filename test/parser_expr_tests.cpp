@@ -84,9 +84,78 @@ TEST_CASE("Parser basic", "[parser]") {
     }
 }
 
+TEST_CASE("Parser numbers", "[parser]") {
+    SECTION("Integers 1") {
+        run_parser_expr_test(
+            "42; -7; 0",
+            {"(expr (lit 42))",
+             "(expr (lit -7))",
+             "(expr (lit 0))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Integers 2") {
+        run_parser_expr_test(
+            "0b1010 0o52 0x2A 0037",
+            {"(expr (lit 10))",
+             "(expr (lit 42))",
+             "(expr (lit 42))",
+             "(expr (lit 37))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Integers 3") {
+        run_parser_expr_test(
+            "-0b1111; -0o17; -0xF",
+            {"(expr (lit -15))",
+             "(expr (lit -15))",
+             "(expr (lit -15))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Int 32 Max") {
+        run_parser_expr_test(
+            "2147483647",
+            {"(expr (lit 2147483647))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Int 32 Min") {
+        run_parser_expr_test(
+            "-2147483648",
+            {"(expr (lit -2147483648))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Floats 1") {
+        run_parser_expr_test(
+            "3.14; -0.001; 2e10",
+            {"(expr (lit 3.140000))",
+             "(expr (lit -0.001000))",
+             "(expr (lit 20000000000.000000))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Floats 2") {
+        run_parser_expr_test(
+            "0.1e-5; 1.5E+10",
+            {"(expr (lit 0.000001))",
+             "(expr (lit 15000000000.000000))",
+             "(stmt:eof)"}
+        );
+    }
+}
+
 TEST_CASE("Parser expressions", "[parser]") {
     SECTION("Unary 1") {
-        run_parser_expr_test("-123", {"(expr (lit -123))", "(stmt:eof)"});
+        run_parser_expr_test(
+            "-123; -(123)",
+            {"(expr (lit -123))", "(expr (unary - (lit 123)))", "(stmt:eof)"}
+        );
     }
 
     SECTION("Unary 2") {
@@ -677,6 +746,29 @@ TEST_CASE("Parser call expressions", "[parser]") {
 }
 
 // MARK: Error tests
+
+TEST_CASE("Parser number errors", "[parser]") {
+    SECTION("Int 32 Max Plus One") {
+        run_parser_expr_error_test(
+            "2147483648", // One more than max int32_t
+            Err::NumberOutOfRange
+        );
+    }
+
+    SECTION("Int 32 Min Minus One") {
+        run_parser_expr_error_test(
+            "-2147483649", // One less than min int32_t
+            Err::NumberOutOfRange
+        );
+    }
+
+    SECTION("Int 32 Min With Parentheses") {
+        run_parser_expr_error_test(
+            "-(2147483648)", // Min int32_t inside parentheses
+            Err::NumberOutOfRange
+        );
+    }
+}
 
 TEST_CASE("Parser block errors", "[parser]") {
     SECTION("Not a block") {
