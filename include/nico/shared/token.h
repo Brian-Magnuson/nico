@@ -52,6 +52,7 @@ enum class Tok {
     Star,
     Slash,
     Percent,
+    Negative,
     Bar,
     Bang,
 
@@ -284,7 +285,7 @@ public:
     const std::string_view lexeme;
     // The literal value of this token, if any; primarily used for string
     // literals
-    const std::any literal;
+    std::any literal;
 
     /**
      * @brief Constructs a new Token object.

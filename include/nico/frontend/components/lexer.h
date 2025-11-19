@@ -229,25 +229,29 @@ class Lexer {
      */
     void identifier();
 
-    /**
-     * @brief Parses a number string and adds the appropriate token to the list
-     * of tokens.
-     *
-     * There are different numeric token types, including Int32, UInt64, and
-     * Float64.
-     *
-     * Based on the token type provided, this function will call the appropriate
-     * parsing function to convert the number string into its literal value and
-     * store it in the token.
-     *
-     * @param number_str The string representation of the number.
-     * @param token_type The type of token to create.
-     * @param base The base of the number. Defaults to 10. Should be 2, 8, 10,
-     * or 16. Will be ignored for float types.
-     */
-    void parse_number_string(
-        std::string_view number_str, Tok token_type, uint8_t base = 10
-    );
+    // /**
+    //  * @brief Parses a number string and adds the appropriate token to the
+    //  list
+    //  * of tokens.
+    //  *
+    //  * There are different numeric token types, including Int32, UInt64, and
+    //  * Float64.
+    //  *
+    //  * Based on the token type provided, this function will call the
+    //  appropriate
+    //  * parsing function to convert the number string into its literal value
+    //  and
+    //  * store it in the token.
+    //  *
+    //  * @param number_str The string representation of the number.
+    //  * @param token_type The type of token to create.
+    //  * @param base The base of the number. Defaults to 10. Should be 2, 8,
+    //  10,
+    //  * or 16. Will be ignored for float types.
+    //  */
+    // void parse_number_string(
+    //     std::string_view number_str, Tok token_type, uint8_t base = 10
+    // );
 
     /**
      * @brief Scans a number from the source code and adds it to the list of

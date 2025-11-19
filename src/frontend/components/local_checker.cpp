@@ -553,7 +553,7 @@ std::any LocalChecker::visit(Expr::Unary* expr, bool as_lvalue) {
         return std::any();
 
     switch (expr->op->tok_type) {
-    case Tok::Minus:
+    case Tok::Negative:
         // Types must inherit from `Type::INumeric`.
         if (!PTR_INSTANCEOF(r_type, Type::INumeric)) {
             Logger::inst().log_error(

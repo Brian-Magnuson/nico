@@ -294,92 +294,24 @@ void Lexer::identifier() {
     tokens.push_back(token);
 }
 
-void Lexer::parse_number_string(
-    std::string_view number_str, Tok token_type, uint8_t base
-) {
-    std::pair<std::any, std::errc> result;
-    switch (token_type) {
-    case Tok::Int8:
-        result = parse_number<int8_t>(number_str, base);
-        break;
-    case Tok::Int16:
-        result = parse_number<int16_t>(number_str, base);
-        break;
-    case Tok::Int32:
-        result = parse_number<int32_t>(number_str, base);
-        break;
-    case Tok::Int64:
-        result = parse_number<int64_t>(number_str, base);
-        break;
-    case Tok::UInt8:
-        result = parse_number<uint8_t>(number_str, base);
-        break;
-    case Tok::UInt16:
-        result = parse_number<uint16_t>(number_str, base);
-        break;
-    case Tok::UInt32:
-        result = parse_number<uint32_t>(number_str, base);
-        break;
-    case Tok::UInt64:
-        result = parse_number<uint64_t>(number_str, base);
-        break;
-    case Tok::Float32:
-        result = parse_number<float>(number_str);
-        break;
-    case Tok::Float64:
-        result = parse_number<double>(number_str);
-        break;
-    case Tok::IntAny:
-        // Temporary; will remove later.
-        result = parse_number<int32_t>(number_str, base);
-        break;
-    case Tok::IntSize:
-        // Temporary; will remove later.
-        result = parse_number<size_t>(number_str, base);
-        break;
-    case Tok::FloatAny:
-        // Temporary; will remove later.
-        result = parse_number<double>(number_str);
-        break;
-    default:
-        panic(
-            "Lexer::parse_number_string: Invalid token type for number parsing."
-        );
-    }
-    if (result.second == std::errc::result_out_of_range) {
-        Logger::inst().log_error(
-            Err::NumberOutOfRange,
-            make_token(Tok::Unknown)->location,
-            "Numeric literal is out of range for specified type."
-        );
-        return;
-    }
-    else if (result.second != std::errc()) {
-        panic(
-            "Lexer::parse_number_string: Unable to properly parse number "
-            "string \"" +
-            std::string(number_str) + "\"."
-        );
-        return;
-    }
-    add_token(token_type, result.first);
-}
-
 void Lexer::numeric_literal(bool integer_only) {
     current--;
-    std::string numeric_string;
+    // std::string numeric_string;
 
     if (integer_only) {
+        std::string numeric_string;
         while (is_digit(peek())) {
             numeric_string += advance();
         }
-        parse_number_string(numeric_string, Tok::IntSize);
+        size_t num = std::stoul(numeric_string);
+        add_token(Tok::IntSize, num);
         return;
     }
 
     uint8_t base = 10;
     bool has_dot = false;
     bool has_exp = false;
+    bool has_digit = false;
 
     if (match_all("0b")) {
         base = 2;
@@ -396,10 +328,11 @@ void Lexer::numeric_literal(bool integer_only) {
             advance();
             continue;
         }
-        numeric_string += advance();
+        advance();
+        has_digit = true;
 
         if (peek() == '.') {
-            numeric_string += advance();
+            advance();
             // A dot can only appear once, before any exponent, only in base 10,
             // and only if the next character is a digit.
             if (has_dot || has_exp || base != 10 || !is_digit(peek())) {
@@ -417,10 +350,12 @@ void Lexer::numeric_literal(bool integer_only) {
         }
 
         if (base != 16 && (peek() == 'e' || peek() == 'E')) {
-            numeric_string += advance();
+            // numeric_string += advance();
+            advance();
             // If the next character is a '+' or '-', advance.
             if (peek() == '+' || peek() == '-') {
-                numeric_string += advance();
+                // numeric_string += advance();
+                advance();
             }
             // An exponent can only appear once, only in base 10, and only if
             // the next character is a digit.
@@ -472,7 +407,7 @@ void Lexer::numeric_literal(bool integer_only) {
         start = prev_start;
         return;
     }
-    else if (numeric_string.empty()) {
+    else if (!has_digit) {
         // This can only happen if the first part of the number is a base
         // prefix.
         auto prev_start = start;
@@ -487,10 +422,12 @@ void Lexer::numeric_literal(bool integer_only) {
     }
 
     if (has_dot || has_exp) {
-        parse_number_string(numeric_string, Tok::FloatAny);
+        // parse_number_string(numeric_string, Tok::FloatAny);
+        add_token(Tok::FloatAny);
     }
     else {
-        parse_number_string(numeric_string, Tok::IntAny, base);
+        // parse_number_string(numeric_string, Tok::IntAny, base);
+        add_token(Tok::IntAny);
     }
 }
 

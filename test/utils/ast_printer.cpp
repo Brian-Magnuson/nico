@@ -168,7 +168,21 @@ std::any AstPrinter::visit(Expr::NameRef* expr, bool as_lvalue) {
 }
 
 std::any AstPrinter::visit(Expr::Literal* expr, bool as_lvalue) {
-    return std::string("(lit " + std::string(expr->token->lexeme) + ")");
+    if (expr->token->tok_type == Tok::IntAny) {
+        return std::string(
+            "(lit " +
+            std::to_string(std::any_cast<int32_t>(expr->token->literal)) + ")"
+        );
+    }
+    else if (expr->token->tok_type == Tok::FloatAny) {
+        return std::string(
+            "(lit " +
+            std::to_string(std::any_cast<double>(expr->token->literal)) + ")"
+        );
+    }
+    else {
+        return std::string("(lit " + std::string(expr->token->lexeme) + ")");
+    }
 }
 
 std::any AstPrinter::visit(Expr::Tuple* expr, bool as_lvalue) {

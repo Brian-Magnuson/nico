@@ -169,7 +169,7 @@ TEST_CASE("Parser function statements", "[parser]") {
         run_parser_stmt_test(
             "func f5(var y: f64) { y += 1.0 }",
             {"(stmt:func f5 (var y f64) => (block (expr (assign (nameref y) "
-             "(binary + (nameref y) (lit 1.0))))))",
+             "(binary + (nameref y) (lit 1.000000))))))",
              "(stmt:eof)"}
         );
     }
@@ -276,7 +276,7 @@ TEST_CASE("Parser statement separation", "[parser]") {
     SECTION("Separated unary statements") {
         run_parser_stmt_test(
             "1; - 2",
-            {"(expr (lit 1))", "(expr (unary - (lit 2)))", "(stmt:eof)"}
+            {"(expr (lit 1))", "(expr (lit -2))", "(stmt:eof)"}
         );
     }
 }

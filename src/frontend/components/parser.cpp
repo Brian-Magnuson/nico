@@ -278,10 +278,86 @@ std::optional<std::shared_ptr<Expr>> Parser::loop() {
     return std::make_shared<Expr::Loop>(loop_kw, *body, condition, loops_once);
 }
 
+std::optional<std::shared_ptr<Expr>> Parser::number_literal() {
+    std::string numeric_string;
+    if (current > 0 && previous()->tok_type == Tok::Negative) {
+        numeric_string += "-";
+    }
+    auto lexeme = peek()->lexeme;
+    int base = 10;
+    int start_index = 0;
+    if (lexeme.starts_with("0b")) {
+        base = 2;
+        start_index = 2;
+    }
+    else if (lexeme.starts_with("0x")) {
+        base = 16;
+        start_index = 2;
+    }
+    else if (lexeme.starts_with("0o")) {
+        base = 8;
+        start_index = 2;
+    }
+    for (size_t i = start_index; i < lexeme.size(); i++) {
+        if (lexeme[i] != '_') {
+            numeric_string += lexeme[i];
+        }
+    }
+
+    if (match({Tok::IntAny})) {
+        auto int_token = previous();
+        int32_t value;
+        auto [_, ec] = std::from_chars(
+            numeric_string.data(),
+            numeric_string.data() + numeric_string.size(),
+            value,
+            base
+        );
+        if (ec != std::errc()) {
+            Logger::inst().log_error(
+                Err::UnknownError,
+                int_token->location,
+                "Invalid integer literal."
+            );
+            return std::nullopt;
+        }
+        int_token->literal = value;
+        return std::make_shared<Expr::Literal>(int_token);
+    }
+    else if (match({Tok::FloatAny})) {
+        auto float_token = previous();
+        double value;
+        auto [_, ec] = std::from_chars(
+            numeric_string.data(),
+            numeric_string.data() + numeric_string.size(),
+            value
+        );
+        if (ec != std::errc()) {
+            Logger::inst().log_error(
+                Err::UnknownError,
+                float_token->location,
+                "Invalid float literal."
+            );
+            return std::nullopt;
+        }
+        float_token->literal = value;
+        return std::make_shared<Expr::Literal>(float_token);
+    }
+    else {
+        Logger::inst().log_error(
+            Err::UnknownError,
+            peek()->location,
+            "Expected number literal."
+        );
+        return std::nullopt;
+    }
+}
+
 std::optional<std::shared_ptr<Expr>> Parser::primary() {
-    if (match(
-            {Tok::IntAny, Tok::FloatAny, Tok::Bool, Tok::Str, Tok::Nullptr}
-        )) {
+    if (peek()->tok_type == Tok::IntAny || peek()->tok_type == Tok::FloatAny) {
+        return number_literal();
+    }
+    if (match({Tok::Bool, Tok::Nullptr, Tok::Str})) {
         return std::make_shared<Expr::Literal>(previous());
     }
     if (match({Tok::Identifier})) {
@@ -424,7 +500,20 @@ std::optional<std::shared_ptr<Expr>> Parser::postfix() {
 }
 
 std::optional<std::shared_ptr<Expr>> Parser::unary() {
-    if (match({Tok::Minus, Tok::KwNot, Tok::Bang})) {
+    if (match({Tok::Minus})) {
+        auto token = previous();
+        token->tok_type = Tok::Negative;
+        auto right = unary();
+        if (!right)
+            return std::nullopt;
+        else if (previous()->tok_type == Tok::IntAny)
+            return right;
+        else if (previous()->tok_type == Tok::FloatAny)
+            return right;
+
+        return std::make_shared<Expr::Unary>(token, *right);
+    }
+    if (match({Tok::KwNot, Tok::Bang})) {
         auto token = previous();
         auto right = unary();
         if (!right)

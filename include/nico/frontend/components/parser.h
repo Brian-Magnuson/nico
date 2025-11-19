@@ -142,6 +142,16 @@ class Parser {
     std::optional<std::shared_ptr<Expr>> loop();
 
     /**
+     * @brief Parses a number literal expression.
+     *
+     * Number literals include integers and floats.
+     *
+     * @return A shared pointer to the parsed expression, or nullopt if the
+     * expression could not be parsed.
+     */
+    std::optional<std::shared_ptr<Expr>> number_literal();
+
+    /**
      * @brief Parses a primary expression.
      *
      * Primary expressions include literals, identifiers, and grouping

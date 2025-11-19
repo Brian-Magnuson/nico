@@ -456,7 +456,7 @@ std::any CodeGenerator::visit(Expr::Unary* expr, bool as_lvalue) {
     auto right = std::any_cast<llvm::Value*>(expr->right->accept(this, false));
     if (PTR_INSTANCEOF(expr->right->type, Type::Float)) {
         switch (expr->op->tok_type) {
-        case Tok::Minus:
+        case Tok::Negative:
             result = builder->CreateFNeg(right);
             break;
         default:
@@ -468,7 +468,7 @@ std::any CodeGenerator::visit(Expr::Unary* expr, bool as_lvalue) {
     }
     else if (PTR_INSTANCEOF(expr->right->type, Type::Int)) {
         switch (expr->op->tok_type) {
-        case Tok::Minus:
+        case Tok::Negative:
             result = builder->CreateNeg(right);
             break;
         default:

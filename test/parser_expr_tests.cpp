@@ -86,10 +86,7 @@ TEST_CASE("Parser basic", "[parser]") {
 
 TEST_CASE("Parser expressions", "[parser]") {
     SECTION("Unary 1") {
-        run_parser_expr_test(
-            "-123",
-            {"(expr (unary - (lit 123)))", "(stmt:eof)"}
-        );
+        run_parser_expr_test("-123", {"(expr (lit -123))", "(stmt:eof)"});
     }
 
     SECTION("Unary 2") {
@@ -140,8 +137,7 @@ TEST_CASE("Parser expressions", "[parser]") {
     SECTION("Binary 4") {
         run_parser_expr_test(
             "1 * -2 + -3",
-            {"(expr (binary + (binary * (lit 1) (unary - (lit 2))) (unary - "
-             "(lit 3))))",
+            {"(expr (binary + (binary * (lit 1) (lit -2)) (lit -3)))",
              "(stmt:eof)"}
         );
     }
