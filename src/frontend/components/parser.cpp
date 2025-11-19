@@ -431,7 +431,7 @@ std::optional<std::shared_ptr<Expr>> Parser::postfix() {
     if (match({Tok::Dot})) {
         do {
             auto op = previous();
-            if (match({Tok::IntSize, Tok::Identifier})) {
+            if (match({Tok::TupleIndex, Tok::Identifier})) {
                 left = std::make_shared<Expr::Access>(*left, op, previous());
             }
             else {

@@ -229,29 +229,19 @@ class Lexer {
      */
     void identifier();
 
-    // /**
-    //  * @brief Parses a number string and adds the appropriate token to the
-    //  list
-    //  * of tokens.
-    //  *
-    //  * There are different numeric token types, including Int32, UInt64, and
-    //  * Float64.
-    //  *
-    //  * Based on the token type provided, this function will call the
-    //  appropriate
-    //  * parsing function to convert the number string into its literal value
-    //  and
-    //  * store it in the token.
-    //  *
-    //  * @param number_str The string representation of the number.
-    //  * @param token_type The type of token to create.
-    //  * @param base The base of the number. Defaults to 10. Should be 2, 8,
-    //  10,
-    //  * or 16. Will be ignored for float types.
-    //  */
-    // void parse_number_string(
-    //     std::string_view number_str, Tok token_type, uint8_t base = 10
-    // );
+    /**
+     * @brief Scans a tuple index from the source code and adds it to the list
+     * of tokens.
+     *
+     * Tuple members are accessed using a dot followed by a number.
+     * This number follows different rules from regular numeric literals and are
+     * handled separately.
+     *
+     * Unlike numeric literals, tuple indices do not allow negative signs,
+     * exponents, dots, base prefixes, suffixes, or underscores. Additionally,
+     * they are parsed immediately instead of in the parser.
+     */
+    void tuple_index();
 
     /**
      * @brief Scans a number from the source code and adds it to the list of
@@ -261,16 +251,8 @@ class Lexer {
      * prefixes: `0x`, `0o`, and `0b`. Numbers that begin with a base prefix may
      * not have any dots or exponent parts. Any number that ends with an `f`
      * (except for base 16) will be added as a float.
-     *
-     * Optionally, the caller can specify to only parse an integer. When
-     * `integer_only` is true, dots, exponents, suffixes, underscores, and base
-     * prefixes will not be included in the token. It is fast and simple.
-     *
-     * @param integer_only If true, the number will be parsed as an integer
-     * only. If a dot is found, it will not be included in the token. Default is
-     * false.
      */
-    void numeric_literal(bool integer_only = false);
+    void numeric_literal();
 
     /**
      * @brief Scans an str literal from the source code and adds it to the list

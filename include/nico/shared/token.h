@@ -86,12 +86,12 @@ enum class Tok {
     Caret,
 
     Identifier,
+    TupleIndex,
 
     // Literals
 
     _LiteralsStart,
     IntAny,
-    IntSize,
     Int8,
     Int16,
     Int32,

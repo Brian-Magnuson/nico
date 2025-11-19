@@ -35,9 +35,8 @@ enum class Err {
     InconsistentLeftSpacing,
     // An indent was detected with an improper number of spaces.
     MalformedIndent,
-    // An attempt was made to parse a number that would require too many bits to
-    // represent.
-    NumberOutOfRange,
+    // An attempt was made a tuple index that is out of range.
+    TupleIndexOutOfRange,
     // An unexpected dot was found in a numeric literal.
     UnexpectedDotInNumber,
     // An unexpected exponent was found in a numeric literal.

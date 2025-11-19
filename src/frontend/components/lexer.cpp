@@ -294,20 +294,35 @@ void Lexer::identifier() {
     tokens.push_back(token);
 }
 
-void Lexer::numeric_literal(bool integer_only) {
+void Lexer::tuple_index() {
     current--;
-    // std::string numeric_string;
-
-    if (integer_only) {
-        std::string numeric_string;
-        while (is_digit(peek())) {
-            numeric_string += advance();
-        }
-        size_t num = std::stoul(numeric_string);
-        add_token(Tok::IntSize, num);
+    std::string numeric_string;
+    while (is_digit(peek())) {
+        numeric_string += advance();
+    }
+    size_t num = 0;
+    try {
+        num = std::stoul(numeric_string);
+    }
+    catch (const std::out_of_range&) {
+        Logger::inst().log_error(
+            Err::UnknownError,
+            make_token(Tok::Unknown)->location,
+            "Tuple index is too large."
+        );
         return;
     }
+    catch (...) {
+        panic(
+            "Lexer::tuple_index: Invalid argument when parsing "
+            "tuple index."
+        );
+    }
+    add_token(Tok::TupleIndex, num);
+}
 
+void Lexer::numeric_literal() {
+    current--;
     uint8_t base = 10;
     bool has_dot = false;
     bool has_exp = false;
@@ -716,10 +731,10 @@ void Lexer::scan_token() {
         }
         else if (is_digit(c)) {
             if (tokens.size() > 0 && tokens.back()->tok_type == Tok::Dot)
-                // If the previous token was a dot, scan integer only.
-                numeric_literal(true);
+                // If the previous token was a dot, scan as a tuple index.
+                tuple_index();
             else
-                numeric_literal(false);
+                numeric_literal();
         }
         else {
             auto token = make_token(Tok::Unknown);
