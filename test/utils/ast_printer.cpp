@@ -1,5 +1,7 @@
 #include "ast_printer.h"
 
+#include <cstdint>
+
 namespace nico {
 
 std::any AstPrinter::visit(Stmt::Expression* stmt) {
@@ -168,21 +170,46 @@ std::any AstPrinter::visit(Expr::NameRef* expr, bool as_lvalue) {
 }
 
 std::any AstPrinter::visit(Expr::Literal* expr, bool as_lvalue) {
-    if (expr->token->tok_type == Tok::IntAny) {
-        return std::string(
-            "(lit " +
-            std::to_string(std::any_cast<int32_t>(expr->token->literal)) + ")"
-        );
+    std::string value;
+    switch (expr->token->tok_type) {
+    case Tok::Int8:
+        value = std::to_string(std::any_cast<int8_t>(expr->token->literal));
+        break;
+    case Tok::Int16:
+        value = std::to_string(std::any_cast<int16_t>(expr->token->literal));
+        break;
+    case Tok::IntAny:
+    case Tok::Int32:
+        value = std::to_string(std::any_cast<int32_t>(expr->token->literal));
+        break;
+    case Tok::Int64:
+        value = std::to_string(std::any_cast<int64_t>(expr->token->literal));
+        break;
+    case Tok::UInt8:
+        value = std::to_string(std::any_cast<uint8_t>(expr->token->literal));
+        break;
+    case Tok::UInt16:
+        value = std::to_string(std::any_cast<uint16_t>(expr->token->literal));
+        break;
+    case Tok::UInt32:
+        value = std::to_string(std::any_cast<uint32_t>(expr->token->literal));
+        break;
+    case Tok::UInt64:
+        value = std::to_string(std::any_cast<uint64_t>(expr->token->literal));
+        break;
+    case Tok::Float32:
+        value = std::to_string(std::any_cast<float>(expr->token->literal));
+        break;
+    case Tok::FloatAny:
+    case Tok::Float64:
+        value = std::to_string(std::any_cast<double>(expr->token->literal));
+        break;
+    default:
+        value = std::string(expr->token->lexeme);
+        break;
     }
-    else if (expr->token->tok_type == Tok::FloatAny) {
-        return std::string(
-            "(lit " +
-            std::to_string(std::any_cast<double>(expr->token->literal)) + ")"
-        );
-    }
-    else {
-        return std::string("(lit " + std::string(expr->token->lexeme) + ")");
-    }
+
+    return std::string("(lit " + value + ")");
 }
 
 std::any AstPrinter::visit(Expr::Tuple* expr, bool as_lvalue) {

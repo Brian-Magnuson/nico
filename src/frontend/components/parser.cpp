@@ -1,5 +1,7 @@
 #include "nico/frontend/components/parser.h"
 
+#include <cstdint>
+
 #include "nico/frontend/utils/nodes.h"
 #include "nico/shared/logger.h"
 #include "nico/shared/utils.h"
@@ -304,53 +306,63 @@ std::optional<std::shared_ptr<Expr>> Parser::number_literal() {
         }
     }
 
-    if (match({Tok::IntAny})) {
-        auto int_token = previous();
-        int32_t value;
-        auto [_, ec] = std::from_chars(
-            numeric_string.data(),
-            numeric_string.data() + numeric_string.size(),
-            value,
-            base
-        );
-        if (ec != std::errc()) {
-            Logger::inst().log_error(
-                Err::UnknownError,
-                int_token->location,
-                "Invalid integer literal."
-            );
-            return std::nullopt;
-        }
-        int_token->literal = value;
-        return std::make_shared<Expr::Literal>(int_token);
+    advance();
+    auto token = previous();
+    std::pair<std::any, std::errc> parse_result;
+
+    switch (token->tok_type) {
+    case Tok::Int8:
+        parse_result = parse_number<int8_t>(numeric_string, base);
+        break;
+    case Tok::Int16:
+        parse_result = parse_number<int16_t>(numeric_string, base);
+        break;
+    case Tok::Int64:
+        parse_result = parse_number<int64_t>(numeric_string, base);
+        break;
+    case Tok::UInt8:
+        parse_result = parse_number<uint8_t>(numeric_string, base);
+        break;
+    case Tok::UInt16:
+        parse_result = parse_number<uint16_t>(numeric_string, base);
+        break;
+    case Tok::UInt32:
+        parse_result = parse_number<uint32_t>(numeric_string, base);
+        break;
+    case Tok::UInt64:
+        parse_result = parse_number<uint64_t>(numeric_string, base);
+        break;
+    case Tok::IntAny:
+    case Tok::Int32:
+        parse_result = parse_number<int32_t>(numeric_string, base);
+        break;
+    case Tok::Float32:
+        parse_result = parse_number<float>(numeric_string);
+        break;
+    case Tok::FloatAny:
+    case Tok::Float64:
+        parse_result = parse_number<double>(numeric_string);
+        break;
+    default:
+        panic("Parser::number_literal: Unexpected token type.");
+        return std::nullopt;
     }
-    else if (match({Tok::FloatAny})) {
-        auto float_token = previous();
-        double value;
-        auto [_, ec] = std::from_chars(
-            numeric_string.data(),
-            numeric_string.data() + numeric_string.size(),
-            value
-        );
-        if (ec != std::errc()) {
-            Logger::inst().log_error(
-                Err::UnknownError,
-                float_token->location,
-                "Invalid float literal."
-            );
-            return std::nullopt;
-        }
-        float_token->literal = value;
-        return std::make_shared<Expr::Literal>(float_token);
-    }
-    else {
+
+    auto [any_val, ec] = parse_result;
+    if (ec == std::errc::result_out_of_range) {
         Logger::inst().log_error(
-            Err::UnknownError,
-            peek()->location,
-            "Expected number literal."
+            Err::NumberOutOfRange,
+            previous()->location,
+            "Numeric literal is out of range for its type."
         );
         return std::nullopt;
     }
+    else if (ec != std::errc()) {
+        panic("Parser::number_literal: Number in unexpected format.");
+        return std::nullopt;
+    }
+    token->literal = any_val;
+    return std::make_shared<Expr::Literal>(token);
 }
 
 std::optional<std::shared_ptr<Expr>> Parser::primary() {
@@ -506,10 +518,25 @@ std::optional<std::shared_ptr<Expr>> Parser::unary() {
         auto right = unary();
         if (!right)
             return std::nullopt;
-        else if (previous()->tok_type == Tok::IntAny)
+        else if (tokens::is_signed_number(previous()->tok_type))
+            // number_literal already handles the negation.
             return right;
-        else if (previous()->tok_type == Tok::FloatAny)
-            return right;
+        else if (tokens::is_unsigned_integer(previous()->tok_type)) {
+            /*
+            Note: this error is actually handled in two places:
+            1. When parsing the number, if the negative sign is right next to
+            the number, e.g. `-42_u8`, the number will be reported as "out of
+            range"
+            2. If the negative sign is not next to the number, e.g. `-(42_u8)`,
+            we reach this point in the parser and report the error here.
+            */
+            Logger::inst().log_error(
+                Err::NegativeOnUnsignedInteger,
+                token->location,
+                "Cannot apply unary '-' to unsigned integer literal."
+            );
+            return std::nullopt;
+        }
 
         return std::make_shared<Expr::Unary>(token, *right);
     }

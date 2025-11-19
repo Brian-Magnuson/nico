@@ -91,18 +91,28 @@ enum class Tok {
     // Literals
 
     _LiteralsStart,
+    _NumbersStart,
+    _SignedNumbersStart,
+    FloatAny,
+    Float32,
+    Float64,
+    _IntegersStart,
+    _SignedIntegersStart,
     IntAny,
     Int8,
     Int16,
     Int32,
     Int64,
+    _SignedIntegersEnd,
+    _SignedNumbersEnd,
+    _UnsignedIntegersStart,
     UInt8,
     UInt16,
     UInt32,
     UInt64,
-    FloatAny,
-    Float32,
-    Float64,
+    _UnsignedIntegersEnd,
+    _IntegersEnd,
+    _NumbersEnd,
     Bool,
     Str,
     Nullptr,
@@ -110,7 +120,6 @@ enum class Tok {
 
     // Keywords
 
-    _KeywordsStart,
     KwAnd,
     KwOr,
     KwNot,
@@ -146,9 +155,7 @@ enum class Tok {
     KwAlloc,
     KwDealloc,
 
-    KwPrintout, // Temporary print keyword for development.
-
-    _KeywordsEnd,
+    KwPrintout // Temporary print keyword for development.
 };
 
 namespace tokens {
@@ -169,19 +176,31 @@ inline bool is_literal(Tok tok) {
 }
 
 /**
- * @brief Checks if a token type is a keyword.
+ * @brief Checks if a token type is for a signed number.
  *
- * Examples of keyword token types are KwIf, KwWhile, KwReturn, etc. All keyword
- * token types have the "Kw" prefix.
+ * Signed numbers include all floating-point numbers and signed integers.
  *
- * This function tests if the token type is within the range of defined keyword
- * token types, making it more efficient than testing each type individually.
+ * Useful for determining if a negative sign can be applied to a numeric
+ * literal.
  *
  * @param tok The token type to check.
- * @return True if the token type is a keyword, false otherwise.
+ * @return True if the token type is a signed number, false otherwise.
  */
-inline bool is_keyword(Tok tok) {
-    return tok > Tok::_KeywordsStart && tok < Tok::_KeywordsEnd;
+inline bool is_signed_number(Tok tok) {
+    return tok > Tok::_SignedNumbersStart && tok < Tok::_SignedNumbersEnd;
+}
+
+/**
+ * @brief Checks if a token type is for an unsigned integer.
+ *
+ * Useful for determining if a negative sign cannot be applied to a numeric
+ * literal.
+ *
+ * @param tok The token type to check.
+ * @return True if the token type is an unsigned integer, false otherwise.
+ */
+inline bool is_unsigned_integer(Tok tok) {
+    return tok > Tok::_UnsignedIntegersStart && tok < Tok::_UnsignedIntegersEnd;
 }
 
 /**

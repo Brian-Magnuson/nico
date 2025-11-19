@@ -1,7 +1,7 @@
 #include "nico/frontend/components/lexer.h"
 
+#include <stdexcept>
 #include <string>
-#include <system_error>
 
 #include "nico/shared/error_code.h"
 #include "nico/shared/logger.h"

@@ -60,6 +60,11 @@ enum class Err {
     NotAnExpression,
     // A statement was found where an identifier was expected but not found.
     NotAnIdentifier,
+    // A numeric literal could not be parsed due to being out of range for the
+    // expected type.
+    NumberOutOfRange,
+    // A negative sign was found before an unsigned integer literal.
+    NegativeOnUnsignedInteger,
     // A type was expected but not found.
     NotAType,
     // An unexpected token was found where specific token was expected.

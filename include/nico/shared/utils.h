@@ -131,64 +131,6 @@ inline std::string project_version() {
 }
 
 /**
- * @brief Parses an integer from a string view.
- *
- * This function serves as a wrapper around std::from_chars to simplify integer
- * parsing.
- *
- * If the whole string is not consumed during parsing or the string does not
- * match the expected format, the error code will be set to
- * std::errc::invalid_argument.
- *
- * If the string is in the expected format, but the integer cannot be
- * represented by the target type (e.g., overflow), the error code will be set
- * to std::errc::result_out_of_range.
- *
- * @tparam T The type of the integer to parse.
- * @param str The string view containing the integer.
- * @param base The numerical base to use for parsing. Default is 10.
- * @return A pair containing the parsed number and an error code.
- */
-template <std::integral T>
-std::pair<std::any, std::errc>
-parse_number(std::string_view str, int base = 10) {
-    T value = T();
-    auto [ptr, ec] =
-        std::from_chars(str.data(), str.data() + str.size(), value, base);
-    if (ec == std::errc() && ptr != str.data() + str.size()) {
-        // Not all characters were consumed
-        ec = std::errc::invalid_argument;
-    }
-    return {value, ec};
-}
-
-/**
- * @brief Parses a floating-point number from a string view.
- *
- * This function serves as a wrapper around std::from_chars to simplify
- * floating-point number parsing.
- *
- * If the whole string is not consumed during parsing or the string does not
- * match the expected format, the error code will be set to
- * std::errc::invalid_argument.
- *
- * @tparam T The type of the floating-point number to parse.
- * @param str The string view containing the floating-point number.
- * @return A pair containing the parsed number and an error code.
- */
-template <std::floating_point T>
-std::pair<std::any, std::errc> parse_number(std::string_view str) {
-    T value = T();
-    auto [ptr, ec] =
-        std::from_chars(str.data(), str.data() + str.size(), value);
-    if (ec == std::errc() && ptr != str.data() + str.size()) {
-        // Not all characters were consumed
-        ec = std::errc::invalid_argument;
-    }
-    return {value, ec};
-}
-
-/**
  * @brief Breaks a string view into multiple string views based on a maximum
  * length.
  *
