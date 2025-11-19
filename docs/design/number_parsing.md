@@ -281,7 +281,7 @@ This solution has even lower memory usage than Solution 3. After type checking, 
 
 Additionally, formatting checks can still be caught early during scanning. Range checking is deferred to the type checker, where it has been done in previous solutions.
 
-# Solution 5: Integer Minimum Requires Negative Token
+## Solution 5: Integer Minimum Requires Negative Token
 
 This solution is designed to treat the minimum value of each signed integer type as a special case that requires the presence of a unary minus token.
 
@@ -321,3 +321,56 @@ This solution has a few advantages:
 - The number is only parsed once, during lexing.
 - Format errors can be caught early during lexing.
 - The type checker does not need to do any additional work for number literals.
+
+Deferring this special case to the parser can be seen as a downside. It violates the principle of single responsibility and it feels unnaturally unbalanced: 129-255 is a lexer error, but 128 is a parser error.
+
+## Solution 6: Only Parser Parses
+
+This solution proposes that only the parser is responsible for parsing number literals. 
+
+The lexer will scan number literals and do its best to validate their format. The lexer will also scan the type suffix and assign the appropriate token type. To simplify the parser's job, the lexer wille exclude the type suffix from the lexeme.
+
+Ideally, the lexer will be able to do this as quickly as possible without fully parsing the number.
+
+Numbers always start with a decimal digit (0-9).
+
+Valid numbers may contain:
+- A prefix (0b, 0o, 0x)
+- Digits of the specified base
+- Underscores
+- If the base is decimal:
+  - No more than one decimal point
+  - If there is a decimal point:
+    - At least one decimal digit after the decimal point
+    - No more than one exponent part (e or E)
+    - The exponent part may contain an optional '+' or '-' sign and must have at least one decimal digit
+  - If there is no decimal point:
+    - No exponent part
+- A type suffix (i8, i16, i32, i64, u8, u16, u32, u64, f32, f64)
+
+The only parts of the lexeme that cannot be parsed by `std::from_chars` are the base prefixes and the underscores. When the parser parses the number, it will create a temporary string that excludes these parts before passing it to `std::from_chars`.
+
+In addition to parsing the number, the parser will also change `Tok::Minus` to `Tok::Negative` when creating unary minus nodes, similar to Solution 5. This allows the parser to handle the minimum value of signed integer types correctly.
+
+1. During scanning...
+   1. The lexer scans numbers and checks if they are in a valid format.
+   2. The token is assigned a type according to its suffix (or default type if no suffix is present).
+2. During parsing...
+   1. When the parser encounters a number literal, it checks if the previous token is `Tok::Negative`.
+      1. If it is, the parser will start the number string with a negative sign.
+   2. The parser creates a temporary string that excludes base prefixes and underscores from the lexeme.
+   3. The parser uses `std::from_chars` to parse the temporary string into the appropriate numeric type, taking into account the sign if necessary.
+   4. If the number is out of range for its type, the parser reports an error.
+   5. Otherwise, the parser stores the actual numeric value in the token.
+
+The type checker does not need to do any additional work for number literals, as all parsing and range checking has already been handled by the parser.
+
+This solution is likely the most sensible approach. It sticks to the idea that *parsing* is the job of the *parser*. All range checking is done in one place, and format errors can still be caught early during lexing.
+
+## Conclusion
+
+Our decision is to implement Solution 6: Only Parser Parses. This approach centralizes number parsing and range checking in the parser, simplifying the overall design and ensuring consistency.
+
+The consistent design also ensures maintainability and avoids special cases. To quote The Zen of Python: "Special cases aren't special enough to break the rules."
+
+
