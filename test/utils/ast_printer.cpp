@@ -178,7 +178,6 @@ std::any AstPrinter::visit(Expr::Literal* expr, bool as_lvalue) {
     case Tok::Int16:
         value = std::to_string(std::any_cast<int16_t>(expr->token->literal));
         break;
-    case Tok::IntAny:
     case Tok::Int32:
         value = std::to_string(std::any_cast<int32_t>(expr->token->literal));
         break;
@@ -200,7 +199,6 @@ std::any AstPrinter::visit(Expr::Literal* expr, bool as_lvalue) {
     case Tok::Float32:
         value = std::to_string(std::any_cast<float>(expr->token->literal));
         break;
-    case Tok::FloatAny:
     case Tok::Float64:
         value = std::to_string(std::any_cast<double>(expr->token->literal));
         break;

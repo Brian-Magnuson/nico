@@ -916,12 +916,6 @@ std::any LocalChecker::visit(Expr::Literal* expr, bool as_lvalue) {
         return std::any();
     }
     switch (expr->token->tok_type) {
-    case Tok::IntAny:
-        expr->type = std::make_shared<Type::Int>(true, 32);
-        break;
-    case Tok::FloatAny:
-        expr->type = std::make_shared<Type::Float>(64);
-        break;
     case Tok::Int8:
         expr->type = std::make_shared<Type::Int>(true, 8);
         break;

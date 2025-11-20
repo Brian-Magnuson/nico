@@ -39,7 +39,7 @@ All integers are assumed to be of type `i32` unless otherwise specified by a typ
 For convenience, the following special suffixes are also supported:
 - `l` or `L`: Equivalent to `i64`
 - `u` or `U`: Equivalent to `u32`
-- `ul` or `UL`: Equivalent to `u64`
+- `ul` or `UL`: Equivalent to `u64` (other combinations of `u`/`U` and `l`/`L` are not supported)
 
 It is recommended to use the full type names for clarity.
 
@@ -90,6 +90,24 @@ If the floating-point number cannot be accurately represented as the specified t
 Note that the type of a floating-point number will never be inferred from the surrounding context. Only type suffixes are used to determine the type of a floating-point literal.
 ```
 let x: f32 = 3.14      // Error: 3.14 is of type f64, not f32
+```
+
+There are two special values for floating-point numbers: `inf` and `nan`. These represent positive infinity and "not a number" respectively.
+```
+let x: f64 = inf       // Positive infinity
+```
+
+By default, these values are of type `f64`.
+
+You cannot use type suffixes or underscores with these values. However, you can choose the floating-point type by adding `32` or `64` immediately after the value:
+```
+let x: f32 = inf32
+let y: f64 = nan64
+```
+
+Attempting to use a type suffix will not result in an error, but the token will be interpreted as an identifier.
+```
+let x: f32 = inf_f32 // 'inf_f32' is an identifier, not a floating-point literal
 ```
 
 ### Boolean type

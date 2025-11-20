@@ -398,6 +398,9 @@ std::any CodeGenerator::visit(Expr::Binary* expr, bool as_lvalue) {
     else if (PTR_INSTANCEOF(expr->left->type, Type::Int) ||
              PTR_INSTANCEOF(expr->left->type, Type::Bool) ||
              PTR_INSTANCEOF(expr->left->type, Type::Pointer)) {
+        auto int_type = std::dynamic_pointer_cast<Type::Int>(expr->left->type);
+        auto is_signed_int = int_type ? int_type->is_signed : false;
+
         switch (expr->op->tok_type) {
         case Tok::Plus:
             result = builder->CreateAdd(left, right);
@@ -410,11 +413,13 @@ std::any CodeGenerator::visit(Expr::Binary* expr, bool as_lvalue) {
             break;
         case Tok::Slash:
             add_div_zero_check(right, &expr->op->location);
-            result = builder->CreateSDiv(left, right);
+            result = is_signed_int ? builder->CreateSDiv(left, right)
+                                   : builder->CreateUDiv(left, right);
             break;
         case Tok::Percent:
             add_div_zero_check(right, &expr->op->location);
-            result = builder->CreateSRem(left, right);
+            result = is_signed_int ? builder->CreateSRem(left, right)
+                                   : builder->CreateURem(left, right);
             break;
         case Tok::EqEq:
             result = builder->CreateICmpEQ(left, right);
@@ -423,16 +428,20 @@ std::any CodeGenerator::visit(Expr::Binary* expr, bool as_lvalue) {
             result = builder->CreateICmpNE(left, right);
             break;
         case Tok::Lt:
-            result = builder->CreateICmpSLT(left, right);
+            result = is_signed_int ? builder->CreateICmpSLT(left, right)
+                                   : builder->CreateICmpULT(left, right);
             break;
         case Tok::LtEq:
-            result = builder->CreateICmpSLE(left, right);
+            result = is_signed_int ? builder->CreateICmpSLE(left, right)
+                                   : builder->CreateICmpULE(left, right);
             break;
         case Tok::Gt:
-            result = builder->CreateICmpSGT(left, right);
+            result = is_signed_int ? builder->CreateICmpSGT(left, right)
+                                   : builder->CreateICmpUGT(left, right);
             break;
         case Tok::GtEq:
-            result = builder->CreateICmpSGE(left, right);
+            result = is_signed_int ? builder->CreateICmpSGE(left, right)
+                                   : builder->CreateICmpUGE(left, right);
             break;
         default:
             panic(
@@ -614,20 +623,80 @@ std::any CodeGenerator::visit(Expr::Literal* expr, bool as_lvalue) {
     llvm::Value* result = nullptr;
 
     switch (expr->token->tok_type) {
-    case Tok::IntAny: {
+    case Tok::Int8:
+        result = llvm::ConstantInt::get(
+            llvm::Type::getInt8Ty(*mod_ctx.llvm_context),
+            std::any_cast<int8_t>(expr->token->literal)
+        );
+        break;
+    case Tok::Int16:
+        result = llvm::ConstantInt::get(
+            llvm::Type::getInt16Ty(*mod_ctx.llvm_context),
+            std::any_cast<int16_t>(expr->token->literal)
+        );
+        break;
+    case Tok::Int32:
         result = llvm::ConstantInt::get(
             llvm::Type::getInt32Ty(*mod_ctx.llvm_context),
             std::any_cast<int32_t>(expr->token->literal)
         );
         break;
-    }
-    case Tok::FloatAny:
-        if (expr->token->lexeme == "inf") {
+    case Tok::Int64:
+        result = llvm::ConstantInt::get(
+            llvm::Type::getInt64Ty(*mod_ctx.llvm_context),
+            std::any_cast<int64_t>(expr->token->literal)
+        );
+        break;
+    case Tok::UInt8:
+        result = llvm::ConstantInt::get(
+            llvm::Type::getInt8Ty(*mod_ctx.llvm_context),
+            std::any_cast<uint8_t>(expr->token->literal)
+        );
+        break;
+    case Tok::UInt16:
+        result = llvm::ConstantInt::get(
+            llvm::Type::getInt16Ty(*mod_ctx.llvm_context),
+            std::any_cast<uint16_t>(expr->token->literal)
+        );
+        break;
+    case Tok::UInt32:
+        result = llvm::ConstantInt::get(
+            llvm::Type::getInt32Ty(*mod_ctx.llvm_context),
+            std::any_cast<uint32_t>(expr->token->literal)
+        );
+        break;
+    case Tok::UInt64:
+        result = llvm::ConstantInt::get(
+            llvm::Type::getInt64Ty(*mod_ctx.llvm_context),
+            std::any_cast<uint64_t>(expr->token->literal)
+        );
+        break;
+    case Tok::Float32:
+        if (expr->token->lexeme == "inf32") {
+            result = llvm::ConstantFP::getInfinity(
+                llvm::Type::getFloatTy(*mod_ctx.llvm_context)
+            );
+        }
+        else if (expr->token->lexeme == "nan32") {
+            result = llvm::ConstantFP::getNaN(
+                llvm::Type::getFloatTy(*mod_ctx.llvm_context)
+            );
+        }
+        else {
+            result = llvm::ConstantFP::get(
+                llvm::Type::getFloatTy(*mod_ctx.llvm_context),
+                std::any_cast<float>(expr->token->literal)
+            );
+        }
+        break;
+    case Tok::Float64:
+        if (expr->token->lexeme == "inf" || expr->token->lexeme == "inf64") {
             result = llvm::ConstantFP::getInfinity(
                 llvm::Type::getDoubleTy(*mod_ctx.llvm_context)
             );
         }
-        else if (expr->token->lexeme == "NaN") {
+        else if (expr->token->lexeme == "nan" ||
+                 expr->token->lexeme == "nan64") {
             result = llvm::ConstantFP::getNaN(
                 llvm::Type::getDoubleTy(*mod_ctx.llvm_context)
             );

@@ -13,8 +13,12 @@ namespace nico {
 std::unordered_map<std::string_view, Tok> Lexer::keywords = {
     // Literals
 
-    {"inf", Tok::FloatAny},
-    {"NaN", Tok::FloatAny},
+    {"inf", Tok::Float64},
+    {"inf32", Tok::Float32},
+    {"inf64", Tok::Float64},
+    {"nan", Tok::Float64},
+    {"nan32", Tok::Float32},
+    {"nan64", Tok::Float64},
     {"true", Tok::Bool},
     {"false", Tok::Bool},
     {"nullptr", Tok::Nullptr},
@@ -306,7 +310,7 @@ void Lexer::tuple_index() {
     }
     catch (const std::out_of_range&) {
         Logger::inst().log_error(
-            Err::UnknownError,
+            Err::TupleIndexOutOfRange,
             make_token(Tok::Unknown)->location,
             "Tuple index is too large."
         );
@@ -388,17 +392,63 @@ void Lexer::numeric_literal() {
             has_exp = true;
         }
     }
-
-    // If the number ends in an f, it is a float.
-    if (peek() == 'f') {
-        // Any base is allowed to end in an `f`, even when the number is already
-        // considered a float. The exception is base 16 since `f` is a valid hex
-        // digit and is considered part of the number.
-        advance();
-        has_dot = true; // Saving an extra byte.
+    if (!has_digit) {
+        // This can only happen if the first part of the number is a base
+        // prefix.
+        auto prev_start = start;
+        start = current;
+        Logger::inst().log_error(
+            Err::UnexpectedEndOfNumber,
+            make_token(Tok::Unknown)->location,
+            "Expected base " + std::to_string(base) + " digit."
+        );
+        start = prev_start;
+        return;
     }
 
-    // Numbers cannot be followed by alphanumeric characters.
+    add_token(Tok::Unknown);
+
+    // Handle type suffixes.
+    auto token = tokens.back();
+    if (match_all("i8")) {
+        token->tok_type = Tok::Int8;
+    }
+    else if (match_all("i16")) {
+        token->tok_type = Tok::Int16;
+    }
+    else if (match_all("i32")) {
+        token->tok_type = Tok::Int32;
+    }
+    else if (match_all("i64") || match('l') || match('L')) {
+        token->tok_type = Tok::Int64;
+    }
+    else if (match_all("u8")) {
+        token->tok_type = Tok::UInt8;
+    }
+    else if (match_all("u16")) {
+        token->tok_type = Tok::UInt16;
+    }
+    else if (match_all("u32") || match('u') || match('U')) {
+        token->tok_type = Tok::UInt32;
+    }
+    else if (match_all("u64") || match_all("ul") || match_all("UL")) {
+        token->tok_type = Tok::UInt64;
+    }
+    else if (match_all("f32") || match('f') || match('F')) {
+        token->tok_type = Tok::Float32;
+    }
+    else if (match_all("f64")) {
+        token->tok_type = Tok::Float64;
+    }
+    else {
+        if (has_dot || has_exp) {
+            token->tok_type = Tok::Float64;
+        }
+        else {
+            token->tok_type = Tok::Int32;
+        }
+    }
+
     if (is_digit(peek(), 16)) {
         auto prev_start = start;
         start = current;
@@ -408,7 +458,6 @@ void Lexer::numeric_literal() {
             "Digit not allowed in numbers of base " + std::to_string(base) + "."
         );
         start = prev_start;
-        return;
     }
     else if (is_alpha(peek())) {
         auto prev_start = start;
@@ -420,29 +469,6 @@ void Lexer::numeric_literal() {
         );
         Logger::inst().log_note("Consider adding a space here.");
         start = prev_start;
-        return;
-    }
-    else if (!has_digit) {
-        // This can only happen if the first part of the number is a base
-        // prefix.
-        auto prev_start = start;
-        start = current;
-        Logger::inst().log_error(
-            Err::UnexpectedEndOfNumber,
-            make_token(Tok::Unknown)->location,
-            "Expected digits in number after base prefix."
-        );
-        start = prev_start;
-        return;
-    }
-
-    if (has_dot || has_exp) {
-        // parse_number_string(numeric_string, Tok::FloatAny);
-        add_token(Tok::FloatAny);
-    }
-    else {
-        // parse_number_string(numeric_string, Tok::IntAny, base);
-        add_token(Tok::IntAny);
     }
 }
 

@@ -382,28 +382,28 @@ TEST_CASE("Lexer basic keywords (run_lexer_test)", "[lexer]") {
 
 TEST_CASE("Lexer numbers (run_lexer_test)", "[lexer]") {
     SECTION("Numbers 1") {
-        run_lexer_test("123 123f", {Tok::IntAny, Tok::FloatAny, Tok::Eof});
+        run_lexer_test("123 123f", {Tok::Int32, Tok::Float32, Tok::Eof});
     }
 
     SECTION("Numbers 2") {
         run_lexer_test(
             "0x1A 0o17 0b101",
-            {Tok::IntAny, Tok::IntAny, Tok::IntAny, Tok::Eof}
+            {Tok::Int32, Tok::Int32, Tok::Int32, Tok::Eof}
         );
     }
 
     SECTION("Numbers 3") {
-        run_lexer_test("1.23 1.23f", {Tok::FloatAny, Tok::FloatAny, Tok::Eof});
+        run_lexer_test("1.23 1.23f", {Tok::Float64, Tok::Float32, Tok::Eof});
     }
 
     SECTION("Numbers 4") {
         run_lexer_test(
             "1.23e10 1.23e-10 1.23E10 1.23E-10 123E+10",
-            {Tok::FloatAny,
-             Tok::FloatAny,
-             Tok::FloatAny,
-             Tok::FloatAny,
-             Tok::FloatAny,
+            {Tok::Float64,
+             Tok::Float64,
+             Tok::Float64,
+             Tok::Float64,
+             Tok::Float64,
              Tok::Eof}
         );
     }
@@ -411,11 +411,11 @@ TEST_CASE("Lexer numbers (run_lexer_test)", "[lexer]") {
     SECTION("Numbers 5") {
         run_lexer_test(
             "0 0.0 0.0 0 0",
-            {Tok::IntAny,
-             Tok::FloatAny,
-             Tok::FloatAny,
-             Tok::IntAny,
-             Tok::IntAny,
+            {Tok::Int32,
+             Tok::Float64,
+             Tok::Float64,
+             Tok::Int32,
+             Tok::Int32,
              Tok::Eof}
         );
     }
@@ -423,33 +423,33 @@ TEST_CASE("Lexer numbers (run_lexer_test)", "[lexer]") {
     SECTION("Numbers 6") {
         run_lexer_test(
             "0xAbCdEf 0x0 0x00",
-            {Tok::IntAny, Tok::IntAny, Tok::IntAny, Tok::Eof}
+            {Tok::Int32, Tok::Int32, Tok::Int32, Tok::Eof}
         );
     }
 
     SECTION("Numbers 7") {
         run_lexer_test(
             "0o123 0123 0o0",
-            {Tok::IntAny, Tok::IntAny, Tok::IntAny, Tok::Eof}
+            {Tok::Int32, Tok::Int32, Tok::Int32, Tok::Eof}
         );
     }
 
     SECTION("Numbers with underscores 1") {
         run_lexer_test(
             "1_000 0b1010_1010 0o_755 0xFF_FF",
-            {Tok::IntAny, Tok::IntAny, Tok::IntAny, Tok::IntAny, Tok::Eof}
+            {Tok::Int32, Tok::Int32, Tok::Int32, Tok::Int32, Tok::Eof}
         );
     }
 
     SECTION("Numbers with underscores 2") {
         run_lexer_test(
             "1_00_00 1__0 1_0_",
-            {Tok::IntAny, Tok::IntAny, Tok::IntAny, Tok::Eof}
+            {Tok::Int32, Tok::Int32, Tok::Int32, Tok::Eof}
         );
     }
 
     SECTION("Number with negative sign") {
-        run_lexer_test("-123", {Tok::Minus, Tok::IntAny, Tok::Eof});
+        run_lexer_test("-123", {Tok::Minus, Tok::Int32, Tok::Eof});
     }
 }
 
@@ -545,7 +545,7 @@ TEST_CASE("Lexer number scanning errors", "[lexer]") {
     }
 
     SECTION("Digit in wrong base 2") {
-        run_lexer_error_test("0b2", Err::DigitInWrongBase);
+        run_lexer_error_test("0b2", Err::UnexpectedEndOfNumber);
     }
 
     SECTION("Unexpected end of number 1") {
@@ -566,6 +566,13 @@ TEST_CASE("Lexer number scanning errors", "[lexer]") {
 
     SECTION("Dot in exp part") {
         run_lexer_error_test("1.2e1.2", Err::UnexpectedDotInNumber);
+    }
+
+    SECTION("Tuple index too large") {
+        run_lexer_error_test(
+            "a.9999999999999999999999999999",
+            Err::TupleIndexOutOfRange
+        );
     }
 }
 

@@ -93,12 +93,10 @@ enum class Tok {
     _LiteralsStart,
     _NumbersStart,
     _SignedNumbersStart,
-    FloatAny,
     Float32,
     Float64,
     _IntegersStart,
     _SignedIntegersStart,
-    IntAny,
     Int8,
     Int16,
     Int32,
@@ -165,14 +163,23 @@ namespace tokens {
  *
  * Examples of literal token types are Int32, Float64, Bool, Str, etc.
  *
- * This function tests if the token type is within the range of defined literal
- * token types, making it more efficient than testing each type individually.
- *
  * @param tok The token type to check.
  * @return True if the token type is a literal, false otherwise.
  */
 inline bool is_literal(Tok tok) {
     return tok > Tok::_LiteralsStart && tok < Tok::_LiteralsEnd;
+}
+
+/**
+ * @brief Checks if a token type is for a number literal.
+ *
+ * Examples of number token types are Int32, Float64, etc.
+ *
+ * @param tok The token type to check.
+ * @return True if the token type is a number, false otherwise.
+ */
+inline bool is_number(Tok tok) {
+    return tok > Tok::_NumbersStart && tok < Tok::_NumbersEnd;
 }
 
 /**

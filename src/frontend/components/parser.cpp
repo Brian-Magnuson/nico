@@ -332,14 +332,12 @@ std::optional<std::shared_ptr<Expr>> Parser::number_literal() {
     case Tok::UInt64:
         parse_result = parse_number<uint64_t>(numeric_string, base);
         break;
-    case Tok::IntAny:
     case Tok::Int32:
         parse_result = parse_number<int32_t>(numeric_string, base);
         break;
     case Tok::Float32:
         parse_result = parse_number<float>(numeric_string);
         break;
-    case Tok::FloatAny:
     case Tok::Float64:
         parse_result = parse_number<double>(numeric_string);
         break;
@@ -366,7 +364,7 @@ std::optional<std::shared_ptr<Expr>> Parser::number_literal() {
 }
 
 std::optional<std::shared_ptr<Expr>> Parser::primary() {
-    if (peek()->tok_type == Tok::IntAny || peek()->tok_type == Tok::FloatAny) {
+    if (tokens::is_number(peek()->tok_type)) {
         return number_literal();
     }
     if (match({Tok::Bool, Tok::Nullptr, Tok::Str})) {
