@@ -50,9 +50,25 @@ Note that the type of an integer will never be inferred from the surrounding con
 let x: i16 = 42      // Error: 42 is of type i32, not i16
 ```
 
+One might expect base-2, base-8, and base-16 literals to be interpreted as raw bit patterns for the desired type. However, this is not the case.
+
+Although they are written like numbers, bit patterns are not numbers; they are representations of numbers. And integer literals are parsed as numbers, not bit patterns.
+This means that signed number representations such as two's complement are completely ignored. 
+For example, the literal `0b11111111_i8` can be interpreted in two ways:
+- The number 255 written in base 2, stored in an 8-bit signed integer
+- The 8-bit signed integer bit pattern for -1 in two's complement
+
+Our parser always follows the first interpretation. So `0b11111111_i8` is a parser error, because 255 cannot be represented as an 8-bit signed integer.
+The only way to write a negative number is to either use a negative sign or cast an unsigned integer to a signed integer:
+```
+-0b1_i8              // OK: -1
+0b1111_1111_u8 as i8 // OK: -1
+0b1111_1111_i8       // Error: 255 cannot be represented as i8
+```
+
 ### Floating-point types
 
-The floating-point types are `f32` and `f64`, representing 32-bit and 64-bit IEEE-754 floating-point numbers respectively.
+The floating-point types are `f32` and `f64`, representing 32-bit and 64-bit IEEE 754 floating-point numbers respectively.
 
 Floating-point literals may be written in decimal or scientific notation:
 ```
@@ -61,9 +77,13 @@ Floating-point literals may be written in decimal or scientific notation:
 2.5E+3      // Same as above
 ```
 
-Base prefixes are not allowed for floating-point literals.
+Base prefixes are not allowed for floating-point literals. 
+You cannot write FP-numbers using binary, octal, or hexadecimal notation.
+This is because we always interpret FP literals as numbers, not bit patterns (even though the bit patterns for FP numbers are well established),
+and there is no standard way to represent non-natural numbers in these bases.
 
-FP literals with no fractional part require a `.0` to distinguish them from integer literals. FP literals less than 1 require a leading `0` before the decimal point to be recognized as numbers.
+FP literals with no fractional part require either a `.0` or a type suffix like `f32` or `f64` (see below) to distinguish them from integer literals. 
+FP literals with an absolute value between 0 (inclusive) and 1 (exclusive) require a leading `0` before the decimal point to be recognized as numbers.
 ```
 42.0
 0.5

@@ -419,7 +419,7 @@ void Lexer::numeric_literal() {
     else if (match_all("i32")) {
         token->tok_type = Tok::Int32;
     }
-    else if (match_all("i64") || match('l') || match('L')) {
+    else if (match_all("i64")) {
         token->tok_type = Tok::Int64;
     }
     else if (match_all("u8")) {
@@ -428,17 +428,29 @@ void Lexer::numeric_literal() {
     else if (match_all("u16")) {
         token->tok_type = Tok::UInt16;
     }
-    else if (match_all("u32") || match('u') || match('U')) {
+    else if (match_all("u32")) {
         token->tok_type = Tok::UInt32;
     }
-    else if (match_all("u64") || match_all("ul") || match_all("UL")) {
+    else if (match_all("u64")) {
         token->tok_type = Tok::UInt64;
     }
-    else if (match_all("f32") || match('f') || match('F')) {
+    else if (match_all("f32")) {
         token->tok_type = Tok::Float32;
     }
     else if (match_all("f64")) {
         token->tok_type = Tok::Float64;
+    }
+    else if (match('l') || match('L')) {
+        token->tok_type = Tok::Int64;
+    }
+    else if (match('u') || match('U')) {
+        token->tok_type = Tok::UInt32;
+    }
+    else if (match_all("ul") || match_all("UL")) {
+        token->tok_type = Tok::UInt64;
+    }
+    else if (match('f') || match('F')) {
+        token->tok_type = Tok::Float32;
     }
     else {
         if (has_dot || has_exp) {

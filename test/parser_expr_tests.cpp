@@ -116,6 +116,28 @@ TEST_CASE("Parser numbers", "[parser]") {
         );
     }
 
+    SECTION("Integers 4") {
+        run_parser_expr_test(
+            "1_000_000; 0b0110_1010; 0xB_AD_C0_DE",
+            {"(expr (lit 1000000))",
+             "(expr (lit 106))",
+             "(expr (lit 195936478))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Integers 5") {
+        run_parser_expr_test(
+            "10; _10; 10_; 1__0; 10__",
+            {"(expr (lit 10))",
+             "(expr (nameref _10))",
+             "(expr (lit 10))",
+             "(expr (lit 10))",
+             "(expr (lit 10))",
+             "(stmt:eof)"}
+        );
+    }
+
     SECTION("Int 32 Max") {
         run_parser_expr_test(
             "2147483647",
@@ -127,6 +149,73 @@ TEST_CASE("Parser numbers", "[parser]") {
         run_parser_expr_test(
             "-2147483648",
             {"(expr (lit -2147483648))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Int 8") {
+        run_parser_expr_test(
+            "37_i8; -128_i8; 127_i8; 0b0111_1111_i8; 0x7F_i8",
+            {"(expr (lit 37))",
+             "(expr (lit -128))",
+             "(expr (lit 127))",
+             "(expr (lit 127))",
+             "(expr (lit 127))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Int 16") {
+        run_parser_expr_test(
+            "32000_i16; -32768_i16; 32767_i16; 0x7FFF_i16",
+            {"(expr (lit 32000))",
+             "(expr (lit -32768))",
+             "(expr (lit 32767))",
+             "(expr (lit 32767))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Int 64") {
+        run_parser_expr_test(
+            "9223372036854775807_i64; -9223372036854775808_i64; "
+            "0x7FFFFFFFFFFFFFFF_i64",
+            {"(expr (lit 9223372036854775807))",
+             "(expr (lit -9223372036854775808))",
+             "(expr (lit 9223372036854775807))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("UInt 8") {
+        run_parser_expr_test(
+            "255_u8; 0b1111_1111_u8; 0xFF_u8",
+            {"(expr (lit 255))",
+             "(expr (lit 255))",
+             "(expr (lit 255))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("UInt 16") {
+        run_parser_expr_test(
+            "65535_u16; 0xFFFF_u16",
+            {"(expr (lit 65535))", "(expr (lit 65535))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("UInt 32") {
+        run_parser_expr_test(
+            "4294967295_u32; 0xFFFFFFFF_u32",
+            {"(expr (lit 4294967295))", "(expr (lit 4294967295))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("UInt 64") {
+        run_parser_expr_test(
+            "18446744073709551615_u64; 0xFFFFFFFFFFFFFFFF_u64",
+            {"(expr (lit 18446744073709551615))",
+             "(expr (lit 18446744073709551615))",
+             "(stmt:eof)"}
         );
     }
 
