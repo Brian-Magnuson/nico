@@ -8,18 +8,11 @@ namespace nico {
 
 std::any AnnotationChecker::visit(Annotation::NameRef* annotation) {
     std::shared_ptr<Type> type = nullptr;
-    // Temporary solution: only allow primitive types.
-    if (annotation->name.to_string() == "i32") {
-        type = std::make_shared<Type::Int>(true, 32);
-    }
-    else if (annotation->name.to_string() == "f64") {
-        type = std::make_shared<Type::Float>(64);
-    }
-    else if (annotation->name.to_string() == "bool") {
-        type = std::make_shared<Type::Bool>();
-    }
-    else if (annotation->name.to_string() == "str") {
-        type = std::make_shared<Type::Str>();
+    auto node = symbol_tree->search_name(annotation->name);
+    if (auto type_node = std::dynamic_pointer_cast<Node::ITypeNode>(
+            node.value_or(nullptr)
+        )) {
+        type = type_node->type;
     }
     else {
         Logger::inst().log_error(

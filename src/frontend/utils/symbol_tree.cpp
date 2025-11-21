@@ -12,8 +12,64 @@ void SymbolTree::install_primitive_types() {
 
     new_node = std::make_shared<Node::PrimitiveType>(
         reserved_scope,
+        "i8",
+        std::make_shared<Type::Int>(true, 8)
+    );
+    new_node->initialize_node();
+
+    new_node = std::make_shared<Node::PrimitiveType>(
+        reserved_scope,
+        "i16",
+        std::make_shared<Type::Int>(true, 16)
+    );
+    new_node->initialize_node();
+
+    new_node = std::make_shared<Node::PrimitiveType>(
+        reserved_scope,
         "i32",
         std::make_shared<Type::Int>(true, 32)
+    );
+    new_node->initialize_node();
+
+    new_node = std::make_shared<Node::PrimitiveType>(
+        reserved_scope,
+        "i64",
+        std::make_shared<Type::Int>(true, 64)
+    );
+    new_node->initialize_node();
+
+    new_node = std::make_shared<Node::PrimitiveType>(
+        reserved_scope,
+        "u8",
+        std::make_shared<Type::Int>(false, 8)
+    );
+    new_node->initialize_node();
+
+    new_node = std::make_shared<Node::PrimitiveType>(
+        reserved_scope,
+        "u16",
+        std::make_shared<Type::Int>(false, 16)
+    );
+    new_node->initialize_node();
+
+    new_node = std::make_shared<Node::PrimitiveType>(
+        reserved_scope,
+        "u32",
+        std::make_shared<Type::Int>(false, 32)
+    );
+    new_node->initialize_node();
+
+    new_node = std::make_shared<Node::PrimitiveType>(
+        reserved_scope,
+        "u64",
+        std::make_shared<Type::Int>(false, 64)
+    );
+    new_node->initialize_node();
+
+    new_node = std::make_shared<Node::PrimitiveType>(
+        reserved_scope,
+        "f32",
+        std::make_shared<Type::Float>(32)
     );
     new_node->initialize_node();
 
@@ -28,6 +84,13 @@ void SymbolTree::install_primitive_types() {
         reserved_scope,
         "bool",
         std::make_shared<Type::Bool>()
+    );
+    new_node->initialize_node();
+
+    new_node = std::make_shared<Node::PrimitiveType>(
+        reserved_scope,
+        "str",
+        std::make_shared<Type::Str>()
     );
     new_node->initialize_node();
 
