@@ -165,6 +165,10 @@ std::any AstPrinter::visit(Expr::Call* expr, bool as_lvalue) {
     return str;
 }
 
+std::any AstPrinter::visit(Expr::SizeOf* expr, bool as_lvalue) {
+    return std::string("(sizeof " + expr->annotation->to_string() + ")");
+}
+
 std::any AstPrinter::visit(Expr::NameRef* expr, bool as_lvalue) {
     return std::string("(nameref " + expr->name.to_string() + ")");
 }

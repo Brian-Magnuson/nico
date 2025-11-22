@@ -603,6 +603,18 @@ std::any CodeGenerator::visit(Expr::Call* expr, bool as_lvalue) {
     return result;
 }
 
+std::any CodeGenerator::visit(Expr::SizeOf* expr, bool as_lvalue) {
+    llvm::Value* result = nullptr;
+    size_t type_size = expr->type->get_llvm_type_size(builder);
+
+    result = llvm::ConstantInt::get(
+        llvm::Type::getInt64Ty(*mod_ctx.llvm_context),
+        type_size
+    );
+
+    return result;
+}
+
 std::any CodeGenerator::visit(Expr::NameRef* expr, bool as_lvalue) {
     llvm::Value* result = nullptr;
     llvm::Value* ptr = expr->field_entry.lock()->get_llvm_allocation(builder);

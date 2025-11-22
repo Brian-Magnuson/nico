@@ -80,7 +80,7 @@ TEST_CASE("Local variable declarations", "[checker]") {
     }
 
     SECTION("Typeof annotation") {
-        run_checker_test("let a = 1 let b: typeof (a) = 2");
+        run_checker_test("let a = 1 let b: typeof(a) = 2");
     }
 
     SECTION("Let type mismatch 1") {

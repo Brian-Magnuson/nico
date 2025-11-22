@@ -865,6 +865,25 @@ std::any LocalChecker::visit(Expr::Call* expr, bool as_lvalue) {
     return std::any();
 }
 
+std::any LocalChecker::visit(Expr::SizeOf* expr, bool as_lvalue) {
+    if (as_lvalue) {
+        Logger::inst().log_error(
+            Err::NotAPossibleLValue,
+            *expr->location,
+            "Sizeof expression cannot be an lvalue."
+        );
+        return std::any();
+    }
+
+    auto type_any = expr->annotation->accept(&annotation_checker);
+    if (!type_any.has_value())
+        return std::any();
+    auto type = std::any_cast<std::shared_ptr<Type>>(type_any);
+    expr->type = std::make_shared<Type::Int>(false, 64); // Sizeof returns u64.
+
+    return std::any();
+}
+
 std::any LocalChecker::visit(Expr::NameRef* expr, bool as_lvalue) {
     auto node = symbol_tree->search_name(expr->name);
 

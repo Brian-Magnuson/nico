@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include <llvm/IR/DataLayout.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Type.h>
 
@@ -240,6 +241,27 @@ public:
     virtual bool is_assignable_to(const Type& target_type) const {
         return *this == target_type;
     }
+
+    /**
+     * @brief Get the size of the LLVM type in bytes corresponding to this type.
+     *
+     * Internally, this function calls `get_llvm_type` and uses the data layout
+     * of the module.
+     *
+     * Note: This is NOT the size of the type object itself, but the size of the
+     * LLVM type that this object represents. For example, if this type object
+     * represents the `i32` LLVM type, this function will return 4.
+     *
+     * @param builder The LLVM IR builder to use for generating the type.
+     * @return The size of the LLVM type in bytes.
+     */
+    size_t
+    get_llvm_type_size(std::unique_ptr<llvm::IRBuilder<>>& builder) const {
+        llvm::Type* llvm_type = get_llvm_type(builder);
+        llvm::DataLayout data_layout =
+            builder->GetInsertBlock()->getModule()->getDataLayout();
+        return data_layout.getTypeAllocSize(llvm_type);
+    }
 };
 
 // MARK: Stmt
@@ -312,6 +334,7 @@ public:
     class Cast;
     class Access;
     class Call;
+    class SizeOf;
     class NameRef;
     class Literal;
 
@@ -338,6 +361,7 @@ public:
         virtual std::any visit(Cast* expr, bool as_lvalue) = 0;
         virtual std::any visit(Access* expr, bool as_lvalue) = 0;
         virtual std::any visit(Call* expr, bool as_lvalue) = 0;
+        virtual std::any visit(SizeOf* expr, bool as_lvalue) = 0;
         virtual std::any visit(NameRef* expr, bool as_lvalue) = 0;
         virtual std::any visit(Literal* expr, bool as_lvalue) = 0;
         virtual std::any visit(Tuple* expr, bool as_lvalue) = 0;

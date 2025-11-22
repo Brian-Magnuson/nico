@@ -489,6 +489,35 @@ public:
 };
 
 /**
+ * @brief A sizeof expression.
+ *
+ * Sizeof expressions are used to get the size of a type in bytes using the
+ * `sizeof` keyword.
+ *
+ * A sizeof expression consists of the `sizeof` keyword token followed by a type
+ * annotation.
+ */
+class Expr::SizeOf : public Expr {
+public:
+    // The 'sizeof' keyword token.
+    std::shared_ptr<Token> sizeof_token;
+    // The type annotation whose size is to be determined.
+    std::shared_ptr<Annotation> annotation;
+
+    SizeOf(
+        std::shared_ptr<Token> sizeof_token,
+        std::shared_ptr<Annotation> annotation
+    )
+        : sizeof_token(sizeof_token), annotation(annotation) {
+        location = &sizeof_token->location;
+    }
+
+    std::any accept(Visitor* visitor, bool as_lvalue) override {
+        return visitor->visit(this, as_lvalue);
+    }
+};
+
+/**
  * @brief A name reference expression.
  *
  * Name reference expressions refer to variables or functions by name.
