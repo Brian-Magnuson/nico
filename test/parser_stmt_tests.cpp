@@ -72,21 +72,21 @@ TEST_CASE("Parser let statements", "[parser]") {
     SECTION("Let statements 1") {
         run_parser_stmt_test(
             "let a = 1",
-            {"(stmt:let a (lit 1))", "(stmt:eof)"}
+            {"(stmt:let a (lit i32 1))", "(stmt:eof)"}
         );
     }
 
     SECTION("Let statements 2") {
         run_parser_stmt_test(
             "let var a = 1",
-            {"(stmt:let var a (lit 1))", "(stmt:eof)"}
+            {"(stmt:let var a (lit i32 1))", "(stmt:eof)"}
         );
     }
 
     SECTION("Let statements 3") {
         run_parser_stmt_test(
             "let a: i32 = 1",
-            {"(stmt:let a i32 (lit 1))", "(stmt:eof)"}
+            {"(stmt:let a i32 (lit i32 1))", "(stmt:eof)"}
         );
     }
 
@@ -107,14 +107,14 @@ TEST_CASE("Parser let statements", "[parser]") {
     SECTION("Let statements 6") {
         run_parser_stmt_test(
             "let a: i32 let b = 2",
-            {"(stmt:let a i32)", "(stmt:let b (lit 2))", "(stmt:eof)"}
+            {"(stmt:let a i32)", "(stmt:let b (lit i32 2))", "(stmt:eof)"}
         );
     }
 
     SECTION("Let statements 7") {
         run_parser_stmt_test(
             "let var a: @i32 = 10",
-            {"(stmt:let var a @i32 (lit 10))", "(stmt:eof)"}
+            {"(stmt:let var a @i32 (lit i32 10))", "(stmt:eof)"}
         );
     }
 
@@ -151,7 +151,7 @@ TEST_CASE("Parser function statements", "[parser]") {
     SECTION("Func statement 3") {
         run_parser_stmt_test(
             "func f3() -> i32 => 10",
-            {"(stmt:func f3 i32 () => (block (stmt:yield => (lit 10))))",
+            {"(stmt:func f3 i32 () => (block (stmt:yield => (lit i32 10))))",
              "(stmt:eof)"}
         );
     }
@@ -160,7 +160,7 @@ TEST_CASE("Parser function statements", "[parser]") {
         run_parser_stmt_test(
             "func f4(x: i32) -> i32 => x + 1",
             {"(stmt:func f4 i32 (x i32) => (block (stmt:yield => (binary + "
-             "(nameref x) (lit 1)))))",
+             "(nameref x) (lit i32 1)))))",
              "(stmt:eof)"}
         );
     }
@@ -169,7 +169,7 @@ TEST_CASE("Parser function statements", "[parser]") {
         run_parser_stmt_test(
             "func f5(var y: f64) { y += 1.0 }",
             {"(stmt:func f5 (var y f64) => (block (expr (assign (nameref y) "
-             "(binary + (nameref y) (lit 1.000000))))))",
+             "(binary + (nameref y) (lit f64 1.000000))))))",
              "(stmt:eof)"}
         );
     }
@@ -177,8 +177,8 @@ TEST_CASE("Parser function statements", "[parser]") {
     SECTION("Func statement 6") {
         run_parser_stmt_test(
             "func f6(a: i32 = 0) -> i32 => a * 2",
-            {"(stmt:func f6 i32 (a i32 (lit 0)) => (block (stmt:yield => "
-             "(binary * (nameref a) (lit 2)))))",
+            {"(stmt:func f6 i32 (a i32 (lit i32 0)) => (block (stmt:yield => "
+             "(binary * (nameref a) (lit i32 2)))))",
              "(stmt:eof)"}
         );
     }
@@ -230,28 +230,28 @@ TEST_CASE("Parser print statements", "[parser]") {
     SECTION("Print statements 1") {
         run_parser_stmt_test(
             "printout 1",
-            {"(stmt:print (lit 1))", "(stmt:eof)"}
+            {"(stmt:print (lit i32 1))", "(stmt:eof)"}
         );
     }
 
     SECTION("Print statements 2") {
         run_parser_stmt_test(
             "printout 1, 2",
-            {"(stmt:print (lit 1) (lit 2))", "(stmt:eof)"}
+            {"(stmt:print (lit i32 1) (lit i32 2))", "(stmt:eof)"}
         );
     }
 
     SECTION("Print statements 3") {
         run_parser_stmt_test(
             "printout 1, 2, 3",
-            {"(stmt:print (lit 1) (lit 2) (lit 3))", "(stmt:eof)"}
+            {"(stmt:print (lit i32 1) (lit i32 2) (lit i32 3))", "(stmt:eof)"}
         );
     }
 
     SECTION("Print statements 4") {
         run_parser_stmt_test(
             "printout 1 / 2",
-            {"(stmt:print (binary / (lit 1) (lit 2)))", "(stmt:eof)"}
+            {"(stmt:print (binary / (lit i32 1) (lit i32 2)))", "(stmt:eof)"}
         );
     }
 
@@ -269,14 +269,14 @@ TEST_CASE("Parser statement separation", "[parser]") {
     SECTION("Unseparated binary statement") {
         run_parser_stmt_test(
             "1 - 2",
-            {"(expr (binary - (lit 1) (lit 2)))", "(stmt:eof)"}
+            {"(expr (binary - (lit i32 1) (lit i32 2)))", "(stmt:eof)"}
         );
     }
 
     SECTION("Separated unary statements") {
         run_parser_stmt_test(
             "1; - 2",
-            {"(expr (lit 1))", "(expr (lit -2))", "(stmt:eof)"}
+            {"(expr (lit i32 1))", "(expr (lit i32 -2))", "(stmt:eof)"}
         );
     }
 }
@@ -285,7 +285,7 @@ TEST_CASE("Parser non-declaring statements", "[parser]") {
     SECTION("Yield statement") {
         run_parser_stmt_test(
             "yield 42",
-            {"(stmt:yield yield (lit 42))", "(stmt:eof)"}
+            {"(stmt:yield yield (lit i32 42))", "(stmt:eof)"}
         );
     }
 
@@ -296,7 +296,7 @@ TEST_CASE("Parser non-declaring statements", "[parser]") {
     SECTION("Break statement") {
         run_parser_stmt_test(
             "break 10",
-            {"(stmt:yield break (lit 10))", "(stmt:eof)"}
+            {"(stmt:yield break (lit i32 10))", "(stmt:eof)"}
         );
     }
 }

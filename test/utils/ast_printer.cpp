@@ -173,34 +173,44 @@ std::any AstPrinter::visit(Expr::Literal* expr, bool as_lvalue) {
     std::string value;
     switch (expr->token->tok_type) {
     case Tok::Int8:
-        value = std::to_string(std::any_cast<int8_t>(expr->token->literal));
+        value =
+            "i8 " + std::to_string(std::any_cast<int8_t>(expr->token->literal));
         break;
     case Tok::Int16:
-        value = std::to_string(std::any_cast<int16_t>(expr->token->literal));
+        value = "i16 " +
+                std::to_string(std::any_cast<int16_t>(expr->token->literal));
         break;
     case Tok::Int32:
-        value = std::to_string(std::any_cast<int32_t>(expr->token->literal));
+        value = "i32 " +
+                std::to_string(std::any_cast<int32_t>(expr->token->literal));
         break;
     case Tok::Int64:
-        value = std::to_string(std::any_cast<int64_t>(expr->token->literal));
+        value = "i64 " +
+                std::to_string(std::any_cast<int64_t>(expr->token->literal));
         break;
     case Tok::UInt8:
-        value = std::to_string(std::any_cast<uint8_t>(expr->token->literal));
+        value = "u8 " +
+                std::to_string(std::any_cast<uint8_t>(expr->token->literal));
         break;
     case Tok::UInt16:
-        value = std::to_string(std::any_cast<uint16_t>(expr->token->literal));
+        value = "u16 " +
+                std::to_string(std::any_cast<uint16_t>(expr->token->literal));
         break;
     case Tok::UInt32:
-        value = std::to_string(std::any_cast<uint32_t>(expr->token->literal));
+        value = "u32 " +
+                std::to_string(std::any_cast<uint32_t>(expr->token->literal));
         break;
     case Tok::UInt64:
-        value = std::to_string(std::any_cast<uint64_t>(expr->token->literal));
+        value = "u64 " +
+                std::to_string(std::any_cast<uint64_t>(expr->token->literal));
         break;
     case Tok::Float32:
-        value = std::to_string(std::any_cast<float>(expr->token->literal));
+        value =
+            "f32 " + std::to_string(std::any_cast<float>(expr->token->literal));
         break;
     case Tok::Float64:
-        value = std::to_string(std::any_cast<double>(expr->token->literal));
+        value = "f64 " +
+                std::to_string(std::any_cast<double>(expr->token->literal));
         break;
     default:
         value = std::string(expr->token->lexeme);
