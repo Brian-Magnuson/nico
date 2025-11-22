@@ -563,6 +563,17 @@ std::any LocalChecker::visit(Expr::Unary* expr, bool as_lvalue) {
             );
             return std::any();
         }
+        // Type cannot be an unsigned integer.
+        if (auto int_type = std::dynamic_pointer_cast<Type::Int>(r_type)) {
+            if (!int_type->is_signed) {
+                Logger::inst().log_error(
+                    Err::NegativeOnUnsignedType,
+                    expr->op->location,
+                    "Cannot use unary '-' on unsigned integer type."
+                );
+                return std::any();
+            }
+        }
         expr->type = r_type;
         return std::any();
     case Tok::KwNot:
@@ -958,8 +969,7 @@ std::any LocalChecker::visit(Expr::Literal* expr, bool as_lvalue) {
     default:
         panic(
             "LocalChecker::visit(Expr::Literal*): Could not handle case "
-            "for "
-            "token type " +
+            "for token type " +
             std::to_string(static_cast<int>(expr->token->tok_type))
         );
     }

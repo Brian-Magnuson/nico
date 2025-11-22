@@ -95,6 +95,10 @@ TEST_CASE("Local variable declarations", "[checker]") {
         run_checker_test("let a = true let b: i32 = a", Err::LetTypeMismatch);
     }
 
+    SECTION("Let type mismatch 4") {
+        run_checker_test("let var a: i32 = 1_i8", Err::LetTypeMismatch);
+    }
+
     SECTION("Undeclared identifier") {
         run_checker_test("let a = b", Err::UndeclaredName);
     }
@@ -135,6 +139,10 @@ TEST_CASE("Local unary expressions", "[checker]") {
 
     SECTION("Unary type mismatch 3") {
         run_checker_test("let a = !1.0", Err::NoOperatorOverload);
+    }
+
+    SECTION("Negative on unsigned type") {
+        run_checker_test("-(1_u32)", Err::NegativeOnUnsignedType);
     }
 }
 

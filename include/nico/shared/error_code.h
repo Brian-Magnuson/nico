@@ -64,7 +64,7 @@ enum class Err {
     // expected type.
     NumberOutOfRange,
     // A negative sign was found before an unsigned integer literal.
-    NegativeOnUnsignedInteger,
+    NegativeOnUnsignedLiteral,
     // A type was expected but not found.
     NotAType,
     // An unexpected token was found where specific token was expected.
@@ -155,6 +155,8 @@ enum class Err {
     OperatorNotValidForExpr,
     // An operator was found that cannot be used with the given types.
     NoOperatorOverload,
+    // A negative sign was found on an unsigned type.
+    NegativeOnUnsignedType,
     // A pointer dereference was attempted on a non-pointer type.
     DereferenceNonPointer,
     // An attempt was made to dereference a pointer whose type is `nullptr`.

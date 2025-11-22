@@ -283,6 +283,14 @@ std::optional<std::shared_ptr<Expr>> Parser::loop() {
 std::optional<std::shared_ptr<Expr>> Parser::number_literal() {
     std::string numeric_string;
     if (current > 0 && previous()->tok_type == Tok::Negative) {
+        if (tokens::is_unsigned_integer(peek()->tok_type)) {
+            Logger::inst().log_error(
+                Err::NegativeOnUnsignedLiteral,
+                previous()->location,
+                "Cannot use unary '-' on unsigned integer literal."
+            );
+            return std::nullopt;
+        }
         numeric_string += "-";
     }
     auto lexeme = peek()->lexeme;
@@ -519,22 +527,6 @@ std::optional<std::shared_ptr<Expr>> Parser::unary() {
         else if (tokens::is_signed_number(previous()->tok_type))
             // number_literal already handles the negation.
             return right;
-        else if (tokens::is_unsigned_integer(previous()->tok_type)) {
-            /*
-            Note: this error is actually handled in two places:
-            1. When parsing the number, if the negative sign is right next to
-            the number, e.g. `-42_u8`, the number will be reported as "out of
-            range"
-            2. If the negative sign is not next to the number, e.g. `-(42_u8)`,
-            we reach this point in the parser and report the error here.
-            */
-            Logger::inst().log_error(
-                Err::NegativeOnUnsignedInteger,
-                token->location,
-                "Cannot apply unary '-' to unsigned integer literal."
-            );
-            return std::nullopt;
-        }
 
         return std::make_shared<Expr::Unary>(token, *right);
     }

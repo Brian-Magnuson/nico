@@ -882,6 +882,10 @@ TEST_CASE("Parser number errors", "[parser]") {
             Err::NumberOutOfRange
         );
     }
+
+    SECTION("Negative UInt") {
+        run_parser_expr_error_test("-1_u32", Err::NegativeOnUnsignedLiteral);
+    }
 }
 
 TEST_CASE("Parser block errors", "[parser]") {
