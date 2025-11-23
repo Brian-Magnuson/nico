@@ -1,6 +1,7 @@
 #ifndef NICO_TYPE_NODE_H
 #define NICO_TYPE_NODE_H
 
+#include <cinttypes>
 #include <string>
 #include <unordered_set>
 #include <utility>
@@ -66,7 +67,49 @@ public:
         llvm::Value* value,
         bool include_quotes = false
     ) const override {
-        return {"%d", {value}};
+        const char* format_chars;
+        if (is_signed) {
+            switch (width) {
+            case 8:
+                format_chars = PRId8;
+                break;
+            case 16:
+                format_chars = PRId16;
+                break;
+            case 32:
+                format_chars = PRId32;
+                break;
+            case 64:
+                format_chars = PRId64;
+                break;
+            default:
+                format_chars =
+                    "lld"; // Default to long long for non-standard widths.
+                break;
+            }
+        }
+        else {
+            switch (width) {
+            case 8:
+                format_chars = PRIu8;
+                break;
+            case 16:
+                format_chars = PRIu16;
+                break;
+            case 32:
+                format_chars = PRIu32;
+                break;
+            case 64:
+                format_chars = PRIu64;
+                break;
+            default:
+                format_chars = "llu"; // Default to unsigned long long for
+                                      // non-standard widths.
+                break;
+            }
+        }
+        std::string format_str = "%" + std::string(format_chars);
+        return {format_str, {value}};
     }
 };
 

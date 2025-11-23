@@ -291,6 +291,30 @@ TEST_CASE("JIT assign expressions", "[jit]") {
     }
 }
 
+TEST_CASE("JIT sizeof expressions", "[jit]") {
+    SECTION("Size of int") {
+        run_jit_test(R"(printout sizeof i32)", "4");
+    }
+
+    SECTION("Size of float") {
+        run_jit_test(R"(printout sizeof f64)", "8");
+    }
+
+    SECTION("Size of bool") {
+        run_jit_test(R"(printout sizeof bool)", "1");
+    }
+
+    SECTION("Size of type of") {
+        run_jit_test(
+            R"(
+        let var x = 42_i16
+        printout sizeof typeof(x)
+        )",
+            "2"
+        );
+    }
+}
+
 TEST_CASE("JIT block expressions", "[jit]") {
     SECTION("Simple block expression") {
         run_jit_test(R"(block { yield 5 })");

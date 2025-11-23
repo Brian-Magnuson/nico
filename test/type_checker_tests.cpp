@@ -146,6 +146,24 @@ TEST_CASE("Local unary expressions", "[checker]") {
     }
 }
 
+TEST_CASE("Local sizeof expressions", "[checker]") {
+    SECTION("Valid sizeof expression 1") {
+        run_checker_test("let a: u64 = sizeof i32");
+    }
+
+    SECTION("Valid sizeof expression 2") {
+        run_checker_test("let a: u64 = sizeof @i32");
+    }
+
+    SECTION("Valid sizeof expression 3") {
+        run_checker_test("let a: u64 = sizeof var@i32");
+    }
+
+    SECTION("Valid sizeof expression 4") {
+        run_checker_test("let x: i32 = 1 let var a: u64 = sizeof typeof(x)");
+    }
+}
+
 TEST_CASE("Local address-of expressions", "[checker]") {
     SECTION("Valid address-of expression 1") {
         run_checker_test("let a = 1 let b: @i32 = @a");

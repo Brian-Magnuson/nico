@@ -24,6 +24,8 @@ enum class Err {
     UnexpectedChar,
     // A closing grouping token was found without a matching opening token.
     UnclosedGrouping,
+    // A grouping token was found to close without an opening token.
+    ClosingUnopenedGrouping,
     // A multi-line comment was not closed at the end of the file.
     UnclosedComment,
     // A token was found to close a multi-line comment without an opening token.

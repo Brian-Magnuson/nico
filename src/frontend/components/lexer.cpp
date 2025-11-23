@@ -634,7 +634,14 @@ void Lexer::scan_token() {
         break;
     case ')': {
         auto t = make_token(Tok::RParen);
-        if (grouping_token_stack.empty() || grouping_token_stack.back() != c) {
+        if (grouping_token_stack.empty()) {
+            Logger::inst().log_error(
+                Err::ClosingUnopenedGrouping,
+                t->location,
+                "Found ')' without '('."
+            );
+        }
+        else if (grouping_token_stack.back() != c) {
             Logger::inst().log_error(
                 Err::UnclosedGrouping,
                 t->location,
@@ -650,7 +657,14 @@ void Lexer::scan_token() {
     }
     case '}': {
         auto t = make_token(Tok::RBrace);
-        if (grouping_token_stack.empty() || grouping_token_stack.back() != c) {
+        if (grouping_token_stack.empty()) {
+            Logger::inst().log_error(
+                Err::ClosingUnopenedGrouping,
+                t->location,
+                "Found '}' without '{'."
+            );
+        }
+        else if (grouping_token_stack.back() != c) {
             Logger::inst().log_error(
                 Err::UnclosedGrouping,
                 t->location,
@@ -666,7 +680,14 @@ void Lexer::scan_token() {
     }
     case ']': {
         auto t = make_token(Tok::RSquare);
-        if (grouping_token_stack.empty() || grouping_token_stack.back() != c) {
+        if (grouping_token_stack.empty()) {
+            Logger::inst().log_error(
+                Err::ClosingUnopenedGrouping,
+                t->location,
+                "Found ']' without '['."
+            );
+        }
+        else if (grouping_token_stack.back() != c) {
             Logger::inst().log_error(
                 Err::UnclosedGrouping,
                 t->location,

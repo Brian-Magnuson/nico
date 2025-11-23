@@ -503,6 +503,8 @@ public:
     std::shared_ptr<Token> sizeof_token;
     // The type annotation whose size is to be determined.
     std::shared_ptr<Annotation> annotation;
+    // The type in the expression; to be filled in by the type checker.
+    std::shared_ptr<Type> inner_type;
 
     SizeOf(
         std::shared_ptr<Token> sizeof_token,

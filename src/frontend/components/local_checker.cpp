@@ -879,6 +879,7 @@ std::any LocalChecker::visit(Expr::SizeOf* expr, bool as_lvalue) {
     if (!type_any.has_value())
         return std::any();
     auto type = std::any_cast<std::shared_ptr<Type>>(type_any);
+    expr->inner_type = type;
     expr->type = std::make_shared<Type::Int>(false, 64); // Sizeof returns u64.
 
     return std::any();

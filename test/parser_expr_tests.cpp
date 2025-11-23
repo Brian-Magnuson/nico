@@ -404,6 +404,32 @@ TEST_CASE("Parser expressions", "[parser]") {
     }
 }
 
+TEST_CASE("Parser sizeof", "[parser]") {
+    SECTION("Sizeof type") {
+        run_parser_expr_test(
+            "sizeof i32 sizeof u8 sizeof f64",
+            {"(expr (sizeof i32))",
+             "(expr (sizeof u8))",
+             "(expr (sizeof f64))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Sizeof typeof") {
+        run_parser_expr_test(
+            "sizeof typeof(123_i8)",
+            {"(expr (sizeof typeof(<expr@1:15>)))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Sizeof tuple") {
+        run_parser_expr_test(
+            "sizeof i32 sizeof (i32)",
+            {"(expr (sizeof i32))", "(expr (sizeof (i32)))", "(stmt:eof)"}
+        );
+    }
+}
+
 TEST_CASE("Parser groupings and tuples", "[parser]") {
     SECTION("Grouping 1") {
         run_parser_expr_test("(1)", {"(expr (lit i32 1))", "(stmt:eof)"});
@@ -421,6 +447,13 @@ TEST_CASE("Parser groupings and tuples", "[parser]") {
             "(1 + 2) * 3",
             {"(expr (binary * (binary + (lit i32 1) (lit i32 2)) (lit i32 3)))",
              "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Grouping 4") {
+        run_parser_expr_test(
+            "(1); (2)",
+            {"(expr (lit i32 1))", "(expr (lit i32 2))", "(stmt:eof)"}
         );
     }
 
