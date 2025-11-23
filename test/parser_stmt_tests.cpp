@@ -111,24 +111,42 @@ TEST_CASE("Parser let statements", "[parser]") {
         );
     }
 
-    SECTION("Let statements 7") {
+    SECTION("Let statements pointers 1") {
         run_parser_stmt_test(
             "let var a: @i32 = 10",
             {"(stmt:let var a @i32 (lit i32 10))", "(stmt:eof)"}
         );
     }
 
-    SECTION("Let statements 8") {
+    SECTION("Let statements pointers 2") {
         run_parser_stmt_test(
             "let var ptr: var@f64",
             {"(stmt:let var ptr var@f64)", "(stmt:eof)"}
         );
     }
 
-    SECTION("Let statements 9") {
+    SECTION("Let statements pointers 3") {
         run_parser_stmt_test(
             "let data: nullptr = nullptr",
             {"(stmt:let data nullptr (lit nullptr))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Let statements typeof 1") {
+        run_parser_stmt_test(
+            "let x: i32 let size: typeof(x)",
+            {"(stmt:let x i32)",
+             "(stmt:let size typeof(<expr@1:29>))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Let statements typeof 2") {
+        run_parser_stmt_test(
+            "let x: i32 let len: typeof(x + 1)",
+            {"(stmt:let x i32)",
+             "(stmt:let len typeof(<expr@1:30>))",
+             "(stmt:eof)"}
         );
     }
 }

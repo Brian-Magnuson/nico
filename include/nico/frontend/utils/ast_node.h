@@ -936,6 +936,17 @@ public:
     }
 };
 
+/**
+ * @brief A type-of annotation.
+ *
+ * Type-of annotations are used to create annotations based on the type of
+ * another expression.
+ * A type-of annotation is an annotation, meaning it can only appear where
+ * annotations are expected.
+ *
+ * When printed, a type-of annotation displays the location of the expression it
+ * references.
+ */
 class Annotation::TypeOf : public Annotation {
 public:
     // The expression whose type is being referenced.
@@ -948,6 +959,12 @@ public:
         location = &typeof_token->location;
     }
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
+
+    std::string to_string() const override {
+        auto [_, line, col] = expression->location->to_tuple();
+        return "typeof(<expr@" + std::to_string(line) + ":" +
+               std::to_string(col) + ">)";
+    }
 };
 
 } // namespace nico

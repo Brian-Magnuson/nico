@@ -544,6 +544,13 @@ std::optional<std::shared_ptr<Expr>> Parser::unary() {
             return std::nullopt;
         return std::make_shared<Expr::Deref>(token, *right);
     }
+    if (match({Tok::KwSizeof})) {
+        auto token = previous();
+        auto anno = annotation();
+        if (!anno)
+            return std::nullopt;
+        return std::make_shared<Expr::SizeOf>(token, *anno);
+    }
     bool has_var = match({Tok::KwVar});
     if (match({Tok::At, Tok::Amp})) {
         auto token = previous();
