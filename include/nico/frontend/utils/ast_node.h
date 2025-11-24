@@ -395,19 +395,56 @@ public:
  */
 class Expr::Cast : public Expr {
 public:
+    /**
+     * @brief The type of cast operation to be performed.
+     */
+    enum class Operation {
+        // The cast operation is not yet determined.
+        Null,
+        // No operation (used when the LLVM type is unchanged) e.g. ptr -> ptr
+        NoOp,
+        // Sign extend integer (sext) e.g. i8 -> i16
+        SignExt,
+        // Zero extend integer (zext) e.g. u8 -> u16, bool -> u8, bool -> i8
+        ZeroExt,
+        // Floating point extend (fpext) e.g. f32 -> f64
+        FPExt,
+        // Integer truncate (trunc) e.g. i16 -> i8, u16 -> u8
+        IntTrunc,
+        // Floating point truncate (fptrunc) e.g. f64 -> f32
+        FPTrunc,
+        // Floating point to signed integer (fptosi) e.g. f32 -> i32
+        FPToSInt,
+        // Floating point to unsigned integer (fptoui) e.g. f32 -> u32
+        FPToUInt,
+        // Signed integer to floating point (sitofp) e.g. i32 -> f32
+        SIntToFP,
+        // Unsigned integer to floating point (uitofp) e.g. u32 -> f32, bool ->
+        // f32
+        UIntToFP,
+        // Number to boolean (compare with zero)
+        NumToBool,
+        // Reinterpret bits (bitcast)
+        ReinterpretBits
+    };
+
     // The expression being cast.
     std::shared_ptr<Expr> expression;
     // The 'as' keyword token.
     std::shared_ptr<Token> as_token;
     // The target type annotation.
-    std::shared_ptr<Annotation> target_type;
+    std::shared_ptr<Annotation> annotation;
+    // The target type in the expression; to be filled in by the type checker.
+    std::shared_ptr<Type> target_type;
+    // The cast operation to be performed; to be filled in by the type checker.
+    Operation operation = Operation::Null;
 
     Cast(
         std::shared_ptr<Expr> expression,
         std::shared_ptr<Token> as_token,
-        std::shared_ptr<Annotation> target_type
+        std::shared_ptr<Annotation> annotation
     )
-        : expression(expression), as_token(as_token), target_type(target_type) {
+        : expression(expression), as_token(as_token), annotation(annotation) {
         location = &as_token->location;
     }
 

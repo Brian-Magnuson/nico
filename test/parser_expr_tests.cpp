@@ -430,6 +430,66 @@ TEST_CASE("Parser sizeof", "[parser]") {
     }
 }
 
+TEST_CASE("Parser cast expressions", "[parser]") {
+    SECTION("Cast 1") {
+        run_parser_expr_test(
+            "123 as i8; 3.14 as f32; true as u8",
+            {"(expr (cast (lit i32 123) as i8))",
+             "(expr (cast (lit f64 3.140000) as f32))",
+             "(expr (cast (lit true) as u8))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Cast 2") {
+        run_parser_expr_test(
+            "(1 + 2) as i16; -(3.14 as f32) as f64",
+            {"(expr (cast (binary + (lit i32 1) (lit i32 2)) as i16))",
+             "(expr (cast (unary - (cast (lit f64 3.140000) as f32)) as f64))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Cast chain") {
+        run_parser_expr_test(
+            "123 as i8 as i16 as i32",
+            {"(expr (cast (cast (cast (lit i32 123) as i8) as i16) as i32))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Casts with nullptr") {
+        run_parser_expr_test(
+            "nullptr as @i32",
+            {"(expr (cast (lit nullptr) as @i32))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Casts with tuples") {
+        run_parser_expr_test(
+            "(1, 2) as (i32, i32)",
+            {"(expr (cast (tuple (lit i32 1) (lit i32 2)) as (i32, i32)))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Casts with parentheses") {
+        run_parser_expr_test(
+            "(123 as i8) + (456 as i16)",
+            {"(expr (binary + (cast (lit i32 123) as i8) (cast (lit i32 456) "
+             "as i16)))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Casts with function calls") {
+        run_parser_expr_test(
+            "f() as i32",
+            {"(expr (cast (call (nameref f)) as i32))", "(stmt:eof)"}
+        );
+    }
+}
+
 TEST_CASE("Parser groupings and tuples", "[parser]") {
     SECTION("Grouping 1") {
         run_parser_expr_test("(1)", {"(expr (lit i32 1))", "(stmt:eof)"});

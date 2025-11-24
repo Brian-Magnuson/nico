@@ -139,7 +139,7 @@ std::any AstPrinter::visit(Expr::Cast* expr, bool as_lvalue) {
     auto inner =
         std::any_cast<std::string>(expr->expression->accept(this, false));
     return std::string(
-        "(cast " + inner + " as " + expr->target_type->to_string() + ")"
+        "(cast " + inner + " as " + expr->annotation->to_string() + ")"
     );
 }
 

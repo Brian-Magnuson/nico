@@ -822,6 +822,39 @@ The drawback is that instances of classes require additional memory overhead due
 
 An expression is a piece of code that produces a value. Expressions may be simple literals or more complex combinations of literals, operators, and other expressions.
 
+### Operator precedence and associativity
+
+Operator precedence determines the order in which operators are evaluated in an expression. Operators with higher precedence are evaluated before operators with lower precedence.
+
+In the following list, lower numbers (listed first) indicate higher precedence:
+1. Primary expressions: literals, name references, blocks, conditionals, loops, and grouping expressions
+2. Postfix expressions: `()` (function call), `[]`, `.`
+3. Unary expressions: `-`, `not`, `!`, `^` (indirection), `sizeof`
+4. Cast expression: `as`
+5. Multiplicative expressions (L to R): `*`, `/`, `%`
+6. Additive expressions (L to R): `+`, `-`
+7. Bit shift expressions (L to R): `<<`, `>>`
+8. Bitwise AND expressions (L to R): `bitand`
+9. Bitwise XOR expressions (L to R): `bitxor`
+10. Bitwise OR expressions (L to R): `bitor`
+9. Comparison expressions (L to R): `<`, `<=`, `>`, `>=`
+10. Equality expressions (L to R): `==`, `!=`
+11. Logical AND expressions (L to R): `and`
+12. Logical OR expressions (L to R): `or`
+13. Assignment expressions (R to L): `=`, `+=`, `-=`, `*=`, `/=`, `%=`
+
+Note that bitwise expressions have higher precedence than comparison expressions.
+This is different from C's operator precedence, which places bitwise expressions below comparison expressions.
+
+Parentheses may be used to group expressions and override the default precedence:
+```
+let x = 3 + 4 * 5       // Multiplication, then addition; x = 23
+let y = (3 + 4) * 5     // Addition, then multiplication; y = 35
+```
+
+There are no errors or warnings for not using parentheses to clarify precedence or using parentheses where they are not needed.
+Users are encouraged to use parentheses where they improve readability.
+
 ### Arithmetic expressions
 
 The following arithmetic operators are supported:
@@ -993,14 +1026,29 @@ All numeric types may be cast to any other numeric type or boolean.
 Such casts must always be explicit; there are no implicit numeric casts.
 
 The following rules apply:
-- Character types, for the purposes of casting, are treated as `u32` types.
-- When casting to a boolean, the value becomes true if the original value is non-zero, and false if the original value is zero.
-- When casting from a floating-point type to an integer type, the value is truncated toward zero.
-- When casting from a wide type to a narrower type, the higher bits are discarded to fit the narrower type.
-- When casting from a narrower type to a wider type, the value is sign-extended for signed types and zero-extended for unsigned types.
-- When casting from a floating-point type to another floating-point type, the value is rounded to the nearest representable value in the target type.
+- Any integer to signed integer:
+  - If the expression type is wider than the target type, the value is truncated toward zero to fit the target type.
+  - If the expression type is narrower than the target type, the value is sign-extended to fit the target type.
+- Any integer to unsigned integer:
+  - If the expression type is wider than the target type, the value is truncated toward zero to fit the target type.
+  - If the expression type is narrower than the target type, the value is zero-extended to fit the target type.
+- Any integer to floating-point:
+  - The integer value is converted to the nearest representable floating-point value.
+- Floating-point to any integer:
+  - The FP value is clamped (runtime check) to the range of the target integer type and any fractional part is truncated toward zero.
+    - If the FP value is `NaN`, the result is `0`.
+- Floating-point to floating-point:
+  - The FP value is rounded to the nearest representable value in the target type.
+- Any number to boolean:
+  - The value becomes true if the original value is non-zero, and false if the original value is zero.
+- Boolean to any number:
+  - The value becomes `1` for true and `0` for false.
 
-There are no checks for overflow, underflow, truncation, or loss of precision when performing numeric casts. It is the programmer's responsibility to ensure the cast is valid.
+The `char` data type is not a numeric type. However, it may be cast to any numeric type and vice versa. In such cases, the `char` type follows the same rules as if it were a `u32` type.
+
+These rules are designed such that the result is always well-defined.
+That is, the program will not panic or produce undefined behavior in the event of overflow, underflow, truncation, clamping, or loss of precision.
+It is the programmer's responsibility to ensure the cast behaves as intended.
 
 **Nullptr casts**
 

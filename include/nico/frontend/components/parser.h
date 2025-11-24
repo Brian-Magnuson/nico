@@ -251,6 +251,16 @@ class Parser {
     std::optional<std::shared_ptr<Expr>> unary();
 
     /**
+     * @brief Parses a cast expression.
+     *
+     * Includes `a as T` where `T` is a type annotation.
+     *
+     * @return A shared pointer to the parsed expression, or nullopt if the
+     * expression could not be parsed.
+     */
+    std::optional<std::shared_ptr<Expr>> cast();
+
+    /**
      * @brief Parses a factor expression.
      *
      * Includes `a * b`, `a / b`, `a % b`

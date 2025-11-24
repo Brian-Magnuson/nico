@@ -570,13 +570,27 @@ std::optional<std::shared_ptr<Expr>> Parser::unary() {
     return postfix();
 }
 
-std::optional<std::shared_ptr<Expr>> Parser::factor() {
+std::optional<std::shared_ptr<Expr>> Parser::cast() {
     auto left = unary();
+    if (!left)
+        return std::nullopt;
+    while (match({Tok::KwAs})) {
+        auto as_token = previous();
+        auto anno = annotation();
+        if (!anno)
+            return std::nullopt;
+        left = std::make_shared<Expr::Cast>(*left, as_token, *anno);
+    }
+    return left;
+}
+
+std::optional<std::shared_ptr<Expr>> Parser::factor() {
+    auto left = cast();
     if (!left)
         return std::nullopt;
     while (match({Tok::Star, Tok::Slash, Tok::Percent})) {
         auto op = previous();
-        auto right = unary();
+        auto right = cast();
         if (!right)
             return std::nullopt;
         left = std::make_shared<Expr::Binary>(*left, op, *right);
