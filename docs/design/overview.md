@@ -837,11 +837,11 @@ In the following list, lower numbers (listed first) indicate higher precedence:
 8. Bitwise AND expressions (L to R): `bitand`
 9. Bitwise XOR expressions (L to R): `bitxor`
 10. Bitwise OR expressions (L to R): `bitor`
-9. Comparison expressions (L to R): `<`, `<=`, `>`, `>=`
-10. Equality expressions (L to R): `==`, `!=`
-11. Logical AND expressions (L to R): `and`
-12. Logical OR expressions (L to R): `or`
-13. Assignment expressions (R to L): `=`, `+=`, `-=`, `*=`, `/=`, `%=`
+11. Comparison expressions (L to R): `<`, `<=`, `>`, `>=`
+12. Equality expressions (L to R): `==`, `!=`
+13. Logical AND expressions (L to R): `and`
+14. Logical OR expressions (L to R): `or`
+15. Assignment expressions (R to L): `=`, `+=`, `-=`, `*=`, `/=`, `%=`
 
 Note that bitwise expressions have higher precedence than comparison expressions.
 This is different from C's operator precedence, which places bitwise expressions below comparison expressions.
