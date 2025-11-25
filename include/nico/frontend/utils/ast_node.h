@@ -422,8 +422,10 @@ public:
         // Unsigned integer to floating point (uitofp) e.g. u32 -> f32, bool ->
         // f32
         UIntToFP,
-        // Number to boolean (compare with zero)
-        NumToBool,
+        // Integer to boolean (icmp with zero)
+        IntToBool,
+        // Floating point to boolean (fcmp with zero)
+        FPToBool,
         // Reinterpret bits (bitcast)
         ReinterpretBits
     };

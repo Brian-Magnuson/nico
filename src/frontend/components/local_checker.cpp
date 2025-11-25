@@ -698,8 +698,129 @@ std::any LocalChecker::visit(Expr::Deref* expr, bool as_lvalue) {
 }
 
 std::any LocalChecker::visit(Expr::Cast* expr, bool as_lvalue) {
-    // TODO: Implement cast expressions.
-    panic("LocalChecker::visit(Expr::Cast*): Not implemented yet.");
+    if (as_lvalue) {
+        Logger::inst().log_error(
+            Err::NotAPossibleLValue,
+            expr->as_token->location,
+            "Cast expression cannot be an lvalue."
+        );
+        return std::any();
+    }
+
+    auto expr_type = expr_check(expr->expression, false);
+    if (!expr_type)
+        return std::any();
+
+    auto anno_any = expr->annotation->accept(&annotation_checker);
+    if (!anno_any.has_value())
+        return std::any();
+    auto target_type = std::any_cast<std::shared_ptr<Type>>(anno_any);
+    expr->target_type = target_type;
+
+    // Check that the cast is valid.
+    if (*expr_type == *target_type) {
+        // The types are the same; no cast needed.
+        // We *could* emit a warning here, but we'll just allow it for now.
+        expr->operation = Expr::Cast::Operation::NoOp;
+    }
+    else if (PTR_INSTANCEOF(target_type, Type::Bool)) {
+        auto target_bool_type =
+            std::dynamic_pointer_cast<Type::Bool>(target_type);
+        // Could be IntToBool, FPToBool
+        if (PTR_INSTANCEOF(expr_type, Type::Int)) {
+            // Must be IntToBool
+            expr->operation = Expr::Cast::Operation::IntToBool;
+        }
+        else if (PTR_INSTANCEOF(expr_type, Type::Float)) {
+            // Must be FPToBool
+            expr->operation = Expr::Cast::Operation::FPToBool;
+        }
+    }
+    else if (PTR_INSTANCEOF(expr_type, Type::Int)) {
+        auto expr_int_type = std::dynamic_pointer_cast<Type::Int>(expr_type);
+        // Could be SignExt, ZeroExt, IntTrunc, SIntToFP, UIntToFP
+        if (PTR_INSTANCEOF(target_type, Type::Int)) {
+            auto target_int_type =
+                std::dynamic_pointer_cast<Type::Int>(target_type);
+            // Could be SignExt, ZeroExt, IntTrunc
+            if (expr_int_type->width < target_int_type->width) {
+                // Could be SignExt or ZeroExt
+                if (target_int_type->is_signed) {
+                    // Must be SignExt
+                    expr->operation = Expr::Cast::Operation::SignExt;
+                }
+                else {
+                    // Must be ZeroExt
+                    expr->operation = Expr::Cast::Operation::ZeroExt;
+                }
+            }
+            else if (expr_int_type->width > target_int_type->width) {
+                // Must be IntTrunc
+                expr->operation = Expr::Cast::Operation::IntTrunc;
+            }
+            else {
+                // Same bit width but different signedness; NoOp
+                expr->operation = Expr::Cast::Operation::NoOp;
+            }
+        }
+        else if (PTR_INSTANCEOF(target_type, Type::Float)) {
+            auto target_float_type =
+                std::dynamic_pointer_cast<Type::Float>(target_type);
+            // Could be SIntToFP or UIntToFP
+            if (expr_int_type->is_signed) {
+                // Must be SIntToFP
+                expr->operation = Expr::Cast::Operation::SIntToFP;
+            }
+            else {
+                // Must be UIntToFP
+                expr->operation = Expr::Cast::Operation::UIntToFP;
+            }
+        }
+    }
+    else if (PTR_INSTANCEOF(expr_type, Type::Float)) {
+        auto expr_float_type =
+            std::dynamic_pointer_cast<Type::Float>(expr_type);
+        // Could be FPExt, FPTrunc, FPToSInt, FPToUInt
+        if (PTR_INSTANCEOF(target_type, Type::Float)) {
+            auto target_float_type =
+                std::dynamic_pointer_cast<Type::Float>(target_type);
+            // Could be FPExt or FPTrunc
+            if (expr_float_type->width < target_float_type->width) {
+                // Must be FPExt
+                expr->operation = Expr::Cast::Operation::FPExt;
+            }
+            else {
+                // Must be FPTrunc
+                expr->operation = Expr::Cast::Operation::FPTrunc;
+            }
+        }
+        else if (PTR_INSTANCEOF(target_type, Type::Int)) {
+            auto target_int_type =
+                std::dynamic_pointer_cast<Type::Int>(target_type);
+            // Could be FPToSInt or FPToUInt
+            if (target_int_type->is_signed) {
+                // Must be FPToSInt
+                expr->operation = Expr::Cast::Operation::FPToSInt;
+            }
+            else {
+                // Must be FPToUInt
+                expr->operation = Expr::Cast::Operation::FPToUInt;
+            }
+        }
+    }
+
+    if (expr->operation == Expr::Cast::Operation::Null) {
+        // No possible cast operation was found.
+        Logger::inst().log_error(
+            Err::InvalidCastOperation,
+            expr->as_token->location,
+            std::string("Cannot cast from type `") + expr_type->to_string() +
+                "` to type `" + target_type->to_string() + "`."
+        );
+        return std::any();
+    }
+
+    expr->type = target_type;
     return std::any();
 }
 

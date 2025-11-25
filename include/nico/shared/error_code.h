@@ -168,6 +168,8 @@ enum class Err {
     // An access expression was found where the right side was not an integer
     // literal.
     InvalidTupleAccess,
+    // A cast expression was found that cannot perform the requested cast.
+    InvalidCastOperation,
     // A control structure was found with a condition that does not have a
     // boolean type.
     ConditionNotBool,
