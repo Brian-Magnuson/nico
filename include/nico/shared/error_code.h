@@ -200,6 +200,8 @@ enum class Err {
     YieldTargetingLoop,
     // An unsafe block was found that does not contain any unsafe statements.
     UnsafeBlockWithoutUnsafeStmt,
+    // A cast expression was found that casts a value to its own type.
+    CastToOwnType,
 
     // Backend error
     BackendError = 7000,

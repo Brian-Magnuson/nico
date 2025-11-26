@@ -2,6 +2,7 @@
 #define NICO_TYPE_NODE_H
 
 #include <cinttypes>
+#include <cstdint>
 #include <string>
 #include <unordered_set>
 #include <utility>
@@ -110,6 +111,74 @@ public:
         }
         std::string format_str = "%" + std::string(format_chars);
         return {format_str, {value}};
+    }
+
+    /**
+     * @brief Returns the maximum value for this integer type and stores it in
+     * an unsigned 64-bit integer.
+     *
+     * @return The maximum value for this integer type.
+     *
+     * @warning Will panic if the width is not one of the supported widths (8,
+     * 16, 32, 64).
+     */
+    uint64_t get_max_value() const {
+        if (is_signed) {
+            switch (width) {
+            case 8:
+                return 127;
+            case 16:
+                return 32767;
+            case 32:
+                return 2147483647;
+            case 64:
+                return 9223372036854775807ULL;
+            default:
+                panic("Type::Int::get_max_value: Unsupported width");
+            }
+        }
+        else {
+            switch (width) {
+            case 8:
+                return 255;
+            case 16:
+                return 65535;
+            case 32:
+                return 4294967295U;
+            case 64:
+                return 18446744073709551615ULL;
+            default:
+                panic("Type::Int::get_max_value: Unsupported width");
+            }
+        }
+    }
+
+    /**
+     * @brief Returns the minimum value for this integer type.
+     *
+     * @return The minimum value for this integer type.
+     *
+     * @warning Will panic if the width is not one of the supported widths (8,
+     * 16, 32, 64).
+     */
+    int64_t get_min_value() const {
+        if (is_signed) {
+            switch (width) {
+            case 8:
+                return -128;
+            case 16:
+                return -32768;
+            case 32:
+                return -2147483648;
+            case 64:
+                return -9223372036854775807LL - 1;
+            default:
+                panic("Type::Int::get_min_value: Unsupported width");
+            }
+        }
+        else {
+            return 0;
+        }
     }
 };
 

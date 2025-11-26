@@ -529,9 +529,123 @@ std::any CodeGenerator::visit(Expr::Deref* expr, bool as_lvalue) {
 }
 
 std::any CodeGenerator::visit(Expr::Cast* expr, bool as_lvalue) {
-    // TODO: Implement cast expressions.
-    panic("CodeGenerator::visit(Expr::Cast*): Not implemented yet.");
-    return std::any();
+    llvm::Value* result = nullptr;
+    auto inner_expr =
+        std::any_cast<llvm::Value*>(expr->expression->accept(this, false));
+
+    switch (expr->operation) {
+    case Expr::Cast::Operation::NoOp:
+        result = inner_expr;
+        break;
+    case Expr::Cast::Operation::SignExt:
+        result =
+            builder->CreateSExt(inner_expr, expr->type->get_llvm_type(builder));
+        break;
+    case Expr::Cast::Operation::ZeroExt:
+        result =
+            builder->CreateZExt(inner_expr, expr->type->get_llvm_type(builder));
+        break;
+    case Expr::Cast::Operation::FPExt:
+        result = builder->CreateFPExt(
+            inner_expr,
+            expr->type->get_llvm_type(builder)
+        );
+        break;
+    case Expr::Cast::Operation::IntTrunc:
+        result = builder->CreateTrunc(
+            inner_expr,
+            expr->type->get_llvm_type(builder)
+        );
+        break;
+    case Expr::Cast::Operation::FPTrunc:
+        result = builder->CreateFPTrunc(
+            inner_expr,
+            expr->type->get_llvm_type(builder)
+        );
+        break;
+    case Expr::Cast::Operation::FPToSInt: {
+        // Clamp the FP value to the range of the target signed integer type
+        auto int_type = std::dynamic_pointer_cast<Type::Int>(expr->type);
+        auto min_val = llvm::ConstantFP::get(
+            inner_expr->getType(),
+            (double)int_type->get_min_value()
+        );
+        auto max_val = llvm::ConstantFP::get(
+            inner_expr->getType(),
+            (double)int_type->get_max_value()
+        );
+        auto clamped = builder->CreateSelect(
+            builder->CreateFCmpOLT(inner_expr, min_val),
+            min_val,
+            builder->CreateSelect(
+                builder->CreateFCmpOGT(inner_expr, max_val),
+                max_val,
+                inner_expr
+            )
+        );
+        result =
+            builder->CreateFPToSI(clamped, expr->type->get_llvm_type(builder));
+        break;
+    }
+    case Expr::Cast::Operation::FPToUInt: {
+        // Clamp the FP value to the range of the target unsigned integer type
+        auto int_type = std::dynamic_pointer_cast<Type::Int>(expr->type);
+        auto min_val = llvm::ConstantFP::get(
+            inner_expr->getType(),
+            0.0
+        ); // Unsigned integers have a minimum of 0
+        auto max_val = llvm::ConstantFP::get(
+            inner_expr->getType(),
+            (double)int_type->get_max_value()
+        );
+        auto clamped = builder->CreateSelect(
+            builder->CreateFCmpOLT(inner_expr, min_val),
+            min_val,
+            builder->CreateSelect(
+                builder->CreateFCmpOGT(inner_expr, max_val),
+                max_val,
+                inner_expr
+            )
+        );
+        result =
+            builder->CreateFPToUI(clamped, expr->type->get_llvm_type(builder));
+        break;
+    }
+    case Expr::Cast::Operation::SIntToFP:
+        result = builder->CreateSIToFP(
+            inner_expr,
+            expr->type->get_llvm_type(builder)
+        );
+        break;
+    case Expr::Cast::Operation::UIntToFP:
+        result = builder->CreateUIToFP(
+            inner_expr,
+            expr->type->get_llvm_type(builder)
+        );
+        break;
+    case Expr::Cast::Operation::IntToBool:
+        result = builder->CreateICmpNE(
+            inner_expr,
+            llvm::ConstantInt::get(inner_expr->getType(), 0)
+        );
+        break;
+    case Expr::Cast::Operation::FPToBool:
+        result = builder->CreateFCmpUNE(
+            inner_expr,
+            llvm::ConstantFP::get(inner_expr->getType(), 0.0)
+        );
+        break;
+    case Expr::Cast::Operation::ReinterpretBits:
+        result = builder->CreateBitCast(
+            inner_expr,
+            expr->type->get_llvm_type(builder)
+        );
+        break;
+    default:
+        panic("CodeGenerator::visit(Expr::Cast*): Unknown cast operation.");
+    }
+
+    return result;
 }
 
 std::any CodeGenerator::visit(Expr::Access* expr, bool as_lvalue) {
