@@ -315,6 +315,112 @@ TEST_CASE("JIT sizeof expressions", "[jit]") {
     }
 }
 
+TEST_CASE("JIT cast expressions", "[jit]") {
+    SECTION("Cast NoOp") {
+        run_jit_test("let a: i32 = 1 let b: i32 = a as i32 printout b", "1");
+    }
+
+    SECTION("Cast IntToBool 1") {
+        run_jit_test(
+            "let a: i32 = 1 let b: bool = a as bool printout b",
+            "true"
+        );
+    }
+
+    SECTION("Cast IntToBool 2") {
+        run_jit_test(
+            "let a: i32 = 0 let b: bool = a as bool printout b",
+            "false"
+        );
+    }
+
+    SECTION("Cast IntToBool 3") {
+        run_jit_test(
+            "let a: i32 = -42 let b: bool = a as bool printout b",
+            "true"
+        );
+    }
+
+    SECTION("Cast IntToBool 4") {
+        run_jit_test(
+            "let a: u32 = 1_u32 let b: bool = a as bool printout b",
+            "true"
+        );
+    }
+
+    SECTION("Cast FPToBool 1") {
+        run_jit_test(
+            "let a: f64 = 3.14 let b: bool = a as bool printout b",
+            "true"
+        );
+    }
+
+    SECTION("Cast FPToBool 2") {
+        run_jit_test(
+            "let a: f64 = 0.0 let b: bool = a as bool printout b",
+            "false"
+        );
+    }
+
+    SECTION("Cast FPToBool 3") {
+        run_jit_test(
+            "let a: f32 = -2.71_f32 let b: bool = a as bool printout b",
+            "true"
+        );
+    }
+
+    SECTION("Cast SignExt 1") {
+        run_jit_test(
+            "let a: i8 = -1_i8 let b: i32 = a as i32 printout b",
+            "-1"
+        );
+    }
+
+    SECTION("Cast SignExt 2") {
+        run_jit_test(
+            "let a: i8 = 42_i8 let b: i32 = a as i32 printout b",
+            "42"
+        );
+    }
+
+    SECTION("Cast ZeroExt 1") {
+        run_jit_test(
+            "let a: u8 = 255_u8 let b: u32 = a as u32 printout b",
+            "255"
+        );
+    }
+
+    SECTION("Cast ZeroExt 2") {
+        run_jit_test(
+            "let a: u8 = 255_u8 let b: i32 = a as i32 printout b",
+            "255"
+        );
+    }
+
+    SECTION("Cast ZeroExt 3") {
+        run_jit_test(
+            "let a: i8 = -1_i8 let b: u32 = a as u32 printout b",
+            "255"
+        );
+    }
+
+    // SECTION("Cast IntTrunc 1") {
+    //     run_jit_test(
+    //         "let a: i32 = 300 let b: i8 = a as i8 printout b",
+    //         "44",
+    //         std::nullopt,
+    //         true
+    //     );
+    // }
+
+    // SECTION("Cast IntTrunc 2") {
+    //     run_jit_test(
+    //         "let a: i32 = -2147483648 let b: i8 = a as i8 printout b",
+    //         "0"
+    //     );
+    // }
+}
+
 TEST_CASE("JIT block expressions", "[jit]") {
     SECTION("Simple block expression") {
         run_jit_test(R"(block { yield 5 })");
