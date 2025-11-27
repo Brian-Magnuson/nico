@@ -404,21 +404,16 @@ TEST_CASE("JIT cast expressions", "[jit]") {
         );
     }
 
-    // SECTION("Cast IntTrunc 1") {
-    //     run_jit_test(
-    //         "let a: i32 = 300 let b: i8 = a as i8 printout b",
-    //         "44",
-    //         std::nullopt,
-    //         true
-    //     );
-    // }
+    SECTION("Cast IntTrunc 1") {
+        run_jit_test("let a: i32 = 300 let b: i8 = a as i8 printout b", "44");
+    }
 
-    // SECTION("Cast IntTrunc 2") {
-    //     run_jit_test(
-    //         "let a: i32 = -2147483648 let b: i8 = a as i8 printout b",
-    //         "0"
-    //     );
-    // }
+    SECTION("Cast IntTrunc 2") {
+        run_jit_test(
+            "let a: i32 = -2147483648 let b: i8 = a as i8 printout b",
+            "0"
+        );
+    }
 }
 
 TEST_CASE("JIT block expressions", "[jit]") {

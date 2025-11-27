@@ -69,13 +69,18 @@ public:
         bool include_quotes = false
     ) const override {
         const char* format_chars;
+        llvm::Value* print_value = value;
+        auto int_32_type = llvm::Type::getInt32Ty(builder->getContext());
+
         if (is_signed) {
             switch (width) {
             case 8:
                 format_chars = PRId8;
+                print_value = builder->CreateSExt(value, int_32_type);
                 break;
             case 16:
                 format_chars = PRId16;
+                print_value = builder->CreateSExt(value, int_32_type);
                 break;
             case 32:
                 format_chars = PRId32;
@@ -84,6 +89,10 @@ public:
                 format_chars = PRId64;
                 break;
             default:
+                print_value = builder->CreateSExt(
+                    value,
+                    llvm::Type::getInt64Ty(builder->getContext())
+                );
                 format_chars =
                     "lld"; // Default to long long for non-standard widths.
                 break;
@@ -93,10 +102,11 @@ public:
             switch (width) {
             case 8:
                 format_chars = PRIu8;
+                print_value = builder->CreateZExt(value, int_32_type);
                 break;
             case 16:
                 format_chars = PRIu16;
-                break;
+                print_value = builder->CreateZExt(value, int_32_type);
             case 32:
                 format_chars = PRIu32;
                 break;
@@ -104,13 +114,17 @@ public:
                 format_chars = PRIu64;
                 break;
             default:
+                print_value = builder->CreateZExt(
+                    value,
+                    llvm::Type::getInt64Ty(builder->getContext())
+                );
                 format_chars = "llu"; // Default to unsigned long long for
                                       // non-standard widths.
                 break;
             }
         }
         std::string format_str = "%" + std::string(format_chars);
-        return {format_str, {value}};
+        return {format_str, {print_value}};
     }
 
     /**
