@@ -164,6 +164,75 @@ TEST_CASE("Local sizeof expressions", "[checker]") {
     }
 }
 
+TEST_CASE("Local cast expressions") {
+    SECTION("Valid cast NoOp") {
+        run_checker_test("let a: i32 = 1 let b: i32 = a as i32");
+    }
+
+    SECTION("Valid cast IntToBool") {
+        run_checker_test("let a: i32 = 1 let b: bool = a as bool");
+    }
+
+    SECTION("Valid cast FPToBool") {
+        run_checker_test("let a: f64 = 1.0 let b: bool = a as bool");
+    }
+
+    SECTION("Valid cast SignExt") {
+        run_checker_test("let a: i8 = 1_i8 let b: i32 = a as i32");
+    }
+
+    SECTION("Valid cast ZeroExt 1") {
+        run_checker_test("let a: u8 = 1_u8 let b: u32 = a as u32");
+    }
+
+    SECTION("Valid cast ZeroExt 2") {
+        run_checker_test("let a: u8 = 1_u8 let b: i32 = a as i32");
+    }
+
+    SECTION("Valid cast ZeroExt 3") {
+        run_checker_test("let a: i8 = -1_i8 let b: u32 = a as u32");
+    }
+
+    SECTION("Valid cast IntTrunc") {
+        run_checker_test("let a: i32 = 1 let b: i8 = a as i8");
+    }
+
+    SECTION("Valid cast NoOp ints") {
+        run_checker_test("let a: u32 = 1_u32 let b: i32 = a as i32");
+    }
+
+    SECTION("Valid cast SIntToFP") {
+        run_checker_test("let a: i32 = 1 let b: f64 = a as f64");
+    }
+
+    SECTION("Valid cast UIntToFP") {
+        run_checker_test("let a: u32 = 1_u32 let b: f64 = a as f64");
+    }
+
+    SECTION("Valid cast FPExt") {
+        run_checker_test("let a: f32 = 1.0_f32 let b: f64 = a as f64");
+    }
+
+    SECTION("Valid cast FPTrunc") {
+        run_checker_test("let a: f64 = 1.0 let b: f32 = a as f32");
+    }
+
+    SECTION("Valid cast FPToSInt") {
+        run_checker_test("let a: f64 = 1.0 let b: i32 = a as i32");
+    }
+
+    SECTION("Valid cast FPToUInt") {
+        run_checker_test("let a: f64 = 1.0 let b: u32 = a as u32");
+    }
+
+    SECTION("Invalid cast operation") {
+        run_checker_test(
+            "let a: bool = true let b: () = a as ()",
+            Err::InvalidCastOperation
+        );
+    }
+}
+
 TEST_CASE("Local address-of expressions", "[checker]") {
     SECTION("Valid address-of expression 1") {
         run_checker_test("let a = 1 let b: @i32 = @a");

@@ -745,7 +745,7 @@ std::any LocalChecker::visit(Expr::Cast* expr, bool as_lvalue) {
             // Could be SignExt, ZeroExt, IntTrunc
             if (expr_int_type->width < target_int_type->width) {
                 // Could be SignExt or ZeroExt
-                if (target_int_type->is_signed) {
+                if (target_int_type->is_signed && expr_int_type->is_signed) {
                     // Must be SignExt
                     expr->operation = Expr::Cast::Operation::SignExt;
                 }
