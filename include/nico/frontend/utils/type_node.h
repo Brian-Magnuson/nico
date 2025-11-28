@@ -247,7 +247,14 @@ public:
         llvm::Value* value,
         bool include_quotes = false
     ) const override {
-        return {"%g", {value}};
+        llvm::Value* print_value = value;
+        if (width == 32) {
+            print_value = builder->CreateFPExt(
+                value,
+                llvm::Type::getDoubleTy(builder->getContext())
+            );
+        }
+        return {"%g", {print_value}};
     }
 };
 

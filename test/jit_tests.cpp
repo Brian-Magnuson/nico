@@ -369,6 +369,13 @@ TEST_CASE("JIT cast expressions", "[jit]") {
         );
     }
 
+    SECTION("Cast FPToBool 4") {
+        run_jit_test(
+            "let a: f64 = nan let b: bool = a as bool printout b",
+            "true"
+        );
+    }
+
     SECTION("Cast SignExt 1") {
         run_jit_test(
             "let a: i8 = -1_i8 let b: i32 = a as i32 printout b",
@@ -404,6 +411,13 @@ TEST_CASE("JIT cast expressions", "[jit]") {
         );
     }
 
+    SECTION("Cast FPExt") {
+        run_jit_test(
+            "let a: f32 = 3.14_f32 let b: f64 = a as f64 printout b",
+            "3.14"
+        );
+    }
+
     SECTION("Cast IntTrunc 1") {
         run_jit_test("let a: i32 = 300 let b: i8 = a as i8 printout b", "44");
     }
@@ -412,6 +426,87 @@ TEST_CASE("JIT cast expressions", "[jit]") {
         run_jit_test(
             "let a: i32 = -2147483648 let b: i8 = a as i8 printout b",
             "0"
+        );
+    }
+
+    SECTION("Cast FPTrunc") {
+        run_jit_test(
+            "let a: f64 = 3.1415926535 let b: f32 = a as f32 printout b",
+            "3.14159"
+        );
+    }
+
+    SECTION("Cast FPToSInt 1") {
+        run_jit_test(
+            "let a: f64 = 42.99 let b: i32 = a as i32 printout b",
+            "42"
+        );
+    }
+
+    SECTION("Cast FPToSInt 2") {
+        run_jit_test(
+            "let a: f64 = -42.99 let b: i32 = a as i32 printout b",
+            "-42"
+        );
+    }
+
+    SECTION("Cast FPToSInt 3") {
+        run_jit_test(
+            "let a: f64 = 1e20 let b: i32 = a as i32 printout b",
+            "2147483647"
+        );
+    }
+
+    SECTION("Cast FPToSInt 4") {
+        run_jit_test(
+            "let a: f64 = -1e20 let b: i32 = a as i32 printout b",
+            "-2147483648"
+        );
+    }
+
+    SECTION("Cast FPToUInt 1") {
+        run_jit_test(
+            "let a: f64 = 42.99 let b: u32 = a as u32 printout b",
+            "42"
+        );
+    }
+
+    SECTION("Cast FPToUInt 2") {
+        run_jit_test(
+            "let a: f64 = -42.99 let b: u32 = a as u32 printout b",
+            "0"
+        );
+    }
+
+    SECTION("Cast FPToUInt 3") {
+        run_jit_test(
+            "let a: f64 = 1e20 let b: u32 = a as u32 printout b",
+            "4294967295"
+        );
+    }
+
+    SECTION("Cast SIntToFP 1") {
+        run_jit_test("let a: i32 = 42 let b: f64 = a as f64 printout b", "42");
+    }
+
+    SECTION("Cast SIntToFP 2") {
+        run_jit_test(
+            "let a: i32 = -42 let b: f64 = a as f64 printout b",
+            "-42"
+        );
+    }
+
+    SECTION("Cast UIntToFP 1") {
+        run_jit_test(
+            "let a: u32 = 42_u32 let b: f64 = a as f64 printout b",
+            "42"
+        );
+    }
+
+    SECTION("Cast UIntToFP 2") {
+        run_jit_test(
+            "let a: u32 = 4294967295_u32 let b: f64 = a as f64 printout b",
+            "4.29497e+09"
         );
     }
 }
@@ -434,7 +529,8 @@ TEST_CASE("JIT block expressions", "[jit]") {
 
     SECTION("Block expression 3") {
         run_jit_test(
-            "let var x = 1 let var y = 2 x = block { let var y = x + 3 yield y "
+            "let var x = 1 let var y = 2 x = block { let var y = x + 3 "
+            "yield y "
             "} printout x, \",\", y",
             "4,2"
         );
@@ -442,7 +538,8 @@ TEST_CASE("JIT block expressions", "[jit]") {
 
     SECTION("Block expression 4") {
         run_jit_test(
-            "let var x = 1 x = block { yield 2 * block { yield 3 } } printout "
+            "let var x = 1 x = block { yield 2 * block { yield 3 } } "
+            "printout "
             "x",
             "6"
         );
@@ -759,7 +856,8 @@ TEST_CASE("JIT while loop expressions", "[jit]") {
                     printout i, "\n"
                 i += 1
             )",
-            "1\n2\nFizz\n4\nBuzz\nFizz\n7\n8\nFizz\nBuzz\n11\nFizz\n13\n14\n"
+            "1\n2\nFizz\n4\nBuzz\nFizz\n7\n8\nFizz\nBuzz\n11\nFizz\n13\n14"
+            "\n"
             "FizzBuzz\n"
         );
     }
