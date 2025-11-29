@@ -881,6 +881,12 @@ std::any CodeGenerator::visit(Expr::Tuple* expr, bool as_lvalue) {
     return result;
 }
 
+std::any CodeGenerator::visit(Expr::Array* expr, bool as_lvalue) {
+    // TODO: Implement array expressions
+    panic("CodeGenerator::visit(Expr::Array*): Not implemented yet.");
+    return std::any();
+}
+
 std::any CodeGenerator::visit(Expr::Block* expr, bool as_lvalue) {
     // Blocks get their own yield allocation.
     llvm::AllocaInst* yield_allocation = builder->CreateAlloca(

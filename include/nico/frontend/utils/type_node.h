@@ -489,9 +489,18 @@ public:
         : base(base), size(std::nullopt) {}
 
     Array(std::shared_ptr<Type> base, size_t size)
-        : base(base), size(size) {}
+        : base(
+              size == 0 ? std::dynamic_pointer_cast<Type>(
+                              std::make_shared<Type::Unit>()
+                          )
+                        : base
+          ),
+          size(size) {}
 
     std::string to_string() const override {
+        if (size.has_value() && size.value() == 0) {
+            return "[]";
+        }
         return "[" + base->to_string() + "; " +
                (size ? std::to_string(*size) : "?") + "]";
     }
@@ -505,11 +514,16 @@ public:
 
     virtual llvm::Type*
     get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
-        if (size) {
+        if (size.has_value()) {
+            // Sized array, [T; N]
             return llvm::ArrayType::get(base->get_llvm_type(builder), *size);
         }
         else {
-            return llvm::PointerType::get(builder->getContext(), 0);
+            // Unsized array, [T, ?]
+            return llvm::ArrayType::get(base->get_llvm_type(builder), 0);
+            // Base is always set for unsized arrays, because the only way to
+            // create an array without a base is to write the literal `[]`,
+            // which is a sized array of size 0.
         }
     }
 

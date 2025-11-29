@@ -652,6 +652,32 @@ public:
 };
 
 /**
+ * @brief An array expression.
+ *
+ * Array expressions are expressions that represent a fixed-size collection
+ * of values of the same type.
+ */
+class Expr::Array : public Expr {
+public:
+    // The opening square bracket of the array.
+    std::shared_ptr<Token> lsquare;
+    // The elements of the array.
+    std::vector<std::shared_ptr<Expr>> elements;
+
+    Array(
+        std::shared_ptr<Token> lsquare,
+        std::vector<std::shared_ptr<Expr>>&& elements
+    )
+        : lsquare(lsquare), elements(std::move(elements)) {
+        location = &lsquare->location;
+    }
+
+    std::any accept(Visitor* visitor, bool as_lvalue) override {
+        return visitor->visit(this, as_lvalue);
+    }
+};
+
+/**
  * @brief A block expression.
  *
  * Block expressions are used to group statements together.

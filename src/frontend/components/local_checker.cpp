@@ -1146,6 +1146,12 @@ std::any LocalChecker::visit(Expr::Tuple* expr, bool as_lvalue) {
     return std::any();
 }
 
+std::any LocalChecker::visit(Expr::Array* expr, bool as_lvalue) {
+    // TODO: Implement array expressions.
+    panic("LocalChecker::visit(Expr::Array*): Not implemented yet.");
+    return std::any();
+}
+
 std::any LocalChecker::visit(Expr::Block* expr, bool as_lvalue) {
     if (as_lvalue) {
         Logger::inst().log_error(

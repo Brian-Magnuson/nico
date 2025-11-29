@@ -340,6 +340,7 @@ public:
 
     class Tuple;
     class Unit;
+    class Array;
 
     class Block;
     class Conditional;
@@ -365,6 +366,7 @@ public:
         virtual std::any visit(NameRef* expr, bool as_lvalue) = 0;
         virtual std::any visit(Literal* expr, bool as_lvalue) = 0;
         virtual std::any visit(Tuple* expr, bool as_lvalue) = 0;
+        virtual std::any visit(Array* expr, bool as_lvalue) = 0;
         virtual std::any visit(Block* expr, bool as_lvalue) = 0;
         virtual std::any visit(Conditional* expr, bool as_lvalue) = 0;
         virtual std::any visit(Loop* expr, bool as_lvalue) = 0;

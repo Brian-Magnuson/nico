@@ -233,6 +233,15 @@ std::any AstPrinter::visit(Expr::Tuple* expr, bool as_lvalue) {
     return str;
 }
 
+std::any AstPrinter::visit(Expr::Array* expr, bool as_lvalue) {
+    std::string str = "(array";
+    for (const auto& element : expr->elements) {
+        str += " " + std::any_cast<std::string>(element->accept(this, false));
+    }
+    str += ")";
+    return str;
+}
+
 std::any AstPrinter::visit(Expr::Block* expr, bool as_lvalue) {
     std::string str = "(block";
     if (expr->is_unsafe) {
