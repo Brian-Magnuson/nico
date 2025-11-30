@@ -910,24 +910,27 @@ public:
 class Annotation::Array : public Annotation {
 public:
     // The base annotation that this array contains.
-    const std::shared_ptr<Annotation> base;
+    const std::optional<std::shared_ptr<Annotation>> base;
     // The number of elements in the array, if known.
     const std::optional<size_t> size;
 
     Array(
-        std::shared_ptr<Token> l_bracket_token,
-        std::shared_ptr<Annotation> base,
+        std::shared_ptr<Token> l_square_token,
+        std::optional<std::shared_ptr<Annotation>> base = std::nullopt,
         std::optional<size_t> size = std::nullopt
     )
         : base(std::move(base)), size(size) {
-        location = &l_bracket_token->location;
+        location = &l_square_token->location;
     }
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 
     std::string to_string() const override {
-        return "[" + base->to_string() +
-               (size ? "; " + std::to_string(*size) : "") + "]";
+        if (!base || (size.has_value() && size.value() == 0)) {
+            return "[]";
+        }
+        return "[" + base.value()->to_string() + "; " +
+               (size ? std::to_string(size.value()) : "?") + "]";
     }
 };
 
