@@ -325,6 +325,9 @@ std::optional<std::shared_ptr<Expr>> Parser::number_literal() {
     case Tok::Int16:
         parse_result = parse_number<int16_t>(numeric_string, base);
         break;
+    case Tok::Int32:
+        parse_result = parse_number<int32_t>(numeric_string, base);
+        break;
     case Tok::Int64:
         parse_result = parse_number<int64_t>(numeric_string, base);
         break;
@@ -340,13 +343,18 @@ std::optional<std::shared_ptr<Expr>> Parser::number_literal() {
     case Tok::UInt64:
         parse_result = parse_number<uint64_t>(numeric_string, base);
         break;
-    case Tok::Int32:
-        parse_result = parse_number<int32_t>(numeric_string, base);
-        break;
     case Tok::Float32:
         parse_result = parse_number<float>(numeric_string);
         break;
     case Tok::Float64:
+        parse_result = parse_number<double>(numeric_string);
+        break;
+    case Tok::IntDefault:
+        token->tok_type = Tok::Int32;
+        parse_result = parse_number<int32_t>(numeric_string, base);
+        break;
+    case Tok::FloatDefault:
+        token->tok_type = Tok::Float64;
         parse_result = parse_number<double>(numeric_string);
         break;
     default:

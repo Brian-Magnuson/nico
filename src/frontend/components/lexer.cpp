@@ -454,10 +454,10 @@ void Lexer::numeric_literal() {
     }
     else {
         if (has_dot || has_exp) {
-            token->tok_type = Tok::Float64;
+            token->tok_type = Tok::FloatDefault;
         }
         else {
-            token->tok_type = Tok::Int32;
+            token->tok_type = Tok::IntDefault;
         }
     }
 
