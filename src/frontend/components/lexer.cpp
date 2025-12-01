@@ -13,10 +13,10 @@ namespace nico {
 std::unordered_map<std::string_view, Tok> Lexer::keywords = {
     // Literals
 
-    {"inf", Tok::Float64},
+    {"inf", Tok::FloatDefault},
     {"inf32", Tok::Float32},
     {"inf64", Tok::Float64},
-    {"nan", Tok::Float64},
+    {"nan", Tok::FloatDefault},
     {"nan32", Tok::Float32},
     {"nan64", Tok::Float64},
     {"true", Tok::Bool},

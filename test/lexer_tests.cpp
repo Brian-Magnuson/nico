@@ -458,6 +458,41 @@ TEST_CASE("Lexer numbers (run_lexer_test)", "[lexer]") {
     SECTION("Number with negative sign") {
         run_lexer_test("-123", {Tok::Minus, Tok::IntDefault, Tok::Eof});
     }
+
+    SECTION("Integers of different sizes") {
+        run_lexer_test(
+            "123i8 123i16 123i32 123i64 123u8 123u16 123u32 123u64",
+            {Tok::Int8,
+             Tok::Int16,
+             Tok::Int32,
+             Tok::Int64,
+             Tok::UInt8,
+             Tok::UInt16,
+             Tok::UInt32,
+             Tok::UInt64,
+             Tok::Eof}
+        );
+    }
+
+    SECTION("Floats of different sizes") {
+        run_lexer_test(
+            "1.23f32 1.23f64",
+            {Tok::Float32, Tok::Float64, Tok::Eof}
+        );
+    }
+
+    SECTION("Special floats") {
+        run_lexer_test(
+            "inf inf32 inf64 nan nan32 nan64",
+            {Tok::FloatDefault,
+             Tok::Float32,
+             Tok::Float64,
+             Tok::FloatDefault,
+             Tok::Float32,
+             Tok::Float64,
+             Tok::Eof}
+        );
+    }
 }
 
 TEST_CASE("Lexer str literals (run_lexer_test)", "[lexer]") {
