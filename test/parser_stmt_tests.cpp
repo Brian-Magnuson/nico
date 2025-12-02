@@ -149,6 +149,48 @@ TEST_CASE("Parser let statements", "[parser]") {
              "(stmt:eof)"}
         );
     }
+
+    SECTION("Let statements arrays 1") {
+        run_parser_stmt_test(
+            "let arr: [i32; 10]",
+            {"(stmt:let arr [i32; 10])", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Let statements arrays 2") {
+        run_parser_stmt_test(
+            "let matrix: [[f64; 5]; 10]",
+            {"(stmt:let matrix [[f64; 5]; 10])", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Let statements arrays 3") {
+        run_parser_stmt_test(
+            "let buffer: [u8; ?]",
+            {"(stmt:let buffer [u8; ?])", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Let statements arrays 4") {
+        run_parser_stmt_test(
+            "let var data: var@[i32; 20]",
+            {"(stmt:let var data var@[i32; 20])", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Let statements arrays 5") {
+        run_parser_stmt_test(
+            "let var empty: [f64; 0]",
+            {"(stmt:let var empty [])", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Let statements arrays 6") {
+        run_parser_stmt_test(
+            "let var empty: []",
+            {"(stmt:let var empty [])", "(stmt:eof)"}
+        );
+    }
 }
 
 TEST_CASE("Parser function statements", "[parser]") {

@@ -87,7 +87,8 @@ enum class Tok {
 
     Identifier,
     TupleIndex,
-    NaturalNumber,
+    ArraySize,
+    Question,
 
     // Literals
 

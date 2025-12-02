@@ -281,7 +281,15 @@ std::optional<std::shared_ptr<Expr>> Parser::loop() {
     return std::make_shared<Expr::Loop>(loop_kw, *body, condition, loops_once);
 }
 
-std::optional<std::shared_ptr<Expr>> Parser::natural_number_literal() {
+std::optional<size_t> Parser::array_size() {
+    if (peek()->tok_type != Tok::IntDefault) {
+        Logger::inst().log_error(
+            Err::NaturalNumberWithoutIntDefaultToken,
+            peek()->location,
+            "Expected a non-negative integer without a sign or type suffix."
+        );
+        return std::nullopt;
+    }
     std::string numeric_string;
     auto lexeme = peek()->lexeme;
     for (size_t i = 0; i < lexeme.size(); i++) {
@@ -290,9 +298,9 @@ std::optional<std::shared_ptr<Expr>> Parser::natural_number_literal() {
         }
         else if (!std::isdigit(lexeme[i])) {
             Logger::inst().log_error(
-                Err::AlphaCharInNaturalNumber,
+                Err::AlphaCharInArraySize,
                 peek()->location,
-                "Natural number literal contains non-digit characters."
+                "Array size contains non-digit characters."
             );
             Logger::inst().log_note(
                 "Only base-10 digits (0-9) and underscores are allowed in this "
@@ -308,19 +316,19 @@ std::optional<std::shared_ptr<Expr>> Parser::natural_number_literal() {
 
     if (ec == std::errc::result_out_of_range) {
         Logger::inst().log_error(
-            Err::NaturalNumberTooLarge,
+            Err::ArraySizeTooLarge,
             previous()->location,
-            "Number is too large."
+            "Array size is too large."
         );
         return std::nullopt;
     }
     else if (ec != std::errc()) {
-        panic("Parser::number_literal: Number in unexpected format.");
+        panic("Parser::array_size: Number in unexpected format.");
         return std::nullopt;
     }
     token->literal = any_val;
-    token->tok_type = Tok::NaturalNumber;
-    return std::make_shared<Expr::Literal>(token);
+    token->tok_type = Tok::ArraySize;
+    return std::any_cast<size_t>(any_val);
 }
 
 std::optional<std::shared_ptr<Expr>> Parser::number_literal() {
@@ -1116,6 +1124,46 @@ std::optional<std::shared_ptr<Annotation>> Parser::annotation() {
         return std::make_shared<Annotation::Tuple>(
             lparen_token,
             std::move(elements)
+        );
+    }
+    if (match({Tok::LSquare})) {
+        auto lsquare_token = previous();
+        if (match({Tok::RSquare})) {
+            // Empty array annotation
+            return std::make_shared<Annotation::Array>(lsquare_token);
+        }
+        auto element_anno = annotation();
+        if (!element_anno)
+            return std::nullopt;
+        if (!match({Tok::Semicolon})) {
+            Logger::inst().log_error(
+                Err::UnexpectedToken,
+                peek()->location,
+                "Expected ';' after element type in array annotation."
+            );
+            return std::nullopt;
+        }
+        std::optional<size_t> arr_size = std::nullopt;
+        if (match({Tok::Question})) {
+            // Unsized array; do nothing.
+        }
+        else {
+            arr_size = array_size();
+            if (!arr_size)
+                return std::nullopt;
+        }
+        if (!match({Tok::RSquare})) {
+            Logger::inst().log_error(
+                Err::UnexpectedToken,
+                peek()->location,
+                "Expected ']' after size in array annotation."
+            );
+            return std::nullopt;
+        }
+        return std::make_shared<Annotation::Array>(
+            lsquare_token,
+            *element_anno,
+            arr_size
         );
     }
     Logger::inst()
