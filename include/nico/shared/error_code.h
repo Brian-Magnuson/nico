@@ -65,6 +65,10 @@ enum class Err {
     // A numeric literal could not be parsed due to being out of range for the
     // expected type.
     NumberOutOfRange,
+    // A natural number literal could not be parsed due to being out of range.
+    NaturalNumberTooLarge,
+    // An alphabetic character was found in a natural number literal.
+    AlphaCharInNaturalNumber,
     // A negative sign was found before an unsigned integer literal.
     NegativeOnUnsignedLiteral,
     // A type was expected but not found.

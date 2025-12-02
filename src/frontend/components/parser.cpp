@@ -1,5 +1,6 @@
 #include "nico/frontend/components/parser.h"
 
+#include <cctype>
 #include <cstdint>
 
 #include "nico/frontend/utils/nodes.h"
@@ -278,6 +279,48 @@ std::optional<std::shared_ptr<Expr>> Parser::loop() {
     }
 
     return std::make_shared<Expr::Loop>(loop_kw, *body, condition, loops_once);
+}
+
+std::optional<std::shared_ptr<Expr>> Parser::natural_number_literal() {
+    std::string numeric_string;
+    auto lexeme = peek()->lexeme;
+    for (size_t i = 0; i < lexeme.size(); i++) {
+        if (lexeme[i] == '_') {
+            continue;
+        }
+        else if (!std::isdigit(lexeme[i])) {
+            Logger::inst().log_error(
+                Err::AlphaCharInNaturalNumber,
+                peek()->location,
+                "Natural number literal contains non-digit characters."
+            );
+            Logger::inst().log_note(
+                "Only base-10 digits (0-9) and underscores are allowed in this "
+                "number."
+            );
+            return std::nullopt;
+        }
+        numeric_string += lexeme[i];
+    }
+    advance();
+    auto token = previous();
+    auto [any_val, ec] = parse_number<size_t>(numeric_string, 10);
+
+    if (ec == std::errc::result_out_of_range) {
+        Logger::inst().log_error(
+            Err::NaturalNumberTooLarge,
+            previous()->location,
+            "Number is too large."
+        );
+        return std::nullopt;
+    }
+    else if (ec != std::errc()) {
+        panic("Parser::number_literal: Number in unexpected format.");
+        return std::nullopt;
+    }
+    token->literal = any_val;
+    token->tok_type = Tok::NaturalNumber;
+    return std::make_shared<Expr::Literal>(token);
 }
 
 std::optional<std::shared_ptr<Expr>> Parser::number_literal() {

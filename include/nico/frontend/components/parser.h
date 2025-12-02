@@ -205,6 +205,22 @@ class Parser {
     std::optional<std::shared_ptr<Expr>> loop();
 
     /**
+     * @brief Parses a natural number literal expression.
+     *
+     * A natural number literal is a number literal expression that has a few
+     * special qualities: Negative signs cannot be applied to them, no base
+     * prefixes are allowed, no type suffixes are allowed, and they are always
+     * parsed as a `size_t` type.
+     *
+     * Natural number literals are useful for when a size or index is needed at
+     * compile-time.
+     *
+     * @return A shared pointer to the parsed expression, or nullopt if the
+     * expression could not be parsed.
+     */
+    std::optional<std::shared_ptr<Expr>> natural_number_literal();
+
+    /**
      * @brief Parses a number literal expression.
      *
      * Number literals include integers and floats.
