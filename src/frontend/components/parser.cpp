@@ -487,6 +487,38 @@ std::optional<std::shared_ptr<Expr>> Parser::primary() {
             return std::make_shared<Expr::Tuple>(lparen, std::move(elements));
         }
     }
+    if (match({Tok::LSquare})) {
+        // Array literal
+        auto lsquare = previous();
+        std::vector<std::shared_ptr<Expr>> elements;
+        if (match({Tok::RSquare})) {
+            // Empty array
+            return std::make_shared<Expr::Array>(lsquare, std::move(elements));
+        }
+        bool comma_matched = false;
+        do {
+            if (peek()->tok_type == Tok::RSquare) {
+                // We allow trailing commas.
+                break;
+            }
+            auto expr = expression();
+            if (!expr)
+                return std::nullopt;
+            elements.push_back(*expr);
+            comma_matched = match({Tok::Comma});
+        } while (comma_matched);
+
+        if (!match({Tok::RSquare})) {
+            Logger::inst().log_error(
+                Err::UnexpectedToken,
+                peek()->location,
+                "Expected ']' after array literal."
+            );
+            return std::nullopt;
+        }
+
+        return std::make_shared<Expr::Array>(lsquare, std::move(elements));
+    }
 
     if (repl_mode && peek()->tok_type == Tok::Eof) {
         incomplete_statement = true;

@@ -952,6 +952,35 @@ TEST_CASE("Parser call expressions", "[parser]") {
     }
 }
 
+TEST_CASE("Parser array expressions", "[parser]") {
+    SECTION("Array literal with integers") {
+        run_parser_expr_test(
+            "[1, 2, 3]",
+            {"(expr (array (lit i32 1) (lit i32 2) (lit i32 3)))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Array trailing comma") {
+        run_parser_expr_test(
+            "[1, 2, 3,]",
+            {"(expr (array (lit i32 1) (lit i32 2) (lit i32 3)))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Array literal with mixed expressions") {
+        run_parser_expr_test(
+            "[a, b + c, d * e]",
+            {"(expr (array (nameref a) (binary + (nameref b) (nameref c)) "
+             "(binary * (nameref d) (nameref e))))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Empty array literal") {
+        run_parser_expr_test("[]", {"(expr (array))", "(stmt:eof)"});
+    }
+}
+
 // MARK: Error tests
 
 TEST_CASE("Parser number errors", "[parser]") {
