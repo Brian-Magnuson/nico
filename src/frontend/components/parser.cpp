@@ -1160,10 +1160,6 @@ std::optional<std::shared_ptr<Annotation>> Parser::annotation() {
     }
     if (match({Tok::LSquare})) {
         auto lsquare_token = previous();
-        if (match({Tok::RSquare})) {
-            // Empty array annotation
-            return std::make_shared<Annotation::Array>(lsquare_token);
-        }
         auto element_anno = annotation();
         if (!element_anno)
             return std::nullopt;

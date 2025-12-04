@@ -926,9 +926,6 @@ public:
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 
     std::string to_string() const override {
-        if (!base || (size.has_value() && size.value() == 0)) {
-            return "[]";
-        }
         return "[" + base.value()->to_string() + "; " +
                (size ? std::to_string(size.value()) : "?") + "]";
     }

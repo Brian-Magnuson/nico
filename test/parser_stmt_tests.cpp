@@ -181,14 +181,7 @@ TEST_CASE("Parser let statements", "[parser]") {
     SECTION("Let statements arrays 5") {
         run_parser_stmt_test(
             "let var empty: [f64; 0]",
-            {"(stmt:let var empty [])", "(stmt:eof)"}
-        );
-    }
-
-    SECTION("Let statements arrays 6") {
-        run_parser_stmt_test(
-            "let var empty: []",
-            {"(stmt:let var empty [])", "(stmt:eof)"}
+            {"(stmt:let var empty [f64; 0])", "(stmt:eof)"}
         );
     }
 }
