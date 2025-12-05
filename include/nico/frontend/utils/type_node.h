@@ -25,6 +25,8 @@ namespace nico {
  */
 class Type::INumeric : virtual public Type {
 public:
+    virtual ~INumeric() = default;
+
     virtual std::string to_string() const = 0;
 };
 
@@ -42,6 +44,8 @@ public:
     // The width of the integer in bits. Can be any number, but should be 8, 16,
     // 32, or 64.
     const uint8_t width;
+
+    virtual ~Int() = default;
 
     Int(bool is_signed, uint8_t width)
         : is_signed(is_signed), width(width) {}
@@ -206,6 +210,8 @@ public:
     // The width of the float in bits. Can be 32 or 64.
     const uint8_t width;
 
+    virtual ~Float() = default;
+
     Float(uint8_t width)
         : width(width) {
         if (width != 32 && width != 64) {
@@ -269,6 +275,8 @@ public:
  */
 class Type::Bool : public Type {
 public:
+    virtual ~Bool() = default;
+
     std::string to_string() const override { return "bool"; }
 
     bool operator==(const Type& other) const override {
@@ -310,6 +318,8 @@ public:
     bool is_mutable;
     // The type that the pointer points to.
     const std::shared_ptr<Type> base;
+
+    virtual ~Pointer() = default;
 
     Pointer(std::shared_ptr<Type> base, bool is_mutable)
         : is_mutable(is_mutable), base(base) {}
@@ -366,6 +376,8 @@ public:
  */
 class Type::Nullptr : public Type::Pointer {
 public:
+    virtual ~Nullptr() = default;
+
     Nullptr()
         : Type::Pointer(nullptr, false) {}
 
@@ -394,6 +406,8 @@ public:
     bool is_mutable;
     // The type that the reference points to.
     const std::shared_ptr<Type> base;
+
+    virtual ~Reference() = default;
 
     Reference(std::shared_ptr<Type> base, bool is_mutable)
         : is_mutable(is_mutable), base(base) {}
@@ -446,6 +460,8 @@ public:
  */
 class Type::Str : public Type {
 public:
+    virtual ~Str() = default;
+
     std::string to_string() const override { return "str"; }
 
     bool operator==(const Type& other) const override {
@@ -484,6 +500,8 @@ public:
     const std::shared_ptr<Type> base;
     // The number of elements in the array.
     const std::optional<size_t> size;
+
+    virtual ~Array() = default;
 
     Array(std::shared_ptr<Type> base)
         : base(base), size(std::nullopt) {}
@@ -537,6 +555,43 @@ public:
 };
 
 /**
+ * @brief An empty array type.
+ *
+ * Represents an array with zero elements and an unspecified base type.
+ * It is written as `[]` and its only value is also `[]`.
+ * It can be assigned to any array type with size 0, regardless of base type.
+ */
+class Type::EmptyArray : public Type::Array {
+public:
+    virtual ~EmptyArray() = default;
+
+    EmptyArray()
+        : Type::Array(nullptr, 0) {}
+
+    std::string to_string() const override { return "[]"; }
+
+    bool operator==(const Type& other) const override {
+        return dynamic_cast<const EmptyArray*>(&other) != nullptr;
+    }
+
+    virtual llvm::Type*
+    get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
+        return llvm::ArrayType::get(
+            llvm::Type::getInt8Ty(builder->getContext()),
+            0
+        );
+    }
+
+    virtual bool is_assignable_to(const Type& other) const override {
+        if (const auto* other_array = dynamic_cast<const Array*>(&other)) {
+            return other_array->size.has_value() &&
+                   other_array->size.value() == 0;
+        }
+        return false;
+    }
+};
+
+/**
  * @brief A tuple type.
  *
  * Used to represent a fixed-size collection of types.
@@ -545,6 +600,8 @@ class Type::Tuple : public Type {
 public:
     // The types of the elements in the tuple.
     const std::vector<std::shared_ptr<Type>> elements;
+
+    virtual ~Tuple() = default;
 
     Tuple(std::vector<std::shared_ptr<Type>> elements)
         : elements(std::move(elements)) {}
@@ -625,6 +682,8 @@ public:
  */
 class Type::Unit : public Type::Tuple {
 public:
+    virtual ~Unit() = default;
+
     Unit()
         : Tuple({}) {}
 
@@ -653,6 +712,8 @@ class Type::Object : public Type {
 public:
     // The fields of the object.
     Dictionary<std::string, Field> properties;
+
+    virtual ~Object() = default;
 
     Object() = default;
 
@@ -690,6 +751,8 @@ public:
 
 class Type::ICallable : public Type {
 public:
+    virtual ~ICallable() = default;
+
     virtual std::pair<std::string, std::vector<llvm::Value*>> to_print_args(
         std::unique_ptr<llvm::IRBuilder<>>& builder,
         llvm::Value* value,
@@ -726,6 +789,8 @@ public:
     Dictionary<std::string, Field> parameters;
     // The return type of the function.
     const std::shared_ptr<Type> return_type;
+
+    virtual ~Function() = default;
 
     Function(
         Dictionary<std::string, Field> parameters,
@@ -811,6 +876,8 @@ public:
     // The overload group this overloaded function belongs to.
     std::weak_ptr<Node::OverloadGroup> overload_group;
 
+    virtual ~OverloadedFn() = default;
+
     OverloadedFn() = default;
 
     std::string to_string() const override { return "overloadedfn"; }
@@ -835,6 +902,8 @@ public:
     // The node associated with this named type; uses a weak pointer to avoid
     // circular references.
     const std::weak_ptr<Node::ITypeNode> node;
+
+    virtual ~Named() = default;
 
     Named(std::weak_ptr<Node::ITypeNode> node)
         : node(node) {

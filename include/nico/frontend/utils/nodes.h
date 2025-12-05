@@ -135,6 +135,7 @@ public:
 
     // Aggregate types
     class Array;
+    class EmptyArray;
     class Tuple;
     class Unit;
     class Object;

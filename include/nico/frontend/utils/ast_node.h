@@ -919,13 +919,16 @@ public:
         std::optional<std::shared_ptr<Annotation>> base = std::nullopt,
         std::optional<size_t> size = std::nullopt
     )
-        : base(std::move(base)), size(size) {
+        : base(base), size(size) {
         location = &l_square_token->location;
     }
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 
     std::string to_string() const override {
+        if (!base.has_value()) {
+            return "[]";
+        }
         return "[" + base.value()->to_string() + "; " +
                (size ? std::to_string(size.value()) : "?") + "]";
     }
