@@ -166,6 +166,13 @@ Arrays are zero-indexed and may be written as literals using square brackets:
 
 For array literals, the size is inferred from the number of elements provided.
 
+Array literals that have no elements can be written as `[]`. These arrays have a special type, empty array, also written as `[]`.
+Empty arrays have no base type associated with them, but may be assigned to any array with a size of 0.
+```
+let empty_1 = []            // Implicitly has type []
+let empty_2: [i32; 0] = []  // Type becomes [i32; 0]
+```
+
 For unsized arrays, the type is written as `[T; ?]`, where `T` is the type of the elements.
 
 The unsized array type can never be used directly. It can only be used as the base type of a raw pointer, written as `@[T; ?]`.
