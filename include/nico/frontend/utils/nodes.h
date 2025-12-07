@@ -244,6 +244,18 @@ public:
     }
 
     /**
+     * @brief Check if this type is sized, i.e., has a known size at compile
+     * time.
+     *
+     * Sized types are required for memory allocation.
+     *
+     * Most types are sized. An example of an unsized type is `[T; ?]`.
+     *
+     * @return True if the type is sized. False otherwise.
+     */
+    virtual bool is_sized_type() const { return true; }
+
+    /**
      * @brief Get the size of the LLVM type in bytes corresponding to this type.
      *
      * Internally, this function calls `get_llvm_type` and uses the data layout

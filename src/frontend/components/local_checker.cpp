@@ -1147,8 +1147,48 @@ std::any LocalChecker::visit(Expr::Tuple* expr, bool as_lvalue) {
 }
 
 std::any LocalChecker::visit(Expr::Array* expr, bool as_lvalue) {
-    // TODO: Implement array expressions.
-    panic("LocalChecker::visit(Expr::Array*): Not implemented yet.");
+    if (as_lvalue) {
+        Logger::inst().log_error(
+            Err::NotAPossibleLValue,
+            *expr->location,
+            "Array expression cannot be an lvalue."
+        );
+        return std::any();
+    }
+    bool has_error = false;
+    if (expr->elements.empty()) {
+        expr->type = std::make_shared<Type::EmptyArray>();
+        return std::any();
+    }
+    // Visit every element once.
+    for (auto& element : expr->elements) {
+        expr_check(element, false);
+        if (!element->type)
+            has_error = true;
+    }
+    if (has_error)
+        return std::any();
+
+    auto first_elem_type = expr->elements[0]->type;
+    // Ensure all elements have the same type.
+    for (size_t i = 1; i < expr->elements.size(); i++) {
+        if (*expr->elements[i]->type != *first_elem_type) {
+            Logger::inst().log_error(
+                Err::ArrayElementTypeMismatch,
+                *expr->elements[i]->location,
+                "Array element type inconsistent with first element."
+            );
+            Logger::inst().log_note(
+                "Expected type `" + first_elem_type->to_string() + "`."
+            );
+            has_error = true;
+        }
+    }
+    if (has_error)
+        return std::any();
+    expr->type =
+        std::make_shared<Type::Array>(first_elem_type, expr->elements.size());
+
     return std::any();
 }
 

@@ -52,7 +52,23 @@ std::any AnnotationChecker::visit(Annotation::Reference* annotation) {
 }
 
 std::any AnnotationChecker::visit(Annotation::Array* annotation) {
-    return std::any();
+    std::shared_ptr<Type> type = nullptr;
+    if (!annotation->base.has_value()) {
+        type = std::make_shared<Type::EmptyArray>();
+        return type;
+    }
+    auto base_any = annotation->base.value()->accept(this);
+    if (!base_any.has_value())
+        return std::any();
+    auto base_type = std::any_cast<std::shared_ptr<Type>>(base_any);
+    if (annotation->size.has_value()) {
+        type =
+            std::make_shared<Type::Array>(base_type, annotation->size.value());
+    }
+    else {
+        type = std::make_shared<Type::Array>(base_type);
+    }
+    return type;
 }
 
 std::any AnnotationChecker::visit(Annotation::Object* annotation) {

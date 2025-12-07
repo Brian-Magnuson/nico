@@ -149,6 +149,8 @@ enum class Err {
     // A type mismatch was found between a function's body expression and its
     // declared return type.
     FunctionReturnTypeMismatch,
+    // An array literal element had a type inconsistent with previous elements.
+    ArrayElementTypeMismatch,
     // An name was not found in the symbol table.
     UndeclaredName,
     // An name was matched to a non-FieldEntry node where one was expected.

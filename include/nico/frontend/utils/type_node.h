@@ -530,6 +530,31 @@ public:
         return false;
     }
 
+    virtual bool is_assignable_to(const Type& other) const override {
+        if (const auto* other_array = dynamic_cast<const Array*>(&other)) {
+            bool sizes_compatible = false;
+            /*
+            We allow assignment in these cases:
+            1. Both arrays have the same size.
+            2. `other` is an unsized array.
+            */
+            if (size.has_value() && other_array->size.has_value()) {
+                sizes_compatible = size.value() == other_array->size.value();
+            }
+            else if (!other_array->size.has_value()) {
+                sizes_compatible = true;
+            }
+
+            return base->is_assignable_to(*other_array->base) &&
+                   sizes_compatible;
+        }
+        return false;
+    }
+
+    virtual bool is_sized_type() const override {
+        return size.has_value() && base->is_sized_type();
+    }
+
     virtual llvm::Type*
     get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
         if (size.has_value()) {
@@ -617,6 +642,15 @@ public:
         }
         result += ")";
         return result;
+    }
+
+    bool is_sized_type() const override {
+        for (const auto& element : elements) {
+            if (!element->is_sized_type()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     bool operator==(const Type& other) const override {
@@ -735,6 +769,15 @@ public:
             return properties == other_object->properties;
         }
         return false;
+    }
+
+    bool is_sized_type() const override {
+        for (const auto& [key, value] : properties) {
+            if (!value.type->is_sized_type()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     virtual llvm::Type*

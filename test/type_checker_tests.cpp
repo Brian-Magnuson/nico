@@ -582,6 +582,31 @@ TEST_CASE("Local tuple expressions", "[checker]") {
     }
 }
 
+TEST_CASE("Local array expressions", "[checker]") {
+    SECTION("Valid array expression 1") {
+        run_checker_test("let a = [1, 2, 3, 4, 5]");
+    }
+
+    SECTION("Valid array expression 2") {
+        run_checker_test("let a: [i32; 3] = [1, 2, 3]");
+    }
+
+    SECTION("Array element type mismatch") {
+        run_checker_test(
+            "let a: [i32; 3] = [1, 2.0, 3]",
+            Err::ArrayElementTypeMismatch
+        );
+    }
+
+    SECTION("Array type mismatch") {
+        run_checker_test("let a: [i32; 4] = [1, 2, 3]", Err::LetTypeMismatch);
+    }
+
+    SECTION("Empty array expression") {
+        run_checker_test("let a: [i32; 0] = []");
+    }
+}
+
 TEST_CASE("Local conditional expressions", "[checker]") {
     SECTION("Valid conditional expression 1") {
         run_checker_test("if true { 1 } else { false }");
