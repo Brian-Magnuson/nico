@@ -121,6 +121,17 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
         expr_type = annotation_type;
     }
 
+    if (!expr_type->is_sized_type()) {
+        Logger::inst().log_error(
+            Err::UnsizedTypeAllocation,
+            stmt->identifier->location,
+            "Cannot allocate variable `" +
+                std::string(stmt->identifier->lexeme) + "` of unsized type `" +
+                expr_type->to_string() + "`."
+        );
+        return std::any();
+    }
+
     // Create the field entry.
     Field field(stmt->has_var, stmt->identifier, expr_type);
 

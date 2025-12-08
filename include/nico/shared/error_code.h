@@ -151,6 +151,8 @@ enum class Err {
     FunctionReturnTypeMismatch,
     // An array literal element had a type inconsistent with previous elements.
     ArrayElementTypeMismatch,
+    // An attempt was made to allocate memory for an unsized type.
+    UnsizedTypeAllocation,
     // An name was not found in the symbol table.
     UndeclaredName,
     // An name was matched to a non-FieldEntry node where one was expected.

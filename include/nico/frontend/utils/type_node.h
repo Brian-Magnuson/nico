@@ -668,6 +668,23 @@ public:
         return false;
     }
 
+    virtual bool is_assignable_to(const Type& other) const override {
+        if (const auto* other_tuple = dynamic_cast<const Tuple*>(&other)) {
+            if (elements.size() != other_tuple->elements.size()) {
+                return false;
+            }
+            for (size_t i = 0; i < elements.size(); ++i) {
+                if (!elements[i]->is_assignable_to(
+                        *(other_tuple->elements[i])
+                    )) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
     virtual llvm::Type*
     get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
         std::vector<llvm::Type*> element_types;

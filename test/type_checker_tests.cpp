@@ -605,6 +605,24 @@ TEST_CASE("Local array expressions", "[checker]") {
     SECTION("Empty array expression") {
         run_checker_test("let a: [i32; 0] = []");
     }
+
+    SECTION("Unsized type allocation 1") {
+        run_checker_test(
+            "let a: [i32; ?] = [1, 2, 3]",
+            Err::UnsizedTypeAllocation
+        );
+    }
+
+    SECTION("Unsized type allocation 2") {
+        run_checker_test(
+            "let a: ([i32; ?]) = ([1],)",
+            Err::UnsizedTypeAllocation
+        );
+    }
+
+    SECTION("Unsized type under pointer") {
+        run_checker_test("let a: [i32; 3] = [1, 2, 3] let b: @[i32; ?] = @a");
+    }
 }
 
 TEST_CASE("Local conditional expressions", "[checker]") {
