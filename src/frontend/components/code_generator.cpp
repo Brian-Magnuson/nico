@@ -882,9 +882,37 @@ std::any CodeGenerator::visit(Expr::Tuple* expr, bool as_lvalue) {
 }
 
 std::any CodeGenerator::visit(Expr::Array* expr, bool as_lvalue) {
-    // TODO: Implement array expressions
-    panic("CodeGenerator::visit(Expr::Array*): Not implemented yet.");
-    return std::any();
+    llvm::Value* result = nullptr;
+    std::vector<llvm::Value*> element_values;
+    for (const auto& element : expr->elements) {
+        element_values.push_back(
+            std::any_cast<llvm::Value*>(element->accept(this, false))
+        );
+    }
+    llvm::ArrayType* array_type =
+        llvm::cast<llvm::ArrayType>(expr->type->get_llvm_type(builder));
+    llvm::Value* array_alloc =
+        builder->CreateAlloca(array_type, nullptr, "array");
+
+    for (size_t i = 0; i < element_values.size(); ++i) {
+        llvm::Value* element_ptr = builder->CreateGEP(
+            array_type,
+            array_alloc,
+            {llvm::ConstantInt::get(
+                 llvm::Type::getInt64Ty(*mod_ctx.llvm_context),
+                 0
+             ),
+             llvm::ConstantInt::get(
+                 llvm::Type::getInt64Ty(*mod_ctx.llvm_context),
+                 i
+             )},
+            "element"
+        );
+        builder->CreateStore(element_values[i], element_ptr);
+    }
+    result = builder->CreateLoad(array_type, array_alloc);
+
+    return result;
 }
 
 std::any CodeGenerator::visit(Expr::Block* expr, bool as_lvalue) {
