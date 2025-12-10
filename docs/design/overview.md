@@ -187,7 +187,9 @@ Implicit bounds checking is not performed on unsized arrays. Accessing the eleme
 
 The unsized array type should not be confused with the data structure commonly known as a "dynamic array". Dynamic arrays are implemented using classes and provide additional functionality, such as resizing and automatic memory management.
 
-It is worth noting that arrays are not pointers, do not decay to pointers, and cannot be casted to pointers. Dereferencing can only be done on pointers and array access can only be done on arrays. 
+It is worth noting that arrays are not pointers, do not decay to pointers, and cannot be casted to pointers. Dereferencing can only be done on pointers and array access can only be done on arrays.
+
+Using `=` to assign one array to another will shallow copy the elements of the array. For other copy behaviors, the copy must be done manually.
 
 ### Tuple type and unit type
 
@@ -209,6 +211,8 @@ A tuple may also have no elements. It is written as an empty pair of parentheses
 ```
 
 A tuple with no elements is called the unit type. It is used to represent the absence of a value.
+
+Using `=` to assign one tuple to another will shallow copy the elements of the tuple. For other copy behaviors, the copy must be done manually.
 
 ### Struct literal type
 
@@ -244,7 +248,7 @@ You cannot add more properties to a struct literal after it is created.
 
 Struct literal values always use braces; there is no indented form, and they are not considered blocks. Blocks always have some keyword signifying the opening of a block, such as `if`, `while`, or `block`.
 
-Struct literal values always use copy semantics. Use in combination with wrapper classes if different behavior is desired.
+Using `=` to assign one struct literal value to another will shallow copy the properties of the struct. For other copy behaviors, the copy must be done manually.
 
 ## Pointer and reference types
 
@@ -1390,3 +1394,30 @@ Labels may be applied to blocks, even if they are not targeted by any yield stat
 Additionally, `break` statements may only target loop blocks.
 
 Labels are allowed on functions and you can use `yield` to set the yield value of a function. However, we do not allow `return` statements to use labels, as they always target the nearest enclosing function.
+
+# Core Library
+
+The Nico core library is a special set of built-in functions, types, and constants that are essential and always available to Nico programs.
+
+It should not be confused with the standard library, which is a larger, optional set of functions, types, and constants that provide additional functionality.
+
+The core library:
+- Is designed to be minimal.
+- Is always available without needing to import anything.
+- Is implemented as part of the compiler.
+- Is tightly integrated with the language itself.
+
+The standard library:
+- Is designed to be comprehensive.
+- Must be explicitly imported to be used.
+- Is implemented as separate modules.
+- Is built on top of the language and core library.
+
+The core library contains constructs that are too fundamental to be implemented in the standard library and too complex to be implemented as part of the language itself.
+
+The following is a non-exhaustive, non-comprehensive list of items in the core library:
+- `Iterable`: An interface for types that can be iterated over.
+- `Range`: A lazily-evaluated sequence of values that can be iterated over.
+- `Option`: A type that represents an optional value.
+- `Result`: A type that represents either a success or an error.
+- `Promise`: A type that represents a value that may be available in the future.
