@@ -461,8 +461,8 @@ public:
  * Access expressions are used to access members of objects or elements of
  * tuples.
  *
- * The right expression can only be an Expr::NameRef or Expr::Literal where
- * the literal is an integer.
+ * The right token can be either an identifier token (for member access) or a
+ * tuple index token (for tuple element access).
  *
  * Although structurally similar to binary expressions, a separate class is used
  * for organization.
@@ -484,6 +484,39 @@ public:
         : left(left), op(op), right_token(right_token) {
         location = &op->location;
     }
+
+    std::any accept(Visitor* visitor, bool as_lvalue) override {
+        return visitor->visit(this, as_lvalue);
+    }
+};
+
+/**
+ * @brief A subscript expression.
+ *
+ * Subscript expressions are used to access elements of arrays using square
+ * brackets.
+ *
+ * They consist of a base expression and an index expression.
+ * E.g., `arr[i]`
+ */
+class Expr::Subscript : public Expr::IPLValue {
+public:
+    // The base expression being subscripted.
+    std::shared_ptr<Expr> left;
+    // The left bracket token.
+    std::shared_ptr<Token> lbracket;
+    // The index expression.
+    std::shared_ptr<Expr> index;
+
+    Subscript(
+        std::shared_ptr<Expr> left,
+        std::shared_ptr<Token> lbracket,
+        std::shared_ptr<Expr> index
+    )
+        : left(left), lbracket(lbracket), index(index) {
+        location = &lbracket->location;
+    }
+
     std::any accept(Visitor* visitor, bool as_lvalue) override {
         return visitor->visit(this, as_lvalue);
     }

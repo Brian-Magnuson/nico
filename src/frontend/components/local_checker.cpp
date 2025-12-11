@@ -886,6 +886,12 @@ std::any LocalChecker::visit(Expr::Access* expr, bool as_lvalue) {
     }
 }
 
+std::any LocalChecker::visit(Expr::Subscript* expr, bool as_lvalue) {
+    // TODO: Implement array subscripting.
+    panic("LocalChecker::visit(Expr::Subscript*): Not implemented yet.");
+    return std::any();
+}
+
 std::any LocalChecker::visit(Expr::Call* expr, bool as_lvalue) {
     std::vector<std::shared_ptr<Type::Function>> candidate_funcs;
     std::vector<std::shared_ptr<Node::FieldEntry>> overload_field_entries;

@@ -346,6 +346,7 @@ public:
     class Deref;
     class Cast;
     class Access;
+    class Subscript;
     class Call;
     class SizeOf;
     class NameRef;
@@ -374,6 +375,7 @@ public:
         virtual std::any visit(Deref* expr, bool as_lvalue) = 0;
         virtual std::any visit(Cast* expr, bool as_lvalue) = 0;
         virtual std::any visit(Access* expr, bool as_lvalue) = 0;
+        virtual std::any visit(Subscript* expr, bool as_lvalue) = 0;
         virtual std::any visit(Call* expr, bool as_lvalue) = 0;
         virtual std::any visit(SizeOf* expr, bool as_lvalue) = 0;
         virtual std::any visit(NameRef* expr, bool as_lvalue) = 0;

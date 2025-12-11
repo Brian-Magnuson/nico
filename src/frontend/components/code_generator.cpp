@@ -682,6 +682,12 @@ std::any CodeGenerator::visit(Expr::Access* expr, bool as_lvalue) {
     return result;
 }
 
+std::any CodeGenerator::visit(Expr::Subscript* expr, bool as_lvalue) {
+    // TODO: Implement array subscripting.
+    panic("CodeGenerator::visit(Expr::Subscript*): Not implemented yet.");
+    return std::any();
+}
+
 std::any CodeGenerator::visit(Expr::Call* expr, bool as_lvalue) {
     // Visit the callee.
     auto callee =

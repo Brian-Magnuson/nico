@@ -84,6 +84,7 @@ class LocalChecker : public Stmt::Visitor, public Expr::Visitor {
     std::any visit(Expr::Deref* expr, bool as_lvalue) override;
     std::any visit(Expr::Cast* expr, bool as_lvalue) override;
     std::any visit(Expr::Access* expr, bool as_lvalue) override;
+    std::any visit(Expr::Subscript* expr, bool as_lvalue) override;
     std::any visit(Expr::Call* expr, bool as_lvalue) override;
     std::any visit(Expr::SizeOf* expr, bool as_lvalue) override;
     std::any visit(Expr::NameRef* expr, bool as_lvalue) override;

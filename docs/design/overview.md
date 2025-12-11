@@ -967,9 +967,9 @@ unsafe:
     let y = p.field    // Automatic dereference
 ```
 
-### Index expressions
+### Subscript expressions
 
-Index expressions are used to access elements of arrays. These use square brackets:
+Subscript expressions are used to access elements of arrays. These use square brackets:
 ```
 array[0]
 ```
@@ -1421,3 +1421,5 @@ The following is a non-exhaustive, non-comprehensive list of items in the core l
 - `Option`: A type that represents an optional value.
 - `Result`: A type that represents either a success or an error.
 - `Promise`: A type that represents a value that may be available in the future.
+- `Sptr`: A smart pointer that manages shared ownership of a value using reference counting.
+- `Wptr`: A weak pointer that holds a non-owning reference to a value managed by a `Sptr`.

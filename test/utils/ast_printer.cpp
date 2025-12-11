@@ -151,6 +151,12 @@ std::any AstPrinter::visit(Expr::Access* expr, bool as_lvalue) {
     );
 }
 
+std::any AstPrinter::visit(Expr::Subscript* expr, bool as_lvalue) {
+    auto left = std::any_cast<std::string>(expr->left->accept(this, false));
+    auto index = std::any_cast<std::string>(expr->index->accept(this, false));
+    return std::string("(subscript " + left + " " + index + ")");
+}
+
 std::any AstPrinter::visit(Expr::Call* expr, bool as_lvalue) {
     std::string str = "(call ";
     str += std::any_cast<std::string>(expr->callee->accept(this, false));
