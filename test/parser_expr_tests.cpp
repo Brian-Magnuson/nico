@@ -952,6 +952,125 @@ TEST_CASE("Parser call expressions", "[parser]") {
     }
 }
 
+TEST_CASE("Parser subscript expressions", "[parser]") {
+    SECTION("Subscript with integer") {
+        run_parser_expr_test(
+            "a[0]",
+            {"(expr (subscript (nameref a) (lit i32 0)))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Subscript with expression") {
+        run_parser_expr_test(
+            "a[i + 1]",
+            {"(expr (subscript (nameref a) (binary + (nameref i) (lit i32 "
+             "1))))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Multiple subscripts") {
+        run_parser_expr_test(
+            "a[i][j + 1]",
+            {"(expr (subscript (subscript (nameref a) (nameref i)) "
+             "(binary + (nameref j) (lit i32 1))))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Subscript with call") {
+        run_parser_expr_test(
+            "a[f(i)]",
+            {"(expr (subscript (nameref a) (call (nameref f) (nameref i))))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Subscript with nested subscript") {
+        run_parser_expr_test(
+            "a[b[i]]",
+            {"(expr (subscript (nameref a) (subscript (nameref b) (nameref "
+             "i))))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Subscript with tuple index") {
+        run_parser_expr_test(
+            "a[(i, j)]",
+            {"(expr (subscript (nameref a) (tuple (nameref i) (nameref j))))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Subscript with really big expression") {
+        run_parser_expr_test(
+            "a[(i + 1) * (j - 2) / f(k)]",
+            {"(expr (subscript (nameref a) (binary / (binary * (binary + "
+             "(nameref i) (lit i32 1)) (binary - (nameref j) (lit i32 2))) "
+             "(call (nameref f) (nameref k)))))",
+             "(stmt:eof)"}
+        );
+    }
+}
+
+TEST_CASE("Parser postfix expressions", "[parser]") {
+    SECTION("Postfix 1") {
+        run_parser_expr_test(
+            "a.b()",
+            {"(expr (call (access . (nameref a) b)))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Postfix 2") {
+        run_parser_expr_test(
+            "a().b",
+            {"(expr (access . (call (nameref a)) b))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Postfix 3") {
+        run_parser_expr_test(
+            "a.b().c()",
+            {"(expr (call (access . (call (access . (nameref a) b)) c)))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Postfix 4") {
+        run_parser_expr_test(
+            "a()().b.c",
+            {"(expr (access . (access . (call (call (nameref a))) b) c))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Postfix 5") {
+        run_parser_expr_test(
+            "a.b()[c]",
+            {"(expr (subscript (call (access . (nameref a) b)) (nameref c)))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Postfix 6") {
+        run_parser_expr_test(
+            "a[b].c()",
+            {"(expr (call (access . (subscript (nameref a) (nameref b)) c)))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Postfix 7") {
+        run_parser_expr_test(
+            "a()[b]()[c]",
+            {"(expr (subscript (call (subscript (call (nameref a)) (nameref "
+             "b))) (nameref c)))",
+             "(stmt:eof)"}
+        );
+    }
+}
+
 TEST_CASE("Parser array expressions", "[parser]") {
     SECTION("Array literal with integers") {
         run_parser_expr_test(

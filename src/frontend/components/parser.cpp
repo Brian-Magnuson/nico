@@ -537,8 +537,8 @@ std::optional<std::shared_ptr<Expr>> Parser::postfix() {
     auto left = primary();
     if (!left)
         return std::nullopt;
-    if (match({Tok::Dot})) {
-        do {
+    while (match({Tok::Dot, Tok::LParen, Tok::LSquare})) {
+        if (previous()->tok_type == Tok::Dot) {
             auto op = previous();
             if (match({Tok::TupleIndex, Tok::Identifier})) {
                 left = std::make_shared<Expr::Access>(*left, op, previous());
@@ -551,59 +551,75 @@ std::optional<std::shared_ptr<Expr>> Parser::postfix() {
                 );
                 return std::nullopt;
             }
-        } while (match({Tok::Dot}));
-    }
-    if (match({Tok::LParen})) {
-        std::vector<std::shared_ptr<Expr>> pos_args;
-        Dictionary<std::string, std::shared_ptr<Expr>> named_args;
-        bool has_named_args = false;
-        do {
-            if (peek()->tok_type == Tok::RParen) {
-                // Allow trailing commas.
-                break;
-            }
-            if (peek()->tok_type == Tok::Identifier &&
-                tokens.at(current + 1)->tok_type == Tok::Colon) {
-                // This token definitely exists because there is a
-                // guaranteed `)` from the lexer.
-                has_named_args = true;
-                // Definitely a named argument.
-                auto name_token = advance(); // Consume identifier
-                advance();                   // Consume ':'
-                auto expr = expression();
-                if (!expr)
-                    return std::nullopt;
-                named_args.insert(std::string(name_token->lexeme), *expr);
-            }
-            else {
-                // Not a named argument, just a normal positional argument.
-                auto expr = expression();
-                if (!expr)
-                    return std::nullopt;
-                pos_args.push_back(*expr);
-                if (has_named_args) {
-                    Logger::inst().log_error(
-                        Err::PosArgumentAfterNamedArgument,
-                        *expr->get()->location,
-                        "Positional arguments cannot follow named arguments."
-                    );
-                    return std::nullopt;
-                }
-            }
-        } while (match({Tok::Comma}));
-        if (!match({Tok::RParen})) {
-            Logger::inst().log_error(
-                Err::UnexpectedToken,
-                peek()->location,
-                "Expected ')' after arguments in function call."
-            );
-            return std::nullopt;
         }
-        left = std::make_shared<Expr::Call>(
-            *left,
-            std::move(pos_args),
-            std::move(named_args)
-        );
+        else if (previous()->tok_type == Tok::LSquare) {
+            auto op = previous();
+            auto index_expr = expression();
+            if (!index_expr)
+                return std::nullopt;
+            if (!match({Tok::RSquare})) {
+                Logger::inst().log_error(
+                    Err::UnexpectedToken,
+                    peek()->location,
+                    "Expected ']' after array subscript."
+                );
+                return std::nullopt;
+            }
+            left = std::make_shared<Expr::Subscript>(*left, op, *index_expr);
+        }
+        else if (previous()->tok_type == Tok::LParen) {
+            std::vector<std::shared_ptr<Expr>> pos_args;
+            Dictionary<std::string, std::shared_ptr<Expr>> named_args;
+            bool has_named_args = false;
+            do {
+                if (peek()->tok_type == Tok::RParen) {
+                    // Allow trailing commas.
+                    break;
+                }
+                if (peek()->tok_type == Tok::Identifier &&
+                    tokens.at(current + 1)->tok_type == Tok::Colon) {
+                    // This token definitely exists because there is a
+                    // guaranteed `)` from the lexer.
+                    has_named_args = true;
+                    // Definitely a named argument.
+                    auto name_token = advance(); // Consume identifier
+                    advance();                   // Consume ':'
+                    auto expr = expression();
+                    if (!expr)
+                        return std::nullopt;
+                    named_args.insert(std::string(name_token->lexeme), *expr);
+                }
+                else {
+                    // Not a named argument, just a normal positional argument.
+                    auto expr = expression();
+                    if (!expr)
+                        return std::nullopt;
+                    pos_args.push_back(*expr);
+                    if (has_named_args) {
+                        Logger::inst().log_error(
+                            Err::PosArgumentAfterNamedArgument,
+                            *expr->get()->location,
+                            "Positional arguments cannot follow named "
+                            "arguments."
+                        );
+                        return std::nullopt;
+                    }
+                }
+            } while (match({Tok::Comma}));
+            if (!match({Tok::RParen})) {
+                Logger::inst().log_error(
+                    Err::UnexpectedToken,
+                    peek()->location,
+                    "Expected ')' after arguments in function call."
+                );
+                return std::nullopt;
+            }
+            left = std::make_shared<Expr::Call>(
+                *left,
+                std::move(pos_args),
+                std::move(named_args)
+            );
+        }
     }
     return left;
 }
