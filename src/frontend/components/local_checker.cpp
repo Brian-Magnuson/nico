@@ -887,8 +887,40 @@ std::any LocalChecker::visit(Expr::Access* expr, bool as_lvalue) {
 }
 
 std::any LocalChecker::visit(Expr::Subscript* expr, bool as_lvalue) {
-    // TODO: Implement array subscripting.
-    panic("LocalChecker::visit(Expr::Subscript*): Not implemented yet.");
+    auto l_type = expr_check(expr->left, true);
+    auto l_lvalue = std::dynamic_pointer_cast<Expr::IPLValue>(expr->left);
+    if (!l_type || !l_lvalue)
+        return std::any();
+
+    auto index_type = expr_check(expr->index, false);
+    if (!index_type)
+        return std::any();
+
+    if (auto array_l_type = std::dynamic_pointer_cast<Type::Array>(l_type)) {
+        // Index must be an integer type.
+        if (!PTR_INSTANCEOF(index_type, Type::Int)) {
+            Logger::inst().log_error(
+                Err::ArrayIndexNotInteger,
+                *expr->index->location,
+                "Array index must be of an integer type."
+            );
+            return std::any();
+        }
+        expr->type = array_l_type->base;
+
+        // For array subscript, the assignability and possible error location
+        // is carried over from the left side.
+        expr->assignable = l_lvalue->assignable;
+        expr->error_location = l_lvalue->error_location;
+    }
+    else {
+        Logger::inst().log_error(
+            Err::OperatorNotValidForExpr,
+            *expr->left->location,
+            "Subscript operator is not valid for this kind of expression."
+        );
+    }
+
     return std::any();
 }
 

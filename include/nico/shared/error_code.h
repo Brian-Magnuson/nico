@@ -202,6 +202,9 @@ enum class Err {
     NoMatchingFunctionOverload,
     // Multiple matching function overloads were found for a function call.
     MultipleMatchingFunctionOverloads,
+    // An array subscript expression was found where the index is not an
+    // integer type.
+    ArrayIndexNotInteger,
 
     // Local type check warning
     LocalTypeWarning = 5500,
