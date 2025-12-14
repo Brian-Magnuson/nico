@@ -625,6 +625,41 @@ TEST_CASE("Local array expressions", "[checker]") {
     }
 }
 
+TEST_CASE("Local subscript expressions", "[checker]") {
+    SECTION("Valid subscript expression 1") {
+        run_checker_test("let a = [10, 20, 30] let b: i32 = a[1]");
+    }
+
+    SECTION("Valid subscript expression 2") {
+        run_checker_test("let a = [[1,2], [3,4], [5,6]] let b: i32 = a[2][0]");
+    }
+
+    SECTION("Subscript index type mismatch") {
+        run_checker_test(
+            "let a = [10, 20, 30] let b = a[true]",
+            Err::ArrayIndexNotInteger
+        );
+    }
+
+    SECTION("Subscript on non-array type") {
+        run_checker_test(
+            "let a = 10 let b = a[0]",
+            Err::OperatorNotValidForExpr
+        );
+    }
+
+    SECTION("Subscript as valid lvalue") {
+        run_checker_test("let var a = [10, 20, 30] a[1] = 25");
+    }
+
+    SECTION("Subscript assign to immutable") {
+        run_checker_test(
+            "let a = [10, 20, 30] a[1] = 25",
+            Err::AssignToImmutable
+        );
+    }
+}
+
 TEST_CASE("Local conditional expressions", "[checker]") {
     SECTION("Valid conditional expression 1") {
         run_checker_test("if true { 1 } else { false }");
