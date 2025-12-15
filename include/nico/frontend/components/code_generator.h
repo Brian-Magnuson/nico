@@ -114,6 +114,22 @@ class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
     void add_div_zero_check(llvm::Value* divisor, const Location* location);
 
     /**
+     * @brief Adds a runtime check for array bounds.
+     *
+     * This check generates code to verify that the given index is between 0
+     * and array_size - 1 (inclusive). If the index is out of bounds, the
+     * program will abort with an error message.
+     *
+     * @param index The index value to check.
+     * @param array_size The size of the array being accessed.
+     * @param location The location in the source code where the array access
+     * occurs, used for the panic message.
+     */
+    void add_array_bounds_check(
+        llvm::Value* index, size_t array_size, const Location* location
+    );
+
+    /**
      * @brief Adds a panic call to the generated code.
      *
      * During a panic, the program will print the error message and immediately

@@ -1275,6 +1275,42 @@ void CodeGenerator::add_div_zero_check(
     builder->SetInsertPoint(div_ok_block);
 }
 
+void CodeGenerator::add_array_bounds_check(
+    llvm::Value* index, size_t array_size, const Location* location
+) {
+    llvm::BasicBlock* current_block = builder->GetInsertBlock();
+    llvm::Function* current_function = current_block->getParent();
+
+    llvm::BasicBlock* out_of_bounds_block = llvm::BasicBlock::Create(
+        *mod_ctx.llvm_context,
+        "array_out_of_bounds",
+        current_function
+    );
+    llvm::BasicBlock* in_bounds_block = llvm::BasicBlock::Create(
+        *mod_ctx.llvm_context,
+        "array_in_bounds",
+        current_function
+    );
+
+    llvm::Value* is_oob = builder->CreateICmpUGE(
+        index,
+        llvm::ConstantInt::get(index->getType(), array_size)
+    );
+    builder->CreateCondBr(is_oob, out_of_bounds_block, in_bounds_block);
+
+    // out_of_bounds_block
+    builder->SetInsertPoint(out_of_bounds_block);
+    add_panic(
+        "Array index out of bounds for array of size " +
+            std::to_string(array_size) + ".",
+        location
+    );
+    builder->CreateUnreachable();
+
+    // in_bounds_block
+    builder->SetInsertPoint(in_bounds_block);
+}
+
 void CodeGenerator::add_panic(
     std::string_view message, const Location* location
 ) {
