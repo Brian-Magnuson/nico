@@ -683,8 +683,47 @@ std::any CodeGenerator::visit(Expr::Access* expr, bool as_lvalue) {
 }
 
 std::any CodeGenerator::visit(Expr::Subscript* expr, bool as_lvalue) {
-    // TODO: Implement array subscripting.
-    panic("CodeGenerator::visit(Expr::Subscript*): Not implemented yet.");
+    // Get the array pointer
+    auto array_ptr =
+        std::any_cast<llvm::Value*>(expr->left->accept(this, true));
+    // Get the index
+    auto index = std::any_cast<llvm::Value*>(expr->index->accept(this, false));
+
+    // Handle array types
+    if (auto array_type =
+            std::dynamic_pointer_cast<Type::Array>(expr->left->type)) {
+
+        if (array_type->size.has_value()) {
+            add_array_bounds_check(
+                index,
+                array_type->size.value(),
+                expr->index->location
+            );
+        }
+
+        // Get the element pointer
+        llvm::Value* element_ptr = builder->CreateGEP(
+            array_type->base->get_llvm_type(builder),
+            array_ptr,
+            index,
+            "array_element"
+        );
+        if (as_lvalue) {
+            return element_ptr;
+        }
+        else {
+            llvm::Value* result = builder->CreateLoad(
+                expr->type->get_llvm_type(builder),
+                element_ptr
+            );
+            return result;
+        }
+    }
+
+    panic(
+        "CodeGenerator::visit(Expr::Subscript*): Left expression is not "
+        "an array type."
+    );
     return std::any();
 }
 

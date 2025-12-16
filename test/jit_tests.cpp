@@ -1250,3 +1250,70 @@ TEST_CASE("JIT functions", "[jit]") {
         );
     }
 }
+
+TEST_CASE("JIT arrays", "[jit]") {
+    SECTION("Array creation and access") {
+        run_jit_test(
+            R"(
+            let arr = [1, 2, 3, 4, 5]
+            printout arr[0], ",", arr[2], ",", arr[4]
+            )",
+            "1,3,5"
+        );
+    }
+
+    SECTION("Array assignment") {
+        run_jit_test(
+            R"(
+            let var arr = [10, 20, 30]
+            arr[1] = 99
+            printout arr[0], ",", arr[1], ",", arr[2]
+            )",
+            "10,99,30"
+        );
+    }
+
+    SECTION("Array size") {
+        run_jit_test(
+            R"(
+            let arr = [1, 2, 3, 4, 5, 6]
+            printout "sizeof arr: ", sizeof typeof(arr)
+            printout "\nsizeof arr[0]: ", sizeof typeof(arr[0])
+            printout "\nlength arr: ", sizeof typeof(arr) / sizeof typeof(arr[0])
+            )",
+            "sizeof arr: 24\nsizeof arr[0]: 4\nlength arr: 6"
+        );
+    }
+
+    SECTION("Multi-dimensional arrays") {
+        run_jit_test(
+            R"(
+            let matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+            printout matrix[0][0], ",", matrix[1][1], ",", matrix[2][2]
+            )",
+            "1,5,9"
+        );
+    }
+
+    SECTION("Array runtime bounds check (>= length)") {
+        run_jit_test(
+            R"(
+            let arr = [1, 2, 3]
+            printout arr[3]
+            )",
+            std::nullopt,
+            101
+        );
+    }
+
+    SECTION("Array runtime bounds check (< 0)") {
+        run_jit_test(
+            R"(
+            let arr = [1, 2, 3]
+            printout arr[-1]
+            )",
+            std::nullopt,
+            101
+        );
+    }
+}
