@@ -128,7 +128,8 @@ public:
     class Bool;
 
     // Pointer types
-    class Pointer;
+    class IPointer;
+    class RawPointer;
     class Nullptr;
     class Reference;
     class Str;

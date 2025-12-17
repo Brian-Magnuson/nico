@@ -32,7 +32,8 @@ std::any AnnotationChecker::visit(Annotation::Pointer* annotation) {
     if (!base_any.has_value())
         return std::any();
     auto base_type = std::any_cast<std::shared_ptr<Type>>(base_any);
-    type = std::make_shared<Type::Pointer>(base_type, annotation->is_mutable);
+    type =
+        std::make_shared<Type::RawPointer>(base_type, annotation->is_mutable);
     return type;
 }
 

@@ -15,6 +15,49 @@ LocalChecker::expr_check(std::shared_ptr<Expr> expr, bool as_lvalue) {
     return expr->type;
 }
 
+std::shared_ptr<Type>
+LocalChecker::implicit_full_dereference(std::shared_ptr<Expr>& expr) {
+    if (!expr->type)
+        panic(
+            "LocalChecker::implicit_full_dereference: Expression has no type. "
+            "Was it type checked?"
+        );
+
+    auto initial_type = expr->type;
+
+    while (auto i_pointer_type =
+               std::dynamic_pointer_cast<Type::IPointer>(expr->type)) {
+        if (PTR_INSTANCEOF(i_pointer_type, Type::Nullptr)) {
+            panic(
+                "LocalChecker::implicit_full_dereference: Called on a nullptr "
+                "pointer unexpectedly."
+            );
+        }
+        if (PTR_INSTANCEOF(i_pointer_type, Type::RawPointer)) {
+            auto local_scope = std::dynamic_pointer_cast<Node::LocalScope>(
+                symbol_tree->current_scope
+            );
+            if (!local_scope || !local_scope->block->is_unsafe) {
+                Logger::inst().log_error(
+                    Err::PtrDerefOutsideUnsafeBlock,
+                    *expr->location,
+                    "Cannot implicitly dereference `" +
+                        initial_type->to_string() +
+                        "` outside of unsafe context."
+                );
+                return nullptr;
+            }
+        }
+        expr = std::make_shared<Expr::Deref>(
+            std::make_shared<Token>(Tok::Star, *expr->location),
+            expr
+        );
+        expr->type = i_pointer_type->base;
+    }
+
+    return expr->type;
+}
+
 std::optional<Dictionary<std::string, std::weak_ptr<Expr>>>
 LocalChecker::try_match_args_to_params(
     std::shared_ptr<Type::Function> func_type,
@@ -100,12 +143,13 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
     // checked in the parser).
 
     // If the type annotation is present, check that it matches the initializer.
-    if (expr_type != nullptr && stmt->annotation.has_value()) {
+    if (stmt->annotation.has_value()) {
         auto anno_any = stmt->annotation.value()->accept(&annotation_checker);
         if (!anno_any.has_value())
             return std::any();
         auto annotation_type = std::any_cast<std::shared_ptr<Type>>(anno_any);
-        if (!expr_type->is_assignable_to(*annotation_type)) {
+        if (expr_type != nullptr &&
+            !expr_type->is_assignable_to(*annotation_type)) {
             Logger::inst().log_error(
                 Err::LetTypeMismatch,
                 *stmt->expression.value()->location,
@@ -488,7 +532,7 @@ std::any LocalChecker::visit(Expr::Binary* expr, bool as_lvalue) {
         // `Type::Pointer`.
         if (!PTR_INSTANCEOF(l_type, Type::INumeric) &&
             !PTR_INSTANCEOF(l_type, Type::Bool) &&
-            !PTR_INSTANCEOF(l_type, Type::Pointer)) {
+            !PTR_INSTANCEOF(l_type, Type::RawPointer)) {
             Logger::inst().log_error(
                 Err::NoOperatorOverload,
                 expr->op->location,
@@ -499,8 +543,9 @@ std::any LocalChecker::visit(Expr::Binary* expr, bool as_lvalue) {
         // Both operands must be of the same type, OR both operands must be
         // pointers.
         // NOT (A == B OR (isptr(A) AND isptr(B)))
-        if (!(*l_type == *r_type || (PTR_INSTANCEOF(l_type, Type::Pointer) &&
-                                     PTR_INSTANCEOF(r_type, Type::Pointer)))) {
+        if (!(*l_type == *r_type ||
+              (PTR_INSTANCEOF(l_type, Type::RawPointer) &&
+               PTR_INSTANCEOF(r_type, Type::RawPointer)))) {
             Logger::inst().log_error(
                 Err::NoOperatorOverload,
                 expr->op->location,
@@ -625,7 +670,7 @@ std::any LocalChecker::visit(Expr::Address* expr, bool as_lvalue) {
         return std::any();
 
     if (expr->op->tok_type == Tok::At) {
-        expr->type = std::make_shared<Type::Pointer>(r_type, expr->has_var);
+        expr->type = std::make_shared<Type::RawPointer>(r_type, expr->has_var);
     }
     else if (expr->op->tok_type == Tok::Amp) {
         // expr->type = std::make_shared<Type::Reference>(r_type,
@@ -676,7 +721,7 @@ std::any LocalChecker::visit(Expr::Deref* expr, bool as_lvalue) {
         );
         return std::any();
     }
-    if (auto ptr_type = std::dynamic_pointer_cast<Type::Pointer>(r_type)) {
+    if (auto ptr_type = std::dynamic_pointer_cast<Type::RawPointer>(r_type)) {
         expr->type = ptr_type->base;
         // Remember: pointers are not possible lvalues.
         // For pointer dereference, the assignability is carried over from the
@@ -691,7 +736,7 @@ std::any LocalChecker::visit(Expr::Deref* expr, bool as_lvalue) {
             Logger::inst().log_error(
                 Err::PtrDerefOutsideUnsafeBlock,
                 expr->op->location,
-                "Cannot dereference pointer outside of an unsafe block."
+                "Cannot dereference raw pointer outside of an unsafe block."
             );
             return std::any();
         }
@@ -837,6 +882,8 @@ std::any LocalChecker::visit(Expr::Cast* expr, bool as_lvalue) {
 
 std::any LocalChecker::visit(Expr::Access* expr, bool as_lvalue) {
     auto l_type = expr_check(expr->left, true);
+    if (l_type)
+        l_type = implicit_full_dereference(expr->left);
     auto l_lvalue = std::dynamic_pointer_cast<Expr::IPLValue>(expr->left);
     if (!l_type || !l_lvalue)
         return std::any();

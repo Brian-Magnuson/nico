@@ -305,6 +305,24 @@ public:
 
 // MARK: Pointer types
 
+class Type::IPointer : public Type {
+public:
+    // The type that the pointer points to.
+    const std::shared_ptr<Type> base;
+    // Whether object pointed to by this pointer is mutable.
+    bool is_mutable;
+
+    virtual ~IPointer() = default;
+
+    IPointer(std::shared_ptr<Type> base, bool is_mutable)
+        : base(base), is_mutable(is_mutable) {}
+
+    virtual llvm::Type*
+    get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
+        return llvm::PointerType::get(builder->getContext(), 0);
+    }
+};
+
 /**
  * @brief A pointer type.
  *
@@ -312,33 +330,24 @@ public:
  * Note: Since LLVM 15, pointers do not store type information.
  * Keep this in mind before converting to the LLVM type.
  */
-class Type::Pointer : public Type {
+class Type::RawPointer : public Type::IPointer {
 public:
-    // Whether object pointed to by this pointer is mutable.
-    bool is_mutable;
-    // The type that the pointer points to.
-    const std::shared_ptr<Type> base;
+    virtual ~RawPointer() = default;
 
-    virtual ~Pointer() = default;
-
-    Pointer(std::shared_ptr<Type> base, bool is_mutable)
-        : is_mutable(is_mutable), base(base) {}
+    RawPointer(std::shared_ptr<Type> base, bool is_mutable)
+        : IPointer(base, is_mutable) {}
 
     std::string to_string() const override {
         return std::string(is_mutable ? "var" : "") + "@" + base->to_string();
     }
 
     bool operator==(const Type& other) const override {
-        if (const auto* other_pointer = dynamic_cast<const Pointer*>(&other)) {
+        if (const auto* other_pointer =
+                dynamic_cast<const RawPointer*>(&other)) {
             return *base == *other_pointer->base &&
                    is_mutable == other_pointer->is_mutable;
         }
         return false;
-    }
-
-    virtual llvm::Type*
-    get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
-        return llvm::PointerType::get(builder->getContext(), 0);
     }
 
     virtual std::pair<std::string, std::vector<llvm::Value*>> to_print_args(
@@ -350,7 +359,8 @@ public:
     }
 
     virtual bool is_assignable_to(const Type& other) const override {
-        if (const auto* other_pointer = dynamic_cast<const Pointer*>(&other)) {
+        if (const auto* other_pointer =
+                dynamic_cast<const RawPointer*>(&other)) {
             // You can assign to a pointer if the base types are the same and
             // the mutability is compatible.
 
@@ -374,12 +384,12 @@ public:
  * and can be assigned to any pointer type.
  * It is only considered equal to other `Nullptr` types.
  */
-class Type::Nullptr : public Type::Pointer {
+class Type::Nullptr : public Type::RawPointer {
 public:
     virtual ~Nullptr() = default;
 
     Nullptr()
-        : Type::Pointer(nullptr, false) {}
+        : Type::RawPointer(nullptr, false) {}
 
     std::string to_string() const override { return "nullptr"; }
 
@@ -389,7 +399,7 @@ public:
 
     virtual bool is_assignable_to(const Type& other) const override {
         // nullptr can be assigned to any pointer type.
-        return dynamic_cast<const Type::Pointer*>(&other) != nullptr;
+        return dynamic_cast<const Type::RawPointer*>(&other) != nullptr;
     }
 };
 
@@ -400,7 +410,7 @@ public:
  * Note: Since LLVM 15, pointers do not store type information.
  * Keep this in mind before converting to the LLVM type.
  */
-class Type::Reference : public Type {
+class Type::Reference : public Type::IPointer {
 public:
     // Whether object pointed to by this reference is mutable.
     bool is_mutable;
@@ -410,7 +420,7 @@ public:
     virtual ~Reference() = default;
 
     Reference(std::shared_ptr<Type> base, bool is_mutable)
-        : is_mutable(is_mutable), base(base) {}
+        : IPointer(base, is_mutable) {}
 
     std::string to_string() const override {
         return std::string(is_mutable ? "var" : "") + "&" + base->to_string();
@@ -425,11 +435,6 @@ public:
         return false;
     }
 
-    virtual llvm::Type*
-    get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
-        return llvm::PointerType::get(builder->getContext(), 0);
-    }
-
     virtual std::pair<std::string, std::vector<llvm::Value*>> to_print_args(
         std::unique_ptr<llvm::IRBuilder<>>& builder,
         llvm::Value* value,
@@ -440,7 +445,8 @@ public:
     }
 
     virtual bool is_assignable_to(const Type& other) const override {
-        if (const auto* other_pointer = dynamic_cast<const Pointer*>(&other)) {
+        if (const auto* other_pointer =
+                dynamic_cast<const Reference*>(&other)) {
             return base->is_assignable_to(*other_pointer->base) &&
                    (is_mutable || !other_pointer->is_mutable);
         }

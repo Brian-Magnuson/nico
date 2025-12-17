@@ -397,7 +397,7 @@ std::any CodeGenerator::visit(Expr::Binary* expr, bool as_lvalue) {
     }
     else if (PTR_INSTANCEOF(expr->left->type, Type::Int) ||
              PTR_INSTANCEOF(expr->left->type, Type::Bool) ||
-             PTR_INSTANCEOF(expr->left->type, Type::Pointer)) {
+             PTR_INSTANCEOF(expr->left->type, Type::RawPointer)) {
         auto int_type = std::dynamic_pointer_cast<Type::Int>(expr->left->type);
         auto is_signed_int = int_type ? int_type->is_signed : false;
 

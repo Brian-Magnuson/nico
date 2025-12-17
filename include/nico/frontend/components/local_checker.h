@@ -46,6 +46,25 @@ class LocalChecker : public Stmt::Visitor, public Expr::Visitor {
     expr_check(std::shared_ptr<Expr> expr, bool as_lvalue = false);
 
     /**
+     * @brief Checks if the expression is a pointer and fully dereferences it if
+     * it is.
+     *
+     * The expression must be type checked before calling this function.
+     *
+     * This is useful for implicit dereferencing in certain contexts, such as
+     * with postfix operators.
+     *
+     * If the expression is a raw pointer and is not within an unsafe context,
+     * an error will be logged and nullptr will be returned.
+     *
+     * @param expr The expression to check. Should be type checked.
+     * @return The fully dereferenced type of the expression, or nullptr if an
+     * error occurred.
+     */
+    std::shared_ptr<Type>
+    implicit_full_dereference(std::shared_ptr<Expr>& expr);
+
+    /**
      * @brief Attempts to match the provided arguments to the function
      * parameters.
      *

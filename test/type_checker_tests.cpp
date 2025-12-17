@@ -580,6 +580,49 @@ TEST_CASE("Local tuple expressions", "[checker]") {
     SECTION("Tuple access out of bounds 2") {
         run_checker_test("let var a = () a.0 = 2", Err::TupleIndexOutOfBounds);
     }
+
+    SECTION("Tuple implicit dereference 1") {
+        run_checker_test(
+            R"(
+            let var a = (1,) 
+            let b = @a 
+            let var c: i32 
+            unsafe { 
+                c = (^b).0 
+                c = b.0 
+            }
+            )"
+        );
+    }
+
+    SECTION("Tuple implicit dereference 2") {
+        run_checker_test(
+            R"(
+            let var a = (1,) 
+            let p = @a
+            let pp = @p
+            let ppp = @pp 
+            let var c: i32 
+            unsafe { 
+                c = (^^^ppp).0 
+                c = (^^ppp).0 
+                c = (^ppp).0
+                c = ppp.0 
+            }
+            )"
+        );
+    }
+
+    SECTION("Tuple implicit deref outside unsafe") {
+        run_checker_test(
+            R"(
+            let var a = (1,) 
+            let p = @a
+            let c = p.0
+            )",
+            Err::PtrDerefOutsideUnsafeBlock
+        );
+    }
 }
 
 TEST_CASE("Local array expressions", "[checker]") {
