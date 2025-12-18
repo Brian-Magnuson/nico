@@ -881,9 +881,9 @@ std::any LocalChecker::visit(Expr::Cast* expr, bool as_lvalue) {
 }
 
 std::any LocalChecker::visit(Expr::Access* expr, bool as_lvalue) {
-    auto l_type = expr_check(expr->left, true);
-    if (l_type)
-        l_type = implicit_full_dereference(expr->left);
+    if (!expr_check(expr->left, true))
+        return std::any();
+    auto l_type = implicit_full_dereference(expr->left);
     auto l_lvalue = std::dynamic_pointer_cast<Expr::IPLValue>(expr->left);
     if (!l_type || !l_lvalue)
         return std::any();
@@ -934,7 +934,9 @@ std::any LocalChecker::visit(Expr::Access* expr, bool as_lvalue) {
 }
 
 std::any LocalChecker::visit(Expr::Subscript* expr, bool as_lvalue) {
-    auto l_type = expr_check(expr->left, true);
+    if (!expr_check(expr->left, true))
+        return std::any();
+    auto l_type = implicit_full_dereference(expr->left);
     auto l_lvalue = std::dynamic_pointer_cast<Expr::IPLValue>(expr->left);
     if (!l_type || !l_lvalue)
         return std::any();

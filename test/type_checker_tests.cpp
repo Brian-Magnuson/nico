@@ -666,6 +666,49 @@ TEST_CASE("Local array expressions", "[checker]") {
     SECTION("Unsized type under pointer") {
         run_checker_test("let a: [i32; 3] = [1, 2, 3] let b: @[i32; ?] = @a");
     }
+
+    SECTION("Array implicit dereference 1") {
+        run_checker_test(
+            R"(
+            let var a: [i32; 3] = [1, 2, 3]
+            let b: @[i32; 3] = @a
+            let var c: i32
+            unsafe {
+                c = (^b)[0]
+                c = b[0]
+            }
+            )"
+        );
+    }
+
+    SECTION("Array implicit dereference 2") {
+        run_checker_test(
+            R"(
+            let var a: [i32; 3] = [1, 2, 3]
+            let p = @a
+            let pp = @p
+            let ppp = @pp
+            let var c: i32
+            unsafe {
+                c = (^^^ppp)[0]
+                c = (^^ppp)[0]
+                c = (^ppp)[0]
+                c = ppp[0]
+            }
+            )"
+        );
+    }
+
+    SECTION("Array implicit deref outside unsafe") {
+        run_checker_test(
+            R"(
+            let var a: [i32; 3] = [1, 2, 3]
+            let p = @a
+            let c = p[0]
+            )",
+            Err::PtrDerefOutsideUnsafeBlock
+        );
+    }
 }
 
 TEST_CASE("Local subscript expressions", "[checker]") {
