@@ -581,7 +581,25 @@ public:
         llvm::Value* value,
         bool include_quotes = false
     ) const override {
-        return {"[array]", {}};
+        if (!size.has_value()) {
+            return {"[array]", {}};
+        }
+        std::string format_str = "[";
+        std::vector<llvm::Value*> args;
+        for (size_t i = 0; i < size.value(); ++i) {
+            auto [fmt, vals] = base->to_print_args(
+                builder,
+                builder->CreateExtractValue(value, {static_cast<unsigned>(i)}),
+                true
+            );
+            format_str += fmt;
+            args.insert(args.end(), vals.begin(), vals.end());
+            if (i < size.value() - 1) {
+                format_str += ", ";
+            }
+        }
+        format_str += "]";
+        return {format_str, args};
     }
 };
 

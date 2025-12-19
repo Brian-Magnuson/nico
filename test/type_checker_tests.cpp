@@ -709,6 +709,10 @@ TEST_CASE("Local array expressions", "[checker]") {
             Err::PtrDerefOutsideUnsafeBlock
         );
     }
+
+    SECTION("Array assignment") {
+        run_checker_test("let a = [1, 2, 3] let b = a");
+    }
 }
 
 TEST_CASE("Local subscript expressions", "[checker]") {

@@ -1316,4 +1316,27 @@ TEST_CASE("JIT arrays", "[jit]") {
             101
         );
     }
+
+    SECTION("Array shallow copy") {
+        run_jit_test(
+            R"(
+            let var a = [1, 1]
+            let var b = a
+            a[0] = 2
+            b[1] = 3
+            printout a[0], a[1], b[0], b[1]
+            )",
+            "2113"
+        );
+    }
+
+    SECTION("Print array") {
+        run_jit_test(
+            R"(
+            let arr = [8, 16, 32, 64]
+            printout arr
+            )",
+            "[8, 16, 32, 64]"
+        );
+    }
 }
