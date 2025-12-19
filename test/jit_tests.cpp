@@ -1339,4 +1339,24 @@ TEST_CASE("JIT arrays", "[jit]") {
             "[8, 16, 32, 64]"
         );
     }
+
+    SECTION("Print empty array") {
+        run_jit_test(
+            R"(
+            let arr = []
+            printout arr
+            )",
+            "[]"
+        );
+    }
+
+    SECTION("Print nested arrays") {
+        run_jit_test(
+            R"(
+            let arr = [[1, 2], [3, 4], [5, 6]]
+            printout arr
+            )",
+            "[[1, 2], [3, 4], [5, 6]]"
+        );
+    }
 }
