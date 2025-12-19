@@ -1127,6 +1127,52 @@ There are two ways to pass arguments to a function:
 
 When a function is called, every parameter must be matched with an argument, or the call is invalid. You can use a mix of positional, named, and default arguments, as long as the positional arguments come first and every parameter is matched with an argument.
 
+### Allocation expressions
+
+An allocation expression is used to manually allocate heap memory for a value. This uses the `alloc` keyword:
+```
+alloc expression
+```
+
+The amount of memory allocated is determined by the size of the expression's type.
+The allocation expression yields a raw pointer of the expression's type.
+```
+let p: @i32 = alloc 42
+```
+
+The allocated memory is initialized with the value of the expression.
+The expression will be fully evaluated and will not be implicitly dereferenced.
+
+Without `var`, the allocated memory cannot be mutated through the pointer. To allow mutation, use `var`:
+```
+let p1: var@i32 = alloc var 42 // Mutable pointer, immutable value
+let var p2: var@i32 = alloc var 42 // Mutable pointer, mutable value
+```
+
+Arrays use the same syntax as other expressions. Thus, allocating an array is done as follows:
+```
+let p: @[i32; 3] = alloc [1, 2, 3]
+```
+
+The `alloc` keyword may be used in safe contexts.
+
+If allocation fails (e.g., due to insufficient memory), the program will panic at runtime.
+
+The allocated memory will remain valid until it is explicitly deallocated using the `dealloc` statement.
+```
+unsafe:
+    dealloc p
+```
+
+Deallocation statements are a kind of non-declaring statement.
+For more information, refer to the section on deallocation statements.
+
+Deallocation is an unsafe operation and must be done within an `unsafe` block.
+
+If the allocated memory is not explicitly deallocated, the memory will remain allocated until the program terminates. 
+Continued failure to deallocate memory will result in less available memory for the program, potentially impacting performance or causing the program to run out of memory.
+It is the programmer's responsibility to ensure allocated memory is properly deallocated when no longer needed.
+
 ### Block expressions
 
 A block expression is used to group statements together. It may be written in idented form or braced form:
@@ -1394,6 +1440,22 @@ Labels may be applied to blocks, even if they are not targeted by any yield stat
 Additionally, `break` statements may only target loop blocks.
 
 Labels are allowed on functions and you can use `yield` to set the yield value of a function. However, we do not allow `return` statements to use labels, as they always target the nearest enclosing function.
+
+### Deallocation statements
+
+A deallocation statement is used to deallocate memory that was previously allocated using the `alloc` keyword. It is written as follows:
+```
+dealloc pointer
+```
+
+Deallocation statements must be used within an `unsafe` block, as deallocating memory incorrectly can lead to memory errors.
+
+When a pointer is deallocated, the memory it points to is freed and may be reused for other allocations. It is the programmer's responsibility to ensure that the pointer being deallocated was previously allocated using `alloc` and has not already been deallocated.
+```
+let p: @i32 = alloc 42
+unsafe:
+    dealloc p
+```
 
 # Core Library
 
