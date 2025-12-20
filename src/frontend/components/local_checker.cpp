@@ -58,6 +58,132 @@ LocalChecker::implicit_full_dereference(std::shared_ptr<Expr>& expr) {
     return expr->type;
 }
 
+bool LocalChecker::check_pointer_cast(
+    std::shared_ptr<Type> expr_type,
+    std::shared_ptr<Type> target_type,
+    std::shared_ptr<Token> as_token
+) {
+    auto expr_ptr_type = std::dynamic_pointer_cast<Type::IPointer>(expr_type);
+    auto target_ptr_type =
+        std::dynamic_pointer_cast<Type::IPointer>(target_type);
+    if (!expr_ptr_type || !target_ptr_type) {
+        panic(
+            "LocalChecker::check_pointer_cast: Both types must be pointer "
+            "types."
+        );
+    }
+
+    // Beyond this point, both types must be raw pointer types.
+    auto expr_raw_ptr_type =
+        std::dynamic_pointer_cast<Type::RawPointer>(expr_ptr_type);
+    auto target_raw_ptr_type =
+        std::dynamic_pointer_cast<Type::RawPointer>(target_ptr_type);
+    if (!expr_raw_ptr_type || !target_raw_ptr_type) {
+        Logger::inst().log_error(
+            Err::InvalidCastOperation,
+            as_token->location,
+            "Invalid pointer cast from `" + expr_type->to_string() + "` to `" +
+                target_type->to_string() + "`."
+        );
+        return false;
+    }
+
+    // Nullptr cast.
+    if (PTR_INSTANCEOF(expr_raw_ptr_type, Type::Nullptr)) {
+        // Nullptr can be cast to any raw pointer type.
+        return true;
+    }
+
+    // Multi-level pointer cast.
+    if (PTR_INSTANCEOF(expr_raw_ptr_type->base, Type::IPointer) &&
+        PTR_INSTANCEOF(target_raw_ptr_type->base, Type::IPointer)) {
+        // Recursively check the inner pointer cast.
+        return check_pointer_cast(
+            expr_raw_ptr_type->base,
+            target_raw_ptr_type->base,
+            as_token
+        );
+    }
+    else if (!PTR_INSTANCEOF(target_raw_ptr_type->base, Type::IPointer)) {
+        Logger::inst().log_error(
+            Err::InvalidCastOperation,
+            as_token->location,
+            "Cannot cast pointer type `" +
+                expr_raw_ptr_type->base->to_string() +
+                "` to non-pointer "
+                "type `" +
+                target_raw_ptr_type->base->to_string() + "`."
+        );
+        return false;
+    }
+    else if (!PTR_INSTANCEOF(expr_raw_ptr_type->base, Type::IPointer)) {
+        Logger::inst().log_error(
+            Err::InvalidCastOperation,
+            as_token->location,
+            "Cannot cast non-pointer type `" +
+                expr_raw_ptr_type->base->to_string() +
+                "` to pointer "
+                "type `" +
+                target_raw_ptr_type->base->to_string() + "`."
+        );
+        return false;
+    }
+
+    // Array pointer cast.
+    if (auto target_array_type =
+            std::dynamic_pointer_cast<Type::Array>(target_raw_ptr_type->base)) {
+        // The base type of the expression pointer type must also be an array
+        // type.
+        auto expr_array_type =
+            std::dynamic_pointer_cast<Type::Array>(expr_raw_ptr_type->base);
+        if (!expr_array_type) {
+            Logger::inst().log_error(
+                Err::InvalidCastOperation,
+                as_token->location,
+                "Cannot cast pointer of type `" + expr_type->to_string() +
+                    "` to array pointer type `" + target_type->to_string() +
+                    "`."
+            );
+            return false;
+        }
+        // The element types must be the same, not just compatible.
+        if (*expr_array_type->base != *target_array_type->base) {
+            Logger::inst().log_error(
+                Err::InvalidCastOperation,
+                as_token->location,
+                "Array pointer element types `" +
+                    expr_array_type->base->to_string() + "` and `" +
+                    target_array_type->base->to_string() +
+                    "` must be equivalent."
+            );
+            return false;
+        }
+        // The target array type must be unsized for this kind of cast.
+        if (target_array_type->size.has_value()) {
+            Logger::inst().log_error(
+                Err::InvalidCastOperation,
+                as_token->location,
+                "Array pointer cast is only valid when target array type is "
+                "unsized; array type `" +
+                    target_array_type->to_string() + "` is sized."
+            );
+            return false;
+        }
+        // Cast is OK.
+        return true;
+    }
+
+    // Cast is invalid.
+    Logger::inst().log_error(
+        Err::InvalidCastOperation,
+        as_token->location,
+        "Invalid pointer cast from `" + expr_type->to_string() + "` to `" +
+            target_type->to_string() + "`."
+    );
+
+    return false;
+}
+
 std::optional<Dictionary<std::string, std::weak_ptr<Expr>>>
 LocalChecker::try_match_args_to_params(
     std::shared_ptr<Type::Function> func_type,
@@ -777,6 +903,15 @@ std::any LocalChecker::visit(Expr::Cast* expr, bool as_lvalue) {
     if (*expr_type == *target_type) {
         // The types are the same; no cast needed.
         // We *could* emit a warning here, but we'll just allow it for now.
+        expr->operation = Expr::Cast::Operation::NoOp;
+    }
+    else if (PTR_INSTANCEOF(expr_type, Type::IPointer) &&
+             PTR_INSTANCEOF(target_type, Type::IPointer)) {
+        // Pointer cast
+        if (!check_pointer_cast(expr_type, target_type, expr->as_token)) {
+            return std::any();
+        }
+        // A pointer cast is a NoOp cast.
         expr->operation = Expr::Cast::Operation::NoOp;
     }
     else if (PTR_INSTANCEOF(target_type, Type::Bool)) {

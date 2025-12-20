@@ -65,6 +65,33 @@ class LocalChecker : public Stmt::Visitor, public Expr::Visitor {
     implicit_full_dereference(std::shared_ptr<Expr>& expr);
 
     /**
+     * @brief Checks if a pointer cast is valid.
+     *
+     * If the cast is not valid, an error message will be logged.
+     *
+     * The arguments should be pointer types. If they are not pointer types,
+     * this function may see the cast as invalid.
+     *
+     * There are three kinds of pointer casts: the nullptr cast, the array
+     * pointer cast, and the class cast. This function is meant to handle all 3
+     * of these.
+     *
+     * This function does not handle the reinterpret cast, even though it may
+     * involve pointers.
+     *
+     * @param expr_type The type of the expression being cast. Should be a
+     * pointer type.
+     * @param target_type The target type of the cast. Should be a pointer type.
+     * @param as_token The 'as' token in the cast. Used for error reporting.
+     * @return True if the cast is valid, false otherwise.
+     */
+    bool check_pointer_cast(
+        std::shared_ptr<Type> expr_type,
+        std::shared_ptr<Type> target_type,
+        std::shared_ptr<Token> as_token
+    );
+
+    /**
      * @brief Attempts to match the provided arguments to the function
      * parameters.
      *

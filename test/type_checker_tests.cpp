@@ -164,7 +164,7 @@ TEST_CASE("Local sizeof expressions", "[checker]") {
     }
 }
 
-TEST_CASE("Local cast expressions") {
+TEST_CASE("Local non pointer cast expressions") {
     SECTION("Valid cast NoOp") {
         run_checker_test("let a: i32 = 1 let b: i32 = a as i32");
     }
@@ -230,6 +230,12 @@ TEST_CASE("Local cast expressions") {
             "let a: bool = true let b: () = a as ()",
             Err::InvalidCastOperation
         );
+    }
+}
+
+TEST_CASE("Local pointer cast expressions", "[checker]") {
+    SECTION("Valid nullptr cast to pointer") {
+        run_checker_test("let a: @i32 = nullptr as @i32");
     }
 }
 
