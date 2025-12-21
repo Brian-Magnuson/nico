@@ -141,6 +141,8 @@ enum class Err {
     YieldTypeMismatch,
     // A type mismatch was found in a variable declaration.
     LetTypeMismatch,
+    // An immutable variable was declared without an initializer.
+    ImmutableWithoutInitializer,
     // A type mismatch was found in an assignment expression.
     AssignmentTypeMismatch,
     // A type mismatch was found between a function's default argument and its
@@ -153,6 +155,8 @@ enum class Err {
     ArrayElementTypeMismatch,
     // An attempt was made to allocate memory for an unsized type.
     UnsizedTypeAllocation,
+    // An rvalue expression has an unsized type.
+    UnsizedRValue,
     // An name was not found in the symbol table.
     UndeclaredName,
     // An name was matched to a non-FieldEntry node where one was expected.

@@ -535,6 +535,8 @@ class Expr::Call : public Expr {
 public:
     // The callee expression, usually a NameRef for a function.
     std::shared_ptr<Expr> callee;
+    // The opening parenthesis of the call.
+    std::shared_ptr<Token> l_paren;
     // The positional arguments that were provided for the call.
     std::vector<std::shared_ptr<Expr>> provided_pos_args;
     // The named arguments that were provided for the call.
@@ -546,13 +548,15 @@ public:
 
     Call(
         std::shared_ptr<Expr> callee,
+        std::shared_ptr<Token> l_paren,
         std::vector<std::shared_ptr<Expr>>&& provided_pos_args,
         Dictionary<std::string, std::shared_ptr<Expr>>&& provided_named_args
     )
         : callee(callee),
+          l_paren(l_paren),
           provided_pos_args(std::move(provided_pos_args)),
           provided_named_args(std::move(provided_named_args)) {
-        location = callee->location;
+        location = &l_paren->location;
     }
 
     std::any accept(Visitor* visitor, bool as_lvalue) override {

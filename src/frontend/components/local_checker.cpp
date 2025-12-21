@@ -12,6 +12,17 @@ namespace nico {
 std::shared_ptr<Type>
 LocalChecker::expr_check(std::shared_ptr<Expr> expr, bool as_lvalue) {
     expr->accept(this, as_lvalue);
+    if (!expr->type)
+        return nullptr;
+    if (!expr->type->is_sized_type() && !as_lvalue) {
+        Logger::inst().log_error(
+            Err::UnsizedRValue,
+            *expr->location,
+            "Unsized type `" + expr->type->to_string() +
+                "` cannot be used as an rvalue."
+        );
+        return nullptr;
+    }
     return expr->type;
 }
 
@@ -95,38 +106,39 @@ bool LocalChecker::check_pointer_cast(
     }
 
     // Multi-level pointer cast.
-    if (PTR_INSTANCEOF(expr_raw_ptr_type->base, Type::IPointer) &&
+    if (PTR_INSTANCEOF(expr_raw_ptr_type->base, Type::IPointer) ||
         PTR_INSTANCEOF(target_raw_ptr_type->base, Type::IPointer)) {
+        if (!PTR_INSTANCEOF(target_raw_ptr_type->base, Type::IPointer)) {
+            Logger::inst().log_error(
+                Err::InvalidCastOperation,
+                as_token->location,
+                "Cannot cast pointer type `" +
+                    expr_raw_ptr_type->base->to_string() +
+                    "` to non-pointer "
+                    "type `" +
+                    target_raw_ptr_type->base->to_string() + "`."
+            );
+            return false;
+        }
+        else if (!PTR_INSTANCEOF(expr_raw_ptr_type->base, Type::IPointer)) {
+            Logger::inst().log_error(
+                Err::InvalidCastOperation,
+                as_token->location,
+                "Cannot cast non-pointer type `" +
+                    expr_raw_ptr_type->base->to_string() +
+                    "` to pointer "
+                    "type `" +
+                    target_raw_ptr_type->base->to_string() + "`."
+            );
+            return false;
+        }
+
         // Recursively check the inner pointer cast.
         return check_pointer_cast(
             expr_raw_ptr_type->base,
             target_raw_ptr_type->base,
             as_token
         );
-    }
-    else if (!PTR_INSTANCEOF(target_raw_ptr_type->base, Type::IPointer)) {
-        Logger::inst().log_error(
-            Err::InvalidCastOperation,
-            as_token->location,
-            "Cannot cast pointer type `" +
-                expr_raw_ptr_type->base->to_string() +
-                "` to non-pointer "
-                "type `" +
-                target_raw_ptr_type->base->to_string() + "`."
-        );
-        return false;
-    }
-    else if (!PTR_INSTANCEOF(expr_raw_ptr_type->base, Type::IPointer)) {
-        Logger::inst().log_error(
-            Err::InvalidCastOperation,
-            as_token->location,
-            "Cannot cast non-pointer type `" +
-                expr_raw_ptr_type->base->to_string() +
-                "` to pointer "
-                "type `" +
-                target_raw_ptr_type->base->to_string() + "`."
-        );
-        return false;
     }
 
     // Array pointer cast.
@@ -264,6 +276,16 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
         expr_type = expr_check(stmt->expression.value(), false);
         if (!expr_type)
             return std::any();
+    }
+    else if (!stmt->has_var) {
+        // If there is no initializer, the statement must have var.
+        Logger::inst().log_error(
+            Err::ImmutableWithoutInitializer,
+            stmt->identifier->location,
+            "Immutable variable `" + std::string(stmt->identifier->lexeme) +
+                "` must have an initializer."
+        );
+        return std::any();
     }
     // If the initializer is not present, the annotation will be (this is
     // checked in the parser).
@@ -1137,6 +1159,7 @@ std::any LocalChecker::visit(Expr::Call* expr, bool as_lvalue) {
             *expr->callee->location,
             "Callee expression is not callable."
         );
+        Logger::inst().log_note(*expr->location, "Call occurs here.");
         return std::any();
     }
 

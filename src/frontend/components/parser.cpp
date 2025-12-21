@@ -568,6 +568,7 @@ std::optional<std::shared_ptr<Expr>> Parser::postfix() {
             left = std::make_shared<Expr::Subscript>(*left, op, *index_expr);
         }
         else if (previous()->tok_type == Tok::LParen) {
+            auto l_paren = previous();
             std::vector<std::shared_ptr<Expr>> pos_args;
             Dictionary<std::string, std::shared_ptr<Expr>> named_args;
             bool has_named_args = false;
@@ -616,6 +617,7 @@ std::optional<std::shared_ptr<Expr>> Parser::postfix() {
             }
             left = std::make_shared<Expr::Call>(
                 *left,
+                l_paren,
                 std::move(pos_args),
                 std::move(named_args)
             );

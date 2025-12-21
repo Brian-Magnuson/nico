@@ -107,6 +107,10 @@ TEST_CASE("Local variable declarations", "[checker]") {
         run_checker_test("let a = 1 let b = 2 a = b", Err::AssignToImmutable);
     }
 
+    SECTION("Immutable without initializer") {
+        run_checker_test("let a: i32", Err::ImmutableWithoutInitializer);
+    }
+
     SECTION("Variable name conflict") {
         run_checker_test("let a = 1 let a = 2", Err::NameAlreadyExists);
     }
@@ -671,6 +675,42 @@ TEST_CASE("Local array expressions", "[checker]") {
 
     SECTION("Unsized type under pointer") {
         run_checker_test("let a: [i32; 3] = [1, 2, 3] let b: @[i32; ?] = @a");
+    }
+
+    SECTION("Unsized array pointer cast") {
+        run_checker_test("let a: [i32; 3] = [1, 2, 3] let b = @a as @[i32; ?]");
+    }
+
+    SECTION("Unsized array access") {
+        run_checker_test(
+            "let a: [i32; 3] = [1, 2, 3] let b = @a as @[i32; ?] "
+            "let var c: i32 unsafe { c = b[0] }"
+        );
+    }
+
+    SECTION("Unsized type as rvalue") {
+        run_checker_test(
+            R"(
+            let var a: [i32; 3] = [1, 2, 3]
+            let p = var@a as var@[i32; ?]
+            unsafe:
+                let q = ^p
+            )",
+            Err::UnsizedRValue
+        );
+    }
+
+    SECTION("Unsized type as lvalue") {
+        run_checker_test(
+            R"(
+            let var a: [i32; 3] = [1, 2, 3]
+            let p = var@a as var@[i32; ?]
+            unsafe:
+                let q = (^p)[0];
+                (^p)[0] = 10
+                ^p = [4, 5, 6]
+            )"
+        );
     }
 
     SECTION("Array implicit dereference 1") {
