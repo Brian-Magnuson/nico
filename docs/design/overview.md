@@ -462,20 +462,33 @@ let a: [i32; ?]   // Error: unsized array type
 let p: @[i32; ?]  // OK: pointer to an unsized array
 ```
 
-Because unsized types cannot be used as rvalue expressions, it follows that all rvalue expressions must be of a sized type.
+Unsized types are usually incompatible with other types, which makes their use limited.
+There are some exceptions:
+- A pointer to a sized array type (e.g. `@[T; N]`) may be implicitly cast to a pointer to an unsized array type (e.g. `@[T; ?]`). The data remains the same, but the size information is discarded.
 
-Note that aggregate types can only be instantiated by providing an rvalue expression for each of their members. Since rvalue expressions are always sized and cannot be assigned to unsized types, it follows that aggregate types containing unsized members cannot be instantiated.
+As mentioned previously, an aggregate type becomes unsized if it contains an unsized type without any levels of indirection. There are additional rules regarding aggregate types with unsized members:
+- Its members cannot be accessed via `.` or `[]` expressions.
+  - This is because the offsets of the members cannot be determined if any member is unsized.
+- It cannot be instantiated directly.
+  - This is because aggregate types are instantiated by providing values for each member, and all rvalue expressions must be of sized types.
 
-This means that aggregate types containing unsized members are not useful, regardless whether the aggregate type itself is sized or unsized.
-Examples of such types are:
-- `@[[i32; ?]; 3]` (sized array with an unsized element type)
-  - Use `@[@[i32; ?]; 3]` instead
-- `@([i32; ?])` (tuple with an unsized element type)
-  - Use `@(@[i32; ?])` instead
-- `@{ arr: [i32; ?] }` (struct literal type with an unsized property type)
-  - Use `@{ arr: @[i32; ?] }` instead
+These rules effectively prevent the normal use of aggregate types with unsized members, regardless of whether the aggregate type itself is sized or unsized.
 
-Although all of the above types are sized, they cannot be instantiated due to their unsized members.
+Examples of aggregate types containing unsized members include:
+- `@[[i32; ?]; 3]` - A sized array of 3 unsized arrays
+- `@([i32; ?])` - A tuple containing an unsized array
+- `@{ arr: [i32; ?] }` - A struct literal type containing an unsized array
+
+The only way to "use" an aggregate type with unsized members is to perform a reinterpret cast to a pointer to a usable type.
+```
+let arr: @([i32; 3])
+unsafe:
+    let p_unsized: @([i32; ?]) = transmute arr as @([i32; ?])
+    let p_sized: @([i32; 3]) = transmute p_unsized as @([i32; 3])
+    printout p_sized.0[0]
+```
+
+Reinterpret casts are a highly unsafe operation and should used with extreme caution.
 
 # Statements
 
