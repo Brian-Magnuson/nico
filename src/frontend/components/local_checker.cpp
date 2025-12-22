@@ -1045,6 +1045,19 @@ std::any LocalChecker::visit(Expr::Access* expr, bool as_lvalue) {
     if (!l_type || !l_lvalue)
         return std::any();
 
+    if (!l_type->is_sized_type()) {
+        Logger::inst().log_error(
+            Err::UnsizedTypeMemberAccess,
+            *expr->left->location,
+            "Cannot access members of unsized type `" + l_type->to_string() +
+                "`."
+        );
+        Logger::inst().log_note(
+            "Aggregate type members must be sized to calculate member offsets."
+        );
+        return std::any();
+    }
+
     if (auto tuple_l_type = std::dynamic_pointer_cast<Type::Tuple>(l_type)) {
         if (expr->right_token->tok_type == Tok::TupleIndex) {
             size_t index = std::any_cast<size_t>(expr->right_token->literal);
@@ -1103,6 +1116,20 @@ std::any LocalChecker::visit(Expr::Subscript* expr, bool as_lvalue) {
         return std::any();
 
     if (auto array_l_type = std::dynamic_pointer_cast<Type::Array>(l_type)) {
+        // Array element type must be a sized type.
+        if (!array_l_type->base->is_sized_type()) {
+            Logger::inst().log_error(
+                Err::UnsizedTypeArrayAccess,
+                *expr->left->location,
+                "Cannot access array elements of unsized type `" +
+                    array_l_type->base->to_string() + "`."
+            );
+            Logger::inst().log_note(
+                "Array element types must be sized to calculate element "
+                "offsets."
+            );
+            return std::any();
+        }
         // Index must be an integer type.
         if (!PTR_INSTANCEOF(index_type, Type::Int)) {
             Logger::inst().log_error(

@@ -205,6 +205,8 @@ If a tuple has only one element, it must be written with a trailing comma to dis
 (42,)
 ```
 
+The type of the above literal is written as `(i32)`. The trailing comma is not necessary in the type annotation.
+
 A tuple may also have no elements. It is written as an empty pair of parentheses:
 ```
 ()
@@ -269,7 +271,7 @@ unsafe:
     let y = ^p
 ```
 
-Raw pointers are never implicitly dereferenced. You must always use the `^` operator to access the value.
+Raw pointers are implicitly dereferenced in access and subscript expressions. For all other contexts, you must use the `^` operator to dereference the pointer.
 
 The keyword `var` may be added to the `@` operator and pointer type to allow mutating the pointed-to value.
 This is separate from the mutability of the pointer itself, and you can use any combination of mutable and immutable pointers and pointed-to values:
@@ -340,7 +342,7 @@ let r2: var&i32 = var&y
 ```
 
 Like raw pointers, references can be dereferenced using the `^` operator.
-References are not automatically dereferenced in any context. You must always use the `^` operator to access the value:
+References are implicitly dereferenced in access and subscript expressions. For all other contexts, you must use the `^` operator to dereference the reference. 
 ```
 let var x = 42
 let r: var&i32 = var&x
@@ -434,6 +436,46 @@ let x: typeof(block {
 ```
 
 This code will compile without warnings, but it can be potentially confusing.
+
+## Unsized data types
+
+Data types may be sized or unsized. Sized data types have a known size at compile time, while unsized data types do not.
+
+A data type is unsized if it meets any of the following criteria:
+- It is one of the basic unsized types
+- It is an aggregate type that contains an unsized type without any levels of indirection (the unsized type is not behind a pointer or reference)
+- It is an infinitely recursive type without any levels of indirection
+
+A data type is also considered unsized if it is excessively deeply nested, even if it technically has a finite size. The maximum allowed nesting depth is 256 levels.
+
+There is currently only one basic unsized type:
+- The unsized array type: `[T; ?]`
+  - Useful when the size of the array is determined at runtime (e.g., when the size needs to change dynamically).
+
+If a type is unsized, memory cannot be allocated for it directly. This means that:
+- Variables, function parameters, and function return types cannot be of unsized types
+- Data for an unsized type cannot be used as an rvalue expression
+
+An unsized type can be made into a sized type by placing it behind a level of indirection, such as a raw pointer or reference.
+```
+let a: [i32; ?]   // Error: unsized array type
+let p: @[i32; ?]  // OK: pointer to an unsized array
+```
+
+Because unsized types cannot be used as rvalue expressions, it follows that all rvalue expressions must be of a sized type.
+
+Note that aggregate types can only be instantiated by providing an rvalue expression for each of their members. Since rvalue expressions are always sized and cannot be assigned to unsized types, it follows that aggregate types containing unsized members cannot be instantiated.
+
+This means that aggregate types containing unsized members are not useful, regardless whether the aggregate type itself is sized or unsized.
+Examples of such types are:
+- `@[[i32; ?]; 3]` (sized array with an unsized element type)
+  - Use `@[@[i32; ?]; 3]` instead
+- `@([i32; ?])` (tuple with an unsized element type)
+  - Use `@(@[i32; ?])` instead
+- `@{ arr: [i32; ?] }` (struct literal type with an unsized property type)
+  - Use `@{ arr: @[i32; ?] }` instead
+
+Although all of the above types are sized, they cannot be instantiated due to their unsized members.
 
 # Statements
 
