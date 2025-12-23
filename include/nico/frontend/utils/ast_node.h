@@ -136,6 +136,22 @@ public:
 };
 
 /**
+ * @brief A deallocation statement.
+ *
+ * Deallocation statements free memory allocated for a given expression.
+ */
+class Stmt::Dealloc : public Stmt {
+public:
+    // The expression to deallocate.
+    std::shared_ptr<Expr> expression;
+
+    Dealloc(std::shared_ptr<Expr> expression)
+        : expression(expression) {}
+
+    std::any accept(Visitor* visitor) override { return visitor->visit(this); }
+};
+
+/**
  * @brief A pass statement.
  *
  * Pass statements do nothing and may be used in places where a statement is

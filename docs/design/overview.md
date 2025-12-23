@@ -895,7 +895,7 @@ Operator precedence determines the order in which operators are evaluated in an 
 In the following list, lower numbers (listed first) indicate higher precedence:
 1. Primary expressions: literals, name references, blocks, conditionals, loops, and grouping expressions
 2. Postfix expressions: `()` (function call), `[]`, `.`
-3. Unary expressions: `-`, `not`, `!`, `^` (indirection), `sizeof`
+3. Unary expressions: `-`, `not`, `!`, `^` (indirection), `sizeof`, `alloc`
 4. Cast expression: `as`
 5. Multiplicative expressions (L to R): `*`, `/`, `%`
 6. Additive expressions (L to R): `+`, `-`

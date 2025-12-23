@@ -192,6 +192,12 @@ std::any CodeGenerator::visit(Stmt::Print* stmt) {
     return std::any();
 }
 
+std::any CodeGenerator::visit(Stmt::Dealloc* stmt) {
+    // TODO: Implement deallocation.
+    panic("CodeGenerator::visit(Stmt::Dealloc*): Not yet implemented.");
+    return std::any();
+}
+
 std::any CodeGenerator::visit(Stmt::Pass* /*stmt*/) {
     // A pass statement does nothing.
     return std::any();

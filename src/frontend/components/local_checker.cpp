@@ -523,6 +523,12 @@ std::any LocalChecker::visit(Stmt::Print* stmt) {
     return std::any();
 }
 
+std::any LocalChecker::visit(Stmt::Dealloc* stmt) {
+    // TODO: Implement deallocation checks.
+    panic("LocalChecker::visit(Stmt::Dealloc*): Not yet implemented.");
+    return std::any();
+}
+
 std::any LocalChecker::visit(Stmt::Eof* stmt) {
     return std::any();
 }

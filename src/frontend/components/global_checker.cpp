@@ -95,6 +95,11 @@ std::any GlobalChecker::visit(Stmt::Print*) {
     return std::any();
 }
 
+std::any GlobalChecker::visit(Stmt::Dealloc*) {
+    // Do nothing.
+    return std::any();
+}
+
 std::any GlobalChecker::visit(Stmt::Pass*) {
     // Do nothing.
     return std::any();

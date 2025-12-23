@@ -69,6 +69,13 @@ std::any AstPrinter::visit(Stmt::Print* stmt) {
     return str;
 }
 
+std::any AstPrinter::visit(Stmt::Dealloc* stmt) {
+    std::string str = "(stmt:dealloc ";
+    str += std::any_cast<std::string>(stmt->expression->accept(this, false));
+    str += ")";
+    return str;
+}
+
 std::any AstPrinter::visit(Stmt::Pass* /*stmt*/) {
     return std::string("(stmt:pass)");
 }
@@ -177,7 +184,7 @@ std::any AstPrinter::visit(Expr::SizeOf* expr, bool as_lvalue) {
 
 std::any AstPrinter::visit(Expr::Alloc* expr, bool as_lvalue) {
     return std::string(
-        "(alloc " +
+        "(alloc " + std::string(expr->has_var ? "var " : "") +
         std::any_cast<std::string>(expr->expression->accept(this, false)) + ")"
     );
 }
