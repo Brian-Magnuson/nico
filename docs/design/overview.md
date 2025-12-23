@@ -837,7 +837,7 @@ Shared variables, like local variables, must always be initialized to some value
 
 To construct an instance of a struct, use the `new` keyword followed by the struct name and a struct literal value:
 ```
-let s = new MyStruct { x = 0, y = 3.14 }
+let s = new MyStruct { x: 0, y: 3.14 }
 ```
 
 There is no special syntax for defining constructors. Instead, use shared functions to create instances of the struct.
