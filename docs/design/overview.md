@@ -893,9 +893,9 @@ An expression is a piece of code that produces a value. Expressions may be simpl
 Operator precedence determines the order in which operators are evaluated in an expression. Operators with higher precedence are evaluated before operators with lower precedence.
 
 In the following list, lower numbers (listed first) indicate higher precedence:
-1. Primary expressions: literals, name references, blocks, conditionals, loops, and grouping expressions
+1. Primary expressions: literals, name references, blocks, conditionals, loops, grouping expressions, `sizeof`, `alloc`
 2. Postfix expressions: `()` (function call), `[]`, `.`
-3. Unary expressions: `-`, `not`, `!`, `^` (indirection), `sizeof`, `alloc`
+3. Unary expressions: `-`, `not`, `!`, `^` (indirection)
 4. Cast expression: `as`
 5. Multiplicative expressions (L to R): `*`, `/`, `%`
 6. Additive expressions (L to R): `+`, `-`

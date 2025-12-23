@@ -449,6 +449,13 @@ std::optional<std::shared_ptr<Expr>> Parser::primary() {
     if (match({Tok::KwLoop, Tok::KwWhile, Tok::KwDo})) {
         return loop();
     }
+    if (match({Tok::KwSizeof})) {
+        auto token = previous();
+        auto anno = annotation();
+        if (!anno)
+            return std::nullopt;
+        return std::make_shared<Expr::SizeOf>(token, *anno);
+    }
     if (match({Tok::LParen})) {
         // Grouping or tuple expression.
         auto lparen = previous();
@@ -652,13 +659,6 @@ std::optional<std::shared_ptr<Expr>> Parser::unary() {
         if (!right)
             return std::nullopt;
         return std::make_shared<Expr::Deref>(token, *right);
-    }
-    if (match({Tok::KwSizeof})) {
-        auto token = previous();
-        auto anno = annotation();
-        if (!anno)
-            return std::nullopt;
-        return std::make_shared<Expr::SizeOf>(token, *anno);
     }
     bool has_var = match({Tok::KwVar});
     if (match({Tok::At, Tok::Amp})) {
