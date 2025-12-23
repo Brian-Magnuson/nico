@@ -1289,6 +1289,12 @@ std::any LocalChecker::visit(Expr::SizeOf* expr, bool as_lvalue) {
     return std::any();
 }
 
+std::any LocalChecker::visit(Expr::Alloc* expr, bool as_lvalue) {
+    // TODO: Implement LocalChecker::visit(Expr::Alloc*)
+    panic("LocalChecker::visit(Expr::Alloc*): Not implemented yet.");
+    return std::any();
+}
+
 std::any LocalChecker::visit(Expr::NameRef* expr, bool as_lvalue) {
     auto node = symbol_tree->search_name(expr->name);
 

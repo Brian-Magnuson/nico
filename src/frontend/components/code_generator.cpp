@@ -774,6 +774,12 @@ std::any CodeGenerator::visit(Expr::SizeOf* expr, bool as_lvalue) {
     return result;
 }
 
+std::any CodeGenerator::visit(Expr::Alloc* expr, bool as_lvalue) {
+    // TODO: Implement dynamic memory allocation
+    panic("CodeGenerator::visit(Expr::Alloc*): Not implemented yet.");
+    return std::any();
+}
+
 std::any CodeGenerator::visit(Expr::NameRef* expr, bool as_lvalue) {
     llvm::Value* result = nullptr;
     llvm::Value* ptr = expr->field_entry.lock()->get_llvm_allocation(builder);

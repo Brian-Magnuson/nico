@@ -596,6 +596,38 @@ public:
 };
 
 /**
+ * @brief An allocation expression.
+ *
+ * Allocation expressions are used to allocate heap memory for an expression
+ * using the `alloc` keyword.
+ *
+ * They consist of the `alloc` keyword token, an optional `var` keyword, and
+ * the expression to be allocated.
+ */
+class Expr::Alloc : public Expr {
+public:
+    // The 'alloc' keyword token.
+    std::shared_ptr<Token> alloc_token;
+    // Whether the allocation has var.
+    bool has_var;
+    // The expression to be allocated.
+    std::shared_ptr<Expr> expression;
+
+    Alloc(
+        std::shared_ptr<Token> alloc_token,
+        bool has_var,
+        std::shared_ptr<Expr> expression
+    )
+        : alloc_token(alloc_token), has_var(has_var), expression(expression) {
+        location = &alloc_token->location;
+    }
+
+    std::any accept(Visitor* visitor, bool as_lvalue) override {
+        return visitor->visit(this, as_lvalue);
+    }
+};
+
+/**
  * @brief A name reference expression.
  *
  * Name reference expressions refer to variables or functions by name.
