@@ -178,6 +178,8 @@ enum class Err {
     DereferenceNonPointer,
     // An attempt was made to dereference a pointer whose type is `nullptr`.
     DereferenceNullptr,
+    // An attempt was made to deallocate a pointer outside of an unsafe context.
+    DeallocOutsideUnsafeBlock,
     // An attempt was made to deallocate a non-raw-pointer type.
     DeallocNonRawPointer,
     // An attempt was made to deallocate a pointer of `nullptr` type.

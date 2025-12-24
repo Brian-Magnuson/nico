@@ -26,6 +26,12 @@ LocalChecker::expr_check(std::shared_ptr<Expr> expr, bool as_lvalue) {
     return expr->type;
 }
 
+bool LocalChecker::is_in_unsafe_context() {
+    auto local_scope =
+        std::dynamic_pointer_cast<Node::LocalScope>(symbol_tree->current_scope);
+    return local_scope && local_scope->block->is_unsafe;
+}
+
 std::shared_ptr<Type>
 LocalChecker::implicit_full_dereference(std::shared_ptr<Expr>& expr) {
     if (!expr->type)
@@ -45,10 +51,7 @@ LocalChecker::implicit_full_dereference(std::shared_ptr<Expr>& expr) {
             );
         }
         if (PTR_INSTANCEOF(i_pointer_type, Type::RawPointer)) {
-            auto local_scope = std::dynamic_pointer_cast<Node::LocalScope>(
-                symbol_tree->current_scope
-            );
-            if (!local_scope || !local_scope->block->is_unsafe) {
+            if (!is_in_unsafe_context()) {
                 Logger::inst().log_error(
                     Err::PtrDerefOutsideUnsafeBlock,
                     *expr->location,
@@ -545,6 +548,14 @@ std::any LocalChecker::visit(Stmt::Dealloc* stmt) {
         );
         return std::any();
     }
+    else if (!is_in_unsafe_context()) {
+        Logger::inst().log_error(
+            Err::DeallocOutsideUnsafeBlock,
+            *stmt->expression->location,
+            "Cannot deallocate outside of unsafe context."
+        );
+        return std::any();
+    }
 
     return std::any();
 }
@@ -903,10 +914,7 @@ std::any LocalChecker::visit(Expr::Deref* expr, bool as_lvalue) {
         expr->assignable = ptr_type->is_mutable;
         expr->error_location = expr->right->location;
 
-        auto local_scope = std::dynamic_pointer_cast<Node::LocalScope>(
-            symbol_tree->current_scope
-        );
-        if (!local_scope || !local_scope->block->is_unsafe) {
+        if (!is_in_unsafe_context()) {
             Logger::inst().log_error(
                 Err::PtrDerefOutsideUnsafeBlock,
                 expr->op->location,

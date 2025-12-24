@@ -46,6 +46,16 @@ class LocalChecker : public Stmt::Visitor, public Expr::Visitor {
     expr_check(std::shared_ptr<Expr> expr, bool as_lvalue = false);
 
     /**
+     * @brief Helper function to determine if the current context is unsafe.
+     *
+     * The context is unsafe if the current scope is a local scope, and that
+     * local scope is tied to a block marked as unsafe.
+     *
+     * @return True if the current context is unsafe, false otherwise.
+     */
+    bool is_in_unsafe_context();
+
+    /**
      * @brief Checks if the expression is a pointer and fully dereferences it if
      * it is.
      *
