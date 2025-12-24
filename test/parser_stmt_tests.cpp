@@ -354,6 +354,59 @@ TEST_CASE("Parser non-declaring statements", "[parser]") {
     }
 }
 
+TEST_CASE("Parser dealloc statement", "[parser]") {
+    SECTION("Dealloc stmt 1") {
+        run_parser_stmt_test(
+            "dealloc ptr",
+            {"(stmt:dealloc (nameref ptr))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Dealloc stmt 2") {
+        run_parser_stmt_test(
+            "dealloc @ptr",
+            {"(stmt:dealloc (address @ (nameref ptr)))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Dealloc stmt 3") {
+        run_parser_stmt_test(
+            "dealloc alloc 100",
+            {"(stmt:dealloc (alloc (lit i32 100)))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Dealloc stmt 4") {
+        run_parser_stmt_test(
+            "dealloc alloc [1, 2, 3]",
+            {"(stmt:dealloc (alloc (array (lit i32 1) (lit i32 2) (lit i32 "
+             "3))))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Dealloc stmt 5") {
+        run_parser_stmt_test(
+            "dealloc nullptr",
+            {"(stmt:dealloc (lit nullptr))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Dealloc stmt 6") {
+        run_parser_stmt_test(
+            "dealloc f()",
+            {"(stmt:dealloc (call (nameref f)))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Dealloc stmt 7") {
+        run_parser_stmt_test(
+            "dealloc ptr as @[i32; 10]",
+            {"(stmt:dealloc (cast (nameref ptr) as @[i32; 10]))", "(stmt:eof)"}
+        );
+    }
+}
+
 // MARK: Error tests
 
 TEST_CASE("Parser let stmt errors", "[parser]") {
@@ -451,12 +504,16 @@ TEST_CASE("Parser unexpected token errors", "[parser]") {
     }
 }
 
-TEST_CASE("Parser yield without expression", "[parser]") {
+TEST_CASE("Parser non-declaring stmt without expr", "[parser]") {
     SECTION("Yield missing expression") {
         run_parser_stmt_error_test("yield", Err::NotAnExpression);
     }
 
     SECTION("Break missing expression") {
         run_parser_stmt_error_test("break", Err::NotAnExpression);
+    }
+
+    SECTION("Dealloc missing expression") {
+        run_parser_stmt_error_test("dealloc", Err::NotAnExpression);
     }
 }

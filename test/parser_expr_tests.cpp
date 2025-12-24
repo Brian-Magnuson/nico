@@ -1234,3 +1234,9 @@ TEST_CASE("Parser call errors", "[parser]") {
         );
     }
 }
+
+TEST_CASE("Parser alloc errors", "[parser]") {
+    SECTION("Alloc without expression") {
+        run_parser_expr_error_test("alloc", Err::NotAnExpression);
+    }
+}
