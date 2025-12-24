@@ -178,6 +178,10 @@ enum class Err {
     DereferenceNonPointer,
     // An attempt was made to dereference a pointer whose type is `nullptr`.
     DereferenceNullptr,
+    // An attempt was made to deallocate a non-raw-pointer type.
+    DeallocNonRawPointer,
+    // An attempt was made to deallocate a pointer of `nullptr` type.
+    DeallocNullptr,
     // An access expression on a tuple had an index that was out of bounds.
     TupleIndexOutOfBounds,
     // An access expression was found where the right side was not an integer

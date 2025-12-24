@@ -524,8 +524,28 @@ std::any LocalChecker::visit(Stmt::Print* stmt) {
 }
 
 std::any LocalChecker::visit(Stmt::Dealloc* stmt) {
-    // TODO: Implement deallocation checks.
-    panic("LocalChecker::visit(Stmt::Dealloc*): Not yet implemented.");
+    auto expr_type = expr_check(stmt->expression, false);
+    if (!expr_type)
+        return std::any();
+
+    if (!PTR_INSTANCEOF(expr_type, Type::RawPointer)) {
+        Logger::inst().log_error(
+            Err::DeallocNonRawPointer,
+            *stmt->expression->location,
+            "Cannot deallocate non-raw pointer type `" +
+                expr_type->to_string() + "`."
+        );
+        return std::any();
+    }
+    else if (PTR_INSTANCEOF(expr_type, Type::Nullptr)) {
+        Logger::inst().log_error(
+            Err::DeallocNullptr,
+            *stmt->expression->location,
+            "Cannot deallocate pointer of nullptr type."
+        );
+        return std::any();
+    }
+
     return std::any();
 }
 
@@ -1296,8 +1316,22 @@ std::any LocalChecker::visit(Expr::SizeOf* expr, bool as_lvalue) {
 }
 
 std::any LocalChecker::visit(Expr::Alloc* expr, bool as_lvalue) {
-    // TODO: Implement LocalChecker::visit(Expr::Alloc*)
-    panic("LocalChecker::visit(Expr::Alloc*): Not implemented yet.");
+    // As a reminder: pointers are not possible lvalues.
+    if (as_lvalue) {
+        Logger::inst().log_error(
+            Err::NotAPossibleLValue,
+            *expr->location,
+            "Alloc expression cannot be an lvalue."
+        );
+        return std::any();
+    }
+    // You can still do `(alloc expr).property` since it contains a dereference.
+
+    auto inner_type = expr_check(expr->expression, false);
+    if (!inner_type)
+        return std::any();
+
+    expr->type = std::make_shared<Type::RawPointer>(inner_type, expr->has_var);
     return std::any();
 }
 
