@@ -456,6 +456,14 @@ std::optional<std::shared_ptr<Expr>> Parser::primary() {
             return std::nullopt;
         return std::make_shared<Expr::SizeOf>(token, *anno);
     }
+    if (match({Tok::KwAlloc})) {
+        auto alloc_token = previous();
+        bool has_var = match({Tok::KwVar});
+        auto expr = expression();
+        if (!expr)
+            return std::nullopt;
+        return std::make_shared<Expr::Alloc>(alloc_token, has_var, *expr);
+    }
     if (match({Tok::LParen})) {
         // Grouping or tuple expression.
         auto lparen = previous();
@@ -1064,6 +1072,12 @@ std::optional<std::shared_ptr<Stmt>> Parser::statement() {
     }
     else if (match({Tok::KwContinue})) {
         return std::make_shared<Stmt::Continue>(previous());
+    }
+    else if (match({Tok::KwDealloc})) {
+        auto expr = expression();
+        if (!expr)
+            return std::nullopt;
+        return std::make_shared<Stmt::Dealloc>(*expr);
     }
     return expression_statement();
 }

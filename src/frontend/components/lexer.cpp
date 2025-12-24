@@ -40,6 +40,7 @@ std::unordered_map<std::string_view, Tok> Lexer::keywords = {
     {"while", Tok::KwWhile},
     {"do", Tok::KwDo},
     {"sizeof", Tok::KwSizeof},
+    {"alloc", Tok::KwAlloc},
     {"transmute", Tok::KwTransmute},
 
     {"typeof", Tok::KwTypeof},
@@ -53,6 +54,7 @@ std::unordered_map<std::string_view, Tok> Lexer::keywords = {
     {"break", Tok::KwBreak},
     {"continue", Tok::KwContinue},
     {"return", Tok::KwReturn},
+    {"dealloc", Tok::KwDealloc},
 
     {"printout", Tok::KwPrintout},
 };

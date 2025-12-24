@@ -1100,6 +1100,80 @@ TEST_CASE("Parser array expressions", "[parser]") {
     }
 }
 
+TEST_CASE("Parser alloc expressions", "[parser]") {
+    SECTION("Alloc expr 1") {
+        run_parser_expr_test(
+            "alloc 1",
+            {"(expr (alloc (lit i32 1)))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Alloc expr 2") {
+        run_parser_expr_test(
+            "alloc (a + b)",
+            {"(expr (alloc (binary + (nameref a) (nameref b))))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Alloc expr 3") {
+        run_parser_expr_test(
+            "alloc [1, 2, 3]",
+            {"(expr (alloc (array (lit i32 1) (lit i32 2) (lit i32 3))))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Alloc expr 4") {
+        run_parser_expr_test(
+            "alloc alloc 10",
+            {"(expr (alloc (alloc (lit i32 10))))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Alloc expr 5") {
+        run_parser_expr_test(
+            "alloc f()",
+            {"(expr (alloc (call (nameref f))))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Alloc expr 6") {
+        run_parser_expr_test(
+            "alloc @x",
+            {"(expr (alloc (address @ (nameref x))))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Alloc expr 7") {
+        run_parser_expr_test(
+            "alloc nullptr",
+            {"(expr (alloc (lit nullptr)))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Alloc expr 8") {
+        run_parser_expr_test(
+            "alloc -123",
+            {"(expr (alloc (lit i32 -123)))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Alloc expr 9") {
+        run_parser_expr_test(
+            "alloc 1 as i64",
+            {"(expr (alloc (cast (lit i32 1) as i64)))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Alloc expr 10") {
+        run_parser_expr_test(
+            "alloc block { yield 123 }",
+            {"(expr (alloc (block (stmt:yield yield (lit i32 123)))))",
+             "(stmt:eof)"}
+        );
+    }
+}
+
 // MARK: Error tests
 
 TEST_CASE("Parser number errors", "[parser]") {
