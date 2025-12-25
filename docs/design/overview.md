@@ -324,6 +324,19 @@ let p1: @i32 = nullptr
 
 Here, we specified the type of `@i32`. If we had not, the type would have been inferred as `nullptr`.
 
+You can use equality operators to compare pointers of any type, even if their base types differ.
+```
+let p1: @i32 = nullptr
+let p2: @f64 = nullptr
+
+let is_nullptr = p1 == nullptr // true
+let is_equal = p1 == p2 // true
+```
+
+This is useful for checking if a pointer is null, regardless of its base type.
+
+Although it is possible to compare pointers of different base types, this feature is usually not useful unless the base types are related in some way (e.g., through inheritance).
+
 ### Reference types
 
 A reference is a safe pointer to a value. It is written as `&T`, where `T` is the type of the value. A reference can never be null and the referenced value must live at least as long as the reference.

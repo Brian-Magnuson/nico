@@ -1074,6 +1074,32 @@ TEST_CASE("JIT pointers", "[jit]") {
             "20"
         );
     }
+
+    SECTION("Pointer comparison") {
+        run_jit_test(
+            R"(
+            let var x = 10
+            let var y = 20
+            let p1 = var@x
+            let p2 = var@y
+            printout p1 == p2, ",", p1 != p2, ",", p1 == @x, ",", p2 == @y
+            )",
+            "false,true,true,true"
+        );
+    }
+
+    SECTION("Pointer comparison different types") {
+        run_jit_test(
+            R"(
+            let var x: i32 = 10
+            let var y: f64 = 20.0
+            let p1 = var@x
+            let p2 = var@y
+            printout p1 == p2, ",", p1 != p2
+            )",
+            "false,true"
+        );
+    }
 }
 
 TEST_CASE("JIT functions", "[jit]") {
