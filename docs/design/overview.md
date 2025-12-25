@@ -1399,18 +1399,23 @@ When a value is moved, the original location is invalidated along with all refer
 
 A mutable value may be moved as mutable:
 ```
-var mv value
+mv var value
 ```
 
 ### Unsafe blocks and expressions
 
-An unsafe block is like a regular block, but allows the use of unsafe operations. Unsafe operations include:
+An unsafe block is like a regular block, but allows the use of unsafe operations. 
+
+An unsafe operation is typically an operation that can potentially result in 
+undefined behavior and has no implicit runtime checks to prevent errors.
+
+Unsafe operations include:
 - Dereferencing raw pointers
 - Accessing elements of an unsized array
 - Performing pointer arithmetic
 - Perform a reinterpret cast
 - Calling unsafe functions
-- Using `alloc` and `dealloc`
+- Deallocating memory using `dealloc`
 
 Unsafe blocks are used to encapsulate unsafe operations and prevent them from leaking into safe code. They are written as follows:
 ```
@@ -1419,7 +1424,23 @@ unsafe:
     statement2
 ```
 
+Unsafe blocks behave like plain blocks and can be used to yield values:
+```
+let a = 1
+let p = @a
+let b = unsafe { yield ^p }
+```
+
 Unsafe blocks may still be written within safe blocks. Memory errors may occur, but they can at least be traced back to these unsafe blocks.
+
+Unsafe blocks do not propagate into nested blocks. If the nested block contains unsafe operations, it must also be marked as unsafe.
+```
+unsafe:
+    statement_1 // In unsafe context
+    block:
+        statement_2 // In safe context; error if unsafe operation
+    statement_3 // In unsafe context
+```
 
 ## Non-declaring statements
 

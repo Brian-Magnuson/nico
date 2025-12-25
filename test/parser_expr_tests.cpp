@@ -1172,6 +1172,13 @@ TEST_CASE("Parser alloc expressions", "[parser]") {
              "(stmt:eof)"}
         );
     }
+
+    SECTION("Alloc with var") {
+        run_parser_expr_test(
+            "alloc var x",
+            {"(expr (alloc var (nameref x)))", "(stmt:eof)"}
+        );
+    }
 }
 
 // MARK: Error tests

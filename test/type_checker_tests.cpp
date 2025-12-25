@@ -168,6 +168,71 @@ TEST_CASE("Local sizeof expressions", "[checker]") {
     }
 }
 
+TEST_CASE("Local alloc expressions", "[checker]") {
+    SECTION("Valid alloc expression 1") {
+        run_checker_test("let a: @i32 = alloc 1");
+    }
+
+    SECTION("Valid alloc expression 2") {
+        run_checker_test("let var a: var@i32 = alloc var 1");
+    }
+
+    SECTION("Alloc type mismatch 1") {
+        run_checker_test("let a: i32 = alloc 1", Err::LetTypeMismatch);
+    }
+
+    SECTION("Alloc loss of var OK") {
+        run_checker_test("let a: @i32 = alloc var 1");
+    }
+
+    SECTION("Alloc type mismatch 2") {
+        run_checker_test("let var a: var@i32 = alloc 1", Err::LetTypeMismatch);
+    }
+
+    SECTION("Alloc with cast") {
+        run_checker_test("let a: @i64 = alloc 1 as i64");
+    }
+}
+
+TEST_CASE("Local dealloc statements", "[checker]") {
+    SECTION("Valid dealloc statement 1") {
+        run_checker_test("let a: @i32 = alloc 1 unsafe { dealloc a }");
+    }
+
+    SECTION("Valid dealloc statement 2") {
+        run_checker_test(
+            "let var a: var@i32 = alloc var 1 unsafe { dealloc a }"
+        );
+    }
+
+    SECTION("Valid dealloc statement 3") {
+        run_checker_test(
+            "let a: @i32 = alloc 1 let b = a unsafe { dealloc b }"
+        );
+    }
+
+    SECTION("Dealloc non-pointer") {
+        run_checker_test(
+            "let a = 1 unsafe { dealloc a }",
+            Err::DeallocNonRawPointer
+        );
+    }
+
+    SECTION("Dealloc nullptr") {
+        run_checker_test(
+            "let a = nullptr unsafe { dealloc a }",
+            Err::DeallocNullptr
+        );
+    }
+
+    SECTION("Dealloc outside unsafe") {
+        run_checker_test(
+            "let a: @i32 = alloc 1 dealloc a",
+            Err::DeallocOutsideUnsafeBlock
+        );
+    }
+}
+
 TEST_CASE("Local non pointer cast expressions") {
     SECTION("Valid cast NoOp") {
         run_checker_test("let a: i32 = 1 let b: i32 = a as i32");
@@ -338,6 +403,13 @@ TEST_CASE("Local dereference expressions", "[checker]") {
         run_checker_test(
             "let p = nullptr unsafe { ^p }",
             Err::DereferenceNullptr
+        );
+    }
+
+    SECTION("Unsafeness does not propagate") {
+        run_checker_test(
+            "let a = 1 let b: @i32 = @a unsafe { block { ^b } }",
+            Err::PtrDerefOutsideUnsafeBlock
         );
     }
 }
