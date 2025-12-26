@@ -1537,6 +1537,12 @@ A deallocation statement is used to deallocate memory that was previously alloca
 dealloc pointer
 ```
 
+Deallocation statements can only be used with raw pointers whose type is not `nullptr`.
+
+If the pointer is to memory that was not allocated with `alloc` or has already been deallocated, the behavior is undefined.
+
+If the pointer is `nullptr`, nothing happens.
+
 Deallocation statements must be used within an `unsafe` block, as deallocating memory incorrectly can lead to memory errors.
 
 When a pointer is deallocated, the memory it points to is freed and may be reused for other allocations. It is the programmer's responsibility to ensure that the pointer being deallocated was previously allocated using `alloc` and has not already been deallocated.

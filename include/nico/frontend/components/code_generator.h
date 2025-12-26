@@ -132,6 +132,20 @@ class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
     );
 
     /**
+     * @brief Adds a runtime check for when alloc expression yields a null
+     * pointer.
+     *
+     * Alloc expressions are based on the C `malloc` function, which returns a
+     * null pointer when memory allocation fails. This check generates code to
+     * verify that the pointer returned by the alloc expression is not null.
+     *
+     * @param ptr The value to check.
+     * @param location The location in the source code where the null pointer
+     * may occur.
+     */
+    void add_alloc_nullptr_check(llvm::Value* ptr, const Location* location);
+
+    /**
      * @brief Adds a panic call to the generated code.
      *
      * During a panic, the program will print the error message and immediately

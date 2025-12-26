@@ -193,8 +193,12 @@ std::any CodeGenerator::visit(Stmt::Print* stmt) {
 }
 
 std::any CodeGenerator::visit(Stmt::Dealloc* stmt) {
-    // TODO: Implement deallocation.
-    panic("CodeGenerator::visit(Stmt::Dealloc*): Not yet implemented.");
+    auto expr_value =
+        std::any_cast<llvm::Value*>(stmt->expression->accept(this, false));
+    llvm::Function* free_fn = mod_ctx.ir_module->getFunction("free");
+
+    builder->CreateCall(free_fn, {expr_value});
+
     return std::any();
 }
 
@@ -781,9 +785,23 @@ std::any CodeGenerator::visit(Expr::SizeOf* expr, bool as_lvalue) {
 }
 
 std::any CodeGenerator::visit(Expr::Alloc* expr, bool as_lvalue) {
-    // TODO: Implement dynamic memory allocation
-    panic("CodeGenerator::visit(Expr::Alloc*): Not implemented yet.");
-    return std::any();
+    llvm::Value* result = nullptr;
+    size_t type_size = expr->expression->type->get_llvm_type_size(builder);
+    llvm::Value* size_value = llvm::ConstantInt::get(
+        llvm::Type::getInt64Ty(*mod_ctx.llvm_context),
+        type_size
+    );
+    llvm::Function* malloc_fn = mod_ctx.ir_module->getFunction("malloc");
+    result = builder->CreateCall(malloc_fn, {size_value}, "alloc_ptr");
+
+    add_alloc_nullptr_check(result, expr->location);
+
+    auto expr_value =
+        std::any_cast<llvm::Value*>(expr->expression->accept(this, false));
+
+    // Store the initial value into the allocated memory
+    builder->CreateStore(expr_value, result);
+    return result;
 }
 
 std::any CodeGenerator::visit(Expr::NameRef* expr, bool as_lvalue) {
@@ -1360,6 +1378,40 @@ void CodeGenerator::add_array_bounds_check(
 
     // in_bounds_block
     builder->SetInsertPoint(in_bounds_block);
+}
+
+void CodeGenerator::add_alloc_nullptr_check(
+    llvm::Value* ptr, const Location* location
+) {
+    llvm::BasicBlock* current_block = builder->GetInsertBlock();
+    llvm::Function* current_function = current_block->getParent();
+
+    llvm::BasicBlock* null_ptr_block = llvm::BasicBlock::Create(
+        *mod_ctx.llvm_context,
+        "alloc_nullptr",
+        current_function
+    );
+    llvm::BasicBlock* not_null_block = llvm::BasicBlock::Create(
+        *mod_ctx.llvm_context,
+        "not_alloc_nullptr",
+        current_function
+    );
+
+    llvm::Value* is_null = builder->CreateICmpEQ(
+        ptr,
+        llvm::ConstantPointerNull::get(
+            llvm::PointerType::get(*mod_ctx.llvm_context, 0)
+        )
+    );
+    builder->CreateCondBr(is_null, null_ptr_block, not_null_block);
+
+    // null_ptr_block
+    builder->SetInsertPoint(null_ptr_block);
+    add_panic("Memory allocation failed.", location);
+    builder->CreateUnreachable();
+
+    // not_null_block
+    builder->SetInsertPoint(not_null_block);
 }
 
 void CodeGenerator::add_panic(
