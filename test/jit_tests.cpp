@@ -1386,3 +1386,39 @@ TEST_CASE("JIT arrays", "[jit]") {
         );
     }
 }
+
+TEST_CASE("JIT alloc and dealloc", "[jit]") {
+    SECTION("Alloc and dealloc integer") {
+        run_jit_test(
+            R"(
+            let p = alloc 123
+            printout unsafe { yield ^p }
+            unsafe { dealloc p }
+            )",
+            "123"
+        );
+    }
+
+    SECTION("Alloc and dealloc float") {
+        run_jit_test(
+            R"(
+            let p = alloc 3.14
+            printout unsafe { yield ^p }
+            unsafe { dealloc p }
+            )",
+            "3.14"
+        );
+    }
+
+    SECTION("Alloc and dealloc array") {
+        run_jit_test(
+            R"(
+            let p = alloc [1, 2, 3, 4, 5]
+            let arr = unsafe { yield ^p }
+            printout arr[0], ",", arr[4]
+            unsafe { dealloc p }
+            )",
+            "1,5"
+        );
+    }
+}
