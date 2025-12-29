@@ -155,6 +155,9 @@ Unlike the previous types, strings vary in size and cannot be stored directly on
 
 ### Array type
 
+> [!CAUTION]
+> This section is planned to be changed significantly in the future.
+
 An array is a collection of elements of the same type. Arrays come in two varieties: sized arrays and unsized arrays.
 
 For sized arrays, the type is written as `[T; N]`, where `T` is the type of the elements and `N` is the number of elements. For example, an array of 3 integers would be written as `[i32; 3]`.
@@ -1197,30 +1200,37 @@ When a function is called, every parameter must be matched with an argument, or 
 
 ### Allocation expressions
 
-An allocation expression is used to manually allocate heap memory for a value. This uses the `alloc` keyword:
+> [!CAUTION]
+> This section is planned to be changed significantly in the future.
+
+An allocation expression is used to manually allocate heap memory for a type. This uses the `alloc` keyword:
 ```
-alloc expression
+alloc type
 ```
 
-The amount of memory allocated is determined by the size of the expression's type.
-The allocation expression yields a raw pointer of the expression's type.
+You can optionally provide an expression to initialize the allocated memory:
 ```
-let p: @i32 = alloc 42
-```
-
-The allocated memory is initialized with the value of the expression.
-The expression will be fully evaluated and will not be implicitly dereferenced.
-
-Without `var`, the allocated memory cannot be mutated through the pointer. To allow mutation, use `var`:
-```
-let p1: var@i32 = alloc var 42 // Mutable pointer, immutable value
-let var p2: var@i32 = alloc var 42 // Mutable pointer, mutable value
+alloc type with expression
 ```
 
-Arrays use the same syntax as other expressions. Thus, allocating an array is done as follows:
+If you provide an expression, you can omit the type, and it will be inferred from the expression:
 ```
-let p: @[i32; 3] = alloc [1, 2, 3]
+alloc with expression
 ```
+
+The amount of memory allocated is determined by the size of the type.
+The allocation expression always yields a mutable raw pointer of the allocated type.
+```
+let p: var@i32 = alloc i32
+```
+
+You can create a dynamically allocated array using a special form of the allocation expression:
+```
+alloc for array_capacity of base_type
+```
+This will give you a mutable unsized array pointer with `base_type` being the base type of the array (`var@[base_type; ?]`).
+
+The pointer is always mutable. When using `alloc for`, you cannot use `var` and you cannot use `with`.
 
 The `alloc` keyword may be used in safe contexts.
 
