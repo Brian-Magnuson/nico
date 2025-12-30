@@ -1252,7 +1252,9 @@ The amount of memory allocated is determined by multiplying the size of `base_ty
 let n = 100
 let p: var@[i32; ?] = alloc for n of i32
 ```
-In the above example, `n` is 100, so 400 bytes of memory (100 * 4 bytes) will be allocated.
+In the above example, `n` is 100, so 400 bytes of contiguous memory (100 * 4 bytes) will be allocated.
+
+A runtime check is performed to ensure that `amount_expr` is non-negative. If it is negative, the program will panic at runtime.
 
 The yielded type will be a mutable unsized array pointer with `base_type` being the base type of the array (`var@[base_type; ?]`).
 With unsized arrays, you can access elements in unsafe contexts without runtime checks, but you cannot change the type without a reinterpret cast.
