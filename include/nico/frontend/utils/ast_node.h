@@ -617,24 +617,32 @@ public:
  * Allocation expressions are used to allocate heap memory for an expression
  * using the `alloc` keyword.
  *
- * They consist of the `alloc` keyword token, an optional `var` keyword, and
- * the expression to be allocated.
+ * They consist of the `alloc` keyword and either:
+ * - A type annotation and an optional initialization expression, or
+ * - `for` keyword, an amount expression, `of` keyword, and a type annotation.
  */
 class Expr::Alloc : public Expr {
 public:
     // The 'alloc' keyword token.
     std::shared_ptr<Token> alloc_token;
-    // Whether the allocation has var.
-    bool has_var;
-    // The expression to be allocated.
-    std::shared_ptr<Expr> expression;
+    // The type annotation for the allocation.
+    std::optional<std::shared_ptr<Annotation>> type_annotation;
+    // The optional expression to initialize the allocated memory.
+    std::optional<std::shared_ptr<Expr>> expression;
+    // An optional expression for the amount to allocate (for dynamic arrays).
+    std::optional<std::shared_ptr<Expr>> amount_expr;
 
     Alloc(
         std::shared_ptr<Token> alloc_token,
-        bool has_var,
-        std::shared_ptr<Expr> expression
+        std::optional<std::shared_ptr<Annotation>> type_annotation =
+            std::nullopt,
+        std::optional<std::shared_ptr<Expr>> expression = std::nullopt,
+        std::optional<std::shared_ptr<Expr>> amount_expr = std::nullopt
     )
-        : alloc_token(alloc_token), has_var(has_var), expression(expression) {
+        : alloc_token(alloc_token),
+          type_annotation(type_annotation),
+          expression(expression),
+          amount_expr(amount_expr) {
         location = &alloc_token->location;
     }
 

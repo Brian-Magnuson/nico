@@ -1335,11 +1335,12 @@ std::any LocalChecker::visit(Expr::Alloc* expr, bool as_lvalue) {
     }
     // You can still do `(alloc expr).property` since it contains a dereference.
 
-    auto inner_type = expr_check(expr->expression, false);
+    auto inner_type = expr_check(expr->expression.value(), false);
     if (!inner_type)
         return std::any();
 
-    expr->type = std::make_shared<Type::RawPointer>(inner_type, expr->has_var);
+    // Alloc always returns a mutable raw pointer.
+    expr->type = std::make_shared<Type::RawPointer>(inner_type, true);
     return std::any();
 }
 

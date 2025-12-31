@@ -371,17 +371,15 @@ TEST_CASE("Parser dealloc statement", "[parser]") {
 
     SECTION("Dealloc stmt 3") {
         run_parser_stmt_test(
-            "dealloc alloc 100",
-            {"(stmt:dealloc (alloc (lit i32 100)))", "(stmt:eof)"}
+            "dealloc alloc i32",
+            {"(stmt:dealloc (alloc i32))", "(stmt:eof)"}
         );
     }
 
     SECTION("Dealloc stmt 4") {
         run_parser_stmt_test(
-            "dealloc alloc [1, 2, 3]",
-            {"(stmt:dealloc (alloc (array (lit i32 1) (lit i32 2) (lit i32 "
-             "3))))",
-             "(stmt:eof)"}
+            "dealloc alloc [i32; 3]",
+            {"(stmt:dealloc (alloc [i32; 3]))", "(stmt:eof)"}
         );
     }
 

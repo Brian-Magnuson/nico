@@ -183,10 +183,24 @@ std::any AstPrinter::visit(Expr::SizeOf* expr, bool as_lvalue) {
 }
 
 std::any AstPrinter::visit(Expr::Alloc* expr, bool as_lvalue) {
-    return std::string(
-        "(alloc " + std::string(expr->has_var ? "var " : "") +
-        std::any_cast<std::string>(expr->expression->accept(this, false)) + ")"
-    );
+    std::string str = "(alloc";
+    if (expr->amount_expr.has_value()) {
+        return str + " for " +
+               std::any_cast<std::string>(
+                   expr->amount_expr.value()->accept(this, false)
+               ) +
+               " " + expr->type_annotation.value()->to_string() + ")";
+    }
+    if (expr->type_annotation.has_value()) {
+        str += " " + expr->type_annotation.value()->to_string();
+    }
+    if (expr->expression.has_value()) {
+        str += " with " + std::any_cast<std::string>(
+                              expr->expression.value()->accept(this, false)
+                          );
+    }
+    str += ")";
+    return str;
 }
 
 std::any AstPrinter::visit(Expr::NameRef* expr, bool as_lvalue) {

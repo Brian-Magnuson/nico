@@ -217,6 +217,19 @@ class Parser {
     std::optional<std::shared_ptr<Expr>> loop();
 
     /**
+     * @brief Parses an allocation expression.
+     *
+     * An allocation expression is used to manually allocate heap memory for
+     * a type.
+     * Includes `alloc type`, `alloc type with expr`, `alloc with expr`, and
+     * `alloc for amount_expr of base_type`.
+     *
+     * @return A shared pointer to the parsed expression, or nullopt if the
+     * expression could not be parsed.
+     */
+    std::optional<std::shared_ptr<Expr>> allocation();
+
+    /**
      * @brief Parses a number literal expression.
      *
      * Number literals include integers and floats.

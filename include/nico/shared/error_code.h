@@ -90,6 +90,8 @@ enum class Err {
     NotABlock,
     // A dot was not followed by an identifier or integer.
     UnexpectedTokenAfterDot,
+    // An `alloc for` expression was found without an `of` keyword.
+    AllocForWithoutOf,
     // A conditional expression was found without a `then` keyword or block.
     ConditionalWithoutThenOrBlock,
     // A while-loop expression was found without a `do` keyword or block.

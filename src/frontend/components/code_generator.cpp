@@ -786,21 +786,21 @@ std::any CodeGenerator::visit(Expr::SizeOf* expr, bool as_lvalue) {
 
 std::any CodeGenerator::visit(Expr::Alloc* expr, bool as_lvalue) {
     llvm::Value* result = nullptr;
-    size_t type_size = expr->expression->type->get_llvm_type_size(builder);
-    llvm::Value* size_value = llvm::ConstantInt::get(
-        llvm::Type::getInt64Ty(*mod_ctx.llvm_context),
-        type_size
-    );
-    llvm::Function* malloc_fn = mod_ctx.ir_module->getFunction("malloc");
-    result = builder->CreateCall(malloc_fn, {size_value}, "alloc_ptr");
+    // size_t type_size = expr->expression->type->get_llvm_type_size(builder);
+    // llvm::Value* size_value = llvm::ConstantInt::get(
+    //     llvm::Type::getInt64Ty(*mod_ctx.llvm_context),
+    //     type_size
+    // );
+    // llvm::Function* malloc_fn = mod_ctx.ir_module->getFunction("malloc");
+    // result = builder->CreateCall(malloc_fn, {size_value}, "alloc_ptr");
 
-    add_alloc_nullptr_check(result, expr->location);
+    // add_alloc_nullptr_check(result, expr->location);
 
-    auto expr_value =
-        std::any_cast<llvm::Value*>(expr->expression->accept(this, false));
+    // auto expr_value =
+    //     std::any_cast<llvm::Value*>(expr->expression->accept(this, false));
 
-    // Store the initial value into the allocated memory
-    builder->CreateStore(expr_value, result);
+    // // Store the initial value into the allocated memory
+    // builder->CreateStore(expr_value, result);
     return result;
 }
 

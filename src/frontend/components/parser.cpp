@@ -281,6 +281,69 @@ std::optional<std::shared_ptr<Expr>> Parser::loop() {
     return std::make_shared<Expr::Loop>(loop_kw, *body, condition, loops_once);
 }
 
+std::optional<std::shared_ptr<Expr>> Parser::allocation() {
+    auto alloc_kw = previous();
+
+    // Check for 'for' keyword (dynamic array allocation).
+    if (match({Tok::KwFor})) {
+        // `alloc for <amount_expr> of <type_annotation>`
+
+        // Parse the amount expression.
+        auto amount_expr = expression();
+        if (!amount_expr)
+            return std::nullopt;
+        // Check for 'of' keyword.
+        if (!match({Tok::KwOf})) {
+            Logger::inst().log_error(
+                Err::AllocForWithoutOf,
+                peek()->location,
+                "Expected `of` keyword after amount expression after `alloc "
+                "for`."
+            );
+            return std::nullopt;
+        }
+        // Parse the type annotation.
+        auto type_annotation = annotation();
+        if (!type_annotation)
+            return std::nullopt;
+        return std::make_shared<Expr::Alloc>(
+            alloc_kw,
+            type_annotation,
+            std::nullopt,
+            amount_expr
+        );
+    }
+    else if (match({Tok::KwWith})) {
+        // `alloc with <init_expr>`
+
+        // Parse the initialization expression.
+        auto init_expr = expression();
+        if (!init_expr)
+            return std::nullopt;
+        return std::make_shared<Expr::Alloc>(alloc_kw, std::nullopt, init_expr);
+    }
+    else {
+        // `alloc <type_annotation> [with <init_expr>]`
+
+        // Parse the type annotation.
+        auto type_annotation = annotation();
+        if (!type_annotation)
+            return std::nullopt;
+        std::optional<std::shared_ptr<Expr>> init_expr = std::nullopt;
+        if (match({Tok::KwWith})) {
+            // Parse the initialization expression.
+            init_expr = expression();
+            if (!init_expr)
+                return std::nullopt;
+        }
+        return std::make_shared<Expr::Alloc>(
+            alloc_kw,
+            type_annotation,
+            init_expr
+        );
+    }
+}
+
 std::optional<size_t> Parser::array_size() {
     if (peek()->tok_type != Tok::IntDefault) {
         Logger::inst().log_error(
@@ -457,12 +520,7 @@ std::optional<std::shared_ptr<Expr>> Parser::primary() {
         return std::make_shared<Expr::SizeOf>(token, *anno);
     }
     if (match({Tok::KwAlloc})) {
-        auto alloc_token = previous();
-        bool has_var = match({Tok::KwVar});
-        auto expr = expression();
-        if (!expr)
-            return std::nullopt;
-        return std::make_shared<Expr::Alloc>(alloc_token, has_var, *expr);
+        return allocation();
     }
     if (match({Tok::LParen})) {
         // Grouping or tuple expression.
