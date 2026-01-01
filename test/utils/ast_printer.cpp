@@ -189,7 +189,7 @@ std::any AstPrinter::visit(Expr::Alloc* expr, bool as_lvalue) {
                std::any_cast<std::string>(
                    expr->amount_expr.value()->accept(this, false)
                ) +
-               " " + expr->type_annotation.value()->to_string() + ")";
+               " of " + expr->type_annotation.value()->to_string() + ")";
     }
     if (expr->type_annotation.has_value()) {
         str += " " + expr->type_annotation.value()->to_string();

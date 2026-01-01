@@ -1100,87 +1100,139 @@ TEST_CASE("Parser array expressions", "[parser]") {
     }
 }
 
-// TEST_CASE("Parser alloc expressions", "[parser]") {
-//     SECTION("Alloc expr 1") {
-//         run_parser_expr_test(
-//             "alloc 1",
-//             {"(expr (alloc (lit i32 1)))", "(stmt:eof)"}
-//         );
-//     }
+TEST_CASE("Parser alloc expressions", "[parser]") {
+    SECTION("Alloc type 1") {
+        run_parser_expr_test("alloc i32", {"(expr (alloc i32))", "(stmt:eof)"});
+    }
 
-//     SECTION("Alloc expr 2") {
-//         run_parser_expr_test(
-//             "alloc (a + b)",
-//             {"(expr (alloc (binary + (nameref a) (nameref b))))",
-//             "(stmt:eof)"}
-//         );
-//     }
+    SECTION("Alloc type 2") {
+        run_parser_expr_test("alloc f64", {"(expr (alloc f64))", "(stmt:eof)"});
+    }
 
-//     SECTION("Alloc expr 3") {
-//         run_parser_expr_test(
-//             "alloc [1, 2, 3]",
-//             {"(expr (alloc (array (lit i32 1) (lit i32 2) (lit i32 3))))",
-//              "(stmt:eof)"}
-//         );
-//     }
+    SECTION("Alloc type 3") {
+        run_parser_expr_test("alloc @i8", {"(expr (alloc @i8))", "(stmt:eof)"});
+    }
 
-//     SECTION("Alloc expr 4") {
-//         run_parser_expr_test(
-//             "alloc alloc 10",
-//             {"(expr (alloc (alloc (lit i32 10))))", "(stmt:eof)"}
-//         );
-//     }
+    SECTION("Alloc type 4") {
+        run_parser_expr_test(
+            "alloc (i32, f64)",
+            {"(expr (alloc (i32, f64)))", "(stmt:eof)"}
+        );
+    }
 
-//     SECTION("Alloc expr 5") {
-//         run_parser_expr_test(
-//             "alloc f()",
-//             {"(expr (alloc (call (nameref f))))", "(stmt:eof)"}
-//         );
-//     }
+    SECTION("Alloc type 5") {
+        run_parser_expr_test(
+            "alloc [i32; 3]",
+            {"(expr (alloc [i32; 3]))", "(stmt:eof)"}
+        );
+    }
 
-//     SECTION("Alloc expr 6") {
-//         run_parser_expr_test(
-//             "alloc @x",
-//             {"(expr (alloc (address @ (nameref x))))", "(stmt:eof)"}
-//         );
-//     }
+    SECTION("Alloc type with 1") {
+        run_parser_expr_test(
+            "alloc i32 with 1",
+            {"(expr (alloc i32 with (lit i32 1)))", "(stmt:eof)"}
+        );
+    }
 
-//     SECTION("Alloc expr 7") {
-//         run_parser_expr_test(
-//             "alloc nullptr",
-//             {"(expr (alloc (lit nullptr)))", "(stmt:eof)"}
-//         );
-//     }
+    SECTION("Alloc type with 2") {
+        run_parser_expr_test(
+            "alloc i32 with a + b",
+            {"(expr (alloc i32 with (binary + (nameref a) (nameref b))))",
+             "(stmt:eof)"}
+        );
+    }
 
-//     SECTION("Alloc expr 8") {
-//         run_parser_expr_test(
-//             "alloc -123",
-//             {"(expr (alloc (lit i32 -123)))", "(stmt:eof)"}
-//         );
-//     }
+    SECTION("Alloc type with 3") {
+        run_parser_expr_test(
+            "alloc [i32; 3] with [1, 2, 3]",
+            {"(expr (alloc [i32; 3] with (array (lit i32 1) (lit i32 2) "
+             "(lit i32 3))))",
+             "(stmt:eof)"}
+        );
+    }
 
-//     SECTION("Alloc expr 9") {
-//         run_parser_expr_test(
-//             "alloc 1 as i64",
-//             {"(expr (alloc (cast (lit i32 1) as i64)))", "(stmt:eof)"}
-//         );
-//     }
+    SECTION("Alloc type with 4") {
+        run_parser_expr_test(
+            "alloc (i32, f64) with (1, 3.14)",
+            {"(expr (alloc (i32, f64) with (tuple (lit i32 1) (lit f64 "
+             "3.140000))))",
+             "(stmt:eof)"}
+        );
+    }
 
-//     SECTION("Alloc expr 10") {
-//         run_parser_expr_test(
-//             "alloc block { yield 123 }",
-//             {"(expr (alloc (block (stmt:yield yield (lit i32 123)))))",
-//              "(stmt:eof)"}
-//         );
-//     }
+    SECTION("Alloc type with 5") {
+        run_parser_expr_test(
+            "alloc @i32 with alloc i32 with 10",
+            {"(expr (alloc @i32 with (alloc i32 with (lit i32 10))))",
+             "(stmt:eof)"}
+        );
+    }
 
-//     SECTION("Alloc with var") {
-//         run_parser_expr_test(
-//             "alloc var x",
-//             {"(expr (alloc var (nameref x)))", "(stmt:eof)"}
-//         );
-//     }
-// }
+    SECTION("Alloc with 1") {
+        run_parser_expr_test(
+            "alloc with 10",
+            {"(expr (alloc with (lit i32 10)))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Alloc with 2") {
+        run_parser_expr_test(
+            "alloc with f()",
+            {"(expr (alloc with (call (nameref f))))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Alloc with 3") {
+        run_parser_expr_test(
+            "alloc with @x",
+            {"(expr (alloc with (address @ (nameref x))))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Alloc with 4") {
+        run_parser_expr_test(
+            "alloc with alloc with 10",
+            {"(expr (alloc with (alloc with (lit i32 10))))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Alloc with 5") {
+        run_parser_expr_test(
+            "alloc with block { yield 42 }",
+            {"(expr (alloc with (block (stmt:yield yield (lit i32 42)))))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Alloc with 6") {
+        run_parser_expr_test(
+            "alloc with 1 as i64",
+            {"(expr (alloc with (cast (lit i32 1) as i64)))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Alloc for 1") {
+        run_parser_expr_test(
+            "alloc for 5 of i32",
+            {"(expr (alloc for (lit i32 5) of i32))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Alloc for 2") {
+        run_parser_expr_test(
+            "alloc for n of f64",
+            {"(expr (alloc for (nameref n) of f64))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Alloc for 3") {
+        run_parser_expr_test(
+            "alloc for 10 + m of @i8",
+            {"(expr (alloc for (binary + (lit i32 10) (nameref m)) of @i8))",
+             "(stmt:eof)"}
+        );
+    }
+}
 
 // MARK: Error tests
 
@@ -1243,8 +1295,20 @@ TEST_CASE("Parser call errors", "[parser]") {
     }
 }
 
-// TEST_CASE("Parser alloc errors", "[parser]") {
-//     SECTION("Alloc without expression") {
-//         run_parser_expr_error_test("alloc", Err::NotAnExpression);
-//     }
-// }
+TEST_CASE("Parser alloc errors", "[parser]") {
+    SECTION("Alloc without expression") {
+        run_parser_expr_error_test("alloc", Err::NotAType);
+    }
+
+    SECTION("Alloc with without expr") {
+        run_parser_expr_error_test("alloc with", Err::NotAnExpression);
+    }
+
+    SECTION("Alloc for without expr") {
+        run_parser_expr_error_test("alloc for", Err::NotAnExpression);
+    }
+
+    SECTION("Alloc for without of") {
+        run_parser_expr_error_test("alloc for 10", Err::AllocForWithoutOf);
+    }
+}
