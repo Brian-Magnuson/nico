@@ -83,6 +83,22 @@ TEST_CASE("Local variable declarations", "[checker]") {
         run_checker_test("let a = 1 let b: typeof(a) = 2");
     }
 
+    SECTION("Nullptr assignment single pointer") {
+        run_checker_test("let var a: @i32 = nullptr");
+    }
+
+    SECTION("Nullptr assignment double pointer") {
+        run_checker_test("let var a: @@i32 = nullptr");
+    }
+
+    SECTION("Nullptr assignment var pointer") {
+        run_checker_test("let var a: var@i32 = nullptr");
+    }
+
+    SECTION("Nullptr assignment deep pointer") {
+        run_checker_test("let var a: var@var@var@var@var@i32 = nullptr");
+    }
+
     SECTION("Let type mismatch 1") {
         run_checker_test("let a: i32 = true", Err::LetTypeMismatch);
     }
@@ -97,6 +113,14 @@ TEST_CASE("Local variable declarations", "[checker]") {
 
     SECTION("Let type mismatch 4") {
         run_checker_test("let var a: i32 = 1_i8", Err::LetTypeMismatch);
+    }
+
+    SECTION("Let type mismatch 5") {
+        run_checker_test("let a: [i32; 3] = [1, 2]", Err::LetTypeMismatch);
+    }
+
+    SECTION("Let type mismatch 6") {
+        run_checker_test("let a: i32 = nullptr", Err::LetTypeMismatch);
     }
 
     SECTION("Undeclared identifier") {
@@ -166,7 +190,114 @@ TEST_CASE("Local sizeof expressions", "[checker]") {
     SECTION("Valid sizeof expression 4") {
         run_checker_test("let x: i32 = 1 let var a: u64 = sizeof typeof(x)");
     }
+
+    SECTION("Sizeof unsized type") {
+        run_checker_test(
+            "let a: u64 = sizeof [i32; ?]",
+            Err::SizeOfUnsizedType
+        );
+    }
 }
+
+TEST_CASE("Local alloc expressions", "[checker]") {
+    SECTION("Valid alloc type expr 1") {
+        run_checker_test("let a: @i32 = alloc i32");
+    }
+
+    SECTION("Valid alloc type expr 2") {
+        run_checker_test("let a: var@i32 = alloc i32");
+    }
+
+    SECTION("Valid alloc type expr 3") {
+        run_checker_test("let a: @@i32 = alloc @i32");
+    }
+
+    SECTION("Unsized type allocation") {
+        run_checker_test(
+            "let a: @[i32; ?] = alloc [i32; ?]",
+            Err::UnsizedTypeAllocation
+        );
+    }
+
+    SECTION("Alloc type mismatch") {
+        run_checker_test("let a: @i32 = alloc f64", Err::LetTypeMismatch);
+    }
+
+    SECTION("Valid alloc type with expr 1") {
+        run_checker_test("let a: @i32 = alloc i32 with 10");
+    }
+
+    SECTION("Valid alloc type with expr 2") {
+        run_checker_test(
+            "let a: var@[i32; 5] = alloc [i32; 5] with [1, 2, 3, 4, 5]"
+        );
+    }
+
+    SECTION("Valid alloc type with expr 3") {
+        run_checker_test("let a: @@f64 = alloc @f64 with alloc f64");
+    }
+
+    SECTION("Valid alloc type with expr 4") {
+        run_checker_test("let a: @@i32 = alloc @i32 with nullptr");
+    }
+
+    SECTION("Alloc init type mismatch 1") {
+        run_checker_test(
+            "let a: @i32 = alloc i32 with 10.0",
+            Err::AllocInitTypeMismatch
+        );
+    }
+
+    SECTION("Alloc init type mismatch 2") {
+        run_checker_test(
+            "let a: var@[i32; 5] = alloc [i32; 5] with [1, 2, 3]",
+            Err::AllocInitTypeMismatch
+        );
+    }
+
+    SECTION("Alloc init type mismatch 3") {
+        run_checker_test(
+            "let a: @f64 = alloc f64 with nullptr",
+            Err::AllocInitTypeMismatch
+        );
+    }
+
+    SECTION("Valid alloc with expr 1") {
+        run_checker_test("let a: @i32 = alloc with 10");
+    }
+
+    SECTION("Valid alloc with expr 2") {
+        run_checker_test("let a: @[i32; 3] = alloc with [1, 2, 3]");
+    }
+
+    SECTION("Valid alloc with expr 3") {
+        run_checker_test("let a: @@f64 = alloc with nullptr");
+    }
+
+    SECTION("Valid alloc with expr 4") {
+        run_checker_test("let a: @nullptr = alloc with nullptr");
+    }
+
+    SECTION("Alloc with expr type mismatch 1") {
+        run_checker_test("let a: i32 = alloc with 10.0", Err::LetTypeMismatch);
+    }
+
+    SECTION("Alloc with expr type mismatch 2") {
+        run_checker_test(
+            "let a: @[i32; 5] = alloc with [1, 2, 3]",
+            Err::LetTypeMismatch
+        );
+    }
+
+    SECTION("Alloc with expr type mismatch 3") {
+        run_checker_test(
+            "let a: nullptr = alloc with nullptr",
+            Err::LetTypeMismatch
+        );
+    }
+}
+
+// TODO: Add a new test case for alloc-for and dealloc
 
 // TEST_CASE("Local alloc expressions", "[checker]") {
 //     SECTION("Valid alloc expression 1") {

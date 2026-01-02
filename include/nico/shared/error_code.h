@@ -157,6 +157,8 @@ enum class Err {
     ArrayElementTypeMismatch,
     // An attempt was made to allocate memory for an unsized type.
     UnsizedTypeAllocation,
+    // A sizeof expression was found with an unsized type.
+    SizeOfUnsizedType,
     // An alloc amount expression was not of an integer type.
     AllocAmountNotInteger,
     // An alloc initializer expression had a type mismatched with the explicit

@@ -1317,6 +1317,14 @@ std::any LocalChecker::visit(Expr::SizeOf* expr, bool as_lvalue) {
     if (!type_any.has_value())
         return std::any();
     auto type = std::any_cast<std::shared_ptr<Type>>(type_any);
+    if (!type->is_sized_type()) {
+        Logger::inst().log_error(
+            Err::SizeOfUnsizedType,
+            *expr->location,
+            "Cannot measure size of unsized type `" + type->to_string() + "`."
+        );
+        return std::any();
+    }
     expr->inner_type = type;
     expr->type = std::make_shared<Type::Int>(false, 64); // Sizeof returns u64.
 
