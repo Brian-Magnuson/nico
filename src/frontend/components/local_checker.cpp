@@ -1335,12 +1335,94 @@ std::any LocalChecker::visit(Expr::Alloc* expr, bool as_lvalue) {
     }
     // You can still do `(alloc expr).property` since it contains a dereference.
 
-    auto inner_type = expr_check(expr->expression.value(), false);
-    if (!inner_type)
-        return std::any();
+    std::shared_ptr<Type> alloc_type = nullptr;
+
+    if (expr->amount_expr.has_value()) {
+        // `alloc for <amount_expr> of <type_annotation>`
+        auto amount_type = expr_check(expr->amount_expr.value(), false);
+        if (!amount_type)
+            return std::any();
+        if (!PTR_INSTANCEOF(amount_type, Type::Int)) {
+            Logger::inst().log_error(
+                Err::AllocAmountNotInteger,
+                *expr->amount_expr.value()->location,
+                "Amount expression for alloc must be of an integer type."
+            );
+            return std::any();
+        }
+        auto anno_any =
+            expr->type_annotation.value()->accept(&annotation_checker);
+        if (!anno_any.has_value())
+            return std::any();
+        auto alloc_inner_type = std::any_cast<std::shared_ptr<Type>>(anno_any);
+        // alloc inner type must be sized.
+        if (!alloc_inner_type->is_sized_type()) {
+            Logger::inst().log_error(
+                Err::UnsizedTypeAllocation,
+                *expr->type_annotation.value()->location,
+                "Cannot allocate memory for unsized type `" +
+                    alloc_inner_type->to_string() + "`."
+            );
+            Logger::inst().log_note(
+                "Allocated types must be sized to calculate memory layout."
+            );
+            return std::any();
+        }
+
+        alloc_type = std::make_shared<Type::Array>(alloc_inner_type);
+    }
+    else if (!expr->type_annotation.has_value()) {
+        // `alloc with <init_expr>`
+        auto init_type = expr_check(expr->expression.value(), false);
+        if (!init_type)
+            return std::any();
+        alloc_type = init_type;
+    }
+    else {
+        // `alloc <type_annotation> [with <init_expr>]`
+        auto anno_any =
+            expr->type_annotation.value()->accept(&annotation_checker);
+        if (!anno_any.has_value())
+            return std::any();
+        auto alloc_inner_type = std::any_cast<std::shared_ptr<Type>>(anno_any);
+        // alloc inner type must be sized.
+        if (!alloc_inner_type->is_sized_type()) {
+            Logger::inst().log_error(
+                Err::UnsizedTypeAllocation,
+                *expr->type_annotation.value()->location,
+                "Cannot allocate memory for unsized type `" +
+                    alloc_inner_type->to_string() + "`."
+            );
+            Logger::inst().log_note(
+                "Allocated types must be sized to calculate memory layout."
+            );
+            return std::any();
+        }
+
+        if (expr->expression.has_value()) {
+            auto init_type = expr_check(expr->expression.value(), false);
+            if (!init_type)
+                return std::any();
+            if (!init_type->is_assignable_to(*alloc_inner_type)) {
+                Logger::inst().log_error(
+                    Err::AllocInitTypeMismatch,
+                    *expr->expression.value()->location,
+                    std::string("Initializer expression of type `") +
+                        init_type->to_string() +
+                        "` is not compatible with allocated type `" +
+                        alloc_inner_type->to_string() + "`."
+                );
+                return std::any();
+            }
+            // alloc_inner_type takes precedence over init_type, so we don't do
+            // anything else with init_type here.
+        }
+
+        alloc_type = alloc_inner_type;
+    }
 
     // Alloc always returns a mutable raw pointer.
-    expr->type = std::make_shared<Type::RawPointer>(inner_type, true);
+    expr->type = std::make_shared<Type::RawPointer>(alloc_type, true);
     return std::any();
 }
 
