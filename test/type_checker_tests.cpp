@@ -299,71 +299,87 @@ TEST_CASE("Local alloc expressions", "[checker]") {
 
 // TODO: Add a new test case for alloc-for and dealloc
 
-// TEST_CASE("Local alloc expressions", "[checker]") {
-//     SECTION("Valid alloc expression 1") {
-//         run_checker_test("let a: @i32 = alloc 1");
-//     }
+TEST_CASE("Local alloc-for expressions", "[checker]") {
+    SECTION("Valid alloc-for expression 1") {
+        run_checker_test("let a: @[i32; ?] = alloc for 1 of i32");
+    }
 
-//     SECTION("Valid alloc expression 2") {
-//         run_checker_test("let var a: var@i32 = alloc var 1");
-//     }
+    SECTION("Valid alloc-for expression 2") {
+        run_checker_test("let a: var@[i32; ?] = alloc for 10 of i32");
+    }
 
-//     SECTION("Alloc type mismatch 1") {
-//         run_checker_test("let a: i32 = alloc 1", Err::LetTypeMismatch);
-//     }
+    SECTION("Valid alloc-for expression 3") {
+        run_checker_test("let a: @[@[i32; ?]; ?] = alloc for 5 of @[i32; ?]");
+    }
 
-//     SECTION("Alloc loss of var OK") {
-//         run_checker_test("let a: @i32 = alloc var 1");
-//     }
+    SECTION("Valid alloc-for expression 4") {
+        run_checker_test("let n = 10 let a: @[i32; ?] = alloc for n of i32");
+    }
 
-//     SECTION("Alloc type mismatch 2") {
-//         run_checker_test("let var a: var@i32 = alloc 1",
-//         Err::LetTypeMismatch);
-//     }
+    SECTION("Alloc-for amount not integer") {
+        run_checker_test(
+            "let a: @[i32; ?] = alloc for 1.0 of i32",
+            Err::AllocAmountNotInteger
+        );
+    }
 
-//     SECTION("Alloc with cast") {
-//         run_checker_test("let a: @i64 = alloc 1 as i64");
-//     }
-// }
+    SECTION("Alloc-for unsized type allocation") {
+        run_checker_test(
+            "let a: @[i32; ?] = alloc for 10 of [i32; ?]",
+            Err::UnsizedTypeAllocation
+        );
+    }
+}
 
-// TEST_CASE("Local dealloc statements", "[checker]") {
-//     SECTION("Valid dealloc statement 1") {
-//         run_checker_test("let a: @i32 = alloc 1 unsafe { dealloc a }");
-//     }
+TEST_CASE("Local dealloc statements", "[checker]") {
+    SECTION("Valid dealloc statement 1") {
+        run_checker_test("let a: @i32 = alloc i32 unsafe { dealloc a }");
+    }
 
-//     SECTION("Valid dealloc statement 2") {
-//         run_checker_test(
-//             "let var a: var@i32 = alloc var 1 unsafe { dealloc a }"
-//         );
-//     }
+    SECTION("Valid dealloc statement 2") {
+        run_checker_test("let var a: var@i32 = alloc i32 unsafe { dealloc a }");
+    }
 
-//     SECTION("Valid dealloc statement 3") {
-//         run_checker_test(
-//             "let a: @i32 = alloc 1 let b = a unsafe { dealloc b }"
-//         );
-//     }
+    SECTION("Valid dealloc statement 3") {
+        run_checker_test(
+            "let a: @i32 = alloc i32 let b = a unsafe { dealloc b }"
+        );
+    }
 
-//     SECTION("Dealloc non-pointer") {
-//         run_checker_test(
-//             "let a = 1 unsafe { dealloc a }",
-//             Err::DeallocNonRawPointer
-//         );
-//     }
+    SECTION("Valid dealloc statement 4") {
+        run_checker_test(
+            "let a: @[i32; 5] = alloc [i32; 5] with [1,2,3,4,5] "
+            "unsafe { dealloc a }"
+        );
+    }
 
-//     SECTION("Dealloc nullptr") {
-//         run_checker_test(
-//             "let a = nullptr unsafe { dealloc a }",
-//             Err::DeallocNullptr
-//         );
-//     }
+    SECTION("Valid dealloc statement 5") {
+        run_checker_test(
+            "let a: @[i32; ?] = alloc for 10 of i32 unsafe { dealloc a }"
+        );
+    }
 
-//     SECTION("Dealloc outside unsafe") {
-//         run_checker_test(
-//             "let a: @i32 = alloc 1 dealloc a",
-//             Err::DeallocOutsideUnsafeBlock
-//         );
-//     }
-// }
+    SECTION("Dealloc non-pointer") {
+        run_checker_test(
+            "let a = 1 unsafe { dealloc a }",
+            Err::DeallocNonRawPointer
+        );
+    }
+
+    SECTION("Dealloc nullptr") {
+        run_checker_test(
+            "let a = nullptr unsafe { dealloc a }",
+            Err::DeallocNullptr
+        );
+    }
+
+    SECTION("Dealloc outside unsafe") {
+        run_checker_test(
+            "let a: @i32 = alloc i32 dealloc a",
+            Err::DeallocOutsideUnsafeBlock
+        );
+    }
+}
 
 TEST_CASE("Local non pointer cast expressions") {
     SECTION("Valid cast NoOp") {
