@@ -3,8 +3,8 @@
 The following is an explanation of how control flow is managed within the code generator in the Nico programming language.
 Understanding control flow is crucial for generating the correct IR for LLVM.
 
-> [!WARNING]
-> This document is a work in progress and is subject to change.
+> [!CAUTION]
+> This information in this document is planned to be heavily revised with a new control flow graph system.
 
 ## Introduction
 

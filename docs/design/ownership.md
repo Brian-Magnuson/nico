@@ -98,6 +98,7 @@ However, this alone leaves us with three problems:
      }
      // x must be invalid here
      ```
+   - Additionally, if `x` is only conditionally invalidated, we must ensure it is dropped properly if it remains valid after the conditional.
 3. **Ownership transfer can occur in loops**: In a loop, the same block of code may execute multiple times. If a variable is created outside the loop, we cannot allow it to be invalidated inside the loop since it may be invalidated multiple times.
    - For example, if we invalidate `x` inside a loop, it will be invalidated the first time the loop runs, but on subsequent iterations, `x` is already invalid, leading to errors.
      ```
@@ -120,10 +121,9 @@ Dropping is the process of freeing the memory associated with a variable when it
 1. Freeing the memory associated with the value.
 2. Invalidating the owner to indicate that it no longer owns the value.
 
-In Nico, we will call this operation **deletion**.
-Deletion can be done implicitly when a variable goes out of scope, or explicitly using a `del` statement.
+Dropping can be done implicitly when a variable goes out of scope, or explicitly using a `del` statement.
 
-The commonality between moving and deleting is that both operations involve invalidating an owner. Henceforth, we will use the term "invalidating" to refer to either operation.
+The commonality between moving and dropping is that both operations involve invalidating an owner. Henceforth, we will use the term "invalidating" to refer to either operation.
 
 ## Observation: Blocks Aren't the Issue
 
