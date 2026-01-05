@@ -786,21 +786,51 @@ std::any CodeGenerator::visit(Expr::SizeOf* expr, bool as_lvalue) {
 
 std::any CodeGenerator::visit(Expr::Alloc* expr, bool as_lvalue) {
     llvm::Value* result = nullptr;
-    // size_t type_size = expr->expression->type->get_llvm_type_size(builder);
-    // llvm::Value* size_value = llvm::ConstantInt::get(
-    //     llvm::Type::getInt64Ty(*mod_ctx.llvm_context),
-    //     type_size
-    // );
-    // llvm::Function* malloc_fn = mod_ctx.ir_module->getFunction("malloc");
-    // result = builder->CreateCall(malloc_fn, {size_value}, "alloc_ptr");
+    llvm::Value* alloc_size = nullptr;
 
-    // add_alloc_nullptr_check(result, expr->location);
+    auto pointer_type = std::dynamic_pointer_cast<Type::RawPointer>(expr->type);
 
-    // auto expr_value =
-    //     std::any_cast<llvm::Value*>(expr->expression->accept(this, false));
+    if (expr->amount_expr.has_value()) {
+        // `alloc for`
+        size_t type_size =
+            std::dynamic_pointer_cast<Type::Array>(pointer_type->base)
+                ->base->get_llvm_type_size(builder);
 
-    // // Store the initial value into the allocated memory
-    // builder->CreateStore(expr_value, result);
+        llvm::Value* type_size_value = llvm::ConstantInt::get(
+            llvm::Type::getInt64Ty(*mod_ctx.llvm_context),
+            type_size
+        );
+        auto amount_value = std::any_cast<llvm::Value*>(
+            expr->amount_expr.value()->accept(this, false)
+        );
+        add_negative_alloc_size_check(amount_value, expr->location);
+
+        alloc_size = builder->CreateMul(
+            type_size_value,
+            amount_value,
+            "total_alloc_size"
+        );
+    }
+    else {
+        // `alloc`
+        size_t type_size = pointer_type->base->get_llvm_type_size(builder);
+        alloc_size = llvm::ConstantInt::get(
+            llvm::Type::getInt64Ty(*mod_ctx.llvm_context),
+            type_size
+        );
+    }
+
+    llvm::Function* malloc_fn = mod_ctx.ir_module->getFunction("malloc");
+    result = builder->CreateCall(malloc_fn, {alloc_size}, "alloc_ptr");
+    add_alloc_nullptr_check(result, expr->location);
+
+    if (expr->expression.has_value()) {
+        auto expr_value = std::any_cast<llvm::Value*>(
+            expr->expression.value()->accept(this, false)
+        );
+        builder->CreateStore(expr_value, result);
+    }
+
     return result;
 }
 
@@ -1412,6 +1442,45 @@ void CodeGenerator::add_alloc_nullptr_check(
 
     // not_null_block
     builder->SetInsertPoint(not_null_block);
+}
+
+void CodeGenerator::add_negative_alloc_size_check(
+    llvm::Value* size_value, const Location* location
+) {
+    llvm::BasicBlock* current_block = builder->GetInsertBlock();
+    llvm::Function* current_function = current_block->getParent();
+
+    llvm::BasicBlock* negative_size_block = llvm::BasicBlock::Create(
+        *mod_ctx.llvm_context,
+        "alloc_negative_size",
+        current_function
+    );
+    llvm::BasicBlock* non_negative_size_block = llvm::BasicBlock::Create(
+        *mod_ctx.llvm_context,
+        "alloc_non_negative_size",
+        current_function
+    );
+
+    llvm::Value* is_negative = builder->CreateICmpSLT(
+        size_value,
+        llvm::ConstantInt::get(size_value->getType(), 0)
+    );
+    builder->CreateCondBr(
+        is_negative,
+        negative_size_block,
+        non_negative_size_block
+    );
+
+    // negative_size_block
+    builder->SetInsertPoint(negative_size_block);
+    add_panic(
+        "Allocation amount expression evaluated to a negative value.",
+        location
+    );
+    builder->CreateUnreachable();
+
+    // non_negative_size_block
+    builder->SetInsertPoint(non_negative_size_block);
 }
 
 void CodeGenerator::add_panic(

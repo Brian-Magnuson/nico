@@ -146,6 +146,20 @@ class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
     void add_alloc_nullptr_check(llvm::Value* ptr, const Location* location);
 
     /**
+     * @brief Adds a runtime check for negative allocation sizes.
+     *
+     * Users can write `alloc for` followed by a size expression. This check
+     * ensures that the size expression does not evaluate to a negative value.
+     * If it does, the program will abort with an error message.
+     *
+     * @param size The size value to check.
+     * @param location The location in the source code where the allocation
+     * occurs.
+     */
+    void
+    add_negative_alloc_size_check(llvm::Value* size, const Location* location);
+
+    /**
      * @brief Adds a panic call to the generated code.
      *
      * During a panic, the program will print the error message and immediately
