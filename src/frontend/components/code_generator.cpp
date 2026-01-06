@@ -803,6 +803,15 @@ std::any CodeGenerator::visit(Expr::Alloc* expr, bool as_lvalue) {
         auto amount_value = std::any_cast<llvm::Value*>(
             expr->amount_expr.value()->accept(this, false)
         );
+        // amount_value is definitely an integer, but may not be a u64.
+        // Use ZExt to convert it.
+        if (amount_value->getType()->isIntegerTy(64) == false) {
+            amount_value = builder->CreateZExt(
+                amount_value,
+                llvm::Type::getInt64Ty(*mod_ctx.llvm_context),
+                "alloc_amount_u64"
+            );
+        }
         add_negative_alloc_size_check(amount_value, expr->location);
 
         alloc_size = builder->CreateMul(

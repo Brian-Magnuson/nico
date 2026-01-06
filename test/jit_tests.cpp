@@ -1387,38 +1387,81 @@ TEST_CASE("JIT arrays", "[jit]") {
     }
 }
 
-// TEST_CASE("JIT alloc and dealloc", "[jit]") {
-//     SECTION("Alloc and dealloc integer") {
-//         run_jit_test(
-//             R"(
-//             let p = alloc 123
-//             printout unsafe { yield ^p }
-//             unsafe { dealloc p }
-//             )",
-//             "123"
-//         );
-//     }
+TEST_CASE("JIT alloc and dealloc", "[jit]") {
+    SECTION("Alloc and dealloc integer") {
+        run_jit_test(
+            R"(
+            let p = alloc i32
+            printout unsafe { 
+                ^p = 123
+                yield ^p 
+                dealloc p
+            }
+            )",
+            "123"
+        );
+    }
 
-//     SECTION("Alloc and dealloc float") {
-//         run_jit_test(
-//             R"(
-//             let p = alloc 3.14
-//             printout unsafe { yield ^p }
-//             unsafe { dealloc p }
-//             )",
-//             "3.14"
-//         );
-//     }
+    SECTION("Alloc and dealloc float") {
+        run_jit_test(
+            R"(
+            let p = alloc f64 with 3.14
+            printout unsafe { yield ^p }
+            unsafe { dealloc p }
+            )",
+            "3.14"
+        );
+    }
 
-//     SECTION("Alloc and dealloc array") {
-//         run_jit_test(
-//             R"(
-//             let p = alloc [1, 2, 3, 4, 5]
-//             let arr = unsafe { yield ^p }
-//             printout arr[0], ",", arr[4]
-//             unsafe { dealloc p }
-//             )",
-//             "1,5"
-//         );
-//     }
-// }
+    SECTION("Alloc and dealloc array") {
+        run_jit_test(
+            R"(
+            let p = alloc with [1, 2, 3, 4, 5]
+            let arr = unsafe { yield ^p }
+            printout arr[0], ",", arr[4]
+            unsafe { dealloc p }
+            )",
+            "1,5"
+        );
+    }
+
+    SECTION("Alloc dynamic array") {
+        run_jit_test(
+            R"(
+            let size = 4
+            let p = alloc for size of i32
+            unsafe {
+                ^p = [10, 20, 30, 40]
+                printout p[0], ",", p[3]
+                dealloc p
+            }
+            )",
+            "10,40"
+        );
+    }
+
+    SECTION("Alloc negative size") {
+        run_jit_test(
+            R"(
+            let size = -5
+            let p = alloc for size of i32
+            )",
+            std::nullopt,
+            101
+        );
+    }
+
+    SECTION("Alloc in block") {
+        run_jit_test(
+            R"(
+            block {
+                let p = alloc i32 with 42
+                printout unsafe { yield ^p }
+                unsafe { dealloc p }
+            }
+            printout " done"
+            )",
+            "42 done"
+        );
+    }
+}
