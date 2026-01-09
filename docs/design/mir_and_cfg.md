@@ -85,7 +85,8 @@ A basic block should not be confused with a block expression, which is a syntact
 Unlike expressions and statements, which can be nested within each other in the AST, instructions in MIR are *atomic*, meaning they perform a single operation and cannot contain other instructions within them.
 This makes it easier to analyze the data flow of the program.
 
-For our implementation, we may use a single class to represent all instructions, with an enumeration to distinguish between different instruction types.
+For our implementation, we may group sets of instructions into subclasses based on their structure and purpose, such as arithmetic instructions, memory instructions, and control flow instructions.
+This helps ensure that each instruction type has the appropriate fields for its operands and behavior.
 
 > [!WARNING]
 > The following code is meant to illustrate the concept and is not a complete implementation.
@@ -108,8 +109,25 @@ public:
     };
 
     Kind kind;
-    std::optional<Value> dest;
-    std::vector<Value> operands; 
+};
+
+class JumpInstruction : public Instruction {
+public:
+    std::weak_ptr<BasicBlock> target_block;
+};
+
+class CallInstruction : public Instruction {
+public:
+    std::weak_ptr<Function> target_function;
+    std::vector<Value> arguments;
+    Value return_value;
+};
+
+class BinaryInstruction : public Instruction {
+public:
+    Value dest;
+    Value op_1;
+    Value op_2;
 };
 ```
 
