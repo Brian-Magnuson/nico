@@ -79,7 +79,7 @@ private:
     friend class Function;
 
     // The name of the basic block.
-    std::string name;
+    const std::string name;
     // The instructions in the basic block.
     std::vector<std::shared_ptr<Instruction::INonTerminator>> instructions;
     // The terminator instruction of the basic block.
@@ -91,7 +91,15 @@ private:
     std::vector<std::weak_ptr<BasicBlock>> predecessors;
 
 protected:
-    BasicBlock(const std::string& name);
+    BasicBlock(std::string_view name);
+
+    /**
+     * @brief Sets this block to use a return terminator.
+     *
+     * Only the Function class is allowed to call this method since only the
+     * exit block may be set as the return block.
+     */
+    void set_as_function_return();
 
 public:
     /**
@@ -134,30 +142,63 @@ public:
         std::shared_ptr<BasicBlock> main_successor,
         std::shared_ptr<BasicBlock> alt_successor
     );
-
-    /**
-     * @brief Sets this block to use a return terminator.
-     */
-    void set_as_return();
 };
 
 class Function : public std::enable_shared_from_this<Function> {
-public:
+private:
     // The name of the function.
-    std::string name;
+    const std::string name;
     // A special temporary value for the return value.
     std::shared_ptr<Value::Temporary> return_value;
     // The basic blocks in the function.
     std::vector<std::shared_ptr<BasicBlock>> basic_blocks;
 
+protected:
     Function(const std::string& name);
+
+public:
+    /**
+     * @brief Creates a new function with the given name.
+     *
+     * The function will have an entry and exit basic block created
+     * automatically.
+     *
+     * The entry block will start without a terminator instruction.
+     * During MIR building, the terminator instruction must be filled in at some
+     * point.
+     *
+     * @param name The name of the function.
+     * @return The newly created function.
+     */
+    static std::shared_ptr<Function> create(const std::string& name);
 
     /**
      * @brief Creates a new basic block and adds it to the function.
+     *
      * @param bb_name The name of the basic block.
      * @return The newly created basic block.
      */
     std::shared_ptr<BasicBlock> create_basic_block(std::string_view bb_name);
+
+    /**
+     * @brief Get the entry basic block of the function.
+     *
+     * The entry block is always the first basic block.
+     *
+     * @return The entry basic block.
+     */
+    std::shared_ptr<BasicBlock> get_entry_block() {
+        return basic_blocks.front();
+    }
+
+    /**
+     * @brief Get the exit basic block of the function.
+     *
+     * The exit block is always the second basic block.
+     *
+     * @return The exit basic block.
+     */
+    std::shared_ptr<BasicBlock> get_exit_block() { return basic_blocks.at(1); }
 };
 
 } // namespace nico
