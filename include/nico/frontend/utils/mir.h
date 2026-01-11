@@ -18,13 +18,13 @@ namespace nico {
  *
  * Only members of this class and its subclasses may be used with instructions.
  */
-class Value {
+class MIRValue {
 public:
     class Literal;
     class Variable;
     class Temporary;
 
-    virtual ~Value() = default;
+    virtual ~MIRValue() = default;
 
     /**
      * @brief A visitor class for values.
@@ -40,11 +40,11 @@ public:
     std::shared_ptr<Type> type;
 
     /**
-     * @brief Constructs a new Value with the given type.
+     * @brief Constructs a new MIRValue with the given type.
      *
      * @param type The type of the value.
      */
-    Value(std::shared_ptr<Type> type)
+    MIRValue(std::shared_ptr<Type> type)
         : type(type) {}
 
     /**
@@ -197,7 +197,7 @@ public:
      * panic.
      */
     void set_successors(
-        std::shared_ptr<Value> condition,
+        std::shared_ptr<MIRValue> condition,
         std::shared_ptr<BasicBlock> main_successor,
         std::shared_ptr<BasicBlock> alt_successor
     );
@@ -218,7 +218,7 @@ class Function : public std::enable_shared_from_this<Function> {
     // The name of the function.
     const std::string name;
     // A special temporary value for the return value.
-    std::shared_ptr<Value::Temporary> return_value;
+    std::shared_ptr<MIRValue::Temporary> return_value;
     // The basic blocks in the function.
     std::vector<std::shared_ptr<BasicBlock>> basic_blocks;
 

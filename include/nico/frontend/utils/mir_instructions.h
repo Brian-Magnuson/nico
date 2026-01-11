@@ -92,7 +92,7 @@ class Instruction::Branch : public ITerminator {
 
 public:
     // The condition value for the branch.
-    std::shared_ptr<Value> condition;
+    std::shared_ptr<MIRValue> condition;
     // The main target basic block if the condition is true.
     std::weak_ptr<BasicBlock> main_target;
     // The alternative target basic block if the condition is false.
@@ -102,7 +102,7 @@ public:
 
 protected:
     Branch(
-        std::shared_ptr<Value> condition,
+        std::shared_ptr<MIRValue> condition,
         std::shared_ptr<BasicBlock> main_target,
         std::shared_ptr<BasicBlock> alt_target
     )

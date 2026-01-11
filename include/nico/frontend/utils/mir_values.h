@@ -19,7 +19,7 @@ namespace nico {
  *
  * Literal values reference a literal expression from the AST.
  */
-class Value::Literal : public Value {
+class MIRValue::Literal : public MIRValue {
 public:
     // The literal value expression.
     std::shared_ptr<Expr::Literal> literal_expr;
@@ -27,7 +27,7 @@ public:
     Literal(
         std::shared_ptr<Type> type, std::shared_ptr<Expr::Literal> literal_expr
     )
-        : Value(type), literal_expr(literal_expr) {}
+        : MIRValue(type), literal_expr(literal_expr) {}
 
     virtual std::any accept(Visitor* visitor) override {
         return visitor->visit(this);
@@ -39,13 +39,13 @@ public:
  *
  * Variable values reference an entry in the symbol tree.
  */
-class Value::Variable : public Value {
+class MIRValue::Variable : public MIRValue {
 public:
     // The field entry node representing the variable.
     std::shared_ptr<Node::FieldEntry> field_entry;
 
     Variable(std::shared_ptr<Node::FieldEntry> field_entry)
-        : Value(field_entry->field.type), field_entry(field_entry) {}
+        : MIRValue(field_entry->field.type), field_entry(field_entry) {}
 
     virtual std::any accept(Visitor* visitor) override {
         return visitor->visit(this);
@@ -60,7 +60,7 @@ public:
  * If a name is not given, a simple unique name will be generated based on a
  * counter.
  */
-class Value::Temporary : public Value {
+class MIRValue::Temporary : public MIRValue {
     // Static counter for generating unique temporary names.
     static int temp_counter;
 
@@ -72,7 +72,7 @@ public:
         std::shared_ptr<Type> type,
         std::optional<std::string_view> name = std::nullopt
     )
-        : Value(type),
+        : MIRValue(type),
           name(
               name.has_value() ? std::string(*name)
                                : "@" + std::to_string(temp_counter++)

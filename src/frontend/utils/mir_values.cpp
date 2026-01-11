@@ -2,6 +2,6 @@
 
 namespace nico {
 
-int Value::Temporary::temp_counter = 0;
+int MIRValue::Temporary::temp_counter = 0;
 
 } // namespace nico

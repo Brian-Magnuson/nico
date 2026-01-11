@@ -41,7 +41,7 @@ void BasicBlock::set_successor(std::shared_ptr<BasicBlock> successor) {
 }
 
 void BasicBlock::set_successors(
-    std::shared_ptr<Value> condition,
+    std::shared_ptr<MIRValue> condition,
     std::shared_ptr<BasicBlock> main_successor,
     std::shared_ptr<BasicBlock> alt_successor
 ) {
