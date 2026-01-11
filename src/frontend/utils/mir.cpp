@@ -1,4 +1,10 @@
 #include "nico/frontend/utils/mir.h"
+
+#include <any>
+#include <memory>
+#include <string>
+#include <string_view>
+
 #include "nico/frontend/utils/mir_instructions.h"
 
 #include "nico/shared/utils.h"
@@ -27,7 +33,8 @@ void BasicBlock::add_instruction(
 void BasicBlock::set_successor(std::shared_ptr<BasicBlock> successor) {
     if (terminator)
         panic(
-            "BasicBlock::set_successor: Basic block already has a terminator"
+            "BasicBlock::set_successor: Basic block already has a "
+            "terminator"
         );
     terminator = std::make_shared<Instruction::Jump>(successor);
     successor->predecessors.push_back(shared_from_this());
@@ -40,7 +47,8 @@ void BasicBlock::set_successors(
 ) {
     if (terminator)
         panic(
-            "BasicBlock::set_successors: Basic block already has a terminator"
+            "BasicBlock::set_successors: Basic block already has a "
+            "terminator"
         );
 
     terminator = std::make_shared<Instruction::Branch>(

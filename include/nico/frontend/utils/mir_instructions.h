@@ -3,7 +3,7 @@
 
 #include <memory>
 
-#include "mir.h"
+#include "nico/frontend/utils/mir.h"
 
 namespace nico {
 

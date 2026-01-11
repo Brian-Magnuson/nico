@@ -287,7 +287,7 @@ public:
  * Includes the expression statement, declarations, and non-declaring
  * statements.
  */
-class Stmt {
+class Stmt : public std::enable_shared_from_this<Stmt> {
 public:
     class Expression;
 

@@ -7,6 +7,8 @@
 #include <string_view>
 #include <vector>
 
+#include "nico/frontend/utils/nodes.h"
+
 namespace nico {
 
 /**
@@ -33,6 +35,17 @@ public:
         virtual std::any visit(Variable* value) = 0;
         virtual std::any visit(Temporary* value) = 0;
     };
+
+    // The type of this value.
+    std::shared_ptr<Type> type;
+
+    /**
+     * @brief Constructs a new Value with the given type.
+     *
+     * @param type The type of the value.
+     */
+    Value(std::shared_ptr<Type> type)
+        : type(type) {}
 
     /**
      * @brief Accept a visitor.
