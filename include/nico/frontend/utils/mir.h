@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <unordered_set>
 #include <vector>
 
 #include "nico/frontend/utils/nodes.h"
@@ -201,6 +202,23 @@ public:
         std::shared_ptr<BasicBlock> main_successor,
         std::shared_ptr<BasicBlock> alt_successor
     );
+
+    /**
+     * @brief Checks if this basic block has any living predecessors.
+     *
+     * A living predecessor is a predecessor that has not been destroyed.
+     *
+     * @return True if this basic block has at least one living predecessor,
+     * false otherwise.
+     */
+    bool has_living_predecessors() const {
+        for (const auto& pred_weak : predecessors) {
+            if (!pred_weak.expired()) {
+                return true;
+            }
+        }
+        return false;
+    }
 };
 
 /**
@@ -219,8 +237,12 @@ class Function : public std::enable_shared_from_this<Function> {
     const std::string name;
     // A special temporary value for the return value.
     std::shared_ptr<MIRValue::Temporary> return_value;
-    // The basic blocks in the function.
-    std::vector<std::shared_ptr<BasicBlock>> basic_blocks;
+    // The entry basic block of the function.
+    std::shared_ptr<BasicBlock> entry_block;
+    // The basic blocks in the function aside from the entry block.
+    std::unordered_set<std::shared_ptr<BasicBlock>> basic_blocks;
+    // The exit block of the function, also stored in basic_blocks.
+    std::weak_ptr<BasicBlock> exit_block;
 
 protected:
     /**
@@ -264,18 +286,33 @@ public:
      *
      * @return The entry basic block.
      */
-    std::shared_ptr<BasicBlock> get_entry_block() {
-        return basic_blocks.front();
+    std::shared_ptr<BasicBlock> get_entry_block() { return entry_block; }
+
+    /**
+     * @brief Get the exit basic block of the function, if it exists.
+     *
+     * An exit block is always created when the function is created.
+     *
+     * However, after MIR transformations, the exit block may be removed if it
+     * has no predecessors.
+     *
+     * @return The exit basic block, or std::nullopt if it does not exist.
+     */
+    std::optional<std::shared_ptr<BasicBlock>> get_exit_block() {
+        return exit_block.expired()
+                   ? std::nullopt
+                   : std::optional<std::shared_ptr<BasicBlock>>(
+                         exit_block.lock()
+                     );
     }
 
     /**
-     * @brief Get the exit basic block of the function.
+     * @brief Removes all basic blocks that are not reachable from the entry
+     * block.
      *
-     * The exit block is always the second basic block.
-     *
-     * @return The exit basic block.
+     * Useful for dead code elimination and further CFG analysis.
      */
-    std::shared_ptr<BasicBlock> get_exit_block() { return basic_blocks.at(1); }
+    void purge_unreachable_blocks();
 };
 
 } // namespace nico
