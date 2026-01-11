@@ -9,6 +9,13 @@
 
 namespace nico {
 
+/**
+ * @brief Represents a value in the MIR.
+ *
+ * A value can be a literal, variable, or temporary.
+ *
+ * Only members of this class and its subclasses may be used with instructions.
+ */
 class Value {
 public:
     class Literal;
@@ -36,6 +43,15 @@ public:
     virtual std::any accept(Visitor* visitor) = 0;
 };
 
+/**
+ * @brief Represents an instruction in the MIR.
+ *
+ * Instructions fall into two categories, each with its own interface:
+ * - Non-terminator instructions (`INonTerminator`): Instructions that do not
+ *   terminate a basic block, e.g., arithmetic operations, function calls.
+ * - Terminator instructions (`ITerminator`): Instructions that terminate a
+ *   basic block, e.g., jumps, branches, returns.
+ */
 class Instruction {
 public:
     class INonTerminator;
@@ -74,8 +90,20 @@ public:
 
 class Function;
 
+/**
+ * @brief Represents a basic block in the MIR.
+ *
+ * A basic block is a sequence of instructions that execute sequentially and end
+ * with a terminator instruction.
+ *
+ * Basic blocks have predecessors and successors (accessed through the
+ * terminator instruction) that, together, form the control flow graph of a
+ * function. Each basic block is a vertex in this graph.
+ *
+ * It should not be confused with a block expression, which defines a lexical
+ * scope.
+ */
 class BasicBlock : public std::enable_shared_from_this<BasicBlock> {
-private:
     friend class Function;
 
     // The name of the basic block.
@@ -91,6 +119,15 @@ private:
     std::vector<std::weak_ptr<BasicBlock>> predecessors;
 
 protected:
+    /**
+     * @brief Constructs a new BasicBlock with the given name.
+     *
+     * This constructor is intended to be called only by the Function class.
+     * This is because the Function class is responsible for managing the
+     * lifetimes of the basic blocks.
+     *
+     * @param name The name of the basic block.
+     */
     BasicBlock(std::string_view name);
 
     /**
@@ -98,6 +135,9 @@ protected:
      *
      * Only the Function class is allowed to call this method since only the
      * exit block may be set as the return block.
+     *
+     * @warning If the terminator instruction is already set, this method will
+     * panic.
      */
     void set_as_function_return();
 
@@ -126,6 +166,9 @@ public:
      * @brief Sets this block to use a jump terminator to the given successor.
      *
      * @param successor The successor basic block.
+     *
+     * @warning If the terminator instruction is already set, this method will
+     * panic.
      */
     void set_successor(std::shared_ptr<BasicBlock> successor);
 
@@ -136,6 +179,9 @@ public:
      * @param condition The condition value for the branch.
      * @param main_successor The main successor basic block.
      * @param alt_successor The alternative successor basic block.
+     *
+     * @warning If the terminator instruction is already set, this method will
+     * panic.
      */
     void set_successors(
         std::shared_ptr<Value> condition,
@@ -144,8 +190,18 @@ public:
     );
 };
 
+/**
+ * @brief Represents a function in the MIR.
+ *
+ * A function consists of a series of basic blocks forming a control flow graph.
+ *
+ * All functions start with the same basic structure: an entry block with an
+ * unset terminator, and an exit block that returns from the function. MIR
+ * building should start from the entry block, filling in its terminator
+ * instruction at some point. When returning from the function, control should
+ * jump to the exit block, and should not return directly.
+ */
 class Function : public std::enable_shared_from_this<Function> {
-private:
     // The name of the function.
     const std::string name;
     // A special temporary value for the return value.
@@ -154,6 +210,14 @@ private:
     std::vector<std::shared_ptr<BasicBlock>> basic_blocks;
 
 protected:
+    /**
+     * @brief Constructs a new Function with the given name.
+     *
+     * This constructor should not be called directly. Use the static create()
+     * method instead.
+     *
+     * @param name The name of the function.
+     */
     Function(const std::string& name);
 
 public:
