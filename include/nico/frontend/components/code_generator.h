@@ -40,7 +40,7 @@ class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
     const bool repl_mode = false;
 
     // The LLVM module and context used for code generation.
-    IrModuleContext mod_ctx;
+    IRModuleContext mod_ctx;
     // The IR builder used to generate the IR; always set the insertion point
     // before using it.
     std::unique_ptr<llvm::IRBuilder<>> builder;

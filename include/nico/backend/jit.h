@@ -39,13 +39,13 @@ public:
     virtual llvm::Error add_module(llvm::orc::ThreadSafeModule tsm) = 0;
 
     /**
-     * @brief Adds an IrModuleContext to the JIT. Accepts ownership of both
+     * @brief Adds an IRModuleContext to the JIT. Accepts ownership of both
      * Module and Context.
      *
-     * @param mod_ctx (Requires move) The IrModuleContext to be added.
+     * @param mod_ctx (Requires move) The IRModuleContext to be added.
      * @return An Error indicating success or failure of the operation.
      */
-    virtual llvm::Error add_module_and_context(IrModuleContext&& mod_ctx) {
+    virtual llvm::Error add_module_and_context(IRModuleContext&& mod_ctx) {
         llvm::orc::ThreadSafeModule tsm(
             std::move(mod_ctx.ir_module),
             std::move(mod_ctx.llvm_context)

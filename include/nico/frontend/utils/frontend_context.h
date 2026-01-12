@@ -39,7 +39,7 @@ public:
     // The symbol tree used for type checking.
     std::shared_ptr<SymbolTree> symbol_tree;
     // The LLVM module and context used for code generation.
-    IrModuleContext mod_ctx;
+    IRModuleContext mod_ctx;
     // The name of the main function generated in the module.
     std::string main_fn_name;
 

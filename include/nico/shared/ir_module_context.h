@@ -19,24 +19,24 @@ namespace nico {
  * destruction order. This class ensures that the module is always destroyed
  * before the context, preventing potential segmentation faults.
  */
-class IrModuleContext {
+class IRModuleContext {
 public:
     // The LLVM context used to generate the module.
     std::unique_ptr<llvm::LLVMContext> llvm_context;
     // The LLVM Module that will be generated.
     std::unique_ptr<llvm::Module> ir_module;
 
-    IrModuleContext()
+    IRModuleContext()
         : llvm_context(nullptr), ir_module(nullptr) {}
 
-    IrModuleContext(IrModuleContext&& other) {
+    IRModuleContext(IRModuleContext&& other) {
         ir_module = nullptr;
         llvm_context = std::move(other.llvm_context);
         ir_module = std::move(other.ir_module);
     }
-    IrModuleContext(const IrModuleContext&) = delete;
+    IRModuleContext(const IRModuleContext&) = delete;
 
-    IrModuleContext& operator=(IrModuleContext&& other) {
+    IRModuleContext& operator=(IRModuleContext&& other) {
         if (this != &other) {
             ir_module = nullptr;
             llvm_context = std::move(other.llvm_context);
@@ -44,15 +44,15 @@ public:
         }
         return *this;
     }
-    IrModuleContext& operator=(const IrModuleContext&) = delete;
+    IRModuleContext& operator=(const IRModuleContext&) = delete;
 
-    ~IrModuleContext() {
+    ~IRModuleContext() {
         ir_module = nullptr;
         llvm_context = nullptr;
     }
 
     /**
-     * @brief Initialize an IrModuleContext with a new LLVM context and module.
+     * @brief Initialize an IRModuleContext with a new LLVM context and module.
      *
      * @param module_name The name of the module. Defaults to "main".
      */
