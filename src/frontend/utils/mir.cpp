@@ -61,11 +61,38 @@ void BasicBlock::set_successors(
     alt_successor->predecessors.push_back(shared_from_this());
 }
 
-Function::Function(const std::string& name)
-    : name(name) {}
+std::shared_ptr<Function>
+Function::create(std::shared_ptr<Stmt::Func> func_stmt) {
+    auto func = std::make_shared<Function>();
+    auto field_entry = func_stmt->field_entry.lock();
 
-std::shared_ptr<Function> Function::create(const std::string& name) {
-    auto func = std::make_shared<Function>(name);
+    func->name = field_entry->symbol;
+    func->return_type = field_entry->field.type;
+    for (const auto& param : func_stmt->parameters) {
+        auto param_var =
+            std::make_shared<MIRValue::Variable>(param.field_entry.lock());
+        func->parameters.push_back(param_var);
+    }
+    func->return_value =
+        std::make_shared<MIRValue::Temporary>(func->return_type);
+
+    func->entry_block = std::make_shared<BasicBlock>("entry");
+    func->entry_block->parent_function = func;
+
+    auto exit = func->create_basic_block("exit");
+    func->exit_block = exit;
+    exit->set_as_function_return();
+
+    return func;
+}
+
+std::shared_ptr<Function> Function::create_script_function() {
+    auto func = std::make_shared<Function>();
+    func->name = "$script";
+    func->return_type = std::make_shared<Type::Unit>();
+    func->return_value =
+        std::make_shared<MIRValue::Temporary>(func->return_type);
+
     func->entry_block = std::make_shared<BasicBlock>("entry");
     func->entry_block->parent_function = func;
 

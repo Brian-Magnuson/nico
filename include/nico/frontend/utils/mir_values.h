@@ -41,11 +41,15 @@ public:
  */
 class MIRValue::Variable : public MIRValue {
 public:
+    // A name for the variable.
+    std::string name;
     // The field entry node representing the variable.
     std::shared_ptr<Node::FieldEntry> field_entry;
 
     Variable(std::shared_ptr<Node::FieldEntry> field_entry)
-        : MIRValue(field_entry->field.type), field_entry(field_entry) {}
+        : MIRValue(field_entry->field.type),
+          name(field_entry->symbol),
+          field_entry(field_entry) {}
 
     virtual std::any accept(Visitor* visitor) override {
         return visitor->visit(this);

@@ -8,7 +8,9 @@
 #include <unordered_set>
 #include <vector>
 
-#include "nico/frontend/utils/nodes.h"
+#include "nico/frontend/utils/ast_node.h"
+#include "nico/frontend/utils/symbol_node.h"
+#include "nico/frontend/utils/type_node.h"
 
 namespace nico {
 
@@ -233,8 +235,14 @@ public:
  * jump to the exit block, and should not return directly.
  */
 class Function : public std::enable_shared_from_this<Function> {
+    friend class MIRModule;
+
     // The name of the function.
-    const std::string name;
+    std::string name;
+    // The return type of the function.
+    std::shared_ptr<Type> return_type;
+    // The parameters of the function.
+    std::vector<std::shared_ptr<MIRValue::Variable>> parameters;
     // A special temporary value for the return value.
     std::shared_ptr<MIRValue::Temporary> return_value;
     // The entry basic block of the function.
@@ -246,18 +254,14 @@ class Function : public std::enable_shared_from_this<Function> {
 
 protected:
     /**
-     * @brief Constructs a new Function with the given name.
+     * @brief Constructs an empty Function.
      *
-     * This constructor should not be called directly. Use the static create()
-     * method instead.
-     *
-     * @param name The name of the function.
+     * Do not call this constructor directly; use Function::create instead.
      */
-    Function(const std::string& name);
+    Function() = default;
 
-public:
     /**
-     * @brief Creates a new function with the given name.
+     * @brief Creates a new function using the provided function statement.
      *
      * The function will have an entry and exit basic block created
      * automatically.
@@ -266,11 +270,25 @@ public:
      * During MIR building, the terminator instruction must be filled in at some
      * point.
      *
-     * @param name The name of the function.
+     * @param func_stmt The statement from which this function was created.
      * @return The newly created function.
      */
-    static std::shared_ptr<Function> create(const std::string& name);
+    static std::shared_ptr<Function>
+    create(std::shared_ptr<Stmt::Func> func_stmt);
 
+    /**
+     * @brief Creates the script function.
+     *
+     * The script function is a special implicit function that contains the
+     * top-level statements in the source code.
+     *
+     * For executables, this function is called by the `main` function.
+     *
+     * @return The newly created script function.
+     */
+    static std::shared_ptr<Function> create_script_function();
+
+public:
     /**
      * @brief Creates a new basic block and adds it to the function.
      *
@@ -313,6 +331,67 @@ public:
      * Useful for dead code elimination and further CFG analysis.
      */
     void purge_unreachable_blocks();
+};
+
+/**
+ * @brief Represents a MIR module containing functions.
+ */
+class MIRModule {
+    // The functions in the module.
+    std::vector<std::shared_ptr<Function>> functions;
+
+protected:
+    MIRModule() = default;
+
+public:
+    /**
+     * @brief Creates a new MIR module with the script function.
+     *
+     * @return The newly created MIR module.
+     */
+    static std::shared_ptr<MIRModule> create() {
+        auto mod = std::make_shared<MIRModule>();
+        auto func = Function::create_script_function();
+        mod->functions.push_back(func);
+        return mod;
+    }
+
+    /**
+     * @brief Creates a new function and adds it to the module.
+     *
+     * The function will have an entry and exit basic block created
+     * automatically.
+     *
+     * The entry block will start without a terminator instruction.
+     * During MIR building, the terminator instruction must be filled in at some
+     * point.
+     *
+     * @param func_stmt The statement from which this function was
+     * created.
+     * @return The newly created function.
+     */
+    std::shared_ptr<Function>
+    create_function(std::shared_ptr<Stmt::Func> func_stmt) {
+        auto func = Function::create(func_stmt);
+        functions.push_back(func);
+        return func;
+    }
+
+    /**
+     * @brief Gets the script function in the module.
+     *
+     * The script function is a special implicit function that contains
+     * the top-level statements in the source code.
+     *
+     * For executables, this function is called by the `main` function.
+     *
+     * The script function is always the first function in the module.
+     *
+     * @return The script function.
+     */
+    std::shared_ptr<Function> get_script_function() {
+        return functions.front();
+    }
 };
 
 } // namespace nico
