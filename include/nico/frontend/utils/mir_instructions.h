@@ -2,6 +2,7 @@
 #define NICO_MIR_INSTRUCTIONS_H
 
 #include <memory>
+#include <string>
 
 #include "nico/frontend/utils/mir.h"
 
@@ -22,15 +23,118 @@ public:
 };
 
 class Instruction::Binary : public INonTerminator {
-    // Implementation details...
+public:
+    enum class Op {
+        Add,
+        Sub,
+        Mul,
+        Div
+        // More operations can be added here.
+    };
+
+    // The operation of the binary instruction.
+    const Op op;
+    // The left operand of the binary instruction.
+    const std::shared_ptr<MIRValue> left_operand;
+    // The right operand of the binary instruction.
+    const std::shared_ptr<MIRValue> right_operand;
+    // The destination where the result is stored.
+    const std::shared_ptr<MIRValue> destination;
+
+    Binary(
+        Op op,
+        std::shared_ptr<MIRValue> left_operand,
+        std::shared_ptr<MIRValue> right_operand,
+        std::shared_ptr<MIRValue> destination
+    )
+        : op(op),
+          left_operand(left_operand),
+          right_operand(right_operand),
+          destination(destination) {}
+
+    std::string op_to_string() const {
+        switch (op) {
+        case Op::Add:
+            return "add";
+        case Op::Sub:
+            return "sub";
+        case Op::Mul:
+            return "mul";
+        case Op::Div:
+            return "div";
+        }
+    }
+
+    virtual std::string to_string() const override {
+        return op_to_string() + left_operand->to_string() +
+               right_operand->to_string() + " -> " + destination->to_string();
+    }
 };
 
 class Instruction::Unary : public INonTerminator {
-    // Implementation details...
+public:
+    enum class Op {
+        Copy,
+        Neg
+        // More operations can be added here.
+    };
+
+    // The operation of the unary instruction.
+    const Op op;
+    // The operand of the unary instruction.
+    const std::shared_ptr<MIRValue> operand;
+    // The destination where the result is stored.
+    const std::shared_ptr<MIRValue> destination;
+
+    Unary(
+        Op op,
+        std::shared_ptr<MIRValue> operand,
+        std::shared_ptr<MIRValue> destination
+    )
+        : op(op), operand(operand), destination(destination) {}
+
+    std::string op_to_string() const {
+        switch (op) {
+        case Op::Copy:
+            return "copy";
+        case Op::Neg:
+            return "neg";
+        }
+    }
+
+    virtual std::string to_string() const override {
+        return op_to_string() + operand->to_string() + " -> " +
+               destination->to_string();
+    }
 };
 
 class Instruction::Call : public INonTerminator {
-    // Implementation details...
+public:
+    // The target function to call.
+    const std::weak_ptr<Function> target_function;
+    // The arguments to pass to the function.
+    const std::vector<std::shared_ptr<MIRValue>> arguments;
+    // The destination where the return value is stored, if any.
+    const std::shared_ptr<MIRValue> destination;
+
+    Call(
+        std::shared_ptr<Function> target_function,
+        std::vector<std::shared_ptr<MIRValue>> arguments,
+        std::shared_ptr<MIRValue> destination
+    )
+        : target_function(target_function),
+          arguments(arguments),
+          destination(destination) {}
+
+    virtual std::string to_string() const override {
+        std::string result =
+            "call " + target_function.lock()->get_name() + "( ";
+        for (const auto& mir_val : arguments) {
+            result += mir_val->to_string() + " ";
+        }
+        result += ") -> " + destination->to_string();
+        return result;
+    }
 };
 
 /**
@@ -64,15 +168,19 @@ protected:
 class Instruction::Jump : public ITerminator {
     friend class BasicBlock;
 
-public:
-    // The target basic block to jump to.
-    std::weak_ptr<BasicBlock> target;
-
-    virtual ~Jump() = default;
-
 protected:
     Jump(std::shared_ptr<BasicBlock> target)
         : target(target) {}
+
+public:
+    // The target basic block to jump to.
+    const std::weak_ptr<BasicBlock> target;
+
+    virtual ~Jump() = default;
+
+    virtual std::string to_string() const override {
+        return "jump " + target.lock()->get_name();
+    }
 };
 
 /**
@@ -90,16 +198,6 @@ protected:
 class Instruction::Branch : public ITerminator {
     friend class BasicBlock;
 
-public:
-    // The condition value for the branch.
-    std::shared_ptr<MIRValue> condition;
-    // The main target basic block if the condition is true.
-    std::weak_ptr<BasicBlock> main_target;
-    // The alternative target basic block if the condition is false.
-    std::weak_ptr<BasicBlock> alt_target;
-
-    virtual ~Branch() = default;
-
 protected:
     Branch(
         std::shared_ptr<MIRValue> condition,
@@ -109,6 +207,22 @@ protected:
         : condition(condition),
           main_target(main_target),
           alt_target(alt_target) {}
+
+public:
+    // The condition value for the branch.
+    const std::shared_ptr<MIRValue> condition;
+    // The main target basic block if the condition is true.
+    const std::weak_ptr<BasicBlock> main_target;
+    // The alternative target basic block if the condition is false.
+    const std::weak_ptr<BasicBlock> alt_target;
+
+    virtual ~Branch() = default;
+
+    virtual std::string to_string() const override {
+        return "branch " + condition->to_string() + " ? " +
+               main_target.lock()->get_name() + " : " +
+               alt_target.lock()->get_name();
+    }
 };
 
 /**
@@ -127,11 +241,13 @@ protected:
 class Instruction::Return : public ITerminator {
     friend class BasicBlock;
 
+protected:
+    Return() = default;
+
 public:
     virtual ~Return() = default;
 
-protected:
-    Return() = default;
+    virtual std::string to_string() const override { return "return"; }
 };
 
 } // namespace nico

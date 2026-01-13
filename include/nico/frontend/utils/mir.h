@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -49,6 +50,17 @@ public:
      */
     MIRValue(std::shared_ptr<Type> type)
         : type(type) {}
+
+    /**
+     * @brief Converts this value to a string.
+     *
+     * The value should not contain any newlines.
+     *
+     * Useful for debugging purposes.
+     *
+     * @return A string representation of the value.
+     */
+    virtual std::string to_string() const = 0;
 
     /**
      * @brief Accept a visitor.
@@ -96,6 +108,17 @@ public:
     };
 
     /**
+     * @brief Converts this instruction to a string.
+     *
+     * The instruction should not contain any newlines.
+     *
+     * Useful for debugging purposes.
+     *
+     * @return A string representation of the instruction.
+     */
+    virtual std::string to_string() const = 0;
+
+    /**
      * @brief Accept a visitor.
      *
      * @param visitor The visitor to accept.
@@ -121,6 +144,9 @@ class Function;
  */
 class BasicBlock : public std::enable_shared_from_this<BasicBlock> {
     friend class Function;
+
+    // A map to keep track of basic block name counters for unique naming.
+    static std::unordered_map<std::string, int> bb_name_counters;
 
     // The name of the basic block.
     const std::string name;
@@ -158,6 +184,13 @@ protected:
     void set_as_function_return();
 
 public:
+    /**
+     * @brief Get the name of the basic block.
+     *
+     * @return The name of the basic block.
+     */
+    std::string get_name() const { return name; }
+
     /**
      * @brief Get the non-terminator instructions in the basic block.
      *
@@ -220,6 +253,39 @@ public:
             }
         }
         return false;
+    }
+
+    /**
+     * @brief Converts this basic block to a string.
+     *
+     * The string will include multiple lines and will end with a newline.
+     *
+     * Note: The string representation includes the entire contents of the basic
+     * block, including all instructions and the terminator.
+     *
+     * For just the name of the basic block, use `get_name()`.
+     *
+     * @return A string representation of the basic block.
+     */
+    std::string to_string() const {
+        std::string result = name + " <-- [ ";
+        for (const auto& pred_weak : predecessors) {
+            if (auto pred = pred_weak.lock()) {
+                result += pred->get_name() + " ";
+            }
+        }
+        result += "]\n";
+
+        for (const auto& instr : instructions) {
+            result += "  " + instr->to_string() + "\n";
+        }
+        if (terminator) {
+            result += "  " + terminator->to_string() + "\n";
+        }
+        else {
+            result += "  <no terminator>\n";
+        }
+        return result;
     }
 };
 
@@ -290,6 +356,13 @@ protected:
 
 public:
     /**
+     * @brief Get the name of the function.
+     *
+     * @return The name of the function.
+     */
+    std::string get_name() const { return name; }
+
+    /**
      * @brief Creates a new basic block and adds it to the function.
      *
      * @param bb_name The name of the basic block.
@@ -331,6 +404,21 @@ public:
      * Useful for dead code elimination and further CFG analysis.
      */
     void purge_unreachable_blocks();
+
+    /**
+     * @brief Converts this function to a string.
+     *
+     * The string representation includes multiple lines and ends with a
+     * newline.
+     *
+     * Note: The string representation includes the entire contents of the
+     * function, including all basic blocks and their instructions.
+     *
+     * For just the name of the function, use `get_name()`.
+     *
+     * @return A string representation of the function.
+     */
+    virtual std::string to_string() const;
 };
 
 /**
@@ -391,6 +479,29 @@ public:
      */
     std::shared_ptr<Function> get_script_function() {
         return functions.front();
+    }
+
+    /**
+     * @brief Converts this module to a string.
+     *
+     * The string representation includes multiple lines and ends with a
+     * newline.
+     *
+     * Note: The string representation includes the entire contents of the
+     * module, including all functions and their basic blocks and instructions.
+     *
+     * @return A string representation of the module.
+     */
+    std::string to_string() const {
+        std::string result = "module\n\n";
+
+        // Print each function.
+        for (const auto& func : functions) {
+            result += func->to_string() + "\n";
+        }
+        result += "\n";
+
+        return result;
     }
 };
 

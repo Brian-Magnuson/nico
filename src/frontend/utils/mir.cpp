@@ -7,13 +7,17 @@
 #include <string_view>
 
 #include "nico/frontend/utils/mir_instructions.h"
+#include "nico/frontend/utils/mir_values.h"
 
 #include "nico/shared/utils.h"
 
 namespace nico {
 
 BasicBlock::BasicBlock(std::string_view name)
-    : name(name) {}
+    : name(
+          std::string(name) + "#" +
+          std::to_string(bb_name_counters[std::string(name)]++)
+      ) {}
 
 void BasicBlock::set_as_function_return() {
     if (terminator)
@@ -164,5 +168,20 @@ void Function::purge_unreachable_blocks() {
         }
     }
 }
+
+std::string Function::to_string() const {
+    std::string result = "func " + name + "( ";
+    for (const auto& param : parameters) {
+        result += param->to_string() + " ";
+    }
+    result += ") -> " + return_type->to_string() + " {\n";
+
+    // Print each basic block.
+    for (const auto& bb : basic_blocks) {
+        result += bb->to_string() + "\n";
+    }
+
+    result += "}\n";
+    return result;
 
 } // namespace nico
