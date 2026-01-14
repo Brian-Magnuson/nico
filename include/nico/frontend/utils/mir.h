@@ -145,6 +145,11 @@ class Function;
 class BasicBlock : public std::enable_shared_from_this<BasicBlock> {
     friend class Function;
 
+    // Empty private struct to restrict access to certain methods.
+    struct Private {
+        explicit Private() = default;
+    };
+
     // A map to keep track of basic block name counters for unique naming.
     static std::unordered_map<std::string, size_t> bb_name_counters;
 
@@ -180,9 +185,11 @@ public:
      * This is because the Function class is responsible for managing the
      * lifetimes of the basic blocks.
      *
+     * @param private Unused, but required to verify that you can call this
+     * function here.
      * @param name The name of the basic block.
      */
-    BasicBlock(std::string_view name);
+    BasicBlock(Private, std::string_view name);
 
     /**
      * @brief Get the name of the basic block.
@@ -284,6 +291,11 @@ public:
 class Function : public std::enable_shared_from_this<Function> {
     friend class MIRModule;
 
+    // Empty private struct to restrict access to certain methods.
+    struct Private {
+        explicit Private() = default;
+    };
+
     // The name of the function.
     std::string name;
     // The return type of the function.
@@ -334,8 +346,11 @@ public:
      *
      * Do not call this constructor directly; create a function from the
      * MIRModule instead.
+     *
+     * @param private Unused, but required to verify that you can call this
+     * function here.
      */
-    Function() = default;
+    Function(Private) {}
 
     /**
      * @brief Get the name of the function.
@@ -407,6 +422,11 @@ public:
  * @brief Represents a MIR module containing functions.
  */
 class MIRModule {
+    // Empty private struct to restrict access to certain methods.
+    struct Private {
+        explicit Private() = default;
+    };
+
     // The functions in the module.
     std::vector<std::shared_ptr<Function>> functions;
 
@@ -415,8 +435,11 @@ public:
      * @brief Constructs an empty MIR module.
      *
      * Do not call this constructor directly; use MIRModule::create instead.
+     *
+     * @param private Unused, but required to verify that you can call this
+     * function here.
      */
-    MIRModule() = default;
+    MIRModule(Private) {}
 
     /**
      * @brief Creates a new MIR module with the script function.
@@ -424,7 +447,7 @@ public:
      * @return The newly created MIR module.
      */
     static std::shared_ptr<MIRModule> create() {
-        auto mod = std::make_shared<MIRModule>();
+        auto mod = std::make_shared<MIRModule>(Private());
         auto func = Function::create_script_function();
         mod->functions.push_back(func);
         return mod;

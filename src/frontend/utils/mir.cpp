@@ -15,7 +15,7 @@ namespace nico {
 
 std::unordered_map<std::string, size_t> BasicBlock::bb_name_counters;
 
-BasicBlock::BasicBlock(std::string_view name)
+BasicBlock::BasicBlock(Private, std::string_view name)
     : name(
           std::string(name) + "#" +
           std::to_string(bb_name_counters[std::string(name)]++)
@@ -90,7 +90,7 @@ std::string BasicBlock::to_string() const {
 
 std::shared_ptr<Function>
 Function::create(std::shared_ptr<Stmt::Func> func_stmt) {
-    auto func = std::make_shared<Function>();
+    auto func = std::make_shared<Function>(Private());
     auto field_entry = func_stmt->field_entry.lock();
 
     func->name = field_entry->symbol;
@@ -103,7 +103,8 @@ Function::create(std::shared_ptr<Stmt::Func> func_stmt) {
     func->return_value =
         std::make_shared<MIRValue::Temporary>(func->return_type);
 
-    func->entry_block = std::make_shared<BasicBlock>("entry");
+    func->entry_block =
+        std::make_shared<BasicBlock>(BasicBlock::Private(), "entry");
     func->entry_block->parent_function = func;
 
     auto exit = func->create_basic_block("exit");
@@ -114,13 +115,14 @@ Function::create(std::shared_ptr<Stmt::Func> func_stmt) {
 }
 
 std::shared_ptr<Function> Function::create_script_function() {
-    auto func = std::make_shared<Function>();
+    auto func = std::make_shared<Function>(Private());
     func->name = "$script";
     func->return_type = std::make_shared<Type::Unit>();
     func->return_value =
         std::make_shared<MIRValue::Temporary>(func->return_type);
 
-    func->entry_block = std::make_shared<BasicBlock>("entry");
+    func->entry_block =
+        std::make_shared<BasicBlock>(BasicBlock::Private(), "entry");
     func->entry_block->parent_function = func;
 
     auto exit = func->create_basic_block("exit");
@@ -132,7 +134,7 @@ std::shared_ptr<Function> Function::create_script_function() {
 
 std::shared_ptr<BasicBlock>
 Function::create_basic_block(std::string_view bb_name) {
-    auto bb = std::make_shared<BasicBlock>(bb_name);
+    auto bb = std::make_shared<BasicBlock>(BasicBlock::Private(), bb_name);
     bb->parent_function = shared_from_this();
     basic_blocks.insert(bb);
     return bb;
