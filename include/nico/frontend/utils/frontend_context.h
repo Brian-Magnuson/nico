@@ -10,6 +10,7 @@
 #include <llvm/IR/Module.h>
 
 #include "nico/frontend/utils/ast_node.h"
+#include "nico/frontend/utils/mir.h"
 #include "nico/frontend/utils/symbol_tree.h"
 #include "nico/shared/ir_module_context.h"
 #include "nico/shared/status.h"
@@ -33,6 +34,8 @@ public:
     std::vector<std::shared_ptr<Token>> scanned_tokens;
     // The AST containing all statements processed so far.
     std::vector<std::shared_ptr<Stmt>> stmts;
+    // The MIR module generated from the AST.
+    std::shared_ptr<MIRModule> mir_module;
     // The number of statements at the beginning of `stmts` that have been
     // type-checked and converted to LLVM IR.
     size_t stmts_processed = 0;
@@ -53,6 +56,7 @@ public:
     void reset() {
         status = Status::Ok();
         stmts.clear();
+        mir_module = MIRModule::create();
         stmts_processed = 0;
         symbol_tree = std::make_shared<SymbolTree>();
         mod_ctx.reset();

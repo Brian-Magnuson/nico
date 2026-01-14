@@ -146,7 +146,7 @@ class BasicBlock : public std::enable_shared_from_this<BasicBlock> {
     friend class Function;
 
     // A map to keep track of basic block name counters for unique naming.
-    static std::unordered_map<std::string, int> bb_name_counters;
+    static std::unordered_map<std::string, size_t> bb_name_counters;
 
     // The name of the basic block.
     const std::string name;
@@ -162,17 +162,6 @@ class BasicBlock : public std::enable_shared_from_this<BasicBlock> {
 
 protected:
     /**
-     * @brief Constructs a new BasicBlock with the given name.
-     *
-     * This constructor is intended to be called only by the Function class.
-     * This is because the Function class is responsible for managing the
-     * lifetimes of the basic blocks.
-     *
-     * @param name The name of the basic block.
-     */
-    BasicBlock(std::string_view name);
-
-    /**
      * @brief Sets this block to use a return terminator.
      *
      * Only the Function class is allowed to call this method since only the
@@ -184,6 +173,17 @@ protected:
     void set_as_function_return();
 
 public:
+    /**
+     * @brief Constructs a new BasicBlock with the given name.
+     *
+     * This constructor is intended to be called only by the Function class.
+     * This is because the Function class is responsible for managing the
+     * lifetimes of the basic blocks.
+     *
+     * @param name The name of the basic block.
+     */
+    BasicBlock(std::string_view name);
+
     /**
      * @brief Get the name of the basic block.
      *
@@ -267,26 +267,7 @@ public:
      *
      * @return A string representation of the basic block.
      */
-    std::string to_string() const {
-        std::string result = name + " <-- [ ";
-        for (const auto& pred_weak : predecessors) {
-            if (auto pred = pred_weak.lock()) {
-                result += pred->get_name() + " ";
-            }
-        }
-        result += "]\n";
-
-        for (const auto& instr : instructions) {
-            result += "  " + instr->to_string() + "\n";
-        }
-        if (terminator) {
-            result += "  " + terminator->to_string() + "\n";
-        }
-        else {
-            result += "  <no terminator>\n";
-        }
-        return result;
-    }
+    std::string to_string() const;
 };
 
 /**
@@ -320,13 +301,6 @@ class Function : public std::enable_shared_from_this<Function> {
 
 protected:
     /**
-     * @brief Constructs an empty Function.
-     *
-     * Do not call this constructor directly; use Function::create instead.
-     */
-    Function() = default;
-
-    /**
      * @brief Creates a new function using the provided function statement.
      *
      * The function will have an entry and exit basic block created
@@ -355,6 +329,14 @@ protected:
     static std::shared_ptr<Function> create_script_function();
 
 public:
+    /**
+     * @brief Constructs an empty Function.
+     *
+     * Do not call this constructor directly; create a function from the
+     * MIRModule instead.
+     */
+    Function() = default;
+
     /**
      * @brief Get the name of the function.
      *
@@ -418,7 +400,7 @@ public:
      *
      * @return A string representation of the function.
      */
-    virtual std::string to_string() const;
+    std::string to_string() const;
 };
 
 /**
@@ -428,10 +410,14 @@ class MIRModule {
     // The functions in the module.
     std::vector<std::shared_ptr<Function>> functions;
 
-protected:
+public:
+    /**
+     * @brief Constructs an empty MIR module.
+     *
+     * Do not call this constructor directly; use MIRModule::create instead.
+     */
     MIRModule() = default;
 
-public:
     /**
      * @brief Creates a new MIR module with the script function.
      *

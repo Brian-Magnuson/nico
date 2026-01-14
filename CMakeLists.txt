@@ -44,6 +44,8 @@ set(FRONT_END_UTILS_SRC
     src/frontend/utils/symbol_tree.cpp
     src/frontend/utils/control_stack.cpp
     src/frontend/utils/annotation_checker.cpp
+    src/frontend/utils/mir.cpp
+    src/frontend/utils/mir_values.cpp
 )
 
 # Front end component files

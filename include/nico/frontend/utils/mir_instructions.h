@@ -52,6 +52,12 @@ public:
           right_operand(right_operand),
           destination(destination) {}
 
+    virtual ~Binary() = default;
+
+    virtual std::any accept(Visitor* visitor) override {
+        return visitor->visit(this);
+    }
+
     std::string op_to_string() const {
         switch (op) {
         case Op::Add:
@@ -93,6 +99,12 @@ public:
     )
         : op(op), operand(operand), destination(destination) {}
 
+    virtual ~Unary() = default;
+
+    virtual std::any accept(Visitor* visitor) override {
+        return visitor->visit(this);
+    }
+
     std::string op_to_string() const {
         switch (op) {
         case Op::Copy:
@@ -126,6 +138,12 @@ public:
           arguments(arguments),
           destination(destination) {}
 
+    virtual ~Call() = default;
+
+    virtual std::any accept(Visitor* visitor) override {
+        return visitor->visit(this);
+    }
+
     virtual std::string to_string() const override {
         std::string result =
             "call " + target_function.lock()->get_name() + "( ";
@@ -147,13 +165,9 @@ public:
  * after all the non-terminator instructions.
  */
 class Instruction::ITerminator : public Instruction {
-    friend class BasicBlock;
-
 public:
-    virtual ~ITerminator() = default;
-
-protected:
     ITerminator() = default;
+    virtual ~ITerminator() = default;
 };
 
 /**
@@ -166,17 +180,18 @@ protected:
  * `BasicBlock::set_successor()` to set up a jump instruction.
  */
 class Instruction::Jump : public ITerminator {
-    friend class BasicBlock;
-
-protected:
-    Jump(std::shared_ptr<BasicBlock> target)
-        : target(target) {}
-
 public:
     // The target basic block to jump to.
     const std::weak_ptr<BasicBlock> target;
 
+    Jump(std::shared_ptr<BasicBlock> target)
+        : target(target) {}
+
     virtual ~Jump() = default;
+
+    virtual std::any accept(Visitor* visitor) override {
+        return visitor->visit(this);
+    }
 
     virtual std::string to_string() const override {
         return "jump " + target.lock()->get_name();
@@ -196,9 +211,14 @@ public:
  * `BasicBlock::set_successors()` to set up a branch instruction.
  */
 class Instruction::Branch : public ITerminator {
-    friend class BasicBlock;
+public:
+    // The condition value for the branch.
+    const std::shared_ptr<MIRValue> condition;
+    // The main target basic block if the condition is true.
+    const std::weak_ptr<BasicBlock> main_target;
+    // The alternative target basic block if the condition is false.
+    const std::weak_ptr<BasicBlock> alt_target;
 
-protected:
     Branch(
         std::shared_ptr<MIRValue> condition,
         std::shared_ptr<BasicBlock> main_target,
@@ -208,15 +228,11 @@ protected:
           main_target(main_target),
           alt_target(alt_target) {}
 
-public:
-    // The condition value for the branch.
-    const std::shared_ptr<MIRValue> condition;
-    // The main target basic block if the condition is true.
-    const std::weak_ptr<BasicBlock> main_target;
-    // The alternative target basic block if the condition is false.
-    const std::weak_ptr<BasicBlock> alt_target;
-
     virtual ~Branch() = default;
+
+    virtual std::any accept(Visitor* visitor) override {
+        return visitor->visit(this);
+    }
 
     virtual std::string to_string() const override {
         return "branch " + condition->to_string() + " ? " +
@@ -239,13 +255,14 @@ public:
  * jump to it when returning from the function.
  */
 class Instruction::Return : public ITerminator {
-    friend class BasicBlock;
-
-protected:
+public:
     Return() = default;
 
-public:
     virtual ~Return() = default;
+
+    virtual std::any accept(Visitor* visitor) override {
+        return visitor->visit(this);
+    }
 
     virtual std::string to_string() const override { return "return"; }
 };

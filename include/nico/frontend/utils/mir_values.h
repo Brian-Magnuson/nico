@@ -76,7 +76,7 @@ public:
  */
 class MIRValue::Temporary : public MIRValue {
     // A static map to keep track of temporary name counters for unique naming.
-    static std::unordered_map<std::string, int> mir_temp_name_counters;
+    static std::unordered_map<std::string, size_t> mir_temp_name_counters;
 
 public:
     // A name for the temporary value.

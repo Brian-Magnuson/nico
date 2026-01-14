@@ -13,6 +13,8 @@
 
 namespace nico {
 
+std::unordered_map<std::string, size_t> BasicBlock::bb_name_counters;
+
 BasicBlock::BasicBlock(std::string_view name)
     : name(
           std::string(name) + "#" +
@@ -63,6 +65,27 @@ void BasicBlock::set_successors(
     );
     main_successor->predecessors.push_back(shared_from_this());
     alt_successor->predecessors.push_back(shared_from_this());
+}
+
+std::string BasicBlock::to_string() const {
+    std::string result = name + " <-- [ ";
+    for (const auto& pred_weak : predecessors) {
+        if (auto pred = pred_weak.lock()) {
+            result += pred->get_name() + " ";
+        }
+    }
+    result += "]\n";
+
+    for (const auto& instr : instructions) {
+        result += "  " + instr->to_string() + "\n";
+    }
+    if (terminator) {
+        result += "  " + terminator->to_string() + "\n";
+    }
+    else {
+        result += "  <no terminator>\n";
+    }
+    return result;
 }
 
 std::shared_ptr<Function>
@@ -183,5 +206,6 @@ std::string Function::to_string() const {
 
     result += "}\n";
     return result;
+}
 
 } // namespace nico
