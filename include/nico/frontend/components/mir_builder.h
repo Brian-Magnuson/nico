@@ -15,12 +15,16 @@ class MIRBuilder : public Stmt::Visitor, public Expr::Visitor {
     const std::shared_ptr<MIRModule> mir_module;
     // The symbol tree used for type checking.
     const std::shared_ptr<SymbolTree> symbol_tree;
+    // The current basic block being built.
+    std::shared_ptr<BasicBlock> current_block;
 
     MIRBuilder(
         std::shared_ptr<MIRModule> mir_module,
         std::shared_ptr<SymbolTree> symbol_tree
     )
-        : mir_module(mir_module), symbol_tree(symbol_tree) {}
+        : mir_module(mir_module),
+          symbol_tree(symbol_tree),
+          current_block(mir_module->get_script_function()->get_entry_block()) {}
 
     std::any visit(Stmt::Expression* stmt) override;
     std::any visit(Stmt::Let* stmt) override;

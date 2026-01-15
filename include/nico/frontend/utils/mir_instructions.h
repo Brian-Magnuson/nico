@@ -5,6 +5,7 @@
 #include <string>
 
 #include "nico/frontend/utils/mir.h"
+#include "nico/frontend/utils/type_node.h"
 
 namespace nico {
 
@@ -77,6 +78,11 @@ public:
     }
 };
 
+/**
+ * @brief A unary instruction in the MIR.
+ *
+ * Unary instructions perform operations on a single operand.
+ */
 class Instruction::Unary : public INonTerminator {
 public:
     enum class Op {
@@ -152,6 +158,40 @@ public:
         }
         result += ") -> " + destination->to_string();
         return result;
+    }
+};
+
+/**
+ * @brief An alloca instruction in the MIR.
+ *
+ * The alloca instruction allocates memory on the stack for a variable of a
+ * specified type.
+ *
+ * The allocated memory is associated with a destination MIR value, which can
+ * be used to reference the allocated memory in subsequent instructions.
+ */
+class Instruction::Alloca : public INonTerminator {
+public:
+    // The destination where the allocated value is stored.
+    const std::shared_ptr<MIRValue> destination;
+    // The type of the allocated value.
+    std::shared_ptr<Type> allocated_type;
+
+    Alloca(
+        std::shared_ptr<MIRValue> destination,
+        std::shared_ptr<Type> allocated_type
+    )
+        : destination(destination), allocated_type(allocated_type) {}
+
+    virtual ~Alloca() = default;
+
+    virtual std::any accept(Visitor* visitor) override {
+        return visitor->visit(this);
+    }
+
+    virtual std::string to_string() const override {
+        return "alloca " + allocated_type->to_string() + " -> " +
+               destination->to_string();
     }
 };
 
