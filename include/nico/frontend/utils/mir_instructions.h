@@ -18,12 +18,12 @@ namespace nico {
  * Basic blocks in the MIR contain zero or more non-terminator instructions
  * followed by exactly one terminator instruction.
  */
-class Instruction::INonTerminator : public Instruction {
+class Instr::INonTerm : public Instr {
 public:
-    virtual ~INonTerminator() = default;
+    virtual ~INonTerm() = default;
 };
 
-class Instruction::Binary : public INonTerminator {
+class Instr::Binary : public INonTerm {
 public:
     enum class Op {
         Add,
@@ -83,7 +83,7 @@ public:
  *
  * Unary instructions perform operations on a single operand.
  */
-class Instruction::Unary : public INonTerminator {
+class Instr::Unary : public INonTerm {
 public:
     enum class Op {
         Copy,
@@ -126,7 +126,7 @@ public:
     }
 };
 
-class Instruction::Call : public INonTerminator {
+class Instr::Call : public INonTerm {
 public:
     // The target function to call.
     const std::weak_ptr<Function> target_function;
@@ -170,7 +170,7 @@ public:
  * The allocated memory is associated with a destination MIR value, which can
  * be used to reference the allocated memory in subsequent instructions.
  */
-class Instruction::Alloca : public INonTerminator {
+class Instr::Alloca : public INonTerm {
 public:
     // The destination where the allocated value is stored.
     const std::shared_ptr<MIRValue> destination;
@@ -204,10 +204,10 @@ public:
  * A basic block must have exactly one terminator instruction, which is executed
  * after all the non-terminator instructions.
  */
-class Instruction::ITerminator : public Instruction {
+class Instr::ITerm : public Instr {
 public:
-    ITerminator() = default;
-    virtual ~ITerminator() = default;
+    ITerm() = default;
+    virtual ~ITerm() = default;
 };
 
 /**
@@ -219,7 +219,7 @@ public:
  * Do not instantiate this class outside of `BasicBlock`. Use
  * `BasicBlock::set_successor()` to set up a jump instruction.
  */
-class Instruction::Jump : public ITerminator {
+class Instr::Jump : public ITerm {
 public:
     // The target basic block to jump to.
     const std::weak_ptr<BasicBlock> target;
@@ -250,7 +250,7 @@ public:
  * Do not instantiate this class outside of `BasicBlock`. Use
  * `BasicBlock::set_successors()` to set up a branch instruction.
  */
-class Instruction::Branch : public ITerminator {
+class Instr::Branch : public ITerm {
 public:
     // The condition value for the branch.
     const std::shared_ptr<MIRValue> condition;
@@ -294,7 +294,7 @@ public:
  * When building MIR, use `Function::get_exit_block()` to get the exit block and
  * jump to it when returning from the function.
  */
-class Instruction::Return : public ITerminator {
+class Instr::Return : public ITerm {
 public:
     Return() = default;
 

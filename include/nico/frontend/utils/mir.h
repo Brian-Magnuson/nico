@@ -75,25 +75,25 @@ public:
  * @brief Represents an instruction in the MIR.
  *
  * Instructions fall into two categories, each with its own interface:
- * - Non-terminator instructions (`INonTerminator`): Instructions that do not
+ * - Non-terminator instructions (`INonTerm`): Instructions that do not
  *   terminate a basic block, e.g., arithmetic operations, function calls.
- * - Terminator instructions (`ITerminator`): Instructions that terminate a
+ * - Terminator instructions (`ITerm`): Instructions that terminate a
  *   basic block, e.g., jumps, branches, returns.
  */
-class Instruction {
+class Instr {
 public:
-    class INonTerminator;
+    class INonTerm;
     class Binary;
     class Unary;
     class Call;
     class Alloca;
 
-    class ITerminator;
+    class ITerm;
     class Jump;
     class Branch;
     class Return;
 
-    virtual ~Instruction() = default;
+    virtual ~Instr() = default;
 
     /**
      * @brief A visitor class for instructions.
@@ -158,9 +158,9 @@ class BasicBlock : public std::enable_shared_from_this<BasicBlock> {
     // The name of the basic block.
     const std::string name;
     // The instructions in the basic block.
-    std::vector<std::shared_ptr<Instruction::INonTerminator>> instructions;
+    std::vector<std::shared_ptr<Instr::INonTerm>> instructions;
     // The terminator instruction of the basic block.
-    std::shared_ptr<Instruction::ITerminator> terminator;
+    std::shared_ptr<Instr::ITerm> terminator;
     // The parent function of the basic block.
     std::weak_ptr<Function> parent_function;
 
@@ -205,7 +205,7 @@ public:
      *
      * @return The non-terminator instructions in the basic block.
      */
-    const std::vector<std::shared_ptr<Instruction::INonTerminator>>&
+    const std::vector<std::shared_ptr<Instr::INonTerm>>&
     get_instructions() const {
         return instructions;
     }
@@ -217,8 +217,7 @@ public:
      *
      * @param instruction The non-terminator instruction to add.
      */
-    void
-    add_instruction(std::shared_ptr<Instruction::INonTerminator> instruction);
+    void add_instruction(std::shared_ptr<Instr::INonTerm> instruction);
 
     /**
      * @brief Sets this block to use a jump terminator to the given successor.

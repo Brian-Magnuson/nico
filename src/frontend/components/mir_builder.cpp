@@ -1,5 +1,7 @@
 #include "nico/frontend/components/mir_builder.h"
 
+#include "nico/frontend/utils/mir_instructions.h"
+
 namespace nico {
 
 std::any MIRBuilder::visit(Stmt::Expression* stmt) {
@@ -10,11 +12,19 @@ std::any MIRBuilder::visit(Stmt::Expression* stmt) {
 std::any MIRBuilder::visit(Stmt::Let* stmt) {
     auto field_entry = stmt->field_entry.lock();
     auto mir_var = std::make_shared<MIRValue::Variable>(field_entry);
-    auto mir_instr =
-        std::make_shared<Instruction::Alloca>(mir_var, field_entry->field.type);
-    auto mir_non_term_instr =
-        std::static_pointer_cast<Instruction::INonTerminator>(mir_instr);
-    current_block->add_instruction(mir_non_term_instr);
+    auto alloca_instr =
+        std::make_shared<Instr::Alloca>(mir_var, field_entry->field.type);
+    auto non_term_instr =
+        std::dynamic_pointer_cast<Instr::INonTerm>(alloca_instr);
+    current_block->add_instruction(non_term_instr);
+
+    if (stmt->expression.has_value()) {
+        auto mir_val = std::any_cast<std::shared_ptr<MIRValue>>(
+            stmt->expression.value()->accept(this, false)
+        );
+        auto copy_instr =
+            std::make_shared<Instr::Unary>(Instr::Unary::Op::Copy, mir_val);
+    }
     return std::any();
 }
 

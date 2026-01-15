@@ -28,12 +28,10 @@ void BasicBlock::set_as_function_return() {
             "terminator"
         );
 
-    terminator = std::make_shared<Instruction::Return>();
+    terminator = std::make_shared<Instr::Return>();
 }
 
-void BasicBlock::add_instruction(
-    std::shared_ptr<Instruction::INonTerminator> instruction
-) {
+void BasicBlock::add_instruction(std::shared_ptr<Instr::INonTerm> instruction) {
     instructions.push_back(instruction);
 }
 
@@ -43,7 +41,7 @@ void BasicBlock::set_successor(std::shared_ptr<BasicBlock> successor) {
             "BasicBlock::set_successor: Basic block already has a "
             "terminator"
         );
-    terminator = std::make_shared<Instruction::Jump>(successor);
+    terminator = std::make_shared<Instr::Jump>(successor);
     successor->predecessors.push_back(shared_from_this());
 }
 
@@ -58,7 +56,7 @@ void BasicBlock::set_successors(
             "terminator"
         );
 
-    terminator = std::make_shared<Instruction::Branch>(
+    terminator = std::make_shared<Instr::Branch>(
         condition,
         main_successor,
         alt_successor
@@ -153,10 +151,9 @@ void Function::purge_unreachable_blocks() {
 
         // Get successors from the terminator instruction.
         if (current->terminator) {
-            if (auto branch_instr =
-                    std::dynamic_pointer_cast<Instruction::Branch>(
-                        current->terminator
-                    )) {
+            if (auto branch_instr = std::dynamic_pointer_cast<Instr::Branch>(
+                    current->terminator
+                )) {
                 auto main_target = branch_instr->main_target.lock();
                 auto alt_target = branch_instr->alt_target.lock();
                 if (main_target && !visited.contains(main_target)) {
@@ -169,10 +166,9 @@ void Function::purge_unreachable_blocks() {
                 }
             }
             else {
-                if (auto jump_instr =
-                        std::dynamic_pointer_cast<Instruction::Jump>(
-                            current->terminator
-                        )) {
+                if (auto jump_instr = std::dynamic_pointer_cast<Instr::Jump>(
+                        current->terminator
+                    )) {
                     auto target = jump_instr->target.lock();
                     if (target && !visited.contains(target)) {
                         visited.insert(target);
