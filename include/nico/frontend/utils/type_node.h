@@ -1029,6 +1029,35 @@ public:
     }
 };
 
+/**
+ * @brief A MIR pointer type.
+ *
+ * A MIR pointer is a low-level pointer type used in the mid-level
+ * intermediate representation (MIR) of the compiler.
+ * It is similar to a raw pointer but does not have a base type or mutability.
+ * It is primarily used for internal compiler operations and optimizations.
+ *
+ * This type should only be used during MIR and LLVM IR generation. It should
+ * not appear in the type checker.
+ */
+class Type::MIRPointer : public Type {
+public:
+    virtual ~MIRPointer() = default;
+
+    MIRPointer() = default;
+
+    std::string to_string() const override { return "ptr"; }
+
+    bool operator==(const Type& other) const override {
+        return dynamic_cast<const MIRPointer*>(&other) != nullptr;
+    }
+
+    virtual llvm::Type*
+    get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
+        return llvm::PointerType::get(builder->getContext(), 0);
+    }
+};
+
 } // namespace nico
 
 #endif // NICO_TYPE_NODE_H

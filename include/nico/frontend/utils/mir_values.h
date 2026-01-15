@@ -50,10 +50,18 @@ public:
     // A name for the variable.
     std::string name;
     // The field entry node representing the variable.
-    std::shared_ptr<Node::FieldEntry> field_entry;
+    std::optional<std::shared_ptr<Node::FieldEntry>> field_entry;
+
+    Variable(std::string_view name = "")
+        : MIRValue(std::make_shared<Type::MIRPointer>()),
+          name(
+              std::string(name) + "#" +
+              std::to_string(mir_temp_name_counters[std::string(name)]++)
+          ),
+          field_entry(std::nullopt) {}
 
     Variable(std::shared_ptr<Node::FieldEntry> field_entry)
-        : MIRValue(field_entry->field.type),
+        : MIRValue(std::make_shared<Type::MIRPointer>()),
           name(field_entry->symbol),
           field_entry(field_entry) {}
 
@@ -75,28 +83,15 @@ public:
  * counter.
  */
 class MIRValue::Temporary : public MIRValue {
-    // A static map to keep track of temporary name counters for unique naming.
-    static std::unordered_map<std::string, size_t> mir_temp_name_counters;
-
 public:
     // A name for the temporary value.
     const std::string name;
 
-    Temporary(
-        std::shared_ptr<Type> type,
-        std::optional<std::string_view> name = std::nullopt
-    )
+    Temporary(std::shared_ptr<Type> type, std::string_view name = "")
         : MIRValue(type),
           name(
-              name.has_value()
-                  ? std::string(*name) + "#" +
-                        std::to_string(
-                            mir_temp_name_counters[std::string(*name)]++
-                        )
-                  : std::string("#") +
-                        std::to_string(
-                            mir_temp_name_counters[std::string("")]++
-                        )
+              std::string(name) + "#" +
+              std::to_string(mir_temp_name_counters[std::string(name)]++)
           ) {}
 
     virtual std::string to_string() const override {

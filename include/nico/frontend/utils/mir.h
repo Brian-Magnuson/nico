@@ -23,6 +23,9 @@ namespace nico {
  * Only members of this class and its subclasses may be used with instructions.
  */
 class MIRValue {
+    // A static map to keep track of temporary name counters for unique naming.
+    static std::unordered_map<std::string, size_t> mir_temp_name_counters;
+
 public:
     class Literal;
     class Variable;
@@ -87,6 +90,7 @@ public:
     class Unary;
     class Call;
     class Alloca;
+    class Store;
 
     class ITerm;
     class Jump;
@@ -104,6 +108,7 @@ public:
         virtual std::any visit(Unary* instr) = 0;
         virtual std::any visit(Call* instr) = 0;
         virtual std::any visit(Alloca* instr) = 0;
+        virtual std::any visit(Store* instr) = 0;
         virtual std::any visit(Jump* instr) = 0;
         virtual std::any visit(Branch* instr) = 0;
         virtual std::any visit(Return* instr) = 0;
@@ -304,7 +309,7 @@ class Function : public std::enable_shared_from_this<Function> {
     // The parameters of the function.
     std::vector<std::shared_ptr<MIRValue::Variable>> parameters;
     // A special temporary value for the return value.
-    std::shared_ptr<MIRValue::Temporary> return_value;
+    std::shared_ptr<MIRValue::Variable> return_value;
     // The entry basic block of the function.
     std::shared_ptr<BasicBlock> entry_block;
     // The basic blocks in the function aside from the entry block.
@@ -359,6 +364,13 @@ public:
      * @return The name of the function.
      */
     std::string get_name() const { return name; }
+
+    /**
+     * @brief Get the return type of the function.
+     *
+     * @return The return type of the function.
+     */
+    std::shared_ptr<Type> get_return_type() const;
 
     /**
      * @brief Creates a new basic block and adds it to the function.

@@ -14,16 +14,14 @@ std::any MIRBuilder::visit(Stmt::Let* stmt) {
     auto mir_var = std::make_shared<MIRValue::Variable>(field_entry);
     auto alloca_instr =
         std::make_shared<Instr::Alloca>(mir_var, field_entry->field.type);
-    auto non_term_instr =
-        std::dynamic_pointer_cast<Instr::INonTerm>(alloca_instr);
-    current_block->add_instruction(non_term_instr);
+    current_block->add_instruction(alloca_instr);
 
     if (stmt->expression.has_value()) {
         auto mir_val = std::any_cast<std::shared_ptr<MIRValue>>(
             stmt->expression.value()->accept(this, false)
         );
-        auto copy_instr =
-            std::make_shared<Instr::Unary>(Instr::Unary::Op::Copy, mir_val);
+        auto store_instr = std::make_shared<Instr::Store>(mir_val, mir_var);
+        current_block->add_instruction(store_instr);
     }
     return std::any();
 }

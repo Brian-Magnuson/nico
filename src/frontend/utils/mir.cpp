@@ -13,6 +13,8 @@
 
 namespace nico {
 
+std::unordered_map<std::string, size_t> MIRValue::mir_temp_name_counters;
+
 std::unordered_map<std::string, size_t> BasicBlock::bb_name_counters;
 
 BasicBlock::BasicBlock(Private, std::string_view name)
@@ -86,6 +88,10 @@ std::string BasicBlock::to_string() const {
     return result;
 }
 
+std::shared_ptr<Type> Function::get_return_type() const {
+    return return_value->type;
+}
+
 std::shared_ptr<Function>
 Function::create(std::shared_ptr<Stmt::Func> func_stmt) {
     auto func = std::make_shared<Function>(Private());
@@ -98,8 +104,7 @@ Function::create(std::shared_ptr<Stmt::Func> func_stmt) {
             std::make_shared<MIRValue::Variable>(param.field_entry.lock());
         func->parameters.push_back(param_var);
     }
-    func->return_value =
-        std::make_shared<MIRValue::Temporary>(func->return_type);
+    func->return_value = std::make_shared<MIRValue::Variable>("$ret_val");
 
     func->entry_block =
         std::make_shared<BasicBlock>(BasicBlock::Private(), "entry");
@@ -117,7 +122,7 @@ std::shared_ptr<Function> Function::create_script_function() {
     func->name = "$script";
     func->return_type = std::make_shared<Type::Unit>();
     func->return_value =
-        std::make_shared<MIRValue::Temporary>(func->return_type);
+        std::make_shared<MIRValue::Variable>("$script_ret_val");
 
     func->entry_block =
         std::make_shared<BasicBlock>(BasicBlock::Private(), "entry");

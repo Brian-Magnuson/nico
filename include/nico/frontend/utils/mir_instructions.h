@@ -5,6 +5,7 @@
 #include <string>
 
 #include "nico/frontend/utils/mir.h"
+#include "nico/frontend/utils/mir_values.h"
 #include "nico/frontend/utils/type_node.h"
 
 namespace nico {
@@ -40,18 +41,18 @@ public:
     // The right operand of the binary instruction.
     const std::shared_ptr<MIRValue> right_operand;
     // The destination where the result is stored.
-    const std::shared_ptr<MIRValue> destination;
+    const std::shared_ptr<MIRValue::Temporary> destination;
 
     Binary(
         Op op,
         std::shared_ptr<MIRValue> left_operand,
         std::shared_ptr<MIRValue> right_operand,
-        std::shared_ptr<MIRValue> destination
+        std::shared_ptr<Type> result_type
     )
         : op(op),
           left_operand(left_operand),
           right_operand(right_operand),
-          destination(destination) {}
+          destination(std::make_shared<MIRValue::Temporary>(result_type)) {}
 
     virtual ~Binary() = default;
 
@@ -86,7 +87,6 @@ public:
 class Instr::Unary : public INonTerm {
 public:
     enum class Op {
-        Copy,
         Neg
         // More operations can be added here.
     };
@@ -96,14 +96,16 @@ public:
     // The operand of the unary instruction.
     const std::shared_ptr<MIRValue> operand;
     // The destination where the result is stored.
-    const std::shared_ptr<MIRValue> destination;
+    const std::shared_ptr<MIRValue::Temporary> destination;
 
     Unary(
         Op op,
         std::shared_ptr<MIRValue> operand,
-        std::shared_ptr<MIRValue> destination
+        std::shared_ptr<Type> result_type
     )
-        : op(op), operand(operand), destination(destination) {}
+        : op(op),
+          operand(operand),
+          destination(std::make_shared<MIRValue::Temporary>(result_type)) {}
 
     virtual ~Unary() = default;
 
@@ -113,8 +115,6 @@ public:
 
     std::string op_to_string() const {
         switch (op) {
-        case Op::Copy:
-            return "copy";
         case Op::Neg:
             return "neg";
         }
@@ -133,16 +133,19 @@ public:
     // The arguments to pass to the function.
     const std::vector<std::shared_ptr<MIRValue>> arguments;
     // The destination where the return value is stored, if any.
-    const std::shared_ptr<MIRValue> destination;
+    const std::shared_ptr<MIRValue::Temporary> destination;
 
     Call(
         std::shared_ptr<Function> target_function,
-        std::vector<std::shared_ptr<MIRValue>> arguments,
-        std::shared_ptr<MIRValue> destination
+        std::vector<std::shared_ptr<MIRValue>> arguments
     )
         : target_function(target_function),
           arguments(arguments),
-          destination(destination) {}
+          destination(
+              std::make_shared<MIRValue::Temporary>(
+                  target_function->get_return_type()
+              )
+          ) {}
 
     virtual ~Call() = default;
 
@@ -173,15 +176,15 @@ public:
 class Instr::Alloca : public INonTerm {
 public:
     // The destination where the allocated value is stored.
-    const std::shared_ptr<MIRValue> destination;
+    const std::shared_ptr<MIRValue::Variable> variable;
     // The type of the allocated value.
     std::shared_ptr<Type> allocated_type;
 
     Alloca(
-        std::shared_ptr<MIRValue> destination,
+        std::shared_ptr<MIRValue::Variable> variable,
         std::shared_ptr<Type> allocated_type
     )
-        : destination(destination), allocated_type(allocated_type) {}
+        : variable(variable), allocated_type(allocated_type) {}
 
     virtual ~Alloca() = default;
 
@@ -191,7 +194,31 @@ public:
 
     virtual std::string to_string() const override {
         return "alloca " + allocated_type->to_string() + " -> " +
-               destination->to_string();
+               variable->to_string();
+    }
+};
+
+class Instr::Store : public INonTerm {
+public:
+    // The source value to copy from.
+    const std::shared_ptr<MIRValue> source;
+    // The destination value to copy to.
+    const std::shared_ptr<MIRValue::Variable> variable;
+
+    Store(
+        std::shared_ptr<MIRValue> source,
+        std::shared_ptr<MIRValue::Variable> variable
+    )
+        : source(source), variable(variable) {}
+
+    virtual ~Store() = default;
+
+    virtual std::any accept(Visitor* visitor) override {
+        return visitor->visit(this);
+    }
+
+    virtual std::string to_string() const override {
+        return "store " + source->to_string() + " -> " + variable->to_string();
     }
 };
 
