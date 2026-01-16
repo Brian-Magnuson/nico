@@ -68,6 +68,13 @@ public:
         return visitor->visit(this);
     }
 
+    /**
+     * @brief Converts the operation to a string.
+     *
+     * E.g., if `this->op` is `Op::Add`, this function returns `"add"`.
+     *
+     * @return A string representation of the operation.
+     */
     std::string op_to_string() const {
         switch (op) {
         case Op::Add:
@@ -121,6 +128,13 @@ public:
         return visitor->visit(this);
     }
 
+    /**
+     * @brief Converts the operation to a string.
+     *
+     * E.g., if `this->op` is `Op::Neg`, this function returns `"neg"`.
+     *
+     * @return The string representation of the operation.
+     */
     std::string op_to_string() const {
         switch (op) {
         case Op::Neg:
