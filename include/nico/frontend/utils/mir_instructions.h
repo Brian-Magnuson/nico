@@ -24,8 +24,16 @@ public:
     virtual ~INonTerm() = default;
 };
 
+/**
+ * @brief A binary instruction in the MIR.
+ *
+ * Binary instructions perform operations on two operands.
+ */
 class Instr::Binary : public INonTerm {
 public:
+    /**
+     * @brief The operation performed by the binary instruction.
+     */
     enum class Op {
         Add,
         Sub,
@@ -126,6 +134,14 @@ public:
     }
 };
 
+/**
+ * @brief A call instruction in the MIR.
+ *
+ * The call instruction represents a function call in the MIR.
+ *
+ * It includes the target function to call, the arguments to pass to the
+ * function, and the destination where the return value is stored, if any.
+ */
 class Instr::Call : public INonTerm {
 public:
     // The target function to call.
@@ -198,6 +214,12 @@ public:
     }
 };
 
+/**
+ * @brief A store instruction in the MIR.
+ *
+ * The store instruction copies a value from a source MIR value to a
+ * destination variable MIR value.
+ */
 class Instr::Store : public INonTerm {
 public:
     // The source value to copy from.
