@@ -17,7 +17,7 @@ std::any AnnotationChecker::visit(Annotation::NameRef* annotation) {
     else {
         Logger::inst().log_error(
             Err::UnknownAnnotationName,
-            *annotation->location,
+            annotation->location,
             "Unknown type annotation: `" + annotation->name.to_string() + "`."
         );
         return std::any();
@@ -99,7 +99,7 @@ std::any AnnotationChecker::visit(Annotation::TypeOf* annotation) {
     if (!expr_visitor) {
         Logger::inst().log_error(
             Err::UncheckableTypeofAnnotation,
-            *annotation->location,
+            annotation->location,
             "Expression after 'typeof' cannot be checked here."
         );
         return std::any();

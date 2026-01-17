@@ -299,7 +299,7 @@ SymbolTree::add_field_entry(const Field& field) {
         if (auto locatable =
                 std::dynamic_pointer_cast<Node::ILocatable>(node.value())) {
             Logger::inst().log_note(
-                *locatable->location,
+                locatable->location,
                 "Previous declaration here."
             );
         }
@@ -348,7 +348,7 @@ SymbolTree::add_overloadable_func(const Field& field) {
             if (auto locatable =
                     std::dynamic_pointer_cast<Node::ILocatable>(node.value())) {
                 Logger::inst().log_note(
-                    *locatable->location,
+                    locatable->location,
                     "Previous declaration here."
                 );
             }
@@ -360,7 +360,7 @@ SymbolTree::add_overloadable_func(const Field& field) {
         overload_group = std::make_shared<Node::OverloadGroup>(
             current_scope,
             field.name,
-            *field.location
+            field.location
         );
         overload_group->initialize_node();
         modified = true;
@@ -407,7 +407,7 @@ SymbolTree::add_overloadable_func(const Field& field) {
             if (auto locatable =
                     std::dynamic_pointer_cast<Node::ILocatable>(conflict)) {
                 Logger::inst().log_note(
-                    *locatable->location,
+                    locatable->location,
                     "Conflicting overload declared here."
                 );
             }

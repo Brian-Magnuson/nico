@@ -9,6 +9,7 @@
 #include "nico/shared/colorize.h"
 #include "nico/shared/error_code.h"
 #include "nico/shared/token.h"
+#include "nico/shared/utils.h"
 
 namespace nico {
 
@@ -107,6 +108,24 @@ public:
     void log_error(Err ec, const Location& location, std::string_view message);
 
     /**
+     * @brief Logs an error message with a location pointer.
+     *
+     * If printing is enabled, the error message will be printed to the output
+     * stream. The error code will be added to the stored list of errors.
+     *
+     * @param ec The error code to log.
+     * @param location The location of the error in the source code.
+     * @param message The message to log with the error.
+     *
+     * @warning If `location` is `nullptr`, this function will panic.
+     */
+    void log_error(Err ec, const Location* location, std::string_view message) {
+        if (location == nullptr)
+            panic("Logger::log_error was given a null Location pointer");
+        log_error(ec, *location, message);
+    }
+
+    /**
      * @brief Logs an error message without a location.
      *
      * If printing is enabled, the error message will be printed to the output
@@ -127,6 +146,23 @@ public:
      * @param message The message to log with the note.
      */
     void log_note(const Location& location, std::string_view message);
+
+    /**
+     * @brief Logs a note message with a location pointer.
+     *
+     * If printing is enabled, the note message will be printed to the output
+     * stream. Otherwise, this function does nothing.
+     *
+     * @param location The location of the note in the source code.
+     * @param message The message to log with the note.
+     *
+     * @warning If `location` is `nullptr`, this function will panic.
+     */
+    void log_note(const Location* location, std::string_view message) {
+        if (location == nullptr)
+            panic("Logger::log_note was given a null Location pointer");
+        log_note(*location, message);
+    }
 
     /**
      * @brief Logs a note message without a location.

@@ -45,7 +45,7 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
         Field param_field(
             param.has_var,
             param.identifier->lexeme,
-            param.identifier->location,
+            &param.identifier->location,
             annotation_type,
             param.expression
         );
@@ -72,7 +72,7 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
     Field field(
         false,
         stmt->identifier->lexeme,
-        stmt->identifier->location,
+        &stmt->identifier->location,
         func_type
     );
     // Functions are always immutable.

@@ -89,8 +89,8 @@ public:
     virtual ~ILocatable() = default;
 
 protected:
-    ILocatable(const Location& location)
-        : Node(std::weak_ptr<Node::IScope>(), ""), location(&location) {}
+    ILocatable(const Location* location)
+        : Node(std::weak_ptr<Node::IScope>(), ""), location(location) {}
 };
 
 /**
@@ -137,7 +137,7 @@ public:
         : Node(parent_scope, std::string(token->lexeme)),
           Node::IScope(parent_scope, std::string(token->lexeme)),
           Node::IGlobalScope(),
-          Node::ILocatable(token->location) {}
+          Node::ILocatable(&token->location) {}
 
     virtual std::string to_string() const override { return "NS " + symbol; }
 };
@@ -216,7 +216,7 @@ public:
           Node::IScope(parent_scope, std::string(token->lexeme)),
           Node::IGlobalScope(),
           Node::ITypeNode(),
-          Node::ILocatable(token->location),
+          Node::ILocatable(&token->location),
           is_class(is_class) {}
 
     virtual std::string to_string() const override {
@@ -284,7 +284,7 @@ public:
 
     FieldEntry(std::weak_ptr<Node::IScope> parent_scope, const Field& field)
         : Node(parent_scope, field.name),
-          Node::ILocatable(*field.location),
+          Node::ILocatable(field.location),
           is_global(PTR_INSTANCEOF(parent_scope.lock(), Node::IGlobalScope)),
           field(field) {}
 
@@ -355,7 +355,7 @@ public:
     OverloadGroup(
         std::weak_ptr<Node::IScope> parent_scope,
         std::string_view overload_name,
-        const Location& first_overload_location
+        const Location* first_overload_location
     )
         : Node(parent_scope, std::string(overload_name)),
           Node::ILocatable(first_overload_location),

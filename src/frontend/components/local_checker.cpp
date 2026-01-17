@@ -17,7 +17,7 @@ LocalChecker::expr_check(std::shared_ptr<Expr> expr, bool as_lvalue) {
     if (!expr->type->is_sized_type() && !as_lvalue) {
         Logger::inst().log_error(
             Err::UnsizedRValue,
-            *expr->location,
+            expr->location,
             "Unsized type `" + expr->type->to_string() +
                 "` cannot be used as an rvalue."
         );
@@ -54,7 +54,7 @@ LocalChecker::implicit_full_dereference(std::shared_ptr<Expr>& expr) {
             if (!is_in_unsafe_context()) {
                 Logger::inst().log_error(
                     Err::PtrDerefOutsideUnsafeBlock,
-                    *expr->location,
+                    expr->location,
                     "Cannot implicitly dereference `" +
                         initial_type->to_string() +
                         "` outside of unsafe context."
@@ -303,7 +303,7 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
             !expr_type->is_assignable_to(*annotation_type)) {
             Logger::inst().log_error(
                 Err::LetTypeMismatch,
-                *stmt->expression.value()->location,
+                stmt->expression.value()->location,
                 std::string("Type `") + expr_type->to_string() +
                     "` is not compatible with type `" +
                     annotation_type->to_string() + "`."
@@ -331,7 +331,7 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
     Field field(
         stmt->has_var,
         stmt->identifier->lexeme,
-        stmt->identifier->location,
+        &stmt->identifier->location,
         expr_type
     );
 
@@ -385,7 +385,7 @@ std::any LocalChecker::visit(Stmt::Func* stmt) {
             else if (!default_expr_type->is_assignable_to(*param_field.type)) {
                 Logger::inst().log_error(
                     Err::DefaultArgTypeMismatch,
-                    *default_expr_ptr->location,
+                    default_expr_ptr->location,
                     std::string("Type `") + default_expr_type->to_string() +
                         "` is not compatible with parameter type `" +
                         param_field.type->to_string() + "`."
@@ -417,7 +417,7 @@ std::any LocalChecker::visit(Stmt::Func* stmt) {
     else if (!body_type->is_assignable_to(*func_type->return_type)) {
         Logger::inst().log_error(
             Err::FunctionReturnTypeMismatch,
-            *stmt->body->location,
+            stmt->body->location,
             std::string("Function body type `") + body_type->to_string() +
                 "` is not compatible with declared return type `" +
                 func_type->return_type->to_string() + "`."
@@ -498,7 +498,7 @@ std::any LocalChecker::visit(Stmt::Yield* stmt) {
         // expression is compatible with it.
         Logger::inst().log_error(
             Err::YieldTypeMismatch,
-            *stmt->expression->location,
+            stmt->expression->location,
             std::string("Type `") + stmt->expression->type->to_string() +
                 "` is not compatible with previously yielded type `" +
                 local_scope->yield_type.value()->to_string() + "`."
@@ -539,7 +539,7 @@ std::any LocalChecker::visit(Stmt::Dealloc* stmt) {
     if (!PTR_INSTANCEOF(expr_type, Type::RawPointer)) {
         Logger::inst().log_error(
             Err::DeallocNonRawPointer,
-            *stmt->expression->location,
+            stmt->expression->location,
             "Cannot deallocate non-raw pointer type `" +
                 expr_type->to_string() + "`."
         );
@@ -548,7 +548,7 @@ std::any LocalChecker::visit(Stmt::Dealloc* stmt) {
     else if (PTR_INSTANCEOF(expr_type, Type::Nullptr)) {
         Logger::inst().log_error(
             Err::DeallocNullptr,
-            *stmt->expression->location,
+            stmt->expression->location,
             "Cannot deallocate pointer of nullptr type."
         );
         return std::any();
@@ -556,7 +556,7 @@ std::any LocalChecker::visit(Stmt::Dealloc* stmt) {
     else if (!is_in_unsafe_context()) {
         Logger::inst().log_error(
             Err::DeallocOutsideUnsafeBlock,
-            *stmt->expression->location,
+            stmt->expression->location,
             "Cannot deallocate outside of unsafe context."
         );
         return std::any();
@@ -590,7 +590,7 @@ std::any LocalChecker::visit(Expr::Assign* expr, bool as_lvalue) {
     if (!l_lvalue->assignable) {
         Logger::inst().log_error(
             Err::AssignToImmutable,
-            *expr->left->location,
+            expr->left->location,
             "Left side of assignment is not assignable."
         );
         if (l_lvalue->error_location) {
@@ -1087,7 +1087,7 @@ std::any LocalChecker::visit(Expr::Access* expr, bool as_lvalue) {
     if (!l_type->is_sized_type()) {
         Logger::inst().log_error(
             Err::UnsizedTypeMemberAccess,
-            *expr->left->location,
+            expr->left->location,
             "Cannot access members of unsized type `" + l_type->to_string() +
                 "`."
         );
@@ -1109,7 +1109,7 @@ std::any LocalChecker::visit(Expr::Access* expr, bool as_lvalue) {
                         std::to_string(tuple_l_type->elements.size()) + "."
                 );
                 Logger::inst().log_note(
-                    *expr->left->location,
+                    expr->left->location,
                     "Expression has type `" + l_type->to_string() + "`."
                 );
                 return std::any();
@@ -1135,7 +1135,7 @@ std::any LocalChecker::visit(Expr::Access* expr, bool as_lvalue) {
     else {
         Logger::inst().log_error(
             Err::OperatorNotValidForExpr,
-            *expr->left->location,
+            expr->left->location,
             "Dot operator is not valid for this kind of expression."
         );
         return std::any();
@@ -1159,7 +1159,7 @@ std::any LocalChecker::visit(Expr::Subscript* expr, bool as_lvalue) {
         if (!array_l_type->base->is_sized_type()) {
             Logger::inst().log_error(
                 Err::UnsizedTypeArrayAccess,
-                *expr->left->location,
+                expr->left->location,
                 "Cannot access array elements of unsized type `" +
                     array_l_type->base->to_string() + "`."
             );
@@ -1173,7 +1173,7 @@ std::any LocalChecker::visit(Expr::Subscript* expr, bool as_lvalue) {
         if (!PTR_INSTANCEOF(index_type, Type::Int)) {
             Logger::inst().log_error(
                 Err::ArrayIndexNotInteger,
-                *expr->index->location,
+                expr->index->location,
                 "Array index must be of an integer type."
             );
             return std::any();
@@ -1188,7 +1188,7 @@ std::any LocalChecker::visit(Expr::Subscript* expr, bool as_lvalue) {
     else {
         Logger::inst().log_error(
             Err::OperatorNotValidForExpr,
-            *expr->left->location,
+            expr->left->location,
             "Subscript operator is not valid for this kind of expression."
         );
     }
@@ -1222,10 +1222,10 @@ std::any LocalChecker::visit(Expr::Call* expr, bool as_lvalue) {
     else {
         Logger::inst().log_error(
             Err::NotACallable,
-            *expr->callee->location,
+            expr->callee->location,
             "Callee expression is not callable."
         );
-        Logger::inst().log_note(*expr->location, "Call occurs here.");
+        Logger::inst().log_note(expr->location, "Call occurs here.");
         return std::any();
     }
 
@@ -1280,7 +1280,7 @@ std::any LocalChecker::visit(Expr::Call* expr, bool as_lvalue) {
         // More than one candidate matched.
         Logger::inst().log_error(
             Err::MultipleMatchingFunctionOverloads,
-            *expr->callee->location,
+            expr->callee->location,
             "Function call matched multiple overloads."
         );
         std::string note_msg = "Matched candidates:\n";
@@ -1294,7 +1294,7 @@ std::any LocalChecker::visit(Expr::Call* expr, bool as_lvalue) {
         // No candidates matched.
         Logger::inst().log_error(
             Err::NoMatchingFunctionOverload,
-            *expr->callee->location,
+            expr->callee->location,
             "No matching function overload found for the provided arguments."
         );
         std::string note_msg = "Possible candidates:\n";
@@ -1312,7 +1312,7 @@ std::any LocalChecker::visit(Expr::SizeOf* expr, bool as_lvalue) {
     if (as_lvalue) {
         Logger::inst().log_error(
             Err::NotAPossibleLValue,
-            *expr->location,
+            expr->location,
             "Sizeof expression cannot be an lvalue."
         );
         return std::any();
@@ -1325,7 +1325,7 @@ std::any LocalChecker::visit(Expr::SizeOf* expr, bool as_lvalue) {
     if (!type->is_sized_type()) {
         Logger::inst().log_error(
             Err::SizeOfUnsizedType,
-            *expr->location,
+            expr->location,
             "Cannot measure size of unsized type `" + type->to_string() + "`."
         );
         return std::any();
@@ -1341,7 +1341,7 @@ std::any LocalChecker::visit(Expr::Alloc* expr, bool as_lvalue) {
     if (as_lvalue) {
         Logger::inst().log_error(
             Err::NotAPossibleLValue,
-            *expr->location,
+            expr->location,
             "Alloc expression cannot be an lvalue."
         );
         return std::any();
@@ -1358,7 +1358,7 @@ std::any LocalChecker::visit(Expr::Alloc* expr, bool as_lvalue) {
         if (!PTR_INSTANCEOF(amount_type, Type::Int)) {
             Logger::inst().log_error(
                 Err::AllocAmountNotInteger,
-                *expr->amount_expr.value()->location,
+                expr->amount_expr.value()->location,
                 "Amount expression for alloc must be of an integer type."
             );
             return std::any();
@@ -1372,7 +1372,7 @@ std::any LocalChecker::visit(Expr::Alloc* expr, bool as_lvalue) {
         if (!alloc_inner_type->is_sized_type()) {
             Logger::inst().log_error(
                 Err::UnsizedTypeAllocation,
-                *expr->type_annotation.value()->location,
+                expr->type_annotation.value()->location,
                 "Cannot allocate memory for unsized type `" +
                     alloc_inner_type->to_string() + "`."
             );
@@ -1402,7 +1402,7 @@ std::any LocalChecker::visit(Expr::Alloc* expr, bool as_lvalue) {
         if (!alloc_inner_type->is_sized_type()) {
             Logger::inst().log_error(
                 Err::UnsizedTypeAllocation,
-                *expr->type_annotation.value()->location,
+                expr->type_annotation.value()->location,
                 "Cannot allocate memory for unsized type `" +
                     alloc_inner_type->to_string() + "`."
             );
@@ -1419,7 +1419,7 @@ std::any LocalChecker::visit(Expr::Alloc* expr, bool as_lvalue) {
             if (!init_type->is_assignable_to(*alloc_inner_type)) {
                 Logger::inst().log_error(
                     Err::AllocInitTypeMismatch,
-                    *expr->expression.value()->location,
+                    expr->expression.value()->location,
                     std::string("Initializer expression of type `") +
                         init_type->to_string() +
                         "` is not compatible with allocated type `" +
@@ -1495,7 +1495,7 @@ std::any LocalChecker::visit(Expr::Literal* expr, bool as_lvalue) {
     if (as_lvalue) {
         Logger::inst().log_error(
             Err::NotAPossibleLValue,
-            *expr->location,
+            expr->location,
             "Literal expression cannot be an lvalue."
         );
         return std::any();
@@ -1554,7 +1554,7 @@ std::any LocalChecker::visit(Expr::Tuple* expr, bool as_lvalue) {
     if (as_lvalue) {
         Logger::inst().log_error(
             Err::NotAPossibleLValue,
-            *expr->location,
+            expr->location,
             "Tuple expression cannot be an lvalue."
         );
         return std::any();
@@ -1583,7 +1583,7 @@ std::any LocalChecker::visit(Expr::Array* expr, bool as_lvalue) {
     if (as_lvalue) {
         Logger::inst().log_error(
             Err::NotAPossibleLValue,
-            *expr->location,
+            expr->location,
             "Array expression cannot be an lvalue."
         );
         return std::any();
@@ -1608,7 +1608,7 @@ std::any LocalChecker::visit(Expr::Array* expr, bool as_lvalue) {
         if (*expr->elements[i]->type != *first_elem_type) {
             Logger::inst().log_error(
                 Err::ArrayElementTypeMismatch,
-                *expr->elements[i]->location,
+                expr->elements[i]->location,
                 "Array element type inconsistent with first element."
             );
             Logger::inst().log_note(
@@ -1629,7 +1629,7 @@ std::any LocalChecker::visit(Expr::Block* expr, bool as_lvalue) {
     if (as_lvalue) {
         Logger::inst().log_error(
             Err::NotAPossibleLValue,
-            *expr->location,
+            expr->location,
             "Block expression cannot be an lvalue."
         );
         return std::any();
@@ -1656,7 +1656,7 @@ std::any LocalChecker::visit(Expr::Conditional* expr, bool as_lvalue) {
     if (as_lvalue) {
         Logger::inst().log_error(
             Err::NotAPossibleLValue,
-            *expr->location,
+            expr->location,
             "Conditional expression cannot be an lvalue."
         );
         return std::any();
@@ -1673,7 +1673,7 @@ std::any LocalChecker::visit(Expr::Conditional* expr, bool as_lvalue) {
     if (!has_error && !PTR_INSTANCEOF(cond_type, Type::Bool)) {
         Logger::inst().log_error(
             Err::ConditionNotBool,
-            *expr->condition->location,
+            expr->condition->location,
             "Condition expression must be of type `bool`, not `" +
                 cond_type->to_string() + "`."
         );
@@ -1695,11 +1695,11 @@ std::any LocalChecker::visit(Expr::Conditional* expr, bool as_lvalue) {
     if (*then_type != *else_type) {
         Logger::inst().log_error(
             Err::ConditionalBranchTypeMismatch,
-            *expr->location,
+            expr->location,
             "Yielded expression types of conditional branches do not match."
         );
         Logger::inst().log_note(
-            *expr->then_branch->location,
+            expr->then_branch->location,
             "Then branch has type `" + then_type->to_string() + "`."
         );
         if (expr->implicit_else) {
@@ -1709,7 +1709,7 @@ std::any LocalChecker::visit(Expr::Conditional* expr, bool as_lvalue) {
         }
         else {
             Logger::inst().log_note(
-                *expr->else_branch->location,
+                expr->else_branch->location,
                 "Else branch has type `" + else_type->to_string() + "`."
             );
         }
@@ -1727,7 +1727,7 @@ std::any LocalChecker::visit(Expr::Loop* expr, bool as_lvalue) {
     if (as_lvalue) {
         Logger::inst().log_error(
             Err::NotAPossibleLValue,
-            *expr->location,
+            expr->location,
             "Loop expression cannot be an lvalue."
         );
         return std::any();
@@ -1742,7 +1742,7 @@ std::any LocalChecker::visit(Expr::Loop* expr, bool as_lvalue) {
         if (!has_error && !PTR_INSTANCEOF(cond_type, Type::Bool)) {
             Logger::inst().log_error(
                 Err::ConditionNotBool,
-                *expr->condition.value()->location,
+                expr->condition.value()->location,
                 "Condition expression must be of type `bool`, not `" +
                     cond_type->to_string() + "`."
             );
@@ -1773,7 +1773,7 @@ std::any LocalChecker::visit(Expr::Loop* expr, bool as_lvalue) {
         if (!PTR_INSTANCEOF(body_type, Type::Unit)) {
             Logger::inst().log_error(
                 Err::WhileLoopYieldingNonUnit,
-                *expr->body->location,
+                expr->body->location,
                 "Body of while loop must yield type `()`, not `" +
                     body_type->to_string() + "`."
             );

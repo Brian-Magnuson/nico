@@ -672,7 +672,7 @@ std::optional<std::shared_ptr<Expr>> Parser::postfix() {
                     if (has_named_args) {
                         Logger::inst().log_error(
                             Err::PosArgumentAfterNamedArgument,
-                            *expr->get()->location,
+                            expr->get()->location,
                             "Positional arguments cannot follow named "
                             "arguments."
                         );

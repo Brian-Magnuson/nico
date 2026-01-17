@@ -583,13 +583,13 @@ public:
     Field(
         bool is_var,
         std::string_view name,
-        const Location& location,
+        const Location* location,
         std::shared_ptr<Type> type,
         std::optional<std::weak_ptr<Expr>> default_expr = std::nullopt
     )
         : is_var(is_var),
           name(name),
-          location(&location),
+          location(location),
           type(type),
           default_expr(default_expr) {
         if (type == nullptr) {
