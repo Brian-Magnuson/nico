@@ -568,7 +568,11 @@ public:
     // Whether the field is declared with `var` or not.
     bool is_var;
     // The name of the field.
-    std::shared_ptr<Token> token;
+    // std::shared_ptr<Token> token;
+    // The name of the field.
+    std::string name;
+    // The location where the field is introduced.
+    const Location* location;
     // The type of the field.
     std::shared_ptr<Type> type;
     // The default expression for the field, if any.
@@ -578,11 +582,16 @@ public:
 
     Field(
         bool is_var,
-        std::shared_ptr<Token> token,
+        std::string_view name,
+        const Location& location,
         std::shared_ptr<Type> type,
         std::optional<std::weak_ptr<Expr>> default_expr = std::nullopt
     )
-        : is_var(is_var), token(token), type(type), default_expr(default_expr) {
+        : is_var(is_var),
+          name(name),
+          location(&location),
+          type(type),
+          default_expr(default_expr) {
         if (type == nullptr) {
             panic("Field::Field: Type cannot be null.");
         }
@@ -594,8 +603,7 @@ public:
      * @return std::string A string representation of the field.
      */
     virtual std::string to_string() const {
-        return (is_var ? "var " : "") + std::string(token->lexeme) + ": " +
-               type->to_string();
+        return (is_var ? "var " : "") + name + ": " + type->to_string();
     }
 
     /**
@@ -609,7 +617,7 @@ public:
      * @return True if the fields are equivalent, false otherwise.
      */
     bool operator==(const Field& other) const {
-        return is_var == other.is_var && token->lexeme == other.token->lexeme &&
+        return is_var == other.is_var && name == other.name &&
                *type == *other.type;
     }
 };

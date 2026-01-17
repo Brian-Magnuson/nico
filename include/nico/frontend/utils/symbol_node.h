@@ -83,14 +83,14 @@ protected:
  */
 class Node::ILocatable : public virtual Node {
 public:
-    // The original token used to create this node.
-    std::shared_ptr<Token> location_token;
+    // The location in the source code where this node is introduced.
+    const Location* location;
 
     virtual ~ILocatable() = default;
 
 protected:
-    ILocatable(std::shared_ptr<Token> token)
-        : Node(std::weak_ptr<Node::IScope>(), ""), location_token(token) {}
+    ILocatable(const Location& location)
+        : Node(std::weak_ptr<Node::IScope>(), ""), location(&location) {}
 };
 
 /**
@@ -137,7 +137,7 @@ public:
         : Node(parent_scope, std::string(token->lexeme)),
           Node::IScope(parent_scope, std::string(token->lexeme)),
           Node::IGlobalScope(),
-          Node::ILocatable(token) {}
+          Node::ILocatable(token->location) {}
 
     virtual std::string to_string() const override { return "NS " + symbol; }
 };
@@ -216,7 +216,7 @@ public:
           Node::IScope(parent_scope, std::string(token->lexeme)),
           Node::IGlobalScope(),
           Node::ITypeNode(),
-          Node::ILocatable(token),
+          Node::ILocatable(token->location),
           is_class(is_class) {}
 
     virtual std::string to_string() const override {
@@ -283,8 +283,8 @@ public:
     virtual ~FieldEntry() = default;
 
     FieldEntry(std::weak_ptr<Node::IScope> parent_scope, const Field& field)
-        : Node(parent_scope, std::string(field.token->lexeme)),
-          Node::ILocatable(field.token),
+        : Node(parent_scope, field.name),
+          Node::ILocatable(*field.location),
           is_global(PTR_INSTANCEOF(parent_scope.lock(), Node::IGlobalScope)),
           field(field) {}
 
@@ -354,15 +354,17 @@ public:
 
     OverloadGroup(
         std::weak_ptr<Node::IScope> parent_scope,
-        std::shared_ptr<Token> first_overload_token
+        std::string_view overload_name,
+        const Location& first_overload_location
     )
-        : Node(parent_scope, std::string(first_overload_token->lexeme)),
-          Node::ILocatable(first_overload_token),
+        : Node(parent_scope, std::string(overload_name)),
+          Node::ILocatable(first_overload_location),
           Node::FieldEntry(
               parent_scope,
               Field(
                   false,
-                  first_overload_token,
+                  overload_name,
+                  first_overload_location,
                   std::dynamic_pointer_cast<Type>(
                       std::make_shared<Type::OverloadedFn>()
                   )

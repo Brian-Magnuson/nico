@@ -31,7 +31,7 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
                 "Duplicate parameter name `" + param_string + "`."
             );
             Logger::inst().log_note(
-                it->second.token->location,
+                *it->second.location,
                 "Previous declaration of parameter `" + param_string + "` here."
             );
             return std::any();
@@ -44,7 +44,8 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
 
         Field param_field(
             param.has_var,
-            param.identifier,
+            param.identifier->lexeme,
+            param.identifier->location,
             annotation_type,
             param.expression
         );
@@ -68,7 +69,12 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
         std::make_shared<Type::Function>(parameter_fields, return_type);
 
     // Create the field entry.
-    Field field(false, stmt->identifier, func_type);
+    Field field(
+        false,
+        stmt->identifier->lexeme,
+        stmt->identifier->location,
+        func_type
+    );
     // Functions are always immutable.
 
     auto [node, err] = symbol_tree->add_overloadable_func(field);

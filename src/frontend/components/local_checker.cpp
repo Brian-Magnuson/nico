@@ -328,7 +328,12 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
     }
 
     // Create the field entry.
-    Field field(stmt->has_var, stmt->identifier, expr_type);
+    Field field(
+        stmt->has_var,
+        stmt->identifier->lexeme,
+        stmt->identifier->location,
+        expr_type
+    );
 
     auto [node, err] = symbol_tree->add_field_entry(field);
     if (err != Err::Null) {
@@ -1478,7 +1483,7 @@ std::any LocalChecker::visit(Expr::NameRef* expr, bool as_lvalue) {
     }
     else {
         expr->assignable = false;
-        expr->error_location = &field_entry->field.token->location;
+        expr->error_location = field_entry->field.location;
     }
 
     expr->type = field_entry->field.type;
