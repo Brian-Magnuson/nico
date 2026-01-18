@@ -239,13 +239,21 @@ public:
     // The source value to copy from.
     const std::shared_ptr<MIRValue> source;
     // The destination value to copy to.
-    const std::shared_ptr<MIRValue::Variable> variable;
+    const std::shared_ptr<MIRValue> destination;
 
     Store(
-        std::shared_ptr<MIRValue> source,
-        std::shared_ptr<MIRValue::Variable> variable
+        std::shared_ptr<MIRValue> source, std::shared_ptr<MIRValue> destination
     )
-        : source(source), variable(variable) {}
+        : source(source), destination(destination) {
+        // Assert that the destination is a pointer type.
+        if (!PTR_INSTANCEOF(destination->type, Type::IPointer)) {
+            panic(
+                "Instr::Store::Store: Destination must be a pointer type. "
+                "Got `" +
+                destination->type->to_string() + "`."
+            );
+        }
+    }
 
     virtual ~Store() = default;
 
@@ -254,7 +262,8 @@ public:
     }
 
     virtual std::string to_string() const override {
-        return "store " + source->to_string() + " -> " + variable->to_string();
+        return "store " + source->to_string() + " -> " +
+               destination->to_string();
     }
 };
 

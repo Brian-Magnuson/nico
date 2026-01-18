@@ -53,7 +53,11 @@ public:
     std::optional<std::shared_ptr<Node::FieldEntry>> field_entry;
 
     Variable(std::string_view name = "")
-        : MIRValue(std::make_shared<Type::MIRPointer>()),
+        : MIRValue(
+              std::make_shared<Type::RawPointer>(
+                  field_entry.value()->field.type, true
+              )
+          ),
           name(
               std::string(name) + "#" +
               std::to_string(mir_temp_name_counters[std::string(name)]++)
@@ -61,7 +65,9 @@ public:
           field_entry(std::nullopt) {}
 
     Variable(std::shared_ptr<Node::FieldEntry> field_entry)
-        : MIRValue(std::make_shared<Type::MIRPointer>()),
+        : MIRValue(
+              std::make_shared<Type::RawPointer>(field_entry->field.type, true)
+          ),
           name(field_entry->symbol),
           field_entry(field_entry) {}
 

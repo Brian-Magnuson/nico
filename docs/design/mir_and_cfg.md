@@ -184,3 +184,107 @@ We can set up the function structure to have the first basic block as the entry 
 Additionally, we can have a special basic block in every function that serves as the exit point for returning from the function. All return instructions in the function will branch to this exit block.
 This design helps us in determining whether all paths in the function return a value.
 If not all paths lead to the exit block, we can raise a compile-time error indicating that not all paths return a value.
+
+## MIR Literals, Variables, and Temporaries
+
+In MIR, we will represent values using three main constructs: **literals**, **variables**, and **temporaries**.
+
+**Literals** are constant values that are directly embedded in the code, such as integers, floats, booleans, and strings. They serve a similar purpose as literals in the AST.
+
+**Temporaries** are intermediate values that are created during the evaluation of expressions. They are not explicitly named by the programmer but are used to hold intermediate results of computations. Temporaries are typically created for the results of operations and function calls.
+For example, suppose we have the following expression in the source code:
+```nico
+let result = (a + b) * c;
+```
+In MIR, this expression might be represented using temporaries as follows:
+```
+load (ptr ::a) -> (i32 #0)
+load (ptr ::b) -> (i32 #1)
+add (i32 #0) (i32 #1) -> (i32 #2)
+load (ptr ::c) -> (i32 #3)
+mul (i32 #2) (i32 #3) -> (i32 #4)
+store (i32 #4) -> (ptr ::result)
+```
+
+Temporaries should be globally unique. However, their name does not need to be particularly meaningful, as they are only used within the context of the MIR.
+For temporaries, we can use a simple naming scheme such as `#0`, `#1`, `#2`, etc., to ensure uniqueness.
+If we need to give a temporary a more meaningful name, it will be added in front of the `#` symbol, such as `$result#0`.
+
+**Variables** in MIR correspond to named storage locations in the program, such as local variables, function parameters, and global variables. They are a bit different from variables in the AST, so we'll explain them in a bit more detail.
+
+In the AST, we try and avoid the term "variable" since a name binding can refer to different things, such as constants, functions, types, etc.
+To encapsulate these different kinds of name bindings, we use the term "name reference" or "nameref". 
+A name reference can refer to any entity in the program that has a node entry in the symbol tree.
+
+Name references in the AST are possible lvalues, meaning they can be either lvalues or rvalues depending on the context.
+An lvalue is an expression that refers to a memory location and allows us to take the address of that location or modify its value.
+In AST visitors, when a node is visited, that visit function will determine whether the child node needs to be treated as an lvalue or rvalue.
+
+In the MIR, however, we want to avoid relying on context to determine whether a name reference is an lvalue or rvalue.
+Instead, we will have MIR *variables* that strictly represent memory locations (i.e., pointers).
+To get the value stored in a variable, it must first be loaded into a temporary using a `load` instruction.
+```
+load (ptr ::x) -> (i32 #0)
+```
+
+To modify the value stored in a variable, we must store a temporary into the variable using a `store` instruction.
+```
+store (i32 #1) -> (ptr ::x)
+```
+
+A variable is always a pointer. 
+Specifically, it is an MIR pointer type.
+MIR pointers are similar to raw pointers, but they are specifically designed for use in the MIR.
+When we see an MIR pointer, we know that the type was added during MIR construction, not during type checking.
+Like other pointers, it has a base type.
+However, we generally do not care about the base type after type checking is complete.
+We can simply write the type as `ptr`.
+
+A variable declaration in the code:
+```
+let x = 10
+```
+Would create a variable in MIR like so:
+```
+alloca i32 -> (ptr ::x)
+store (i32 10) -> (ptr ::x)
+```
+
+When checking the AST, we generally think of the type of `x` as `i32`, but in MIR, the type of the variable `x` is `ptr`.
+If it helps, we can think of the MIR value `(ptr ::x)` as a pointer that was named after the variable `x`.
+
+In `load` instructions, the source operand must always be a pointer type, such as a variable, raw pointer, or reference.
+In `store` instructions, the destination value must always be a pointer type as well.
+
+These instructions do not necessarily require a variable. It is possible for a temporary to hold a pointer value, such as when dereferencing a raw pointer or reference.
+```
+let x = 10
+let p = var@x
+@p = @p + 5
+```
+MIR:
+```
+alloca i32 -> (ptr ::x)           // let x
+store (i32 10) -> (ptr ::x)       // = 10
+alloca @i32 -> (ptr ::p)          // let p
+store (ptr ::x) -> (ptr ::p)      // = var@x      
+
+load (ptr ::p) -> (var@i32 #0)    // p
+load (var@i32 #0) -> (i32 #1)     // @p
+add (i32 #1) (i32 5) -> (i32 #2)  // @p + 5
+store (i32 #2) -> (var@i32 #0)    // @p = @p + 5
+```
+
+Notice that there was no store instruction that wrote directly to `p`.
+If you look at the code, we didn't modify `p` itself; we modified the value that `p` points to.
+
+Also, notice these two instructions:
+```
+store (ptr ::x) -> (ptr ::p)   
+load (ptr ::p) -> (var@i32 #0)
+```
+
+There is no instruction that takes the address of `x`. In the MIR, `x` is already a pointer, so we can directly store it into `p`.
+Then, we immediately load the value of `p` into a temporary. 
+
+Once we have the complete MIR, we don't need to worry about rvalues or lvalues anymore. The load and store instructions make it explicit when we are dealing with values versus memory locations.
