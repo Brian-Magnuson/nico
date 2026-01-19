@@ -223,7 +223,7 @@ public:
     }
 
     virtual std::string to_string() const override {
-        return "alloca " + allocated_type->to_string() + " -> " +
+        return "alloca " + allocated_type->to_string() + " " +
                variable->to_string();
     }
 };

@@ -246,7 +246,7 @@ let x = 10
 ```
 Would create a variable in MIR like so:
 ```
-alloca i32 -> (ptr ::x)
+alloca i32 (ptr ::x)
 store (i32 10) -> (ptr ::x)
 ```
 
@@ -264,9 +264,9 @@ let p = var@x
 ```
 MIR:
 ```
-alloca i32 -> (ptr ::x)           // let x
+alloca i32 (ptr ::x)           // let x
 store (i32 10) -> (ptr ::x)       // = 10
-alloca @i32 -> (ptr ::p)          // let p
+alloca @i32 (ptr ::p)          // let p
 store (ptr ::x) -> (ptr ::p)      // = var@x      
 
 load (ptr ::p) -> (var@i32 #0)    // p
