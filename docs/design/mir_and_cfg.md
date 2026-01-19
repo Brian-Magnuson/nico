@@ -72,12 +72,13 @@ A **basic block** is a sequence of instructions that are executed sequentially. 
 A basic block may only have one terminator instruction, which must be the last instruction in the block.
 ```
 func i32 example():
-bb1:
-    @t1 = add i32 1, 2
-    @t2 = mul i32 @t1, 3
-    br bb2
-bb2:
-    ret i32 @t2
+entry#0:
+    add (i32 1) (i32 2) -> (i32 #0)
+    mul (i32 #0) (i32 3) -> (i32 #1)
+    store (i32 #1) -> (ptr $ret_val#0)
+    br exit#0
+exit#0:
+    return
 ```
 
 A basic block should not be confused with a block expression, which is a syntactic construct that defines a local scope and groups multiple statements together. Basic blocks are groupings of instructions and cannot contain other basic blocks within them.
@@ -264,9 +265,9 @@ let p = var@x
 ```
 MIR:
 ```
-alloca i32 (ptr ::x)           // let x
+alloca i32 (ptr ::x)              // let x
 store (i32 10) -> (ptr ::x)       // = 10
-alloca @i32 (ptr ::p)          // let p
+alloca @i32 (ptr ::p)             // let p
 store (ptr ::x) -> (ptr ::p)      // = var@x      
 
 load (ptr ::p) -> (var@i32 #0)    // p

@@ -91,6 +91,7 @@ public:
     class Call;
     class Alloca;
     class Store;
+    class Load;
 
     class ITerm;
     class Jump;
@@ -109,6 +110,7 @@ public:
         virtual std::any visit(Call* instr) = 0;
         virtual std::any visit(Alloca* instr) = 0;
         virtual std::any visit(Store* instr) = 0;
+        virtual std::any visit(Load* instr) = 0;
         virtual std::any visit(Jump* instr) = 0;
         virtual std::any visit(Branch* instr) = 0;
         virtual std::any visit(Return* instr) = 0;

@@ -268,6 +268,43 @@ public:
 };
 
 /**
+ * @brief A load instruction in the MIR.
+ *
+ * The load instruction reads a value from a source MIR value (which must be a
+ * pointer) and stores it in a destination temporary MIR value.
+ */
+class Instr::Load : public INonTerm {
+public:
+    // The source value to load from.
+    const std::shared_ptr<MIRValue> source;
+    // The destination where the loaded value is stored.
+    const std::shared_ptr<MIRValue::Temporary> destination;
+
+    Load(std::shared_ptr<MIRValue> source, std::shared_ptr<Type> result_type)
+        : source(source),
+          destination(std::make_shared<MIRValue::Temporary>(result_type)) {
+        // Assert that the source is a pointer type.
+        if (!PTR_INSTANCEOF(source->type, Type::IPointer)) {
+            panic(
+                "Instr::Load::Load: Source must be a pointer type. Got `" +
+                source->type->to_string() + "`."
+            );
+        }
+    }
+
+    virtual ~Load() = default;
+
+    virtual std::any accept(Visitor* visitor) override {
+        return visitor->visit(this);
+    }
+
+    virtual std::string to_string() const override {
+        return "load " + source->to_string() + " -> " +
+               destination->to_string();
+    }
+};
+
+/**
  * @brief A terminator instruction in the MIR.
  *
  * Terminator instructions alter the control flow of a basic block. They
