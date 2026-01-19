@@ -869,7 +869,7 @@ public:
     // The 'loop' keyword token.
     std::shared_ptr<Token> loop_kw;
     // The body of the loop.
-    std::shared_ptr<Expr> body;
+    std::shared_ptr<Expr::Block> body;
     // The condition of the loop, if any.
     std::optional<std::shared_ptr<Expr>> condition;
     // Whether this loop is guaranteed to execute at least once.
@@ -877,7 +877,7 @@ public:
 
     Loop(
         std::shared_ptr<Token> loop_kw,
-        std::shared_ptr<Expr> body,
+        std::shared_ptr<Expr::Block> body,
         std::optional<std::shared_ptr<Expr>> condition,
         bool loops_once
     )

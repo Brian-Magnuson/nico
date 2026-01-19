@@ -190,7 +190,7 @@ std::optional<std::shared_ptr<Expr>> Parser::conditional() {
 std::optional<std::shared_ptr<Expr>> Parser::loop() {
     auto loop_kw = previous();
     std::optional<std::shared_ptr<Expr>> condition;
-    std::optional<std::shared_ptr<Expr>> body;
+    std::optional<std::shared_ptr<Expr>> expr_body;
     bool loops_once = false;
 
     if (loop_kw->tok_type == Tok::KwLoop) {
@@ -198,12 +198,12 @@ std::optional<std::shared_ptr<Expr>> Parser::loop() {
         loops_once = true;
         if (peek()->tok_type == Tok::Indent ||
             peek()->tok_type == Tok::LBrace) {
-            body = block(Expr::Block::Kind::Loop);
+            expr_body = block(Expr::Block::Kind::Loop);
         }
         else {
-            body = expression();
+            expr_body = expression();
         }
-        if (!body)
+        if (!expr_body)
             return std::nullopt;
     }
     else if (loop_kw->tok_type == Tok::KwWhile) {
@@ -213,10 +213,10 @@ std::optional<std::shared_ptr<Expr>> Parser::loop() {
             return std::nullopt;
         if (peek()->tok_type == Tok::Indent ||
             peek()->tok_type == Tok::LBrace) {
-            body = block(Expr::Block::Kind::Loop);
+            expr_body = block(Expr::Block::Kind::Loop);
         }
         else if (match({Tok::KwDo})) {
-            body = expression();
+            expr_body = expression();
         }
         else {
             Logger::inst().log_error(
@@ -226,7 +226,7 @@ std::optional<std::shared_ptr<Expr>> Parser::loop() {
             );
             return std::nullopt;
         }
-        if (!body)
+        if (!expr_body)
             return std::nullopt;
 
         // If the condition is literally `true`...
@@ -244,12 +244,12 @@ std::optional<std::shared_ptr<Expr>> Parser::loop() {
         loops_once = true;
         if (peek()->tok_type == Tok::Indent ||
             peek()->tok_type == Tok::LBrace) {
-            body = block(Expr::Block::Kind::Loop);
+            expr_body = block(Expr::Block::Kind::Loop);
         }
         else {
-            body = expression();
+            expr_body = expression();
         }
-        if (!body)
+        if (!expr_body)
             return std::nullopt;
 
         // Check for the `while` keyword.
@@ -278,7 +278,21 @@ std::optional<std::shared_ptr<Expr>> Parser::loop() {
         panic("Parser::loop: Unexpected loop keyword.");
     }
 
-    return std::make_shared<Expr::Loop>(loop_kw, *body, condition, loops_once);
+    // The body must be a block.
+    // If it is not a block, we wrap it in one.
+    std::shared_ptr<Expr::Block> body =
+        std::dynamic_pointer_cast<Expr::Block>(expr_body.value());
+    if (!body) {
+        body = std::make_shared<Expr::Block>(
+            loop_kw,
+            std::vector<std::shared_ptr<Stmt>>{
+                std::make_shared<Stmt::Expression>(expr_body.value())
+            },
+            Expr::Block::Kind::Loop
+        );
+    }
+
+    return std::make_shared<Expr::Loop>(loop_kw, body, condition, loops_once);
 }
 
 std::optional<std::shared_ptr<Expr>> Parser::allocation() {

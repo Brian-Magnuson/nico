@@ -1750,20 +1750,20 @@ std::any LocalChecker::visit(Expr::Loop* expr, bool as_lvalue) {
         }
     }
 
-    // If this is a conditional loop that does not have a block body...
-    if (!PTR_INSTANCEOF(expr->body, Expr::Block) &&
-        expr->condition.has_value()) {
-        // Wrap the body in a block.
-        expr->body = std::make_shared<Expr::Block>(
-            expr->loop_kw,
-            std::vector<std::shared_ptr<Stmt>>{
-                std::make_shared<Stmt::Expression>(expr->body)
-            },
-            Expr::Block::Kind::Loop
-        );
-        // This allows users to write single-expression while loops without
-        // restriction.
-    }
+    // // If this is a conditional loop that does not have a block body...
+    // if (!PTR_INSTANCEOF(expr->body, Expr::Block) &&
+    //     expr->condition.has_value()) {
+    //     // Wrap the body in a block.
+    //     expr->body = std::make_shared<Expr::Block>(
+    //         expr->loop_kw,
+    //         std::vector<std::shared_ptr<Stmt>>{
+    //             std::make_shared<Stmt::Expression>(expr->body)
+    //         },
+    //         Expr::Block::Kind::Loop
+    //     );
+    //     // This allows users to write single-expression while loops without
+    //     // restriction.
+    // }
 
     auto body_type = expr_check(expr->body, false);
     if (!body_type)

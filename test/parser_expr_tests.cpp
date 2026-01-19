@@ -805,7 +805,7 @@ TEST_CASE("Parser loop expressions", "[parser]") {
     SECTION("Infinite loop 1") {
         run_parser_expr_test(
             "loop 123\n",
-            {"(expr (loop (lit i32 123)))", "(stmt:eof)"}
+            {"(expr (loop (block (expr (lit i32 123)))))", "(stmt:eof)"}
         );
     }
 
@@ -825,7 +825,8 @@ TEST_CASE("Parser loop expressions", "[parser]") {
     SECTION("While loop 1") {
         run_parser_expr_test(
             "while condition do 123\n",
-            {"(expr (loop while (nameref condition) (lit i32 123)))",
+            {"(expr (loop while (nameref condition) (block (expr (lit i32 "
+             "123)))))",
              "(stmt:eof)"}
         );
     }
@@ -851,14 +852,15 @@ TEST_CASE("Parser loop expressions", "[parser]") {
     SECTION("While true loop") {
         run_parser_expr_test(
             "while true do 123\n",
-            {"(expr (loop (lit i32 123)))", "(stmt:eof)"}
+            {"(expr (loop (block (expr (lit i32 123)))))", "(stmt:eof)"}
         );
     }
 
     SECTION("Do-while loop 1") {
         run_parser_expr_test(
             "do 123 while condition\n",
-            {"(expr (loop do while (nameref condition) (lit i32 123)))",
+            {"(expr (loop do while (nameref condition) (block (expr (lit i32 "
+             "123)))))",
              "(stmt:eof)"}
         );
     }
@@ -884,7 +886,7 @@ TEST_CASE("Parser loop expressions", "[parser]") {
     SECTION("Do-while true loop") {
         run_parser_expr_test(
             "do 123 while true\n",
-            {"(expr (loop (lit i32 123)))", "(stmt:eof)"}
+            {"(expr (loop (block (expr (lit i32 123)))))", "(stmt:eof)"}
         );
     }
 }
