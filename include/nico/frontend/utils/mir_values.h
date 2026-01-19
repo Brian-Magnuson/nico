@@ -52,12 +52,8 @@ public:
     // The field entry node representing the variable.
     std::optional<std::shared_ptr<Node::FieldEntry>> field_entry;
 
-    Variable(std::string_view name = "")
-        : MIRValue(
-              std::make_shared<Type::RawPointer>(
-                  field_entry.value()->field.type, true
-              )
-          ),
+    Variable(std::string_view name, std::shared_ptr<Type> type)
+        : MIRValue(std::make_shared<Type::RawPointer>(type, true)),
           name(
               std::string(name) + "#" +
               std::to_string(mir_temp_name_counters[std::string(name)]++)

@@ -104,7 +104,8 @@ Function::create(std::shared_ptr<Stmt::Func> func_stmt) {
             std::make_shared<MIRValue::Variable>(param.field_entry.lock());
         func->parameters.push_back(param_var);
     }
-    func->return_value = std::make_shared<MIRValue::Variable>("$ret_val");
+    func->return_value =
+        std::make_shared<MIRValue::Variable>("$ret_val", func->return_type);
 
     func->entry_block =
         std::make_shared<BasicBlock>(BasicBlock::Private(), "entry");
@@ -121,8 +122,10 @@ std::shared_ptr<Function> Function::create_script_function() {
     auto func = std::make_shared<Function>(Private());
     func->name = "$script";
     func->return_type = std::make_shared<Type::Unit>();
-    func->return_value =
-        std::make_shared<MIRValue::Variable>("$script_ret_val");
+    func->return_value = std::make_shared<MIRValue::Variable>(
+        "$script_ret_val",
+        func->return_type
+    );
 
     func->entry_block =
         std::make_shared<BasicBlock>(BasicBlock::Private(), "entry");
