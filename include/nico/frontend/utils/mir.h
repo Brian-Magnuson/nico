@@ -2,7 +2,9 @@
 #define NICO_MIR_H
 
 #include <any>
+#include <array>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -252,6 +254,20 @@ public:
         std::shared_ptr<BasicBlock> main_successor,
         std::shared_ptr<BasicBlock> alt_successor
     );
+
+    /**
+     * @brief Retrieves the successors of this basic block.
+     *
+     * A basic block can have 0, 1, or 2 successors depending on its terminator
+     * instruction.
+     *
+     * This function helps abstract away the process of checking the type of the
+     * terminator instruction and converting the weak pointers to shared
+     * pointers.
+     *
+     * @return A vector of shared pointers to the successor basic blocks.
+     */
+    std::vector<std::shared_ptr<BasicBlock>> get_successors() const;
 
     /**
      * @brief Checks if this basic block has any living predecessors.

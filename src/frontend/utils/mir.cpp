@@ -67,6 +67,34 @@ void BasicBlock::set_successors(
     alt_successor->predecessors.push_back(shared_from_this());
 }
 
+std::vector<std::shared_ptr<BasicBlock>> BasicBlock::get_successors() const {
+    std::vector<std::shared_ptr<BasicBlock>> successors;
+    // Reserve space for up to 2 successors (for branches).
+    successors.reserve(2);
+
+    if (terminator) {
+        if (auto jump = std::dynamic_pointer_cast<Instr::Jump>(terminator)) {
+            // Jump has one successor
+            if (auto bb = jump->target.lock()) {
+                successors.push_back(bb);
+            }
+        }
+        else if (auto branch =
+                     std::dynamic_pointer_cast<Instr::Branch>(terminator)) {
+            // Branch has two successors
+            if (auto bb = branch->main_target.lock()) {
+                successors.push_back(bb);
+            }
+            if (auto bb = branch->alt_target.lock()) {
+                successors.push_back(bb);
+            }
+        }
+        // Return has no successors, so do nothing
+    }
+
+    return successors;
+}
+
 std::string BasicBlock::to_string() const {
     std::string result = name + " <-- [ ";
     for (const auto& pred_weak : predecessors) {
@@ -157,32 +185,11 @@ void Function::purge_unreachable_blocks() {
         auto current = to_visit.front();
         to_visit.pop();
 
-        // Get successors from the terminator instruction.
-        if (current->terminator) {
-            if (auto branch_instr = std::dynamic_pointer_cast<Instr::Branch>(
-                    current->terminator
-                )) {
-                auto main_target = branch_instr->main_target.lock();
-                auto alt_target = branch_instr->alt_target.lock();
-                if (main_target && !visited.contains(main_target)) {
-                    visited.insert(main_target);
-                    to_visit.push(main_target);
-                }
-                if (alt_target && !visited.contains(alt_target)) {
-                    visited.insert(alt_target);
-                    to_visit.push(alt_target);
-                }
-            }
-            else {
-                if (auto jump_instr = std::dynamic_pointer_cast<Instr::Jump>(
-                        current->terminator
-                    )) {
-                    auto target = jump_instr->target.lock();
-                    if (target && !visited.contains(target)) {
-                        visited.insert(target);
-                        to_visit.push(target);
-                    }
-                }
+        auto successors = current->get_successors();
+        for (const auto& succ : successors) {
+            if (!visited.contains(succ)) {
+                visited.insert(succ);
+                to_visit.push(succ);
             }
         }
     }
