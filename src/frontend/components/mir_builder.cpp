@@ -82,13 +82,29 @@ std::any MIRBuilder::visit(Expr::Unary* expr, bool as_lvalue) {
 }
 
 std::any MIRBuilder::visit(Expr::Address* expr, bool as_lvalue) {
-    // TODO: Implementation for visiting Address expressions goes here.
-    return {};
+    // The right expression is a possible lvalue.
+    // Visiting it as one will give us its address.
+    return std::any_cast<std::shared_ptr<MIRValue>>(
+        expr->right->accept(this, true)
+    );
 }
 
 std::any MIRBuilder::visit(Expr::Deref* expr, bool as_lvalue) {
-    // TODO: Implementation for visiting Deref expressions goes here.
-    return {};
+    // The inner expression of a dereference is a pointer.
+    auto mir_ptr = std::any_cast<std::shared_ptr<MIRValue>>(
+        expr->right->accept(this, false)
+    );
+    if (as_lvalue) {
+        // If we're treating this as an lvalue, return the pointer itself.
+        return mir_ptr;
+    }
+    else {
+        // Otherwise, we need to load the value from the pointer.
+        auto load_instr = std::make_shared<Instr::Load>(mir_ptr);
+        current_block->add_instruction(load_instr);
+
+        return load_instr->destination;
+    }
 }
 
 std::any MIRBuilder::visit(Expr::Cast* expr, bool as_lvalue) {
