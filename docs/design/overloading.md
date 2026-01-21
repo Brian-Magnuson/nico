@@ -117,6 +117,36 @@ We only check for conflicts in pairs of overloads. When a new overload is define
 When reporting errors, we can briefly describe these rules like this:
 > Two function overloads conflict if they have the same set of parameters, or if one set of parameters is a superset of the other, differing only by optional parameters.
 
+### Sidenote on Variadic Arguments
+
+Variadic functions are functions that can accept a variable number of arguments.
+They are typically defined using a special syntax, such as an ellipsis (`...`) or a specific keyword.
+Although variadic functions are complex to implement, we must take them into consideration due to this language's relationship with C.
+
+Nico is not planned to support variadic arguments for internally-linked functions.
+Variadic arguments may be added for externally-linked functions in the future.
+
+Possible syntax:
+```
+extern "C":
+    func printf(format: ptr, ...) -> i32
+
+printf("Hello, %s!", name)
+```
+
+If variadic arguments are added, we can be sure of the following:
+- A variadic parameter must be the *last* parameter in a function definition.
+- A variadic function can only be called with positional arguments (no named arguments).
+
+These two rules greatly simplify the overload conflict resolution problem.
+We can modify our previous rules as follows:
+- Let $M(f_i)$ be the set of parameter strings for *all non-variadic* parameters of $f_i$.
+
+The remaining rules stay the same.
+
+This works because your overload conflict resolution strategy is based on a function's *required* parameters, which do not include variadic parameters.
+Additionally, because we also check for ambiguity during function *calls* (not just definitions), meaning any conflicts will eventually be caught.
+
 ### Examples
 
 Let us use the above rules to analyze some examples.
