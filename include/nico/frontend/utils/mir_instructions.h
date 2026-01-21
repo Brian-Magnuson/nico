@@ -305,6 +305,48 @@ public:
 };
 
 /**
+ * @brief A phi instruction in the MIR.
+ *
+ * The phi instruction selects a value based on the predecessor basic block
+ * from which control arrived.
+ *
+ * This is used in SSA form to merge values coming from different control flow
+ * paths.
+ */
+class Instr::Phi : public INonTerm {
+public:
+    // The temporary where the result is stored.
+    const std::shared_ptr<MIRValue::Temporary> destination;
+    // A map of predecessor basic blocks to their corresponding values.
+    const std::
+        unordered_map<std::shared_ptr<BasicBlock>, std::shared_ptr<MIRValue>>
+            incoming_values;
+
+    Phi(std::shared_ptr<Type> result_type,
+        std::unordered_map<
+            std::shared_ptr<BasicBlock>,
+            std::shared_ptr<MIRValue>> incoming_values)
+        : destination(std::make_shared<MIRValue::Temporary>(result_type)),
+          incoming_values(incoming_values) {}
+
+    virtual ~Phi() = default;
+
+    virtual std::any accept(Visitor* visitor) override {
+        return visitor->visit(this);
+    }
+
+    virtual std::string to_string() const override {
+        std::string result = "phi ";
+        for (const auto& [block, value] : incoming_values) {
+            result +=
+                "[" + block->get_name() + ": " + value->to_string() + "] ";
+        }
+        result += "-> " + destination->to_string();
+        return result;
+    }
+};
+
+/**
  * @brief A terminator instruction in the MIR.
  *
  * Terminator instructions alter the control flow of a basic block. They
