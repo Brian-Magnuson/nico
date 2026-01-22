@@ -337,6 +337,48 @@ This is useful for checking if a pointer is null, regardless of its base type.
 
 Although it is possible to compare pointers of different base types, this feature is usually not useful unless the base types are related in some way (e.g., through inheritance).
 
+### Any pointer type
+
+There is a special pointer type called the any pointer type, written as `anyptr`. It is like a mutable raw pointer, but without a base type.
+
+An any pointer can be assigned a value of any mutable raw pointer type without requiring an explicit cast or unsafe context.
+```
+let p1: anyptr = var@x
+```
+
+Any pointers cannot be assigned immutable raw pointer types.
+Any pointers can potentially be used in "any" way, meaning it cannot make any guarantees about whether the pointed-to value will be mutated or not.
+```
+let p1: anyptr = @x // Error: cannot assign immutable pointer to anyptr
+```
+
+Values of type `anyptr` cannot be dereferenced in any way, not even within an `unsafe` block.
+Attempting to do so will result in a compile-time error.
+```
+let p: anyptr = var@x
+unsafe:
+    ^p // Error: cannot dereference anyptr
+    p.member // Error: cannot dereference anyptr
+    p[0] // Error: cannot dereference anyptr
+```
+
+The only way to use an any pointer is to perform a reinterpret cast to a specific raw pointer type.
+```
+let p1: anyptr = var@x
+unsafe:
+    let p2 = transmute p1 as var@i32
+    let y = ^p2
+```
+
+The any pointer type is useful for working with low-level or external code that uses raw pointers that would be otherwise incompatible with Nico's raw pointer types.
+
+For example, C functions like `malloc` and `free` use `void*` pointers. But `void` does not exist in Nico. So we use `anyptr` instead:
+```
+func malloc(size: usize) -> anyptr
+func free(ptr: anyptr)
+```
+
+
 ### Reference types
 
 A reference is a safe pointer to a value. It is written as `&T`, where `T` is the type of the value. A reference can never be null and the referenced value must live at least as long as the reference.
@@ -624,6 +666,9 @@ func my_function() { // Braced form
 func my_function() => expression // Short form
 ```
 
+If you omit the block opening token or `=>`, the function becomes a function header, having no implementation (the declaration ends there).
+Function headers are not allowed outside of external declaration blocks. See the corresponding section for more information.
+
 Functions may accept arguments by listing parameters in parentheses. Types are always required when listing parameters (except for the instance parameter in methods):
 ```
 func my_function(a: i32, b: i32):
@@ -896,6 +941,50 @@ Classes differ from structs in the following ways:
 
 Classes are designed to support object-oriented programming features, making them more suitable for complex data structures and behaviors.
 The drawback is that instances of classes require additional memory overhead due to features like virtual method tables and inheritance.
+
+### External declaration blocks
+
+External declaration blocks are used to declare functions or variables that are defined outside of the current module. This is useful for interfacing with code written in other programming languages or for linking to external libraries.
+
+To create an external declaration block, use the `extern` keyword followed by either a colon or an opening curly brace. The block may be written in indented form or braced form:
+```
+extern:
+    func external_function(a: i32) -> i32
+    let external_variable: f64
+
+extern {
+    func external_function(a: i32) -> i32
+    let external_variable: f64
+}
+```
+
+Despite using a similar syntax to block expressions, extern blocks are not block expressions. They are a kind of declaration, i.e., a statement.
+
+Inside an external declaration block, you may only declare the following:
+- Variables using `let` with a type annotation and no initializer.
+- Functions using `func` without a body (function headers).
+
+External declaration blocks allow you to declare variables and functions that are defined in external code, such as C libraries.
+- With variables, the identifier and type should match the external definition.
+- With functions, the identifier, parameter types (but not parameter identifiers), and return type should match the external definition.
+
+Currently there is no way to specify a different linkage name for an external variable or function. You can, however, create a wrapper function or variable with the desired name.
+
+You can add a string literal after the `extern` keyword to specify the ABI to use.
+Currently, the only supported ABI is `"C"`.
+```
+extern "C":
+    func c_function(a: i32) -> i32
+    let c_variable: f64
+```
+Using an unsupported ABI will result in a compile-time error.
+If you do not specify an ABI, the default ABI for the target platform will be used (currently "C").
+
+Extern blocks may only be placed at the top level. 
+They cannot be nested inside other blocks, functions, or complex types.
+
+Externally-declared variables/functions may be referenced/called in safe contexts without requiring an `unsafe` block.
+It is the user's responsibility to ensure that the external code is safe to use.
 
 ## Expressions
 
