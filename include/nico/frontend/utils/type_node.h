@@ -305,6 +305,11 @@ public:
 
 // MARK: Pointer types
 
+/**
+ * @brief The base class for all pointer types.
+ *
+ * All pointers have a mutability property.
+ */
 class Type::IPointer : public Type {
 public:
     // Whether object pointed to by this pointer is mutable.
@@ -321,6 +326,15 @@ public:
     }
 };
 
+/**
+ * @brief An interface for raw pointer types.
+ *
+ * This class does not add additional state beyond `IPointer`.
+ * It is used for organizational purposes.
+ *
+ * Raw pointers are meant to have no special semantics. They simply store an
+ * address.
+ */
 class Type::IRawPtr : virtual public IPointer {
 public:
     virtual ~IRawPtr() = default;
@@ -333,9 +347,13 @@ public:
  * @brief A null pointer type.
  *
  * The type and its only value are both written as `nullptr`.
- * It extends the pointer type and behaves similarly, except it has no base type
- * and can be assigned to any pointer type.
  * It is only considered equal to other `Nullptr` types.
+ *
+ * It is a raw pointer type that has no base type.
+ * It may be assigned to any other raw pointer type.
+ *
+ * For type compatibility purposes, a nullptr is considered mutable, even though
+ * it cannot be used to modify any data (it cannot be dereferenced).
  */
 class Type::Nullptr : public Type::IRawPtr {
 public:
@@ -356,6 +374,18 @@ public:
     }
 };
 
+/**
+ * @brief An any-pointer type.
+ *
+ * The type is written as `anyptr`.
+ * It is only considered equal to other `Anyptr` types.
+ *
+ * An any-pointer is a raw pointer type that has no base type.
+ * Any raw pointer type may be assigned to an any-pointer.
+ *
+ * For type compatibility purposes, an any-pointer is considered mutable, even
+ * though it cannot be used to modify any data (it cannot be dereferenced).
+ */
 class Type::Anyptr : public Type::IRawPtr {
 public:
     virtual ~Anyptr() = default;
@@ -370,6 +400,12 @@ public:
     }
 };
 
+/**
+ * @brief An interface for typed pointer types.
+ *
+ * Typed pointers point to a specific base type.
+ * Generally, a pointer can only be dereferenced if it is a typed pointer.
+ */
 class Type::ITypedPtr : virtual public IPointer {
 public:
     // The type that the pointer points to.
@@ -382,11 +418,10 @@ public:
 };
 
 /**
- * @brief A pointer type.
+ * @brief A raw typed pointer type.
  *
- * Points to another type.
- * Note: Since LLVM 15, pointers do not store type information.
- * Keep this in mind before converting to the LLVM type.
+ * Raw typed pointers are raw pointers that also have a base type.
+ * They are usually the most common raw pointer type used.
  */
 class Type::RawTypedPtr : public Type::IRawPtr, public Type::ITypedPtr {
 public:
@@ -444,8 +479,6 @@ public:
  * @brief A reference type.
  *
  * References are pointers with special semantics.
- * Note: Since LLVM 15, pointers do not store type information.
- * Keep this in mind before converting to the LLVM type.
  */
 class Type::Reference : public Type::ITypedPtr {
 public:
