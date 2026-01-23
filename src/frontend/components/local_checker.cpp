@@ -44,13 +44,16 @@ LocalChecker::implicit_full_dereference(std::shared_ptr<Expr>& expr) {
 
     while (auto i_pointer_type =
                std::dynamic_pointer_cast<Type::IPointer>(expr->type)) {
-        if (PTR_INSTANCEOF(i_pointer_type, Type::Nullptr)) {
-            panic(
-                "LocalChecker::implicit_full_dereference: Called on a nullptr "
-                "pointer unexpectedly."
+        if (!PTR_INSTANCEOF(i_pointer_type, Type::ITypedPtr)) {
+            Logger::inst().log_error(
+                Err::DereferenceNonTypedPointer,
+                expr->location,
+                "Cannot implicitly dereference non-typed pointer `" +
+                    expr->type->to_string() + "`."
             );
+            return nullptr;
         }
-        if (PTR_INSTANCEOF(i_pointer_type, Type::RawPointer)) {
+        if (PTR_INSTANCEOF(i_pointer_type, Type::RawTypedPtr)) {
             if (!is_in_unsafe_context()) {
                 Logger::inst().log_error(
                     Err::PtrDerefOutsideUnsafeBlock,
@@ -66,7 +69,9 @@ LocalChecker::implicit_full_dereference(std::shared_ptr<Expr>& expr) {
             std::make_shared<Token>(Tok::Star, *expr->location),
             expr
         );
-        expr->type = i_pointer_type->base;
+        auto i_ptr_base_type =
+            std::dynamic_pointer_cast<Type::ITypedPtr>(i_pointer_type)->base;
+        expr->type = i_ptr_base_type;
     }
 
     return expr->type;
@@ -89,9 +94,9 @@ bool LocalChecker::check_pointer_cast(
 
     // Beyond this point, both types must be raw pointer types.
     auto expr_raw_ptr_type =
-        std::dynamic_pointer_cast<Type::RawPointer>(expr_ptr_type);
+        std::dynamic_pointer_cast<Type::IRawPtr>(expr_ptr_type);
     auto target_raw_ptr_type =
-        std::dynamic_pointer_cast<Type::RawPointer>(target_ptr_type);
+        std::dynamic_pointer_cast<Type::IRawPtr>(target_ptr_type);
     if (!expr_raw_ptr_type || !target_raw_ptr_type) {
         Logger::inst().log_error(
             Err::InvalidCastOperation,
@@ -107,50 +112,71 @@ bool LocalChecker::check_pointer_cast(
         // Nullptr can be cast to any raw pointer type.
         return true;
     }
+    // Anyptr cast.
+    if (PTR_INSTANCEOF(target_raw_ptr_type, Type::Anyptr)) {
+        // You can cast any mutable raw pointer type to `anyptr`.
+        return expr_raw_ptr_type->is_mutable;
+    }
+
+    // Beyond this point, both pointer types must have typed bases.
+    auto expr_typed_ptr_type =
+        std::dynamic_pointer_cast<Type::RawTypedPtr>(expr_raw_ptr_type);
+    auto target_typed_ptr_type =
+        std::dynamic_pointer_cast<Type::RawTypedPtr>(target_raw_ptr_type);
+    if (!expr_typed_ptr_type || !target_typed_ptr_type) {
+        Logger::inst().log_error(
+            Err::InvalidCastOperation,
+            as_token->location,
+            "Invalid pointer cast from `" + expr_type->to_string() + "` to `" +
+                target_type->to_string() + "`."
+        );
+        return false;
+    }
 
     // Multi-level pointer cast.
-    if (PTR_INSTANCEOF(expr_raw_ptr_type->base, Type::IPointer) ||
-        PTR_INSTANCEOF(target_raw_ptr_type->base, Type::IPointer)) {
-        if (!PTR_INSTANCEOF(target_raw_ptr_type->base, Type::IPointer)) {
+    if (PTR_INSTANCEOF(expr_typed_ptr_type->base, Type::IPointer) ||
+        PTR_INSTANCEOF(target_typed_ptr_type->base, Type::IPointer)) {
+        if (!PTR_INSTANCEOF(target_typed_ptr_type->base, Type::IPointer)) {
             Logger::inst().log_error(
                 Err::InvalidCastOperation,
                 as_token->location,
                 "Cannot cast pointer type `" +
-                    expr_raw_ptr_type->base->to_string() +
+                    expr_typed_ptr_type->base->to_string() +
                     "` to non-pointer "
                     "type `" +
-                    target_raw_ptr_type->base->to_string() + "`."
+                    target_typed_ptr_type->base->to_string() + "`."
             );
             return false;
         }
-        else if (!PTR_INSTANCEOF(expr_raw_ptr_type->base, Type::IPointer)) {
+        else if (!PTR_INSTANCEOF(expr_typed_ptr_type->base, Type::IPointer)) {
             Logger::inst().log_error(
                 Err::InvalidCastOperation,
                 as_token->location,
                 "Cannot cast non-pointer type `" +
-                    expr_raw_ptr_type->base->to_string() +
+                    expr_typed_ptr_type->base->to_string() +
                     "` to pointer "
                     "type `" +
-                    target_raw_ptr_type->base->to_string() + "`."
+                    target_typed_ptr_type->base->to_string() + "`."
             );
             return false;
         }
 
         // Recursively check the inner pointer cast.
         return check_pointer_cast(
-            expr_raw_ptr_type->base,
-            target_raw_ptr_type->base,
+            expr_typed_ptr_type->base,
+            target_typed_ptr_type->base,
             as_token
         );
     }
 
     // Array pointer cast.
-    if (auto target_array_type =
-            std::dynamic_pointer_cast<Type::Array>(target_raw_ptr_type->base)) {
-        // The base type of the expression pointer type must also be an array
-        // type.
+    if (auto target_array_type = std::dynamic_pointer_cast<Type::Array>(
+            target_typed_ptr_type->base
+        )) {
+        // The base type of the expression pointer type must also be an
+        // array type.
         auto expr_array_type =
-            std::dynamic_pointer_cast<Type::Array>(expr_raw_ptr_type->base);
+            std::dynamic_pointer_cast<Type::Array>(expr_typed_ptr_type->base);
         if (!expr_array_type) {
             Logger::inst().log_error(
                 Err::InvalidCastOperation,
@@ -178,7 +204,8 @@ bool LocalChecker::check_pointer_cast(
             Logger::inst().log_error(
                 Err::InvalidCastOperation,
                 as_token->location,
-                "Array pointer cast is only valid when target array type is "
+                "Array pointer cast is only valid when target array type "
+                "is "
                 "unsized; array type `" +
                     target_array_type->to_string() + "` is sized."
             );
@@ -536,20 +563,20 @@ std::any LocalChecker::visit(Stmt::Dealloc* stmt) {
     if (!expr_type)
         return std::any();
 
-    if (!PTR_INSTANCEOF(expr_type, Type::RawPointer)) {
+    if (PTR_INSTANCEOF(expr_type, Type::Nullptr)) {
+        Logger::inst().log_error(
+            Err::DeallocNullptr,
+            stmt->expression->location,
+            "Cannot deallocate pointer of nullptr type."
+        );
+        return std::any();
+    }
+    else if (!PTR_INSTANCEOF(expr_type, Type::IRawPtr)) {
         Logger::inst().log_error(
             Err::DeallocNonRawPointer,
             stmt->expression->location,
             "Cannot deallocate non-raw pointer type `" +
                 expr_type->to_string() + "`."
-        );
-        return std::any();
-    }
-    else if (PTR_INSTANCEOF(expr_type, Type::Nullptr)) {
-        Logger::inst().log_error(
-            Err::DeallocNullptr,
-            stmt->expression->location,
-            "Cannot deallocate pointer of nullptr type."
         );
         return std::any();
     }
@@ -719,23 +746,22 @@ std::any LocalChecker::visit(Expr::Binary* expr, bool as_lvalue) {
     case Tok::EqEq:
     case Tok::BangEq:
         // Types must inherit from `Type::INumeric` or be `Type::Bool` or
-        // `Type::Pointer`.
+        // `Type::IRawPtr`.
         if (!PTR_INSTANCEOF(l_type, Type::INumeric) &&
             !PTR_INSTANCEOF(l_type, Type::Bool) &&
-            !PTR_INSTANCEOF(l_type, Type::RawPointer)) {
+            !PTR_INSTANCEOF(l_type, Type::IRawPtr)) {
             Logger::inst().log_error(
                 Err::NoOperatorOverload,
                 expr->op->location,
-                "Operands must be of a numeric, boolean, or pointer type."
+                "Operands must be of a numeric, boolean, or raw pointer type."
             );
             return std::any();
         }
         // Both operands must be of the same type, OR both operands must be
         // pointers.
         // NOT (A == B OR (isptr(A) AND isptr(B)))
-        if (!(*l_type == *r_type ||
-              (PTR_INSTANCEOF(l_type, Type::RawPointer) &&
-               PTR_INSTANCEOF(r_type, Type::RawPointer)))) {
+        if (!(*l_type == *r_type || (PTR_INSTANCEOF(l_type, Type::IRawPtr) &&
+                                     PTR_INSTANCEOF(r_type, Type::IRawPtr)))) {
             Logger::inst().log_error(
                 Err::NoOperatorOverload,
                 expr->op->location,
@@ -860,7 +886,7 @@ std::any LocalChecker::visit(Expr::Address* expr, bool as_lvalue) {
         return std::any();
 
     if (expr->op->tok_type == Tok::At) {
-        expr->type = std::make_shared<Type::RawPointer>(r_type, expr->has_var);
+        expr->type = std::make_shared<Type::RawTypedPtr>(r_type, expr->has_var);
     }
     else if (expr->op->tok_type == Tok::Amp) {
         // expr->type = std::make_shared<Type::Reference>(r_type,
@@ -903,15 +929,15 @@ std::any LocalChecker::visit(Expr::Deref* expr, bool as_lvalue) {
     if (!r_type)
         return std::any();
 
-    if (PTR_INSTANCEOF(r_type, Type::Nullptr)) {
+    if (!PTR_INSTANCEOF(r_type, Type::IPointer)) {
         Logger::inst().log_error(
-            Err::DereferenceNullptr,
+            Err::DereferenceNonPointer,
             expr->op->location,
-            "Cannot dereference a pointer of type `nullptr`."
+            "Cannot dereference non-pointer type `" + r_type->to_string() + "`."
         );
         return std::any();
     }
-    if (auto ptr_type = std::dynamic_pointer_cast<Type::RawPointer>(r_type)) {
+    if (auto ptr_type = std::dynamic_pointer_cast<Type::ITypedPtr>(r_type)) {
         expr->type = ptr_type->base;
         // Remember: pointers are not possible lvalues.
         // For pointer dereference, the assignability is carried over from the
@@ -932,9 +958,10 @@ std::any LocalChecker::visit(Expr::Deref* expr, bool as_lvalue) {
     }
     else {
         Logger::inst().log_error(
-            Err::DereferenceNonPointer,
+            Err::DereferenceNonTypedPointer,
             expr->op->location,
-            "Dereference operator is not valid for this kind of expression."
+            "Cannot dereference non-typed pointer `" + r_type->to_string() +
+                "`."
         );
         return std::any();
     }
@@ -1435,7 +1462,7 @@ std::any LocalChecker::visit(Expr::Alloc* expr, bool as_lvalue) {
     }
 
     // Alloc always returns a mutable raw pointer.
-    expr->type = std::make_shared<Type::RawPointer>(alloc_type, true);
+    expr->type = std::make_shared<Type::RawTypedPtr>(alloc_type, true);
     return std::any();
 }
 

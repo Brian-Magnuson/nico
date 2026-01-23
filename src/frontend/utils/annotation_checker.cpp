@@ -33,7 +33,7 @@ std::any AnnotationChecker::visit(Annotation::Pointer* annotation) {
         return std::any();
     auto base_type = std::any_cast<std::shared_ptr<Type>>(base_any);
     type =
-        std::make_shared<Type::RawPointer>(base_type, annotation->is_mutable);
+        std::make_shared<Type::RawTypedPtr>(base_type, annotation->is_mutable);
     return type;
 }
 

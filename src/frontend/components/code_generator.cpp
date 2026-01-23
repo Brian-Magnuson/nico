@@ -407,7 +407,7 @@ std::any CodeGenerator::visit(Expr::Binary* expr, bool as_lvalue) {
     }
     else if (PTR_INSTANCEOF(expr->left->type, Type::Int) ||
              PTR_INSTANCEOF(expr->left->type, Type::Bool) ||
-             PTR_INSTANCEOF(expr->left->type, Type::RawPointer)) {
+             PTR_INSTANCEOF(expr->left->type, Type::RawTypedPtr)) {
         auto int_type = std::dynamic_pointer_cast<Type::Int>(expr->left->type);
         auto is_signed_int = int_type ? int_type->is_signed : false;
 
@@ -788,7 +788,8 @@ std::any CodeGenerator::visit(Expr::Alloc* expr, bool as_lvalue) {
     llvm::Value* result = nullptr;
     llvm::Value* alloc_size = nullptr;
 
-    auto pointer_type = std::dynamic_pointer_cast<Type::RawPointer>(expr->type);
+    auto pointer_type =
+        std::dynamic_pointer_cast<Type::RawTypedPtr>(expr->type);
 
     if (expr->amount_expr.has_value()) {
         // `alloc for`

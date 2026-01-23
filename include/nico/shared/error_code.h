@@ -185,8 +185,9 @@ enum class Err {
     NegativeOnUnsignedType,
     // A pointer dereference was attempted on a non-pointer type.
     DereferenceNonPointer,
-    // An attempt was made to dereference a pointer whose type is `nullptr`.
-    DereferenceNullptr,
+    // An attempt was made to dereference a non-typed pointer (e.g., nullptr or
+    // anyptr).
+    DereferenceNonTypedPointer,
     // An attempt was made to deallocate a pointer outside of an unsafe context.
     DeallocOutsideUnsafeBlock,
     // An attempt was made to deallocate a non-raw-pointer type.

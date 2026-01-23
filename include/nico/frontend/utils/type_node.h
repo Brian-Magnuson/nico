@@ -307,20 +307,78 @@ public:
 
 class Type::IPointer : public Type {
 public:
-    // The type that the pointer points to.
-    const std::shared_ptr<Type> base;
     // Whether object pointed to by this pointer is mutable.
     bool is_mutable;
 
     virtual ~IPointer() = default;
 
-    IPointer(std::shared_ptr<Type> base, bool is_mutable)
-        : base(base), is_mutable(is_mutable) {}
+    IPointer(bool is_mutable)
+        : is_mutable(is_mutable) {}
 
     virtual llvm::Type*
     get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
         return llvm::PointerType::get(builder->getContext(), 0);
     }
+};
+
+class Type::IRawPtr : virtual public IPointer {
+public:
+    virtual ~IRawPtr() = default;
+
+    IRawPtr(bool is_mutable)
+        : IPointer(is_mutable) {}
+};
+
+/**
+ * @brief A null pointer type.
+ *
+ * The type and its only value are both written as `nullptr`.
+ * It extends the pointer type and behaves similarly, except it has no base type
+ * and can be assigned to any pointer type.
+ * It is only considered equal to other `Nullptr` types.
+ */
+class Type::Nullptr : public Type::IRawPtr {
+public:
+    virtual ~Nullptr() = default;
+
+    Nullptr()
+        : Type::IPointer(true), Type::IRawPtr(true) {}
+
+    std::string to_string() const override { return "nullptr"; }
+
+    bool operator==(const Type& other) const override {
+        return dynamic_cast<const Nullptr*>(&other) != nullptr;
+    }
+
+    virtual bool is_assignable_to(const Type& other) const override {
+        // nullptr can be assigned to any instance of IRawPtr.
+        return dynamic_cast<const Type::IRawPtr*>(&other) != nullptr;
+    }
+};
+
+class Type::Anyptr : public Type::IRawPtr {
+public:
+    virtual ~Anyptr() = default;
+
+    Anyptr()
+        : Type::IPointer(true), Type::IRawPtr(true) {}
+
+    std::string to_string() const override { return "anyptr"; }
+
+    bool operator==(const Type& other) const override {
+        return dynamic_cast<const Anyptr*>(&other) != nullptr;
+    }
+};
+
+class Type::ITypedPtr : virtual public IPointer {
+public:
+    // The type that the pointer points to.
+    const std::shared_ptr<Type> base;
+
+    virtual ~ITypedPtr() = default;
+
+    ITypedPtr(std::shared_ptr<Type> base, bool is_mutable)
+        : IPointer(is_mutable), base(base) {}
 };
 
 /**
@@ -330,12 +388,14 @@ public:
  * Note: Since LLVM 15, pointers do not store type information.
  * Keep this in mind before converting to the LLVM type.
  */
-class Type::RawPointer : public Type::IPointer {
+class Type::RawTypedPtr : public Type::IRawPtr, public Type::ITypedPtr {
 public:
-    virtual ~RawPointer() = default;
+    virtual ~RawTypedPtr() = default;
 
-    RawPointer(std::shared_ptr<Type> base, bool is_mutable)
-        : IPointer(base, is_mutable) {}
+    RawTypedPtr(std::shared_ptr<Type> base, bool is_mutable)
+        : IPointer(is_mutable),
+          IRawPtr(is_mutable),
+          ITypedPtr(base, is_mutable) {}
 
     std::string to_string() const override {
         return std::string(is_mutable ? "var" : "") + "@" + base->to_string();
@@ -343,7 +403,7 @@ public:
 
     bool operator==(const Type& other) const override {
         if (const auto* other_pointer =
-                dynamic_cast<const RawPointer*>(&other)) {
+                dynamic_cast<const RawTypedPtr*>(&other)) {
             return *base == *other_pointer->base &&
                    is_mutable == other_pointer->is_mutable;
         }
@@ -360,7 +420,7 @@ public:
 
     virtual bool is_assignable_to(const Type& other) const override {
         if (const auto* other_pointer =
-                dynamic_cast<const RawPointer*>(&other)) {
+                dynamic_cast<const RawTypedPtr*>(&other)) {
             // You can assign to a pointer if the base types are the same and
             // the mutability is compatible.
 
@@ -372,34 +432,11 @@ public:
             // we either have an equivalent type or a loss of mutability.
             // We explicitly allow a loss of mutability.
         }
+        else if (dynamic_cast<const Type::Anyptr*>(&other) != nullptr) {
+            // You can assign to `anyptr` if this pointer is mutable.
+            return is_mutable;
+        }
         return false;
-    }
-};
-
-/**
- * @brief A null pointer type.
- *
- * The type and its only value are both written as `nullptr`.
- * It extends the pointer type and behaves similarly, except it has no base type
- * and can be assigned to any pointer type.
- * It is only considered equal to other `Nullptr` types.
- */
-class Type::Nullptr : public Type::RawPointer {
-public:
-    virtual ~Nullptr() = default;
-
-    Nullptr()
-        : Type::RawPointer(nullptr, false) {}
-
-    std::string to_string() const override { return "nullptr"; }
-
-    bool operator==(const Type& other) const override {
-        return dynamic_cast<const Nullptr*>(&other) != nullptr;
-    }
-
-    virtual bool is_assignable_to(const Type& other) const override {
-        // nullptr can be assigned to any pointer type.
-        return dynamic_cast<const Type::RawPointer*>(&other) != nullptr;
     }
 };
 
@@ -410,17 +447,12 @@ public:
  * Note: Since LLVM 15, pointers do not store type information.
  * Keep this in mind before converting to the LLVM type.
  */
-class Type::Reference : public Type::IPointer {
+class Type::Reference : public Type::ITypedPtr {
 public:
-    // Whether object pointed to by this reference is mutable.
-    bool is_mutable;
-    // The type that the reference points to.
-    const std::shared_ptr<Type> base;
-
     virtual ~Reference() = default;
 
     Reference(std::shared_ptr<Type> base, bool is_mutable)
-        : IPointer(base, is_mutable) {}
+        : IPointer(is_mutable), ITypedPtr(base, is_mutable) {}
 
     std::string to_string() const override {
         return std::string(is_mutable ? "var" : "") + "&" + base->to_string();
@@ -504,22 +536,23 @@ public:
  * This type should only be used during MIR and LLVM IR generation. It should
  * not appear in the type checker.
  */
-class Type::MIRPointer : public Type::IPointer {
+class Type::MIRPointer : public Type::IRawPtr {
 public:
+    // An optional base type for the pointer.
+    std::optional<std::shared_ptr<Type>> opt_base;
+
     virtual ~MIRPointer() = default;
 
+    MIRPointer()
+        : Type::IPointer(true), Type::IRawPtr(true), opt_base(std::nullopt) {}
+
     MIRPointer(std::shared_ptr<Type> base)
-        : Type::IPointer(base, true) {}
+        : Type::IPointer(true), Type::IRawPtr(true), opt_base(base) {}
 
     std::string to_string() const override { return "ptr"; }
 
     bool operator==(const Type& other) const override {
         return dynamic_cast<const MIRPointer*>(&other) != nullptr;
-    }
-
-    virtual llvm::Type*
-    get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
-        return llvm::PointerType::get(builder->getContext(), 0);
     }
 };
 

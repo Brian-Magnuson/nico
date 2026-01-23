@@ -129,8 +129,11 @@ public:
 
     // Pointer types
     class IPointer;
-    class RawPointer;
+    class IRawPtr;
     class Nullptr;
+    class Anyptr;
+    class ITypedPtr;
+    class RawTypedPtr;
     class Reference;
     class Str;
 

@@ -550,7 +550,7 @@ TEST_CASE("Local dereference expressions", "[checker]") {
     SECTION("Dereference nullptr type pointer") {
         run_checker_test(
             "let p = nullptr unsafe { ^p }",
-            Err::DereferenceNullptr
+            Err::DereferenceNonTypedPointer
         );
     }
 
@@ -558,6 +558,18 @@ TEST_CASE("Local dereference expressions", "[checker]") {
         run_checker_test(
             "let a = 1 let b: @i32 = @a unsafe { block { ^b } }",
             Err::PtrDerefOutsideUnsafeBlock
+        );
+    }
+
+    SECTION("Implicit dereference nullptr") {
+        run_checker_test(
+            R"(
+            let p = nullptr
+            unsafe {
+                let x = p.0
+            }
+            )",
+            Err::DereferenceNonTypedPointer
         );
     }
 }
