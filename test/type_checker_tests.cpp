@@ -99,28 +99,62 @@ TEST_CASE("Local variable declarations", "[checker]") {
         run_checker_test("let var a: var@var@var@var@var@i32 = nullptr");
     }
 
-    SECTION("Let type mismatch 1") {
+    SECTION("Anyptr assignment with nullptr") {
+        run_checker_test("let var a: anyptr = nullptr");
+    }
+
+    SECTION("Anyptr assignment with raw typed pointer") {
+        run_checker_test("let var a = 1 let p = var@a let q: anyptr = p");
+    }
+
+    SECTION("Anyptr assignment with alloc") {
+        run_checker_test("let q: anyptr = alloc i32");
+    }
+
+    SECTION("Anyptr assignment with anyptr") {
+        run_checker_test("let var a: anyptr = nullptr let b: anyptr = a");
+    }
+
+    SECTION("Let type mismatch i32 and bool") {
         run_checker_test("let a: i32 = true", Err::LetTypeMismatch);
     }
 
-    SECTION("Let type mismatch 2") {
-        run_checker_test("let a: i32 = 1.0", Err::LetTypeMismatch);
-    }
-
-    SECTION("Let type mismatch 3") {
+    SECTION("Let type mismatch i32 and bool 2") {
         run_checker_test("let a = true let b: i32 = a", Err::LetTypeMismatch);
     }
 
-    SECTION("Let type mismatch 4") {
+    SECTION("Let type mismatch i32 and f64") {
+        run_checker_test("let a: i32 = 1.0", Err::LetTypeMismatch);
+    }
+
+    SECTION("Let type mismatch i32 and i8") {
         run_checker_test("let var a: i32 = 1_i8", Err::LetTypeMismatch);
     }
 
-    SECTION("Let type mismatch 5") {
+    SECTION("Let type mismatch arrays of different sizes") {
         run_checker_test("let a: [i32; 3] = [1, 2]", Err::LetTypeMismatch);
     }
 
-    SECTION("Let type mismatch 6") {
+    SECTION("Let type mismatch i32 and nullptr") {
         run_checker_test("let a: i32 = nullptr", Err::LetTypeMismatch);
+    }
+
+    SECTION("Let type mismatch anyptr and i32") {
+        run_checker_test("let a: anyptr = 1", Err::LetTypeMismatch);
+    }
+
+    SECTION("Let type mismatch i32 and anyptr") {
+        run_checker_test(
+            "let q: anyptr = alloc i32 let a: i32 = q",
+            Err::LetTypeMismatch
+        );
+    }
+
+    SECTION("Let type mismatch anyptr and non-var ptr") {
+        run_checker_test(
+            "let a = 1 let p = @a let q: anyptr = p",
+            Err::LetTypeMismatch
+        );
     }
 
     SECTION("Undeclared identifier") {

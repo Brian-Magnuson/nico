@@ -94,6 +94,13 @@ void SymbolTree::install_primitive_types() {
     );
     new_node->initialize_node();
 
+    new_node = std::make_shared<Node::PrimitiveType>(
+        reserved_scope,
+        "anyptr",
+        std::make_shared<Type::Anyptr>()
+    );
+    new_node->initialize_node();
+
     modified = true;
 }
 
