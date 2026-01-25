@@ -151,7 +151,6 @@ public:
 
     // Special types
     class Named;
-    class MIRPointer;
 
     Type() = default;
     virtual ~Type() = default;
