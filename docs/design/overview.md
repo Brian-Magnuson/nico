@@ -256,22 +256,42 @@ Using `=` to assign one struct literal value to another will shallow copy the pr
 
 ### Raw pointer types
 
-A raw pointer contains the memory address of a value. It is written as `@T`, where `T` is the type of the value being pointed to. Raw pointers can point to null or invalid memory locations. They do not have any lifetime restrictions; they simply store a memory address.
+A raw pointer contains the memory address and has no special ownership or lifetime semantics.
+There are currently three kinds of raw pointers: raw typed pointers, null pointers, and any pointers.
 
-To create a raw pointer, use the `@` operator:
+### Raw typed pointers
+
+A raw typed pointer points to a value of a specific type.
+It is a raw pointer because it does not have any ownership or lifetime semantics.
+We may simply refer to them as "raw pointers" for brevity.
+It is the most basic form of pointer in Nico.
+
+It is written as `@T`, where `T` is the type of the value being pointed to. 
+Raw typed pointers can point to null or invalid memory locations.
+
+To create a raw typed pointer, use the `@` operator:
 ```
 let x = 42
 let p: @i32 = @x
 ```
 
-To dereference a raw pointer, use the `^` operator.
-Because raw pointers can potentially point to invalid memory locations, dereferencing a raw pointer is considered unsafe and must be done within an `unsafe` block:
+The `@` operator always creates a raw typed pointer.
+
+To dereference a raw typed pointer, use the `^` operator.
+Because raw typed pointers can potentially point to invalid memory locations, dereferencing a raw typed pointer is considered unsafe and must be done within an `unsafe` block:
 ```
 unsafe:
     let y = ^p
 ```
 
 Raw pointers are implicitly dereferenced in access and subscript expressions. For all other contexts, you must use the `^` operator to dereference the pointer.
+```
+let t = (1, 2, 3)
+let tptr = @t
+unsafe:
+    let first_element = tptr.0    // Implicit dereference
+    let second_element = (^tptr).1 // Explicit dereference
+```
 
 The keyword `var` may be added to the `@` operator and pointer type to allow mutating the pointed-to value.
 This is separate from the mutability of the pointer itself, and you can use any combination of mutable and immutable pointers and pointed-to values:
@@ -283,7 +303,7 @@ let var p3: @i32 = @a        // Mutable pointer with immutable value
 let var p4: var@i32 = var@a  // Mutable pointer with mutable value
 ```
 
-You cannot have a mutable pointer to a value that was not declared as mutable.
+You cannot create a mutable pointer to a value that was not declared as mutable.
 ```
 let a = 42
 let var p: @i32 = @a // Error: a is not mutable
@@ -300,7 +320,7 @@ let p3: var@i32 = p1    // Error: p1 is not mutable
 
 ### Null pointer type
 
-There is a special pointer type called the null pointer type, written as `nullptr`. It has only one value, which is also written as `nullptr`.
+A null pointer, written as `nullptr`, is a special raw pointer that does not have a type and has only one value: `nullptr`.
 ```
 let p1: nullptr = nullptr
 let p2 = nullptr // Type inferred as nullptr
@@ -315,16 +335,21 @@ unsafe:
     ^p // Error: cannot dereference nullptr
 ```
 
-This does not mean you are safe from dereferencing null pointers. A raw pointer of any other type may still point to null. We add this check because the only value of the `nullptr` type is `nullptr`, so dereferencing it is never valid.
+This does not mean you are safe from dereferencing null pointers. 
+A raw pointer of any other type may still point to null. 
+We add this check because the only value of the `nullptr` type is `nullptr`, so dereferencing it is never valid.
 
-The `nullptr` type is special in that pointers of this type may be assigned to any other pointer type without requiring an explicit cast.
+You can assign `nullptr` to any other raw pointer type without requiring an explicit cast (though an explicit cast is allowed).
 ```
 let p1: @i32 = nullptr
 ```
 
 Here, we specified the type of `@i32`. If we had not, the type would have been inferred as `nullptr`.
 
-You can use equality operators to compare pointers of any type, even if their base types differ.
+For type compatibility purposes, all null pointers are considered mutable, even though there is no pointed-at value to mutate.
+Thus, you can safely assign a `nullptr` to both mutable and immutable raw pointer types.
+
+You can use equality operators to compare null pointers with other raw pointers.
 ```
 let p1: @i32 = nullptr
 let p2: @f64 = nullptr
@@ -335,19 +360,17 @@ let is_equal = p1 == p2 // true
 
 This is useful for checking if a pointer is null, regardless of its base type.
 
-Although it is possible to compare pointers of different base types, this feature is usually not useful unless the base types are related in some way (e.g., through inheritance).
+Although it is possible to compare pointers of different types, this feature is usually not useful unless the base types are related in some way (e.g., through inheritance).
 
 ### Any pointer type
 
-There is a special pointer type called the any pointer type, written as `anyptr`. It is like a mutable raw pointer, but without a base type.
-
-An any pointer can be assigned a value of any mutable raw pointer type without requiring an explicit cast or unsafe context.
+The any pointer type is a special kind of raw pointer that can be assigned a value of any mutable raw pointer type without requiring an explicit cast or unsafe context.
 ```
 let p1: anyptr = var@x
 ```
 
 Any pointers cannot be assigned immutable raw pointer types.
-Any pointers can potentially be used in "any" way, meaning it cannot make any guarantees about whether the pointed-to value will be mutated or not.
+This is because any pointers can potentially be used in "any" way, meaning it cannot make any guarantees about whether the pointed-to value will be mutated or not.
 ```
 let p1: anyptr = @x // Error: cannot assign immutable pointer to anyptr
 ```
@@ -361,6 +384,8 @@ unsafe:
     p.member // Error: cannot dereference anyptr
     p[0] // Error: cannot dereference anyptr
 ```
+
+Although any pointers cannot be dereferenced, they are considered mutable pointers for type compatibility purposes.
 
 The only way to use an any pointer is to perform a reinterpret cast to a specific raw pointer type.
 ```
@@ -377,7 +402,6 @@ For example, C functions like `malloc` and `free` use `void*` pointers. But `voi
 func malloc(size: usize) -> anyptr
 func free(ptr: anyptr)
 ```
-
 
 ### Reference types
 
@@ -545,6 +569,37 @@ unsafe:
 
 Reinterpret casts are a highly unsafe operation and should used with extreme caution.
 
+## Type compatibility
+
+There are three kinds of type compatibility:
+- Equivalent: Two types are equivalent if they are the same type.
+- Assignment-compatible: Two types are assignment-compatible if a value of one type can be assigned to a variable of the other type without requiring an explicit cast.
+- Cast-compatible: Two types are cast-compatible if a value of one type can be cast to the other type using an explicit cast.
+
+For more information on cast compatibility, refer to the section on cast expressions.
+
+Assignment compatibility, as the name implies, is generally based on assignment operations.
+It is used for assignment statements, variable initializations, function arguments, and yield/break/return statements.
+
+It is assymetric, meaning `a = b` being valid does not imply that `b = a` is also valid.
+To avoid confusion, the "assignment compatibility" of two types should only be described in the context of a specific assignment direction.
+
+Here are some general rules for assignment compatibility:
+- All types are assignment-compatible with themselves in both directions.
+- A value of type `nullptr` is assignable to any raw pointer type.
+- Any mutable raw pointer type is assignable to `anyptr`.
+- Any mutable raw pointer type is assignable to an immutable raw pointer type if the base types are assignment-compatible.
+- A pointer to a sized array type (e.g. `@[T; N]`) is assignable to a pointer to an unsized array type (e.g. `@[T; ?]`).
+- A pointer to a derived class type is assignable to a pointer to a base class type.
+
+Additionally:
+- If the type conversion would require the data of the value to change, the types are not assignment-compatible.
+
+Because of this, integer types of different widths are not assignment-compatible, and floating-point types of different widths are not assignment-compatible.
+
+Generally, if a type may be assigned to another type, it is also cast-compatible.
+However, not all cast-compatible types are assignment-compatible.
+
 # Statements
 
 All programs consist of statements. Statements fall into three categories:
@@ -646,6 +701,13 @@ let x: i32 = 42
 ```
 
 A variable must always be initialized when declared. If no value is provided, a type annotation is required. The variable will be initialized to the default value for the specified type. If this default value is never used, it may be optimized out.
+
+If the the type from the type annotation and the type of the initialization expression do not match, the types may still be assignment-compatible.
+In such cases, the type from the annotation takes precedence, and the newly declared variable will have that type.
+```
+let a = nullptr       // The type of `a` is `nullptr`
+let b: @i32 = nullptr // The type of `b` is `@i32`
+```
 
 Variables are immutable by default. To declare a mutable variable, use the `var` keyword:
 ```
@@ -1388,6 +1450,15 @@ Blocks yield the value from the last yield statement executed within the block. 
 ```
 let x = block:
     yield 42
+```
+
+The type of a block expression is based on the first yield statement from the top that targets the block.
+All other yield statements must yield a type that is assignment-compatible with this type.
+```
+block:
+    yield 42       // First yield; block type is i32
+    yield 100      // OK; yields i32
+    yield 3.14     // Error; yields f64, incompatible with i32
 ```
 
 Any block can be given a label. The label must be written first, inside the block:

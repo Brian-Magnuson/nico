@@ -520,7 +520,7 @@ std::any LocalChecker::visit(Stmt::Yield* stmt) {
         // If this local scope does not currently have a yield type...
         local_scope->yield_type = expr_type;
     }
-    else if (*local_scope->yield_type.value() != *expr_type) {
+    else if (!expr_type->is_assignable_to(*local_scope->yield_type.value())) {
         // If this local scope has a yield type, check that the new yield
         // expression is compatible with it.
         Logger::inst().log_error(
