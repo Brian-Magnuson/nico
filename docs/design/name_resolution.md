@@ -190,6 +190,107 @@ For Nico, there is a need for these **internal use symbols**, symbols that are u
 
 Here is a list of the the current internal use symbols:
 - `main`
-- `script`
+- `$script`
 - `$retval`
 - `$yieldval`
+
+## Accessing Foreign Variables and Functions
+
+In LLVM, code is organized into modules. Functions and variables with *internal linkage* are only accessible within the module they are defined in. Functions and variables with *external linkage* can be accessed from other modules.
+
+To access an external variable or function, the current module must declare the variable or function with the same name and type as the external definition.
+The linker then resolves the reference to the external definition during the linking phase.
+
+Nico is planned to support "exporting" and "importing", which handles this much of this process automatically for Nico code in the same project.
+Imported code is safer to use and the linking is done seamlessly.
+
+However, we also plan to support *foreign function interfaces* (FFI), which allows Nico code to call functions and access variables defined in external libraries, such as C libraries.
+Nico users use an external declaration block where they can declare the external variables and functions they want to access (e.g., `printf` or `malloc` from the C standard library).
+
+For simplicity, we will use the term "external" to refer to foreign code defined outside of Nico code and accessed via FFI.
+
+FFI complicates the name resolution process, because the identifier used for the declaration must resolve to a symbol that matches the external definition exactly.
+```
+func my_func() {}                        // Symbol: "::my_func$1"
+
+namespace s:
+  func my_other_func(x: i32) {}          // Symbol: "::s::my_other_func$2"
+
+extern:
+  func printf(fmt: anyptr, ...) -> i32   // Symbol: "printf"
+```
+
+Let us start tackling this problem by reviewing name mangling. **Name mangling** is the process of transforming a function or variable name into a unique string that encodes additional information about the function or variable, such as its namespace, parameter types, and return type.
+The main purpose of name mangling is to allow symbol table entries to be unique from other entries declared with the same identifiers.
+This additional makes code generation easier, because the code generator can simply use the mangled name as the symbol name in the generated code.
+
+Because the code generator uses the mangled name as the symbol name, it makes it harder for external code to call Nico functions (the external code would have to understand the mangling scheme to know the correct symbol name to call).
+But if the symbol were *unmangled*, then external code could easily call the Nico function by using the unmangled name.
+
+This introduces a new idea: for any entry in the symbol tree, we can choose to either have a *mangled symbol* or an *unmangled symbol*.
+For normal Nico code, we use mangled symbols by default.
+But we can "opt-in" to unmangled symbols if we want.
+And for external declarations, we always use unmangled symbols.
+
+Unmangled symbols must still be unique within the symbol tree. Thus, if a user attempts to introduce a symbol that collides with an existing unmangled symbol, the type checker must raise an error, regardless of where that existing symbol was declared.
+For example, consider this code:
+```
+namespace x:
+  func foo() -> i32 {}   // Symbol: "::x::foo$1"
+  extern:
+    func bar() -> i32    // Symbol: "bar"
+namespace y:
+  func foo() -> i32 {}   // Symbol: "::y::foo$1"
+  extern:
+    func bar() -> i32    // Symbol: "bar"  <-- Error: symbol collision
+```
+
+As shown in the above example, mangled symbols do not conflict if they are declared in different namespaces.
+However, unmangled symbols can still conflict with each other.
+This is a **symbol collision**.
+
+- A **name collision** occurs when a symbol tree entry's fully-qualified name matches that of another entry.
+- A **symbol collision** occurs when a symbol tree entry's unique symbol matches that of another entry. This can occur even if the fully-qualified names are different.
+
+Now, users not only have to worry about name collisions, but also symbol collisions.
+This is the trade-off we make to allow the use of unmangled symbols.
+
+Unmanged symbols can still be referenced using qualified names.
+```
+namespace c_funcs:
+  extern:
+    func printf(fmt: str, ...) -> i32   // Symbol: "printf"
+
+let var result = c_funcs::printf("Hello, world!\n")
+```
+
+When we declare an external variable or function, the entry in the symbol tree will be placed within the current global scope.
+This is possible because the name lookup algorithm does not require the symbol to perform a search.
+In the above example, the name `c_funcs::printf` is resolved to the symbol `printf`, and not `::c_funcs::printf$1`. The symbol is actually shorter than the name used to reference it.
+
+By allowing unmangled symbols to be introduced in namespaces, we allow the user to organize their external declarations better to avoid name collisions.
+
+For example, consider this code:
+```
+namespace c_funcs:
+  extern:
+    func malloc(size: u64) -> anyptr     // 1
+
+  func malloc(size: i32) -> anyptr:      // 2
+    return c_funcs::malloc(size as u64) 
+
+func malloc(size: u64) -> anyptr:        // 3
+    return c_funcs::malloc(size)
+
+malloc(1024_u64) // Calls function 3
+c_funcs::malloc(512_i32) // Calls function 2
+c_funcs::malloc(256_u64) // Calls function 1
+```
+
+Here, we have three different `malloc` functions:
+1. The external declaration for the C `malloc` function, which has the unmangled symbol `malloc`.
+2. A Nico wrapper function in the `c_funcs` namespace that overloads the first `malloc` function to accept an `i32` size and has the symbol `::c_funcs::malloc$1`.
+3. A top-level Nico wrapper function that accepts an `u64` size and has the symbol `::malloc$1`.
+
+The use of namespaces combined with external declaration blocks allows all three functions to coexist without symbol collisions or name collisions.
+

@@ -96,6 +96,8 @@ std::any CodeGenerator::visit(Stmt::Func* stmt) {
     llvm::Function* function = llvm::Function::Create(
         llvm_func_type,
         llvm::Function::ExternalLinkage,
+        // We add "$func" to differentiate this from the global variable
+        // declared below.
         stmt->field_entry.lock()->symbol + "$func",
         mod_ctx.ir_module.get()
     );
