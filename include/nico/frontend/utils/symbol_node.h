@@ -25,8 +25,15 @@ public:
     virtual ~IScope() = default;
 
 protected:
-    IScope(std::weak_ptr<Node::IScope> parent_scope, const std::string& name)
-        : Node(parent_scope, name) {}
+    // IScope(
+    //     Private,
+    //     std::weak_ptr<Node::IScope> parent_scope,
+    //     const std::string& name
+    // )
+    //     : Node(Private(), parent_scope, name) {}
+
+    IScope(Private)
+        : Node(Private()) {}
 
 public:
     virtual std::string to_tree_string(size_t indent = 0) const override;
@@ -45,12 +52,17 @@ public:
     virtual ~IGlobalScope() = default;
 
 protected:
-    IGlobalScope()
-        : Node(std::weak_ptr<Node::IScope>(), ""),
-          Node::IScope(std::weak_ptr<Node::IScope>(), "")
-    // Note: These values won't actually be used since only derived classes will
-    // call this constructor.
-    {}
+    // TODO: Clean up all the commented-out constructors.
+    // IGlobalScope(Private)
+    //     : Node(Private(), std::weak_ptr<Node::IScope>(), ""),
+    //       Node::IScope(Private(), std::weak_ptr<Node::IScope>(), "")
+    // // Note: These values won't actually be used since only derived classes
+    // will
+    // // call this constructor.
+    // {}
+
+    IGlobalScope(Private)
+        : Node(Private()) {}
 };
 
 /**
@@ -67,8 +79,11 @@ public:
     virtual ~ITypeNode() = default;
 
 protected:
-    ITypeNode()
-        : Node(std::weak_ptr<Node::IScope>(), "") {}
+    // ITypeNode(Private)
+    //     : Node(Private(), std::weak_ptr<Node::IScope>(), "") {}
+
+    ITypeNode(Private)
+        : Node(Private()) {}
 };
 
 /**
@@ -89,8 +104,12 @@ public:
     virtual ~ILocatable() = default;
 
 protected:
-    ILocatable(const Location* location)
-        : Node(std::weak_ptr<Node::IScope>(), ""), location(location) {}
+    ILocatable(Private, const Location* location)
+        : Node(Private(), std::weak_ptr<Node::IScope>(), ""),
+          location(location) {}
+
+    ILocatable(Private)
+        : Node(Private()) {}
 };
 
 /**
@@ -104,10 +123,20 @@ class Node::RootScope : public virtual Node::IGlobalScope {
 public:
     virtual ~RootScope() = default;
 
-    RootScope()
-        : Node(std::weak_ptr<Node::IScope>(), ""),
-          Node::IScope(std::weak_ptr<Node::IScope>(), ""),
-          Node::IGlobalScope() {}
+    // RootScope(Private)
+    //     : Node(Private(), std::weak_ptr<Node::IScope>(), ""),
+    //       Node::IScope(Private(), std::weak_ptr<Node::IScope>(), ""),
+    //       Node::IGlobalScope(Private()) {}
+    RootScope(Private)
+        : Node(Private()),
+          Node::IScope(Private()),
+          Node::IGlobalScope(Private()) {}
+
+    static std::shared_ptr<RootScope> create() {
+        auto node = std::make_shared<RootScope>(Private());
+        node->symbol = "";
+        return node;
+    }
 
     virtual std::string to_string() const override { return "ROOT " + symbol; }
 };
@@ -131,13 +160,36 @@ class Node::Namespace : public virtual Node::IGlobalScope,
 public:
     virtual ~Namespace() = default;
 
-    Namespace(
+    // Namespace(
+    //     Private,
+    //     std::weak_ptr<Node::IScope> parent_scope,
+    //     std::shared_ptr<Token> token
+    // )
+    //     : Node(Private(), parent_scope, std::string(token->lexeme)),
+    //       Node::IScope(Private(), parent_scope, std::string(token->lexeme)),
+    //       Node::IGlobalScope(Private()),
+    //       Node::ILocatable(Private(), &token->location) {}
+
+    Namespace(Private)
+        : Node(Private()),
+          Node::IScope(Private()),
+          Node::IGlobalScope(Private()),
+          Node::ILocatable(Private()) {}
+
+    static std::shared_ptr<Namespace> create(
         std::weak_ptr<Node::IScope> parent_scope, std::shared_ptr<Token> token
-    )
-        : Node(parent_scope, std::string(token->lexeme)),
-          Node::IScope(parent_scope, std::string(token->lexeme)),
-          Node::IGlobalScope(),
-          Node::ILocatable(&token->location) {}
+    ) {
+        auto node = std::make_shared<Namespace>(Private());
+        node->parent = parent_scope;
+        if (parent_scope.expired()) {
+            panic("Node::Namespace::create: Parent scope is expired.");
+        }
+        node->short_name = std::string(token->lexeme);
+        node->symbol = parent_scope.lock()->symbol + "::" + node->short_name;
+        node->location = &token->location;
+        parent_scope.lock()->children[std::string(token->lexeme)] = node;
+        return node;
+    }
 
     virtual std::string to_string() const override { return "NS " + symbol; }
 };
@@ -160,16 +212,40 @@ class Node::PrimitiveType : public virtual Node::ITypeNode {
 public:
     virtual ~PrimitiveType() = default;
 
-    PrimitiveType(
+    // PrimitiveType(
+    //     Private,
+    //     std::weak_ptr<Node::IScope> parent_scope,
+    //     std::string_view short_name,
+    //     std::shared_ptr<Type> type
+    // )
+    //     : Node(Private(), parent_scope, short_name),
+    //       Node::ITypeNode(Private()) {
+
+    //     this->type = type;
+    // }
+
+    PrimitiveType(Private)
+        : Node(Private()), Node::ITypeNode(Private()) {}
+
+    static std::shared_ptr<PrimitiveType> create(
         std::weak_ptr<Node::IScope> parent_scope,
-        const std::string& name,
+        std::string_view short_name,
         std::shared_ptr<Type> type
-    )
-        : Node(parent_scope, name), Node::ITypeNode() {
+    ) {
+        auto node = std::make_shared<PrimitiveType>(Private());
+        node->parent = parent_scope;
+        node->short_name = std::string(short_name);
+        if (parent_scope.expired()) {
+            panic("Node::PrimitiveType::create: Parent scope is expired.");
+        }
+        node->symbol = parent_scope.lock()->symbol + "::" + node->short_name;
+        parent_scope.lock()->children[std::string(short_name)] = node;
+
         if (type == nullptr) {
             panic("Node::PrimitiveType: Type cannot be null.");
         }
-        this->type = type;
+        node->type = type;
+        return node;
     }
 
     virtual std::string to_string() const override {
@@ -196,7 +272,7 @@ public:
     // Whether this struct is declared with `class` or not. Classes may
     // follow different semantic rules than structs, such as memory
     // management.
-    const bool is_class = false;
+    bool is_class = false;
     // A dictionary of properties (fields) in this struct, indexed by their
     // names.
     Dictionary<std::string, Field> properties;
@@ -207,17 +283,31 @@ public:
 
     virtual ~StructDef() = default;
 
-    StructDef(
+    // StructDef(
+    //     Private,
+    //     std::weak_ptr<Node::IScope> parent_scope,
+    //     std::shared_ptr<Token> token,
+    //     bool is_class = false
+    // )
+    //     : Node(Private(), parent_scope, std::string(token->lexeme)),
+    //       Node::IScope(Private(), parent_scope, std::string(token->lexeme)),
+    //       Node::IGlobalScope(Private()),
+    //       Node::ITypeNode(Private()),
+    //       Node::ILocatable(Private(), &token->location),
+    //       is_class(is_class) {}
+
+    StructDef(Private)
+        : Node(Private()),
+          Node::IScope(Private()),
+          Node::IGlobalScope(Private()),
+          Node::ITypeNode(Private()),
+          Node::ILocatable(Private()) {}
+
+    static std::shared_ptr<StructDef> create(
         std::weak_ptr<Node::IScope> parent_scope,
         std::shared_ptr<Token> token,
         bool is_class = false
-    )
-        : Node(parent_scope, std::string(token->lexeme)),
-          Node::IScope(parent_scope, std::string(token->lexeme)),
-          Node::IGlobalScope(),
-          Node::ITypeNode(),
-          Node::ILocatable(&token->location),
-          is_class(is_class) {}
+    );
 
     virtual std::string to_string() const override {
         return "STRUCT " + symbol;
@@ -249,13 +339,36 @@ public:
 
     virtual ~LocalScope() = default;
 
-    LocalScope(
+    // LocalScope(
+    //     Private,
+    //     std::weak_ptr<Node::IScope> parent_scope,
+    //     std::shared_ptr<Expr::Block> block
+    // )
+    //     : Node(Private(), parent_scope, std::to_string(next_scope_id++)),
+    //       Node::IScope(
+    //           Private(), parent_scope, std::to_string(next_scope_id - 1)
+    //       ),
+    //       block(block) {}
+
+    LocalScope(Private)
+        : Node(Private()), Node::IScope(Private()) {}
+
+    static std::shared_ptr<LocalScope> create(
         std::weak_ptr<Node::IScope> parent_scope,
         std::shared_ptr<Expr::Block> block
-    )
-        : Node(parent_scope, std::to_string(next_scope_id++)),
-          Node::IScope(parent_scope, std::to_string(next_scope_id - 1)),
-          block(block) {}
+    ) {
+        auto node = std::make_shared<LocalScope>(Private());
+        node->parent = parent_scope;
+        node->short_name = std::to_string(next_scope_id++);
+        node->block = block;
+
+        if (parent_scope.expired()) {
+            panic("Node::LocalScope::create: Parent scope is expired.");
+        }
+        node->symbol = parent_scope.lock()->symbol + "::" + node->short_name;
+        parent_scope.lock()->local_scopes.push_back(node);
+        return node;
+    }
 
     virtual std::string to_string() const override {
         return "LSCOPE " + symbol;
@@ -273,7 +386,7 @@ public:
 class Node::FieldEntry : public virtual Node::ILocatable {
 public:
     // Whether this field entry is declared in a global scope or not.
-    const bool is_global;
+    bool is_global;
     // The field object that this entry represents.
     Field field;
     // If this field is a local variable, the pointer to the LLVM
@@ -282,11 +395,55 @@ public:
 
     virtual ~FieldEntry() = default;
 
-    FieldEntry(std::weak_ptr<Node::IScope> parent_scope, const Field& field)
-        : Node(parent_scope, field.name),
-          Node::ILocatable(field.location),
-          is_global(PTR_INSTANCEOF(parent_scope.lock(), Node::IGlobalScope)),
-          field(field) {}
+    // FieldEntry(
+    //     Private, std::weak_ptr<Node::IScope> parent_scope, const Field& field
+    // )
+    //     : Node(Private(), parent_scope, field.name),
+    //       Node::ILocatable(Private(), field.location),
+    //       is_global(PTR_INSTANCEOF(parent_scope.lock(), Node::IGlobalScope)),
+    //       field(field) {}
+
+    FieldEntry(Private, const Field& field)
+        : Node(Private()), Node::ILocatable(Private()), field(field) {}
+
+    static std::shared_ptr<FieldEntry>
+    create(std::weak_ptr<Node::IScope> parent_scope, const Field& field) {
+        auto node = std::make_shared<FieldEntry>(Private(), field);
+        node->parent = parent_scope;
+        node->short_name = field.name;
+        node->location = field.location;
+
+        if (parent_scope.expired()) {
+            panic("Node::FieldEntry::create: Parent scope is expired.");
+        }
+        parent_scope.lock()->children[field.name] = node;
+        node->symbol = parent_scope.lock()->symbol + "::" + node->short_name;
+        node->is_global =
+            PTR_INSTANCEOF(parent_scope.lock(), Node::IGlobalScope);
+
+        return node;
+    }
+
+    static std::shared_ptr<FieldEntry> create_as_overload(
+        std::weak_ptr<Node::IScope> parent_scope, const Field& field
+    ) {
+        auto node = std::make_shared<FieldEntry>(Private(), field);
+        node->parent = parent_scope;
+        node->short_name = field.name;
+        node->location = field.location;
+
+        if (parent_scope.expired()) {
+            panic(
+                "Node::FieldEntry::create_as_overload: Parent scope is expired."
+            );
+        }
+        node->symbol = parent_scope.lock()->symbol + "::" + node->short_name;
+        node->is_global =
+            PTR_INSTANCEOF(parent_scope.lock(), Node::IGlobalScope);
+        // Note: Overload entries are not added to the parent scope's
+        // children dictionary. They are only stored within overload groups.
+        return node;
+    }
 
     /**
      * @brief Gets the LLVM allocation for this field entry.
@@ -353,14 +510,14 @@ public:
     virtual ~OverloadGroup() = default;
 
     OverloadGroup(
-        std::weak_ptr<Node::IScope> parent_scope,
+        Private,
         std::string_view overload_name,
         const Location* first_overload_location
     )
-        : Node(parent_scope, std::string(overload_name)),
-          Node::ILocatable(first_overload_location),
+        : Node(Private()),
+          Node::ILocatable(Private()),
           Node::FieldEntry(
-              parent_scope,
+              Private(),
               Field(
                   false,
                   overload_name,
@@ -370,6 +527,12 @@ public:
                   )
               )
           ) {}
+
+    static std::shared_ptr<OverloadGroup> create(
+        std::weak_ptr<Node::IScope> parent_scope,
+        std::string_view overload_name,
+        const Location* first_overload_location
+    );
 
     virtual llvm::Value*
     get_llvm_allocation(std::unique_ptr<llvm::IRBuilder<>>& builder) override {

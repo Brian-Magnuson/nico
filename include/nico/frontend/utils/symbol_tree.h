@@ -84,9 +84,9 @@ public:
      * or when reinitializing the symbol tree.
      */
     void reset() {
-        root_scope = std::make_shared<Node::RootScope>();
+        root_scope = Node::RootScope::create();
         current_scope = root_scope;
-        reserved_scope = std::make_shared<Node::RootScope>();
+        reserved_scope = Node::RootScope::create();
         modified = false;
 
         install_primitive_types();

@@ -331,8 +331,6 @@ TEST_CASE("Local alloc expressions", "[checker]") {
     }
 }
 
-// TODO: Add a new test case for alloc-for and dealloc
-
 TEST_CASE("Local alloc-for expressions", "[checker]") {
     SECTION("Valid alloc-for expression 1") {
         run_checker_test("let a: @[i32; ?] = alloc for 1 of i32");
@@ -1386,7 +1384,10 @@ TEST_CASE("Local function overload declarations", "[checker]") {
             R"(
         func add(a: i32, b: i32 = 0, c: i32 = 0) -> i32 => a + b + c
         func add(a: i32, d: i32 = 0) -> i32 => a + d
-        )"
+        )",
+            std::nullopt,
+            std::nullopt,
+            true
         );
     }
 

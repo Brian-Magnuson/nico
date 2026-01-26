@@ -8,98 +8,84 @@ namespace nico {
 
 void SymbolTree::install_primitive_types() {
     modified = true;
-    std::shared_ptr<Node> new_node;
 
-    new_node = std::make_shared<Node::PrimitiveType>(
+    Node::PrimitiveType::create(
         reserved_scope,
         "i8",
         std::make_shared<Type::Int>(true, 8)
     );
-    new_node->initialize_node();
 
-    new_node = std::make_shared<Node::PrimitiveType>(
+    Node::PrimitiveType::create(
         reserved_scope,
         "i16",
         std::make_shared<Type::Int>(true, 16)
     );
-    new_node->initialize_node();
 
-    new_node = std::make_shared<Node::PrimitiveType>(
+    Node::PrimitiveType::create(
         reserved_scope,
         "i32",
         std::make_shared<Type::Int>(true, 32)
     );
-    new_node->initialize_node();
 
-    new_node = std::make_shared<Node::PrimitiveType>(
+    Node::PrimitiveType::create(
         reserved_scope,
         "i64",
         std::make_shared<Type::Int>(true, 64)
     );
-    new_node->initialize_node();
 
-    new_node = std::make_shared<Node::PrimitiveType>(
+    Node::PrimitiveType::create(
         reserved_scope,
         "u8",
         std::make_shared<Type::Int>(false, 8)
     );
-    new_node->initialize_node();
 
-    new_node = std::make_shared<Node::PrimitiveType>(
+    Node::PrimitiveType::create(
         reserved_scope,
         "u16",
         std::make_shared<Type::Int>(false, 16)
     );
-    new_node->initialize_node();
 
-    new_node = std::make_shared<Node::PrimitiveType>(
+    Node::PrimitiveType::create(
         reserved_scope,
         "u32",
         std::make_shared<Type::Int>(false, 32)
     );
-    new_node->initialize_node();
 
-    new_node = std::make_shared<Node::PrimitiveType>(
+    Node::PrimitiveType::create(
         reserved_scope,
         "u64",
         std::make_shared<Type::Int>(false, 64)
     );
-    new_node->initialize_node();
 
-    new_node = std::make_shared<Node::PrimitiveType>(
+    Node::PrimitiveType::create(
         reserved_scope,
         "f32",
         std::make_shared<Type::Float>(32)
     );
-    new_node->initialize_node();
 
-    new_node = std::make_shared<Node::PrimitiveType>(
+    Node::PrimitiveType::create(
         reserved_scope,
         "f64",
         std::make_shared<Type::Float>(64)
     );
-    new_node->initialize_node();
 
-    new_node = std::make_shared<Node::PrimitiveType>(
+    Node::PrimitiveType::create(
         reserved_scope,
         "bool",
         std::make_shared<Type::Bool>()
     );
-    new_node->initialize_node();
 
-    new_node = std::make_shared<Node::PrimitiveType>(
+    Node::PrimitiveType::create(
         reserved_scope,
         "str",
         std::make_shared<Type::Str>()
     );
-    new_node->initialize_node();
 
-    new_node = std::make_shared<Node::PrimitiveType>(
+    Node::PrimitiveType::create(
         reserved_scope,
         "anyptr",
         std::make_shared<Type::Anyptr>()
     );
-    new_node->initialize_node();
 
     modified = true;
 }
@@ -187,9 +173,7 @@ SymbolTree::add_namespace(std::shared_ptr<Token> token) {
     else {
         // If name does not exist...
         // Add the namespace to its parent scope's children.
-        auto new_namespace =
-            std::make_shared<Node::Namespace>(current_scope, token);
-        new_namespace->initialize_node();
+        auto new_namespace = Node::Namespace::create(current_scope, token);
         current_scope = new_namespace;
         modified = true;
         return std::make_pair(new_namespace, Err::Null);
@@ -212,10 +196,7 @@ SymbolTree::add_struct_def(std::shared_ptr<Token> token, bool is_class) {
         return std::make_pair(node.value(), Err::NameAlreadyExists);
     }
 
-    auto new_struct =
-        std::make_shared<Node::StructDef>(current_scope, token, is_class);
-    new_struct
-        ->initialize_node(); // Add the struct to its parent scope's children
+    auto new_struct = Node::StructDef::create(current_scope, token, is_class);
     current_scope = new_struct;
     modified = true;
     return std::make_pair(new_struct, Err::Null);
@@ -223,10 +204,7 @@ SymbolTree::add_struct_def(std::shared_ptr<Token> token, bool is_class) {
 
 std::pair<std::shared_ptr<Node::LocalScope>, Err>
 SymbolTree::add_local_scope(std::shared_ptr<Expr::Block> block) {
-    // Add the local scope to its parent scope's children.
-    auto new_local_scope =
-        std::make_shared<Node::LocalScope>(current_scope, block);
-    new_local_scope->initialize_node();
+    auto new_local_scope = Node::LocalScope::create(current_scope, block);
     current_scope = new_local_scope;
     modified = true;
     return std::make_pair(new_local_scope, Err::Null);
@@ -313,10 +291,7 @@ SymbolTree::add_field_entry(const Field& field) {
         return std::make_pair(node.value(), Err::NameAlreadyExists);
     }
 
-    // Add the field entry to its parent scope's children.
-    auto new_field_entry =
-        std::make_shared<Node::FieldEntry>(current_scope, field);
-    new_field_entry->initialize_node();
+    auto new_field_entry = Node::FieldEntry::create(current_scope, field);
     modified = true;
 
     return std::make_pair(new_field_entry, Err::Null);
@@ -364,19 +339,16 @@ SymbolTree::add_overloadable_func(const Field& field) {
     }
     else {
         // If name does not exist, create a new overload group.
-        overload_group = std::make_shared<Node::OverloadGroup>(
+        overload_group = Node::OverloadGroup::create(
             current_scope,
             field.name,
             field.location
         );
-        overload_group->initialize_node();
         modified = true;
     }
 
     auto new_overload =
-        std::make_shared<Node::FieldEntry>(current_scope, field);
-    // We *cannot* use `initialize_node` here because it would overwrite the
-    // overload group entry in the parent scope.
+        Node::FieldEntry::create_as_overload(current_scope, field);
 
     auto func_type =
         std::dynamic_pointer_cast<Type::Function>(new_overload->field.type);

@@ -4,6 +4,7 @@
 #include <any>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include <llvm/IR/DataLayout.h>
@@ -54,29 +55,39 @@ public:
     std::string symbol;
     // A short name for this node, used for adding this node to the parent
     // node's children.
-    const std::string short_name;
+    std::string short_name;
 
     virtual ~Node() = default;
 
 protected:
+    struct Private {
+        explicit Private() = default;
+    };
+
     Node(
-        std::weak_ptr<Node::IScope> parent_scope, const std::string& identifier
+        Private,
+        std::weak_ptr<Node::IScope> parent_scope,
+        std::string_view identifier
     );
 
+    Node(Private) {}
+
 public:
-    /**
-     * @brief Adds this node to its parent scope's children.
-     *
-     * If this node is an instance of Node::RootScope, this function does
-     * nothing.
-     *
-     * If this node is an instance of Node::StructDef, it will also set the type
-     * of the node to a Named type that references this node.
-     *
-     * Should be called immediately after constructing a node that is part of a
-     * scope.
-     */
-    void initialize_node();
+    // /**
+    //  * @brief Adds this node to its parent scope's children.
+    //  *
+    //  * If this node is an instance of Node::RootScope, this function does
+    //  * nothing.
+    //  *
+    //  * If this node is an instance of Node::StructDef, it will also set the
+    //  type
+    //  * of the node to a Named type that references this node.
+    //  *
+    //  * Should be called immediately after constructing a node that is part of
+    //  a
+    //  * scope.
+    //  */
+    // void initialize_node();
 
     /**
      * @brief Returns a string representation of this node.
