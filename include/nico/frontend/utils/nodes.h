@@ -60,6 +60,9 @@ public:
     virtual ~Node() = default;
 
 protected:
+    /**
+     * @brief A private struct used to restrict access to constructors.
+     */
     struct Private {
         explicit Private() = default;
     };
@@ -73,22 +76,6 @@ protected:
     Node(Private) {}
 
 public:
-    // /**
-    //  * @brief Adds this node to its parent scope's children.
-    //  *
-    //  * If this node is an instance of Node::RootScope, this function does
-    //  * nothing.
-    //  *
-    //  * If this node is an instance of Node::StructDef, it will also set the
-    //  type
-    //  * of the node to a Named type that references this node.
-    //  *
-    //  * Should be called immediately after constructing a node that is part of
-    //  a
-    //  * scope.
-    //  */
-    // void initialize_node();
-
     /**
      * @brief Returns a string representation of this node.
      *

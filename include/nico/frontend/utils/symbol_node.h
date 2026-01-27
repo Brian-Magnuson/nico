@@ -25,13 +25,6 @@ public:
     virtual ~IScope() = default;
 
 protected:
-    // IScope(
-    //     Private,
-    //     std::weak_ptr<Node::IScope> parent_scope,
-    //     const std::string& name
-    // )
-    //     : Node(Private(), parent_scope, name) {}
-
     IScope(Private)
         : Node(Private()) {}
 
@@ -52,15 +45,6 @@ public:
     virtual ~IGlobalScope() = default;
 
 protected:
-    // TODO: Clean up all the commented-out constructors.
-    // IGlobalScope(Private)
-    //     : Node(Private(), std::weak_ptr<Node::IScope>(), ""),
-    //       Node::IScope(Private(), std::weak_ptr<Node::IScope>(), "")
-    // // Note: These values won't actually be used since only derived classes
-    // will
-    // // call this constructor.
-    // {}
-
     IGlobalScope(Private)
         : Node(Private()) {}
 };
@@ -79,9 +63,6 @@ public:
     virtual ~ITypeNode() = default;
 
 protected:
-    // ITypeNode(Private)
-    //     : Node(Private(), std::weak_ptr<Node::IScope>(), "") {}
-
     ITypeNode(Private)
         : Node(Private()) {}
 };
@@ -123,15 +104,16 @@ class Node::RootScope : public virtual Node::IGlobalScope {
 public:
     virtual ~RootScope() = default;
 
-    // RootScope(Private)
-    //     : Node(Private(), std::weak_ptr<Node::IScope>(), ""),
-    //       Node::IScope(Private(), std::weak_ptr<Node::IScope>(), ""),
-    //       Node::IGlobalScope(Private()) {}
     RootScope(Private)
         : Node(Private()),
           Node::IScope(Private()),
           Node::IGlobalScope(Private()) {}
 
+    /**
+     * @brief Creates a new root scope node.
+     *
+     * @return A shared pointer to the newly created root scope node.
+     */
     static std::shared_ptr<RootScope> create() {
         auto node = std::make_shared<RootScope>(Private());
         node->symbol = "";
@@ -160,22 +142,19 @@ class Node::Namespace : public virtual Node::IGlobalScope,
 public:
     virtual ~Namespace() = default;
 
-    // Namespace(
-    //     Private,
-    //     std::weak_ptr<Node::IScope> parent_scope,
-    //     std::shared_ptr<Token> token
-    // )
-    //     : Node(Private(), parent_scope, std::string(token->lexeme)),
-    //       Node::IScope(Private(), parent_scope, std::string(token->lexeme)),
-    //       Node::IGlobalScope(Private()),
-    //       Node::ILocatable(Private(), &token->location) {}
-
     Namespace(Private)
         : Node(Private()),
           Node::IScope(Private()),
           Node::IGlobalScope(Private()),
           Node::ILocatable(Private()) {}
 
+    /**
+     * @brief Creates a new namespace node and adds it to the parent scope.
+     *
+     * @param parent_scope The parent scope to add the namespace to.
+     * @param token The token representing the namespace identifier.
+     * @return A shared pointer to the newly created namespace node.
+     */
     static std::shared_ptr<Namespace> create(
         std::weak_ptr<Node::IScope> parent_scope, std::shared_ptr<Token> token
     ) {
@@ -212,21 +191,20 @@ class Node::PrimitiveType : public virtual Node::ITypeNode {
 public:
     virtual ~PrimitiveType() = default;
 
-    // PrimitiveType(
-    //     Private,
-    //     std::weak_ptr<Node::IScope> parent_scope,
-    //     std::string_view short_name,
-    //     std::shared_ptr<Type> type
-    // )
-    //     : Node(Private(), parent_scope, short_name),
-    //       Node::ITypeNode(Private()) {
-
-    //     this->type = type;
-    // }
-
     PrimitiveType(Private)
         : Node(Private()), Node::ITypeNode(Private()) {}
 
+    /**
+     * @brief Creates a new primitive type node and adds it to the parent scope.
+     *
+     * Primitive types are usually added to the reserved scope, a root scope
+     * separate from the main tree.
+     *
+     * @param parent_scope The parent scope to add the primitive type to.
+     * @param short_name The short name of the primitive type.
+     * @param type The type object that this primitive type node references.
+     * @return A shared pointer to the newly created primitive type node.
+     */
     static std::shared_ptr<PrimitiveType> create(
         std::weak_ptr<Node::IScope> parent_scope,
         std::string_view short_name,
@@ -283,19 +261,6 @@ public:
 
     virtual ~StructDef() = default;
 
-    // StructDef(
-    //     Private,
-    //     std::weak_ptr<Node::IScope> parent_scope,
-    //     std::shared_ptr<Token> token,
-    //     bool is_class = false
-    // )
-    //     : Node(Private(), parent_scope, std::string(token->lexeme)),
-    //       Node::IScope(Private(), parent_scope, std::string(token->lexeme)),
-    //       Node::IGlobalScope(Private()),
-    //       Node::ITypeNode(Private()),
-    //       Node::ILocatable(Private(), &token->location),
-    //       is_class(is_class) {}
-
     StructDef(Private)
         : Node(Private()),
           Node::IScope(Private()),
@@ -303,6 +268,18 @@ public:
           Node::ITypeNode(Private()),
           Node::ILocatable(Private()) {}
 
+    /**
+     * @brief Creates a new struct definition node and adds it to the parent
+     * scope.
+     *
+     * The struct and its corresponding named type are also set up to reference
+     * each other.
+     *
+     * @param parent_scope The parent scope to add the struct definition to.
+     * @param token The token representing the struct identifier.
+     * @param is_class Whether this struct is declared with `class` or not.
+     * @return A shared pointer to the newly created struct definition node.
+     */
     static std::shared_ptr<StructDef> create(
         std::weak_ptr<Node::IScope> parent_scope,
         std::shared_ptr<Token> token,
@@ -339,20 +316,23 @@ public:
 
     virtual ~LocalScope() = default;
 
-    // LocalScope(
-    //     Private,
-    //     std::weak_ptr<Node::IScope> parent_scope,
-    //     std::shared_ptr<Expr::Block> block
-    // )
-    //     : Node(Private(), parent_scope, std::to_string(next_scope_id++)),
-    //       Node::IScope(
-    //           Private(), parent_scope, std::to_string(next_scope_id - 1)
-    //       ),
-    //       block(block) {}
-
     LocalScope(Private)
         : Node(Private()), Node::IScope(Private()) {}
 
+    /**
+     * @brief Creates a new local scope and adds it to the current scope's list
+     * of local scopes.
+     *
+     * Local scopes do not have real names and are kept alive by their parent's
+     * list of local scopes.
+     *
+     * Their names and symbols are based on a static counter that increments
+     * with each new local scope created.
+     *
+     * @param parent_scope The parent scope to add the local scope to.
+     * @param block The block expression that this local scope represents.
+     * @return A shared pointer to the newly created local scope node.
+     */
     static std::shared_ptr<LocalScope> create(
         std::weak_ptr<Node::IScope> parent_scope,
         std::shared_ptr<Expr::Block> block
@@ -395,17 +375,19 @@ public:
 
     virtual ~FieldEntry() = default;
 
-    // FieldEntry(
-    //     Private, std::weak_ptr<Node::IScope> parent_scope, const Field& field
-    // )
-    //     : Node(Private(), parent_scope, field.name),
-    //       Node::ILocatable(Private(), field.location),
-    //       is_global(PTR_INSTANCEOF(parent_scope.lock(), Node::IGlobalScope)),
-    //       field(field) {}
-
     FieldEntry(Private, const Field& field)
         : Node(Private()), Node::ILocatable(Private()), field(field) {}
 
+    /**
+     * @brief Creates a new field entry node and adds it to the parent scope.
+     *
+     * A field entry node represents a new variable or function in the symbol
+     * tree.
+     *
+     * @param parent_scope The parent scope to add the field entry to.
+     * @param field The field object that this entry represents.
+     * @return A shared pointer to the newly created field entry node.
+     */
     static std::shared_ptr<FieldEntry>
     create(std::weak_ptr<Node::IScope> parent_scope, const Field& field) {
         auto node = std::make_shared<FieldEntry>(Private(), field);
@@ -424,6 +406,20 @@ public:
         return node;
     }
 
+    /**
+     * @brief Creates a new field entry node, but does not add it to the parent
+     * scope.
+     *
+     * This function is used for overload entries, which are stored differently
+     * from regular field entries.
+     *
+     * Typically, the returned node would be added manually to an overload
+     * group.
+     *
+     * @param parent_scope The parent scope to add the field entry to.
+     * @param field The field object that this entry represents.
+     * @return A shared pointer to the newly created field entry node.
+     */
     static std::shared_ptr<FieldEntry> create_as_overload(
         std::weak_ptr<Node::IScope> parent_scope, const Field& field
     ) {
@@ -528,6 +524,17 @@ public:
               )
           ) {}
 
+    /**
+     * @brief Creates a new overload group and adds it to the parent scope.
+     *
+     * Additionally, an instance of `Type::OverloadedFn` is created and assigned
+     * to the overload group's field entry.
+     *
+     * @param parent_scope The parent scope to add the overload group to.
+     * @param overload_name The name of the overload group.
+     * @param first_overload_location The location of the first overload.
+     * @return A shared pointer to the newly created overload group node.
+     */
     static std::shared_ptr<OverloadGroup> create(
         std::weak_ptr<Node::IScope> parent_scope,
         std::string_view overload_name,
