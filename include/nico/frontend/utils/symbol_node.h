@@ -1,9 +1,17 @@
 #ifndef NICO_SYMBOL_NODE_H
 #define NICO_SYMBOL_NODE_H
 
+#include <memory>
+#include <optional>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
+
 #include "nico/frontend/utils/ast_node.h"
 #include "nico/frontend/utils/nodes.h"
 #include "nico/shared/dictionary.h"
+#include "nico/shared/error_code.h"
 #include "nico/shared/utils.h"
 
 namespace nico {
@@ -407,39 +415,26 @@ public:
     }
 
     /**
-     * @brief Creates a new field entry node, but does not add it to the parent
-     * scope.
+     * @brief Creates a new field entry node for an overloadable function and
+     * attempts to add it to the given overload group.
+     *
+     * If the node cannot be added, an error will be *logged*.
      *
      * This function is used for overload entries, which are stored differently
      * from regular field entries.
      *
-     * Typically, the returned node would be added manually to an overload
-     * group.
-     *
-     * @param parent_scope The parent scope to add the field entry to.
+     * @param parent_scope The parent scope of the overload group.
+     * @param overload_group The overload group to add this overload to.
      * @param field The field object that this entry represents.
-     * @return A shared pointer to the newly created field entry node.
+     * @return If the creation was successful, a pair containing the newly
+     * created field entry node and `Err::Null`. If there was an error, a pair
+     * containing the problematic node and the corresponding error code.
      */
-    static std::shared_ptr<FieldEntry> create_as_overload(
-        std::weak_ptr<Node::IScope> parent_scope, const Field& field
-    ) {
-        auto node = std::make_shared<FieldEntry>(Private(), field);
-        node->parent = parent_scope;
-        node->short_name = field.name;
-        node->location = field.location;
-
-        if (parent_scope.expired()) {
-            panic(
-                "Node::FieldEntry::create_as_overload: Parent scope is expired."
-            );
-        }
-        node->symbol = parent_scope.lock()->symbol + "::" + node->short_name;
-        node->is_global =
-            PTR_INSTANCEOF(parent_scope.lock(), Node::IGlobalScope);
-        // Note: Overload entries are not added to the parent scope's
-        // children dictionary. They are only stored within overload groups.
-        return node;
-    }
+    static std::pair<std::shared_ptr<FieldEntry>, Err> create_as_overload(
+        std::weak_ptr<Node::IScope> parent_scope,
+        std::shared_ptr<Node::OverloadGroup> overload_group,
+        const Field& field
+    );
 
     /**
      * @brief Gets the LLVM allocation for this field entry.

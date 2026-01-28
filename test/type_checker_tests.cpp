@@ -1384,10 +1384,7 @@ TEST_CASE("Local function overload declarations", "[checker]") {
             R"(
         func add(a: i32, b: i32 = 0, c: i32 = 0) -> i32 => a + b + c
         func add(a: i32, d: i32 = 0) -> i32 => a + d
-        )",
-            std::nullopt,
-            std::nullopt,
-            true
+        )"
         );
     }
 

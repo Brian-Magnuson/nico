@@ -347,66 +347,15 @@ SymbolTree::add_overloadable_func(const Field& field) {
         modified = true;
     }
 
-    auto new_overload =
-        Node::FieldEntry::create_as_overload(current_scope, field);
-
-    auto func_type =
-        std::dynamic_pointer_cast<Type::Function>(new_overload->field.type);
-    if (!func_type)
-        panic("Field added as overloadable function is not a function.");
-    auto [m_f1, d_f1] = func_type->get_param_sets();
-
-    // Check for overload conflicts.
-    std::vector<std::shared_ptr<Node::FieldEntry>> conflicts;
-    for (const auto& existing_overload : overload_group->overloads) {
-        auto existing_func_type = std::dynamic_pointer_cast<Type::Function>(
-            existing_overload->field.type
-        );
-        if (!existing_func_type)
-            panic("Existing overload in overload group is not a function.");
-        auto [m_f2, d_f2] = existing_func_type->get_param_sets();
-        auto conflict_found =
-            sets::equals(m_f1, m_f2) ||
-            (sets::subset(m_f2, m_f1) &&
-             sets::subseteq(sets::difference(m_f1, m_f2), d_f1)) ||
-            (sets::subset(m_f1, m_f2) &&
-             sets::subseteq(sets::difference(m_f2, m_f1), d_f2));
-
-        if (conflict_found) {
-            conflicts.push_back(existing_overload);
-        }
+    auto result = Node::FieldEntry::create_as_overload(
+        current_scope,
+        overload_group,
+        field
+    );
+    if (result.second == Err::Null) {
+        modified = true;
     }
-    if (!conflicts.empty()) {
-        Logger::inst().log_error(
-            Err::FunctionOverloadConflict,
-            *field.location,
-            "Function overload conflict for function `" + field.name + "`."
-        );
-        for (const auto& conflict : conflicts) {
-            if (auto locatable =
-                    std::dynamic_pointer_cast<Node::ILocatable>(conflict)) {
-                Logger::inst().log_note(
-                    locatable->location,
-                    "Conflicting overload declared here."
-                );
-            }
-            Logger::inst().log_note(
-                "Two function overloads conflict if they have the same set of "
-                "parameters, or if one set of parameters is a superset of the "
-                "other, differing only by optional parameters."
-            );
-        }
-        return std::make_pair(conflicts.at(0), Err::FunctionOverloadConflict);
-    }
-
-    overload_group->overloads.push_back(new_overload);
-    // Change the new overload's symbol to include a $N suffix to make it
-    // unique.
-    new_overload->symbol +=
-        "$" + std::to_string(overload_group->overloads.size());
-    modified = true;
-
-    return std::make_pair(new_overload, Err::Null);
+    return result;
 }
 
 std::string SymbolTree::to_tree_string() const {
