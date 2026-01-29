@@ -165,18 +165,7 @@ public:
      */
     static std::shared_ptr<Namespace> create(
         std::weak_ptr<Node::IScope> parent_scope, std::shared_ptr<Token> token
-    ) {
-        auto node = std::make_shared<Namespace>(Private());
-        node->parent = parent_scope;
-        if (parent_scope.expired()) {
-            panic("Node::Namespace::create: Parent scope is expired.");
-        }
-        node->short_name = std::string(token->lexeme);
-        node->symbol = parent_scope.lock()->symbol + "::" + node->short_name;
-        node->location = &token->location;
-        parent_scope.lock()->children[std::string(token->lexeme)] = node;
-        return node;
-    }
+    );
 
     virtual std::string to_string() const override { return "NS " + symbol; }
 };
@@ -217,22 +206,7 @@ public:
         std::weak_ptr<Node::IScope> parent_scope,
         std::string_view short_name,
         std::shared_ptr<Type> type
-    ) {
-        auto node = std::make_shared<PrimitiveType>(Private());
-        node->parent = parent_scope;
-        node->short_name = std::string(short_name);
-        if (parent_scope.expired()) {
-            panic("Node::PrimitiveType::create: Parent scope is expired.");
-        }
-        node->symbol = parent_scope.lock()->symbol + "::" + node->short_name;
-        parent_scope.lock()->children[std::string(short_name)] = node;
-
-        if (type == nullptr) {
-            panic("Node::PrimitiveType: Type cannot be null.");
-        }
-        node->type = type;
-        return node;
-    }
+    );
 
     virtual std::string to_string() const override {
         return "PTYPE " + symbol + " : " + type->to_string();
@@ -344,19 +318,7 @@ public:
     static std::shared_ptr<LocalScope> create(
         std::weak_ptr<Node::IScope> parent_scope,
         std::shared_ptr<Expr::Block> block
-    ) {
-        auto node = std::make_shared<LocalScope>(Private());
-        node->parent = parent_scope;
-        node->short_name = std::to_string(next_scope_id++);
-        node->block = block;
-
-        if (parent_scope.expired()) {
-            panic("Node::LocalScope::create: Parent scope is expired.");
-        }
-        node->symbol = parent_scope.lock()->symbol + "::" + node->short_name;
-        parent_scope.lock()->local_scopes.push_back(node);
-        return node;
-    }
+    );
 
     virtual std::string to_string() const override {
         return "LSCOPE " + symbol;
@@ -397,22 +359,7 @@ public:
      * @return A shared pointer to the newly created field entry node.
      */
     static std::shared_ptr<FieldEntry>
-    create(std::weak_ptr<Node::IScope> parent_scope, const Field& field) {
-        auto node = std::make_shared<FieldEntry>(Private(), field);
-        node->parent = parent_scope;
-        node->short_name = field.name;
-        node->location = field.location;
-
-        if (parent_scope.expired()) {
-            panic("Node::FieldEntry::create: Parent scope is expired.");
-        }
-        parent_scope.lock()->children[field.name] = node;
-        node->symbol = parent_scope.lock()->symbol + "::" + node->short_name;
-        node->is_global =
-            PTR_INSTANCEOF(parent_scope.lock(), Node::IGlobalScope);
-
-        return node;
-    }
+    create(std::weak_ptr<Node::IScope> parent_scope, const Field& field);
 
     /**
      * @brief Creates a new field entry node for an overloadable function and
