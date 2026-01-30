@@ -41,6 +41,7 @@ include(Catch)
 # Front end utility files
 set(FRONT_END_UTILS_SRC
     src/frontend/utils/symbol_node.cpp
+    src/frontend/utils/type_node.cpp
     src/frontend/utils/symbol_tree.cpp
     src/frontend/utils/control_stack.cpp
     src/frontend/utils/annotation_checker.cpp

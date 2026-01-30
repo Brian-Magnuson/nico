@@ -10,11 +10,14 @@
 
 #include "nico/frontend/utils/ast_node.h"
 #include "nico/frontend/utils/nodes.h"
+#include "nico/frontend/utils/symbol_tree.h"
 #include "nico/shared/dictionary.h"
 #include "nico/shared/error_code.h"
 #include "nico/shared/utils.h"
 
 namespace nico {
+
+class SymbolTree;
 
 /**
  * @brief A scope interface for nodes in the symbol tree.
@@ -94,8 +97,7 @@ public:
 
 protected:
     ILocatable(Private, const Location* location)
-        : Node(Private(), std::weak_ptr<Node::IScope>(), ""),
-          location(location) {}
+        : Node(Private()), location(location) {}
 
     ILocatable(Private)
         : Node(Private()) {}
@@ -159,13 +161,12 @@ public:
     /**
      * @brief Creates a new namespace node and adds it to the parent scope.
      *
-     * @param parent_scope The parent scope to add the namespace to.
+     * @param symbol_tree The symbol tree to which the namespace will be added.
      * @param token The token representing the namespace identifier.
      * @return A shared pointer to the newly created namespace node.
      */
-    static std::shared_ptr<Namespace> create(
-        std::weak_ptr<Node::IScope> parent_scope, std::shared_ptr<Token> token
-    );
+    static std::shared_ptr<Namespace>
+    create(const SymbolTree* symbol_tree, std::shared_ptr<Token> token);
 
     virtual std::string to_string() const override { return "NS " + symbol; }
 };
@@ -197,13 +198,14 @@ public:
      * Primitive types are usually added to the reserved scope, a root scope
      * separate from the main tree.
      *
-     * @param parent_scope The parent scope to add the primitive type to.
+     * @param symbol_tree The symbol tree to which the primitive type will be
+     * added.
      * @param short_name The short name of the primitive type.
      * @param type The type object that this primitive type node references.
      * @return A shared pointer to the newly created primitive type node.
      */
     static std::shared_ptr<PrimitiveType> create(
-        std::weak_ptr<Node::IScope> parent_scope,
+        const SymbolTree* symbol_tree,
         std::string_view short_name,
         std::shared_ptr<Type> type
     );
@@ -257,13 +259,14 @@ public:
      * The struct and its corresponding named type are also set up to reference
      * each other.
      *
-     * @param parent_scope The parent scope to add the struct definition to.
+     * @param symbol_tree The symbol tree to which the struct definition will be
+     * added.
      * @param token The token representing the struct identifier.
      * @param is_class Whether this struct is declared with `class` or not.
      * @return A shared pointer to the newly created struct definition node.
      */
     static std::shared_ptr<StructDef> create(
-        std::weak_ptr<Node::IScope> parent_scope,
+        const SymbolTree* symbol_tree,
         std::shared_ptr<Token> token,
         bool is_class = false
     );
@@ -311,14 +314,13 @@ public:
      * Their names and symbols are based on a static counter that increments
      * with each new local scope created.
      *
-     * @param parent_scope The parent scope to add the local scope to.
+     * @param symbol_tree The symbol tree to which the local scope will be
+     * added.
      * @param block The block expression that this local scope represents.
      * @return A shared pointer to the newly created local scope node.
      */
-    static std::shared_ptr<LocalScope> create(
-        std::weak_ptr<Node::IScope> parent_scope,
-        std::shared_ptr<Expr::Block> block
-    );
+    static std::shared_ptr<LocalScope>
+    create(const SymbolTree* symbol_tree, std::shared_ptr<Expr::Block> block);
 
     virtual std::string to_string() const override {
         return "LSCOPE " + symbol;
@@ -354,12 +356,13 @@ public:
      * A field entry node represents a new variable or function in the symbol
      * tree.
      *
-     * @param parent_scope The parent scope to add the field entry to.
+     * @param symbol_tree The symbol tree to which the field entry will be
+     * added.
      * @param field The field object that this entry represents.
      * @return A shared pointer to the newly created field entry node.
      */
     static std::shared_ptr<FieldEntry>
-    create(std::weak_ptr<Node::IScope> parent_scope, const Field& field);
+    create(const SymbolTree* symbol_tree, const Field& field);
 
     /**
      * @brief Creates a new field entry node for an overloadable function and
@@ -370,7 +373,8 @@ public:
      * This function is used for overload entries, which are stored differently
      * from regular field entries.
      *
-     * @param parent_scope The parent scope of the overload group.
+     * @param symbol_tree The symbol tree to which the overload group will be
+     * added.
      * @param overload_group The overload group to add this overload to.
      * @param field The field object that this entry represents.
      * @return If the creation was successful, a pair containing the newly
@@ -378,7 +382,7 @@ public:
      * containing the problematic node and the corresponding error code.
      */
     static std::pair<std::shared_ptr<FieldEntry>, Err> create_as_overload(
-        std::weak_ptr<Node::IScope> parent_scope,
+        const SymbolTree* symbol_tree,
         std::shared_ptr<Node::OverloadGroup> overload_group,
         const Field& field
     );
@@ -472,13 +476,14 @@ public:
      * Additionally, an instance of `Type::OverloadedFn` is created and assigned
      * to the overload group's field entry.
      *
-     * @param parent_scope The parent scope to add the overload group to.
+     * @param symbol_tree The symbol tree to which the overload group will be
+     * added.
      * @param overload_name The name of the overload group.
      * @param first_overload_location The location of the first overload.
      * @return A shared pointer to the newly created overload group node.
      */
     static std::shared_ptr<OverloadGroup> create(
-        std::weak_ptr<Node::IScope> parent_scope,
+        const SymbolTree* symbol_tree,
         std::string_view overload_name,
         const Location* first_overload_location
     );

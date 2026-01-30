@@ -7,7 +7,7 @@
 #include <utility>
 
 #include "nico/frontend/utils/ast_node.h"
-#include "nico/frontend/utils/nodes.h"
+#include "nico/frontend/utils/symbol_node.h"
 #include "nico/frontend/utils/type_node.h"
 #include "nico/shared/dictionary.h"
 #include "nico/shared/error_code.h"
@@ -83,14 +83,7 @@ public:
      * This function should be called before starting a new type-checking pass
      * or when reinitializing the symbol tree.
      */
-    void reset() {
-        root_scope = Node::RootScope::create();
-        current_scope = root_scope;
-        reserved_scope = Node::RootScope::create();
-        modified = false;
-
-        install_primitive_types();
-    }
+    void reset();
 
     /**
      * @brief Checks if the symbol tree has been modified since the last

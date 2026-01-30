@@ -1061,12 +1061,7 @@ public:
         }
     }
 
-    std::string to_string() const override {
-        if (auto node_ptr = node.lock()) {
-            return node_ptr->symbol;
-        }
-        return "<expired>";
-    }
+    std::string to_string() const override;
 
     bool operator==(const Type& other) const override {
         if (const auto* other_named = dynamic_cast<const Named*>(&other)) {
@@ -1076,22 +1071,7 @@ public:
     }
 
     virtual llvm::Type*
-    get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
-        if (auto node_ptr = node.lock()) {
-            llvm::StructType* struct_ty = llvm::StructType::getTypeByName(
-                builder->getContext(),
-                node_ptr->symbol
-            );
-            if (!struct_ty) {
-                struct_ty = llvm::StructType::create(
-                    builder->getContext(),
-                    node_ptr->symbol
-                );
-            }
-            return struct_ty;
-        }
-        panic("Type::Named: Node is expired; LLVM type cannot be generated.");
-    }
+    get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override;
 };
 
 } // namespace nico

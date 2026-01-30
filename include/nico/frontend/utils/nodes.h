@@ -67,12 +67,6 @@ protected:
         explicit Private() = default;
     };
 
-    Node(
-        Private,
-        std::weak_ptr<Node::IScope> parent_scope,
-        std::string_view identifier
-    );
-
     Node(Private) {}
 
 public:

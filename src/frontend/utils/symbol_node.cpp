@@ -8,19 +8,6 @@ namespace nico {
 
 int Node::LocalScope::next_scope_id = 0;
 
-Node::Node(
-    Node::Private,
-    std::weak_ptr<Node::IScope> parent_scope,
-    std::string_view identifier
-)
-    : parent(parent_scope),
-      symbol(
-          parent_scope.lock()
-              ? parent_scope.lock()->symbol + "::" + std::string(identifier)
-              : std::string(identifier)
-      ),
-      short_name(identifier) {}
-
 std::string Node::IScope::to_tree_string(size_t indent) const {
     std::string indent_str(indent, ' ');
     std::string result = indent_str + to_string() + "\n";
@@ -34,33 +21,30 @@ std::string Node::IScope::to_tree_string(size_t indent) const {
 }
 
 std::shared_ptr<Node::Namespace> Node::Namespace::create(
-    std::weak_ptr<Node::IScope> parent_scope, std::shared_ptr<Token> token
+    const SymbolTree* symbol_tree, std::shared_ptr<Token> token
 ) {
     auto node = std::make_shared<Namespace>(Private());
+    auto parent_scope = symbol_tree->current_scope;
     node->parent = parent_scope;
-    if (parent_scope.expired()) {
-        panic("Node::Namespace::create: Parent scope is expired.");
-    }
+
     node->short_name = std::string(token->lexeme);
-    node->symbol = parent_scope.lock()->symbol + "::" + node->short_name;
+    node->symbol = parent_scope->symbol + "::" + node->short_name;
     node->location = &token->location;
-    parent_scope.lock()->children[std::string(token->lexeme)] = node;
+    parent_scope->children[std::string(token->lexeme)] = node;
     return node;
 }
 
 std::shared_ptr<Node::PrimitiveType> Node::PrimitiveType::create(
-    std::weak_ptr<Node::IScope> parent_scope,
+    const SymbolTree* symbol_tree,
     std::string_view short_name,
     std::shared_ptr<Type> type
 ) {
     auto node = std::make_shared<PrimitiveType>(Private());
+    auto parent_scope = symbol_tree->current_scope;
     node->parent = parent_scope;
     node->short_name = std::string(short_name);
-    if (parent_scope.expired()) {
-        panic("Node::PrimitiveType::create: Parent scope is expired.");
-    }
-    node->symbol = parent_scope.lock()->symbol + "::" + node->short_name;
-    parent_scope.lock()->children[std::string(short_name)] = node;
+    node->symbol = parent_scope->symbol + "::" + node->short_name;
+    parent_scope->children[std::string(short_name)] = node;
 
     if (type == nullptr) {
         panic("Node::PrimitiveType: Type cannot be null.");
@@ -70,76 +54,63 @@ std::shared_ptr<Node::PrimitiveType> Node::PrimitiveType::create(
 }
 
 std::shared_ptr<Node::StructDef> Node::StructDef::create(
-    std::weak_ptr<Node::IScope> parent_scope,
-    std::shared_ptr<Token> token,
-    bool is_class
+    const SymbolTree* symbol_tree, std::shared_ptr<Token> token, bool is_class
 ) {
     auto node = std::make_shared<StructDef>(Private());
+    auto parent_scope = symbol_tree->current_scope;
     node->parent = parent_scope;
     node->short_name = std::string(token->lexeme);
     node->location = &token->location;
     node->is_class = is_class;
-
-    if (parent_scope.expired()) {
-        panic("Node::StructDef::create: Parent scope is expired.");
-    }
-    node->symbol = parent_scope.lock()->symbol + "::" + node->short_name;
-    parent_scope.lock()->children[std::string(token->lexeme)] = node;
+    node->symbol = parent_scope->symbol + "::" + node->short_name;
+    parent_scope->children[std::string(token->lexeme)] = node;
 
     node->type = std::make_shared<Type::Named>(node);
     return node;
 }
 
 std::shared_ptr<Node::LocalScope> Node::LocalScope::create(
-    std::weak_ptr<Node::IScope> parent_scope, std::shared_ptr<Expr::Block> block
+    const SymbolTree* symbol_tree, std::shared_ptr<Expr::Block> block
 ) {
     auto node = std::make_shared<LocalScope>(Private());
+    auto parent_scope = symbol_tree->current_scope;
     node->parent = parent_scope;
     node->short_name = std::to_string(next_scope_id++);
     node->block = block;
 
-    if (parent_scope.expired()) {
-        panic("Node::LocalScope::create: Parent scope is expired.");
-    }
-    node->symbol = parent_scope.lock()->symbol + "::" + node->short_name;
-    parent_scope.lock()->local_scopes.push_back(node);
+    node->symbol = parent_scope->symbol + "::" + node->short_name;
+    parent_scope->local_scopes.push_back(node);
     return node;
 }
 
-std::shared_ptr<Node::FieldEntry> Node::FieldEntry::create(
-    std::weak_ptr<Node::IScope> parent_scope, const Field& field
-) {
+std::shared_ptr<Node::FieldEntry>
+Node::FieldEntry::create(const SymbolTree* symbol_tree, const Field& field) {
     auto node = std::make_shared<FieldEntry>(Private(), field);
+    auto parent_scope = symbol_tree->current_scope;
     node->parent = parent_scope;
     node->short_name = field.name;
     node->location = field.location;
 
-    if (parent_scope.expired()) {
-        panic("Node::FieldEntry::create: Parent scope is expired.");
-    }
-    parent_scope.lock()->children[field.name] = node;
-    node->symbol = parent_scope.lock()->symbol + "::" + node->short_name;
-    node->is_global = PTR_INSTANCEOF(parent_scope.lock(), Node::IGlobalScope);
+    parent_scope->children[field.name] = node;
+    node->symbol = parent_scope->symbol + "::" + node->short_name;
+    node->is_global = PTR_INSTANCEOF(parent_scope, Node::IGlobalScope);
 
     return node;
 }
 
 std::pair<std::shared_ptr<Node::FieldEntry>, Err>
 Node::FieldEntry::create_as_overload(
-    std::weak_ptr<Node::IScope> parent_scope,
+    const SymbolTree* symbol_tree,
     std::shared_ptr<Node::OverloadGroup> overload_group,
     const Field& field
 ) {
     auto node = std::make_shared<FieldEntry>(Private(), field);
+    auto parent_scope = symbol_tree->current_scope;
     node->parent = parent_scope;
     node->short_name = field.name;
     node->location = field.location;
-
-    if (parent_scope.expired()) {
-        panic("Node::FieldEntry::create_as_overload: Parent scope is expired.");
-    }
-    node->symbol = parent_scope.lock()->symbol + "::" + node->short_name;
-    node->is_global = PTR_INSTANCEOF(parent_scope.lock(), Node::IGlobalScope);
+    node->symbol = parent_scope->symbol + "::" + node->short_name;
+    node->is_global = PTR_INSTANCEOF(parent_scope, Node::IGlobalScope);
 
     auto func_type =
         std::dynamic_pointer_cast<Type::Function>(node->field.type);
@@ -199,7 +170,7 @@ Node::FieldEntry::create_as_overload(
 }
 
 std::shared_ptr<Node::OverloadGroup> Node::OverloadGroup::create(
-    std::weak_ptr<Node::IScope> parent_scope,
+    const SymbolTree* symbol_tree,
     std::string_view overload_name,
     const Location* first_overload_location
 ) {
@@ -208,16 +179,14 @@ std::shared_ptr<Node::OverloadGroup> Node::OverloadGroup::create(
         overload_name,
         first_overload_location
     );
+    auto parent_scope = symbol_tree->current_scope;
     node->parent = parent_scope;
     node->short_name = std::string(overload_name);
     node->location = first_overload_location;
 
-    if (parent_scope.expired()) {
-        panic("Node::OverloadGroup::create: Parent scope is expired.");
-    }
-    parent_scope.lock()->children[std::string(overload_name)] = node;
-    node->symbol = parent_scope.lock()->symbol + "::" + node->short_name;
-    node->is_global = PTR_INSTANCEOF(parent_scope.lock(), Node::IGlobalScope);
+    parent_scope->children[std::string(overload_name)] = node;
+    node->symbol = parent_scope->symbol + "::" + node->short_name;
+    node->is_global = PTR_INSTANCEOF(parent_scope, Node::IGlobalScope);
 
     auto overloaded_fn_type =
         std::dynamic_pointer_cast<Type::OverloadedFn>(node->field.type);
