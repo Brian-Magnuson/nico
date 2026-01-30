@@ -16,6 +16,8 @@
 
 namespace nico {
 
+class SymbolTree;
+
 // MARK: Node
 
 /**
@@ -51,8 +53,6 @@ public:
 
     // This node's parent scope, if it exists.
     std::weak_ptr<Node::IScope> parent;
-    // This node's unique symbol, assigned upon construction.
-    std::string symbol;
     // A short name for this node, used for adding this node to the parent
     // node's children.
     std::string short_name;
@@ -60,6 +60,9 @@ public:
     virtual ~Node() = default;
 
 protected:
+    // This node's unique symbol, assigned upon construction.
+    std::string symbol;
+
     /**
      * @brief A private struct used to restrict access to constructors.
      */
@@ -76,6 +79,37 @@ public:
      * @return A string representation of this node.
      */
     virtual std::string to_string() const = 0;
+
+    /**
+     * @brief Sets the symbol of this node.
+     *
+     * The symbol must be unique for the entire symbol tree.
+     * If the symbol is already in use, this function returns false and the
+     * symbol is not changed.
+     *
+     * @param symbol_tree The symbol tree to which this node belongs.
+     * @param new_symbol The new symbol to set.
+     * @return True if the symbol was set successfully. False otherwise.
+     */
+    bool set_symbol(const SymbolTree* symbol_tree, std::string_view new_symbol);
+
+    /**
+     * @brief Sets the symbol of this node using its parent's symbol.
+     *
+     * Will fail if the parent pointer is empty/expired or if the symbol is not
+     * unique.
+     *
+     * @param symbol_tree The symbol tree to which this node belongs.
+     * @return True if the symbol was set successfully. False otherwise.
+     */
+    bool set_symbol_using_parent(const SymbolTree* symbol_tree);
+
+    /**
+     * @brief Retrieves the unique symbol of this node.
+     *
+     * @return The unique symbol of this node.
+     */
+    const std::string& get_symbol() const { return symbol; }
 
     /**
      * @brief Returns a string representation of the subtree rooted at this

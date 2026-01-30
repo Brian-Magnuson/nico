@@ -122,11 +122,12 @@ public:
     /**
      * @brief Creates a new root scope node.
      *
+     * @param symbol The symbol of the root scope. Defaults to an empty string.
      * @return A shared pointer to the newly created root scope node.
      */
-    static std::shared_ptr<RootScope> create() {
+    static std::shared_ptr<RootScope> create(std::string_view symbol = "") {
         auto node = std::make_shared<RootScope>(Private());
-        node->symbol = "";
+        node->symbol = std::string(symbol);
         return node;
     }
 

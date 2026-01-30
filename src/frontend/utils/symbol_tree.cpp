@@ -133,7 +133,7 @@ std::optional<std::shared_ptr<Node>> SymbolTree::search_name_from_scope(
 void SymbolTree::reset() {
     root_scope = Node::RootScope::create();
     current_scope = root_scope;
-    reserved_scope = Node::RootScope::create();
+    reserved_scope = Node::RootScope::create(":");
     modified = false;
 
     install_primitive_types();

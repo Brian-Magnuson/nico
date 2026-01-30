@@ -125,7 +125,7 @@ Function::create(std::shared_ptr<Stmt::Func> func_stmt) {
     auto func = std::make_shared<Function>(Private());
     auto field_entry = func_stmt->field_entry.lock();
 
-    func->name = field_entry->symbol;
+    func->name = field_entry->get_symbol();
     func->return_type = field_entry->field.type;
     for (const auto& param : func_stmt->parameters) {
         auto param_var =

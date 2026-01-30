@@ -28,9 +28,17 @@ std::shared_ptr<Node::Namespace> Node::Namespace::create(
     node->parent = parent_scope;
 
     node->short_name = std::string(token->lexeme);
-    node->symbol = parent_scope->symbol + "::" + node->short_name;
     node->location = &token->location;
     parent_scope->children[std::string(token->lexeme)] = node;
+
+    bool ok = node->set_symbol_using_parent(symbol_tree);
+    if (!ok) {
+        panic(
+            "Node::Namespace::create: Symbol conflict when creating namespace "
+            "`" +
+            std::string(token->lexeme) + "`."
+        );
+    }
     return node;
 }
 
@@ -43,9 +51,16 @@ std::shared_ptr<Node::PrimitiveType> Node::PrimitiveType::create(
     auto parent_scope = symbol_tree->current_scope;
     node->parent = parent_scope;
     node->short_name = std::string(short_name);
-    node->symbol = parent_scope->symbol + "::" + node->short_name;
     parent_scope->children[std::string(short_name)] = node;
 
+    bool ok = node->set_symbol_using_parent(symbol_tree);
+    if (!ok) {
+        panic(
+            "Node::PrimitiveType::create: Symbol conflict when creating "
+            "primitive type `" +
+            std::string(short_name) + "`."
+        );
+    }
     if (type == nullptr) {
         panic("Node::PrimitiveType: Type cannot be null.");
     }
@@ -62,7 +77,15 @@ std::shared_ptr<Node::StructDef> Node::StructDef::create(
     node->short_name = std::string(token->lexeme);
     node->location = &token->location;
     node->is_class = is_class;
-    node->symbol = parent_scope->symbol + "::" + node->short_name;
+
+    bool ok = node->set_symbol_using_parent(symbol_tree);
+    if (!ok) {
+        panic(
+            "Node::StructDef::create: Symbol conflict when creating struct/\
+class `" + std::string(token->lexeme) +
+            "`."
+        );
+    }
     parent_scope->children[std::string(token->lexeme)] = node;
 
     node->type = std::make_shared<Type::Named>(node);
@@ -78,7 +101,15 @@ std::shared_ptr<Node::LocalScope> Node::LocalScope::create(
     node->short_name = std::to_string(next_scope_id++);
     node->block = block;
 
-    node->symbol = parent_scope->symbol + "::" + node->short_name;
+    bool ok = node->set_symbol_using_parent(symbol_tree);
+    if (!ok) {
+        panic(
+            "Node::LocalScope::create: Symbol conflict when creating local "
+            "scope `" +
+            node->short_name + "`."
+        );
+    }
+
     parent_scope->local_scopes.push_back(node);
     return node;
 }
@@ -92,7 +123,15 @@ Node::FieldEntry::create(const SymbolTree* symbol_tree, const Field& field) {
     node->location = field.location;
 
     parent_scope->children[field.name] = node;
-    node->symbol = parent_scope->symbol + "::" + node->short_name;
+
+    bool ok = node->set_symbol_using_parent(symbol_tree);
+    if (!ok) {
+        panic(
+            "Node::FieldEntry::create: Symbol conflict when creating field "
+            "`" +
+            field.name + "`."
+        );
+    }
     node->is_global = PTR_INSTANCEOF(parent_scope, Node::IGlobalScope);
 
     return node;
@@ -109,7 +148,8 @@ Node::FieldEntry::create_as_overload(
     node->parent = parent_scope;
     node->short_name = field.name;
     node->location = field.location;
-    node->symbol = parent_scope->symbol + "::" + node->short_name;
+    auto symbol_prefix = parent_scope->get_symbol() + "::" + node->short_name;
+
     node->is_global = PTR_INSTANCEOF(parent_scope, Node::IGlobalScope);
 
     auto func_type =
@@ -164,7 +204,17 @@ Node::FieldEntry::create_as_overload(
     overload_group->overloads.push_back(node);
     // Change the new overload's symbol to include a $N suffix to make it
     // unique.
-    node->symbol += "$" + std::to_string(overload_group->overloads.size());
+    bool ok = node->set_symbol(
+        symbol_tree,
+        symbol_prefix + "$" + std::to_string(overload_group->overloads.size())
+    );
+    if (!ok) {
+        panic(
+            "Node::FieldEntry::create_as_overload: Symbol conflict when "
+            "creating overload `" +
+            field.name + "`."
+        );
+    }
 
     return {node, Err::Null};
 }
@@ -185,7 +235,15 @@ std::shared_ptr<Node::OverloadGroup> Node::OverloadGroup::create(
     node->location = first_overload_location;
 
     parent_scope->children[std::string(overload_name)] = node;
-    node->symbol = parent_scope->symbol + "::" + node->short_name;
+
+    bool ok = node->set_symbol_using_parent(symbol_tree);
+    if (!ok) {
+        panic(
+            "Node::OverloadGroup::create: Symbol conflict when creating "
+            "overload group `" +
+            std::string(overload_name) + "`."
+        );
+    }
     node->is_global = PTR_INSTANCEOF(parent_scope, Node::IGlobalScope);
 
     auto overloaded_fn_type =

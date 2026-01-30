@@ -64,7 +64,7 @@ public:
         : MIRValue(
               std::make_shared<Type::RawTypedPtr>(field_entry->field.type, true)
           ),
-          name(field_entry->symbol),
+          name(field_entry->get_symbol()),
           field_entry(field_entry) {}
 
     virtual std::string to_string() const override {
