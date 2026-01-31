@@ -362,8 +362,8 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
         expr_type
     );
 
-    auto [node, err] = symbol_tree->add_field_entry(field);
-    if (err != Err::Null) {
+    auto [ok, node] = symbol_tree->add_field_entry(field);
+    if (!ok) {
         return std::any();
     }
     else if (auto field_node =
@@ -420,8 +420,8 @@ std::any LocalChecker::visit(Stmt::Func* stmt) {
                 has_error = true;
             }
         }
-        auto [node, err] = symbol_tree->add_field_entry(param_field);
-        if (err != Err::Null) {
+        auto [ok, node] = symbol_tree->add_field_entry(param_field);
+        if (!ok) {
             has_error = true;
         }
         else {
@@ -1661,10 +1661,10 @@ std::any LocalChecker::visit(Expr::Block* expr, bool as_lvalue) {
         );
         return std::any();
     }
-    auto [local_scope, err] = symbol_tree->add_local_scope(
+    auto [ok, local_scope] = symbol_tree->add_local_scope(
         std::dynamic_pointer_cast<Expr::Block>(expr->shared_from_this())
     );
-    if (err != Err::Null) {
+    if (!ok) {
         panic("LocalChecker::visit(Expr::Block*): Could not add local scope.");
     }
     for (auto& stmt : expr->statements) {

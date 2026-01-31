@@ -77,8 +77,8 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
     );
     // Functions are always immutable.
 
-    auto [node, err] = symbol_tree->add_overloadable_func(field);
-    if (err != Err::Null) {
+    auto [ok, node] = symbol_tree->add_overloadable_func(field);
+    if (!ok) {
         return std::any();
     }
     else if (auto field_entry =
