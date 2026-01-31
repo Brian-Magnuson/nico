@@ -42,7 +42,7 @@ std::any CodeGenerator::visit(Stmt::Expression* stmt) {
 std::any CodeGenerator::visit(Stmt::Let* stmt) {
     auto field_entry = stmt->field_entry.lock();
     auto llvm_type = field_entry->field.type->get_llvm_type(builder);
-    auto symbol = field_entry->get_symbol();
+    auto symbol = field_entry->symbol;
 
     llvm::Value* allocation = nullptr;
 
@@ -98,7 +98,7 @@ std::any CodeGenerator::visit(Stmt::Func* stmt) {
         llvm::Function::ExternalLinkage,
         // We add "$func" to differentiate this from the global variable
         // declared below.
-        stmt->field_entry.lock()->get_symbol() + "$func",
+        stmt->field_entry.lock()->symbol + "$func",
         mod_ctx.ir_module.get()
     );
 
@@ -118,7 +118,7 @@ std::any CodeGenerator::visit(Stmt::Func* stmt) {
         llvm::AllocaInst* param_alloca = builder->CreateAlloca(
             llvm_param->getType(),
             nullptr,
-            param.field_entry.lock()->get_symbol()
+            param.field_entry.lock()->symbol
         );
         builder->CreateStore(llvm_param, param_alloca);
         param.field_entry.lock()->llvm_ptr = param_alloca;
@@ -160,7 +160,7 @@ std::any CodeGenerator::visit(Stmt::Func* stmt) {
         false,
         llvm::GlobalValue::ExternalLinkage,
         function,
-        stmt->field_entry.lock()->get_symbol()
+        stmt->field_entry.lock()->symbol
     );
     // `new` is safe here because the module manages the memory.
     // Also, we don't store this in the field entry; we reference global

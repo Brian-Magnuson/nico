@@ -17,8 +17,6 @@
 
 namespace nico {
 
-class SymbolTree;
-
 /**
  * @brief A scope interface for nodes in the symbol tree.
  *
@@ -122,12 +120,13 @@ public:
     /**
      * @brief Creates a new root scope node.
      *
-     * @param symbol The symbol of the root scope. Defaults to an empty string.
+     * @param short_name The short name of the root scope. Defaults to an empty
+     * string.
      * @return A shared pointer to the newly created root scope node.
      */
-    static std::shared_ptr<RootScope> create(std::string_view symbol = "") {
+    static std::shared_ptr<RootScope> create(std::string_view short_name = "") {
         auto node = std::make_shared<RootScope>(Private());
-        node->symbol = std::string(symbol);
+        node->short_name = std::string(short_name);
         return node;
     }
 
@@ -162,12 +161,12 @@ public:
     /**
      * @brief Creates a new namespace node and adds it to the parent scope.
      *
-     * @param symbol_tree The symbol tree to which the namespace will be added.
+     * @param parent The parent scope in which to add the namespace.
      * @param token The token representing the namespace identifier.
      * @return A shared pointer to the newly created namespace node.
      */
     static std::shared_ptr<Namespace>
-    create(const SymbolTree* symbol_tree, std::shared_ptr<Token> token);
+    create(std::shared_ptr<Node::IScope> parent, std::shared_ptr<Token> token);
 
     virtual std::string to_string() const override { return "NS " + symbol; }
 };
@@ -199,14 +198,13 @@ public:
      * Primitive types are usually added to the reserved scope, a root scope
      * separate from the main tree.
      *
-     * @param symbol_tree The symbol tree to which the primitive type will be
-     * added.
+     * @param parent The parent scope in which to add the primitive type.
      * @param short_name The short name of the primitive type.
      * @param type The type object that this primitive type node references.
      * @return A shared pointer to the newly created primitive type node.
      */
     static std::shared_ptr<PrimitiveType> create(
-        const SymbolTree* symbol_tree,
+        std::shared_ptr<Node::IScope> parent,
         std::string_view short_name,
         std::shared_ptr<Type> type
     );
@@ -260,14 +258,13 @@ public:
      * The struct and its corresponding named type are also set up to reference
      * each other.
      *
-     * @param symbol_tree The symbol tree to which the struct definition will be
-     * added.
+     * @param parent The parent scope in which to add the struct definition.
      * @param token The token representing the struct identifier.
      * @param is_class Whether this struct is declared with `class` or not.
      * @return A shared pointer to the newly created struct definition node.
      */
     static std::shared_ptr<StructDef> create(
-        const SymbolTree* symbol_tree,
+        std::shared_ptr<Node::IScope> parent,
         std::shared_ptr<Token> token,
         bool is_class = false
     );
@@ -315,13 +312,13 @@ public:
      * Their names and symbols are based on a static counter that increments
      * with each new local scope created.
      *
-     * @param symbol_tree The symbol tree to which the local scope will be
-     * added.
+     * @param parent The parent scope in which to add the local scope.
      * @param block The block expression that this local scope represents.
      * @return A shared pointer to the newly created local scope node.
      */
-    static std::shared_ptr<LocalScope>
-    create(const SymbolTree* symbol_tree, std::shared_ptr<Expr::Block> block);
+    static std::shared_ptr<LocalScope> create(
+        std::shared_ptr<Node::IScope> parent, std::shared_ptr<Expr::Block> block
+    );
 
     virtual std::string to_string() const override {
         return "LSCOPE " + symbol;
@@ -357,36 +354,38 @@ public:
      * A field entry node represents a new variable or function in the symbol
      * tree.
      *
-     * @param symbol_tree The symbol tree to which the field entry will be
-     * added.
+     * @param parent The parent scope in which to add the field entry.
      * @param field The field object that this entry represents.
      * @return A shared pointer to the newly created field entry node.
      */
     static std::shared_ptr<FieldEntry>
-    create(const SymbolTree* symbol_tree, const Field& field);
+    create(std::shared_ptr<Node::IScope> parent, const Field& field);
 
-    /**
-     * @brief Creates a new field entry node for an overloadable function and
-     * attempts to add it to the given overload group.
-     *
-     * If the node cannot be added, an error will be *logged*.
-     *
-     * This function is used for overload entries, which are stored differently
-     * from regular field entries.
-     *
-     * @param symbol_tree The symbol tree to which the overload group will be
-     * added.
-     * @param overload_group The overload group to add this overload to.
-     * @param field The field object that this entry represents.
-     * @return If the creation was successful, a pair containing the newly
-     * created field entry node and `Err::Null`. If there was an error, a pair
-     * containing the problematic node and the corresponding error code.
-     */
-    static std::pair<std::shared_ptr<FieldEntry>, Err> create_as_overload(
-        const SymbolTree* symbol_tree,
-        std::shared_ptr<Node::OverloadGroup> overload_group,
-        const Field& field
-    );
+    // TODO: Clean this up later.
+    // /**
+    //  * @brief Creates a new field entry node for an overloadable function and
+    //  * attempts to add it to the given overload group.
+    //  *
+    //  * If the node cannot be added, an error will be *logged*.
+    //  *
+    //  * This function is used for overload entries, which are stored
+    //  differently
+    //  * from regular field entries.
+    //  *
+    //  * @param symbol_tree The symbol tree to which the overload group will be
+    //  * added.
+    //  * @param overload_group The overload group to add this overload to.
+    //  * @param field The field object that this entry represents.
+    //  * @return If the creation was successful, a pair containing the newly
+    //  * created field entry node and `Err::Null`. If there was an error, a
+    //  pair
+    //  * containing the problematic node and the corresponding error code.
+    //  */
+    // static std::pair<std::shared_ptr<FieldEntry>, Err> create_as_overload(
+    //     const SymbolTree* symbol_tree,
+    //     std::shared_ptr<Node::OverloadGroup> overload_group,
+    //     const Field& field
+    // );
 
     /**
      * @brief Gets the LLVM allocation for this field entry.
@@ -477,14 +476,14 @@ public:
      * Additionally, an instance of `Type::OverloadedFn` is created and assigned
      * to the overload group's field entry.
      *
-     * @param symbol_tree The symbol tree to which the overload group will be
+     * @param parent The parent scope to which the overload group will be
      * added.
      * @param overload_name The name of the overload group.
      * @param first_overload_location The location of the first overload.
      * @return A shared pointer to the newly created overload group node.
      */
     static std::shared_ptr<OverloadGroup> create(
-        const SymbolTree* symbol_tree,
+        std::shared_ptr<Node::IScope> parent,
         std::string_view overload_name,
         const Location* first_overload_location
     );

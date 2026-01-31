@@ -125,6 +125,10 @@ enum class Err {
     NameAlreadyExists,
     // An attempt was made to shadow a reserved name.
     NameIsReserved,
+    // An attempt was made to introduce a symbol that is already in use.
+    SymbolAlreadyExists,
+    // An attempt was made to use a symbol that is reserved.
+    SymbolIsReserved,
     // An annotation referenced a name that could not be found.
     UnknownAnnotationName,
     // A type-of annotation has no way to type-check the inner expression.
@@ -273,6 +277,8 @@ enum class Err {
     Malfunction = 9000,
     // An unknown error occurred.
     UnknownError,
+    // A temporary error for unimplemented features.
+    Unimplemented,
     // Error for testing purposes.
     TestError,
 };

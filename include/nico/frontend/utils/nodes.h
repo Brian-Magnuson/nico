@@ -57,12 +57,12 @@ public:
     // node's children.
     std::string short_name;
 
+    // This node's unique symbol, assigned by the symbol tree.
+    std::string symbol;
+
     virtual ~Node() = default;
 
 protected:
-    // This node's unique symbol, assigned upon construction.
-    std::string symbol;
-
     /**
      * @brief A private struct used to restrict access to constructors.
      */
@@ -80,51 +80,57 @@ public:
      */
     virtual std::string to_string() const = 0;
 
-    /**
-     * @brief Adds this node as a child of the current scope of the symbol tree.
-     *
-     * This node's short name must be properly set before calling this function.
-     *
-     * Both this node's parent pointer and the parent's children dictionary will
-     * be modified.
-     *
-     * @param symbol_tree The symbol tree to which this node belongs.
-     * @return True if the node was added successfully. False otherwise.
-     */
-    bool add_to_tree(const SymbolTree* symbol_tree);
+    // TODO: Clean this up later.
+    // /**
+    //  * @brief Adds this node as a child of the current scope of the symbol
+    //  tree.
+    //  *
+    //  * This node's short name must be properly set before calling this
+    //  function.
+    //  *
+    //  * Both this node's parent pointer and the parent's children dictionary
+    //  will
+    //  * be modified.
+    //  *
+    //  * @param symbol_tree The symbol tree to which this node belongs.
+    //  * @return True if the node was added successfully. False otherwise.
+    //  */
+    // bool add_to_tree(const SymbolTree* symbol_tree);
 
-    /**
-     * @brief Sets the symbol of this node.
-     *
-     * The symbol must be unique for the entire symbol tree.
-     * If the symbol is already in use, this function returns false and the
-     * symbol is not changed.
-     *
-     * @param symbol_tree The symbol tree to which this node belongs.
-     * @param new_symbol The new symbol to set.
-     * @return True if the symbol was set successfully. False otherwise.
-     */
-    bool set_symbol(const SymbolTree* symbol_tree, std::string_view new_symbol);
+    // /**
+    //  * @brief Sets the symbol of this node.
+    //  *
+    //  * The symbol must be unique for the entire symbol tree.
+    //  * If the symbol is already in use, this function returns false and the
+    //  * symbol is not changed.
+    //  *
+    //  * @param symbol_tree The symbol tree to which this node belongs.
+    //  * @param new_symbol The new symbol to set.
+    //  * @return True if the symbol was set successfully. False otherwise.
+    //  */
+    // bool set_symbol(const SymbolTree* symbol_tree, std::string_view
+    // new_symbol);
 
-    /**
-     * @brief Sets the symbol of this node using its parent's symbol.
-     *
-     * This node's parent pointer must be valid before calling this function.
-     *
-     * Will fail if the parent pointer is empty/expired or if the symbol is not
-     * unique.
-     *
-     * @param symbol_tree The symbol tree to which this node belongs.
-     * @return True if the symbol was set successfully. False otherwise.
-     */
-    bool set_symbol_using_parent(const SymbolTree* symbol_tree);
+    // /**
+    //  * @brief Sets the symbol of this node using its parent's symbol.
+    //  *
+    //  * This node's parent pointer must be valid before calling this function.
+    //  *
+    //  * Will fail if the parent pointer is empty/expired or if the symbol is
+    //  not
+    //  * unique.
+    //  *
+    //  * @param symbol_tree The symbol tree to which this node belongs.
+    //  * @return True if the symbol was set successfully. False otherwise.
+    //  */
+    // bool set_symbol_using_parent(const SymbolTree* symbol_tree);
 
-    /**
-     * @brief Retrieves the unique symbol of this node.
-     *
-     * @return The unique symbol of this node.
-     */
-    const std::string& get_symbol() const { return symbol; }
+    // /**
+    //  * @brief Retrieves the unique symbol of this node.
+    //  *
+    //  * @return The unique symbol of this node.
+    //  */
+    // const std::string& get_symbol() const { return symbol; }
 
     /**
      * @brief Returns a string representation of the subtree rooted at this

@@ -4,6 +4,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <unordered_map>
 #include <utility>
 
 #include "nico/frontend/utils/ast_node.h"
@@ -67,6 +68,12 @@ public:
     // currently active.
     std::shared_ptr<Node::RootScope> reserved_scope;
 
+    // A map of symbols to their corresponding nodes for quick lookup.
+    // The node may be std::nullopt if the symbol is reserved but has no
+    // associated node.
+    std::unordered_map<std::string, std::optional<std::shared_ptr<Node>>>
+        symbol_map;
+
     /**
      * @brief Constructs a symbol tree with a root scope and installs primitive
      * types.
@@ -98,6 +105,28 @@ public:
      * considered unmodified.
      */
     void clear_modified() { modified = false; }
+
+    /**
+     * @brief Registers a node's symbol in the symbol tree.
+     *
+     * The symbol and the node will be added to the symbol map.
+     * If the symbol already exists the function will log an error and return
+     * false.
+     *
+     * If no symbol is provided, one will be created based on the node's
+     * position within the tree.
+     * The generated symbol may still conflict with existing symbols, in which
+     * case, this function will log an error and return false.
+     *
+     * @param node The node whose symbol is to be registered.
+     * @param symbol An optional symbol to register. If not provided, a symbol
+    will be generated.
+     * @return
+    j */
+    bool register_symbol(
+        std::shared_ptr<Node::ILocatable> node,
+        std::optional<std::string> symbol = std::nullopt
+    );
 
     /**
      * @brief Enters the namespace with the name contained in token, adding it
