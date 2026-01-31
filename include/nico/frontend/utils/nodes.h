@@ -81,6 +81,19 @@ public:
     virtual std::string to_string() const = 0;
 
     /**
+     * @brief Adds this node as a child of the current scope of the symbol tree.
+     *
+     * This node's short name must be properly set before calling this function.
+     *
+     * Both this node's parent pointer and the parent's children dictionary will
+     * be modified.
+     *
+     * @param symbol_tree The symbol tree to which this node belongs.
+     * @return True if the node was added successfully. False otherwise.
+     */
+    bool add_to_tree(const SymbolTree* symbol_tree);
+
+    /**
      * @brief Sets the symbol of this node.
      *
      * The symbol must be unique for the entire symbol tree.
@@ -95,6 +108,8 @@ public:
 
     /**
      * @brief Sets the symbol of this node using its parent's symbol.
+     *
+     * This node's parent pointer must be valid before calling this function.
      *
      * Will fail if the parent pointer is empty/expired or if the symbol is not
      * unique.

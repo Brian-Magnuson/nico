@@ -24,13 +24,10 @@ std::shared_ptr<Node::Namespace> Node::Namespace::create(
     const SymbolTree* symbol_tree, std::shared_ptr<Token> token
 ) {
     auto node = std::make_shared<Namespace>(Private());
-    auto parent_scope = symbol_tree->current_scope;
-    node->parent = parent_scope;
-
     node->short_name = std::string(token->lexeme);
     node->location = &token->location;
-    parent_scope->children[std::string(token->lexeme)] = node;
 
+    node->add_to_tree(symbol_tree);
     bool ok = node->set_symbol_using_parent(symbol_tree);
     if (!ok) {
         panic(
@@ -48,11 +45,9 @@ std::shared_ptr<Node::PrimitiveType> Node::PrimitiveType::create(
     std::shared_ptr<Type> type
 ) {
     auto node = std::make_shared<PrimitiveType>(Private());
-    auto parent_scope = symbol_tree->current_scope;
-    node->parent = parent_scope;
     node->short_name = std::string(short_name);
-    parent_scope->children[std::string(short_name)] = node;
 
+    node->add_to_tree(symbol_tree);
     bool ok = node->set_symbol_using_parent(symbol_tree);
     if (!ok) {
         panic(
@@ -72,12 +67,11 @@ std::shared_ptr<Node::StructDef> Node::StructDef::create(
     const SymbolTree* symbol_tree, std::shared_ptr<Token> token, bool is_class
 ) {
     auto node = std::make_shared<StructDef>(Private());
-    auto parent_scope = symbol_tree->current_scope;
-    node->parent = parent_scope;
     node->short_name = std::string(token->lexeme);
     node->location = &token->location;
     node->is_class = is_class;
 
+    node->add_to_tree(symbol_tree);
     bool ok = node->set_symbol_using_parent(symbol_tree);
     if (!ok) {
         panic(
@@ -86,7 +80,6 @@ class `" + std::string(token->lexeme) +
             "`."
         );
     }
-    parent_scope->children[std::string(token->lexeme)] = node;
 
     node->type = std::make_shared<Type::Named>(node);
     return node;
@@ -96,8 +89,7 @@ std::shared_ptr<Node::LocalScope> Node::LocalScope::create(
     const SymbolTree* symbol_tree, std::shared_ptr<Expr::Block> block
 ) {
     auto node = std::make_shared<LocalScope>(Private());
-    auto parent_scope = symbol_tree->current_scope;
-    node->parent = parent_scope;
+    node->parent = symbol_tree->current_scope;
     node->short_name = std::to_string(next_scope_id++);
     node->block = block;
 
@@ -110,20 +102,17 @@ std::shared_ptr<Node::LocalScope> Node::LocalScope::create(
         );
     }
 
-    parent_scope->local_scopes.push_back(node);
+    symbol_tree->current_scope->local_scopes.push_back(node);
     return node;
 }
 
 std::shared_ptr<Node::FieldEntry>
 Node::FieldEntry::create(const SymbolTree* symbol_tree, const Field& field) {
     auto node = std::make_shared<FieldEntry>(Private(), field);
-    auto parent_scope = symbol_tree->current_scope;
-    node->parent = parent_scope;
     node->short_name = field.name;
     node->location = field.location;
 
-    parent_scope->children[field.name] = node;
-
+    node->add_to_tree(symbol_tree);
     bool ok = node->set_symbol_using_parent(symbol_tree);
     if (!ok) {
         panic(
@@ -132,7 +121,8 @@ Node::FieldEntry::create(const SymbolTree* symbol_tree, const Field& field) {
             field.name + "`."
         );
     }
-    node->is_global = PTR_INSTANCEOF(parent_scope, Node::IGlobalScope);
+    node->is_global =
+        PTR_INSTANCEOF(symbol_tree->current_scope, Node::IGlobalScope);
 
     return node;
 }
@@ -144,13 +134,16 @@ Node::FieldEntry::create_as_overload(
     const Field& field
 ) {
     auto node = std::make_shared<FieldEntry>(Private(), field);
-    auto parent_scope = symbol_tree->current_scope;
-    node->parent = parent_scope;
+    // We add overloads manually since they are not stored in the children
+    // dictionary.
+    node->parent = symbol_tree->current_scope;
     node->short_name = field.name;
     node->location = field.location;
-    auto symbol_prefix = parent_scope->get_symbol() + "::" + node->short_name;
+    auto symbol_prefix =
+        symbol_tree->current_scope->get_symbol() + "::" + node->short_name;
 
-    node->is_global = PTR_INSTANCEOF(parent_scope, Node::IGlobalScope);
+    node->is_global =
+        PTR_INSTANCEOF(symbol_tree->current_scope, Node::IGlobalScope);
 
     auto func_type =
         std::dynamic_pointer_cast<Type::Function>(node->field.type);
@@ -229,13 +222,10 @@ std::shared_ptr<Node::OverloadGroup> Node::OverloadGroup::create(
         overload_name,
         first_overload_location
     );
-    auto parent_scope = symbol_tree->current_scope;
-    node->parent = parent_scope;
     node->short_name = std::string(overload_name);
     node->location = first_overload_location;
 
-    parent_scope->children[std::string(overload_name)] = node;
-
+    node->add_to_tree(symbol_tree);
     bool ok = node->set_symbol_using_parent(symbol_tree);
     if (!ok) {
         panic(
@@ -244,7 +234,8 @@ std::shared_ptr<Node::OverloadGroup> Node::OverloadGroup::create(
             std::string(overload_name) + "`."
         );
     }
-    node->is_global = PTR_INSTANCEOF(parent_scope, Node::IGlobalScope);
+    node->is_global =
+        PTR_INSTANCEOF(symbol_tree->current_scope, Node::IGlobalScope);
 
     auto overloaded_fn_type =
         std::dynamic_pointer_cast<Type::OverloadedFn>(node->field.type);
