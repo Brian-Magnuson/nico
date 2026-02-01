@@ -688,6 +688,186 @@ x; -y
 
 ## Declarations
 
+### Namespaces
+
+Namespaces are used to organize declarations in global scope.
+The `namespace` keyword declares a namespace. It may be written in indented form or braced form:
+```
+namespace my_namespace: // Indented form
+    declaration1
+
+namespace my_namespace { // Braced form
+    declaration1
+}
+```
+
+You can omit the name of a namespace to create an anonymous namespace:
+```
+namespace: // Indented form
+    declaration1
+
+namespace { // Braced form
+    declaration1
+}
+```
+
+The namespace receives an internal unique name that cannot be referenced, effectively making all declarations within it private.
+
+A namespace may only be opened in the root scope or other namespaces.
+
+You can nest namespaces within other namespaces. You can even name the nested namespace the same as the outer namespace:
+```
+namespace my_namespace:
+    namespace inner_namespace:
+        declaration1
+    namespace my_namespace:
+        declaration2
+```
+
+You can declare multiple namespaces with the same name in the same scope. The second declaration "reopens" the namespace, allowing you to add more declarations to it.
+```
+namespace my_namespace:
+    declaration1
+
+namespace my_namespace:
+    declaration2
+```
+
+Declaring multiple anonymous namespaces in the same scope is allowed, but each declaration creates a new unique namespace. 
+I.e., you cannot reopen an anonymous namespace.
+
+You may reference functions, structs, and classes declared in a later namespace declaration.
+This is because the compiler checks all namespace declarations before checking other statements.
+```
+let x = my_namespace::my_function(1, 2)
+
+namespace my_namespace:
+    func my_function(a: i32, b: i32) -> i32:
+        yield a + b
+```
+
+Because of this, top-level declarations cannot use identifiers that are later used to declare namespaces.
+```
+block { let x = 64 } // OK - x is scoped to the block.
+let x = 42 // Error: x is the name of a namespace.
+
+namespace x:
+    func my_function() -> i32:
+        yield 0
+```
+
+### Using declarations
+
+Using declarations are used to bring names from a namespace into the current scope. 
+The `using` keyword declares a using declaration:
+```
+using nameN from name1::name2
+```
+
+A using declaration consists of a name reference to an entry and a name reference to a global scope, such as a namespace or struct (only shared members can be imported).
+A search will be performed from the targeted scope for the specified entry name.
+
+The `from` keyword may be omitted. 
+In this case the current namespace is used as the target scope. 
+This is useful for aliasing names (see `as` keyword below).
+
+You can use multiple using declarations to bring in names from multiple namespaces.
+```
+using nameN from name1::name2
+using nameZ from nameA::nameB
+```
+
+You can use commas to bring in multiple names from the same namespace:
+```
+using x, y, z from ns1::ns2
+```
+Commas are not allowed after the `from` keyword.
+
+You can use the `as` keyword to create aliases for the imported names:
+```
+using a as x, b as y from ns1
+```
+
+If you use the `as` keyword and omit the `from` keyword, you can assign an alias to an entry in the current namespace:
+```
+using my_function as mf
+```
+
+You can use the `*` wildcard to bring in all names from a namespace:
+```
+using * from ns1
+```
+This is equivalent to writing a using declaration for every name in the target namespace.
+Note: `ns1::*` is not valid syntax.
+You cannot use `as` with wildcard using declarations.
+
+Using declarations may only appear at the beginning of the current scope, before any other declarations or statements.
+
+The name reference in a using declaration must have at least two parts (i.e., it must contain at least one `::`).
+
+Once a using declaration is made, the targeted entry becomes accessible in the current scope without needing to use its fully-qualified name.
+```
+namespace ns1:
+    func my_function() -> i32:
+        yield 42
+
+namespace ns2:
+    using ns1::my_function
+
+    func another_function() -> i32:
+        yield ns1::my_function() + 1   // OK: using fully-qualified name
+        yield my_function() + 1        // OK: using declaration brings in my_function
+```
+
+You cannot use a name reference to reference a name imported in another namespace via a using declaration.
+Using declarations are not transitive.
+```
+namespace ns1:
+    func my_function() -> i32:
+        yield 42
+
+namespace ns2:
+    using ns1::my_function
+    let x = my_function() // OK
+
+namespace ns3:
+    using ns2::ns1::my_function  // Error: ns2 has no entry named ns1
+    let y = my_function()        // Error: my_function is not accessible here
+```
+
+It is not a name conflict to:
+- Have a using declaration that brings in a name that is already available in the current scope, or
+- Introduce a binding with a name that is already imported via a using declaration.
+
+In such cases, the local declaration takes precedence, followed by declarations imported first-to-last.
+```
+namespace ns3:
+    using x, y from ns1
+    using y from ns2
+
+    let x = 64    // OK: `x` is not an existing member of `ns3`
+    let z = x     // OK: refers to local `x`, not `ns1::x`
+    let w = y     // OK: refers to `ns1::y` since its using declaration comes before `ns2::y`
+```
+
+It is not a name conflict to have overlapping using declarations.
+```
+namespace ns4:
+    using ns2 from ns1
+    using ns3 from ns1::ns2
+    using my_function from ns1::ns2::ns3
+```
+
+When a namespace is closed, any using declarations made within that namespace are "cleared", meaning they won't affect reopened namespaces declared later.
+```
+namespace ns2:
+    using ns1::my_function
+
+namespace ns2:
+    func another_function() -> i32:
+        yield my_function() + 1 // Error: my_function is not accessible here
+```
+
 ### Variables
 
 Variables are used to store data. The `let` keyword declares a local variable:
