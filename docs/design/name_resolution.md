@@ -167,7 +167,7 @@ The Nico compiler must meet the following requirements for name resolution:
   - Type objects must be directly convertible to LLVM types, which are used in the code generation phase.
   - Special names must be in a format that makes it impossible for them to collide with other names.
 
-## Internal Use Symbols
+## LLVM Identifiers
 
 According to the LLVM docs:
 
@@ -179,20 +179,6 @@ As mentioned previously, unique symbols may look like this.
 ```
 
 Unique symbols are used internally by the code generator to prevent naming collisions and ensure that generated code is unique and unambiguous. There is no need to transform the string into an "LLVM safe" name since any character is allowed in an LLVM identifier.
-
-It is impossible for users to access these symbols directly, largely because they all start with `::`, which is not a valid starting token for user-defined identifiers.
-Additionally, any `:` is not allowed in an identifier.
-It is also impossible for users to write two identifiers that have the same unique symbol; any attempt to do so would be caught by the type checker before the code is generated.
-
-The construction of unique symbols also mean that certain names that are used internally cannot be accessed by users. For example, if the user attempts to write a function named `main` at the top level, the unique symbol generated would be `::main`, which will not collide with the internal `main` function.
-
-For Nico, there is a need for these **internal use symbols**, symbols that are used by the compiler and are named in such a way that they cannot be accessed by users.
-
-Here is a list of the the current internal use symbols:
-- `main`
-- `$script`
-- `$retval`
-- `$yieldval`
 
 ## Accessing Foreign Variables and Functions
 
@@ -231,6 +217,12 @@ This introduces a new idea: for any entry in the symbol tree, we can choose to e
 For normal Nico code, we use mangled symbols by default.
 But we can "opt-in" to unmangled symbols if we want.
 And for external declarations, we always use unmangled symbols.
+
+## Unmangled Symbols
+
+An **unmangled symbol** or **custom symbol** is a symbol that is not mangled by the compiler.
+Unmangled symbols are mainly used for linking with external code, which may expect certain symbol names to be present in the compiled code.
+Because they are not restricted to the mangling scheme, they can potentially conflict with other symbols in the symbol tree.
 
 Unmangled symbols must still be unique within the symbol tree. Thus, if a user attempts to introduce a symbol that collides with an existing unmangled symbol, the type checker must raise an error, regardless of where that existing symbol was declared.
 For example, consider this code:
@@ -294,3 +286,61 @@ Here, we have three different `malloc` functions:
 
 The use of namespaces combined with external declaration blocks allows all three functions to coexist without symbol collisions or name collisions.
 
+## Reserved Words and Conflict Checking
+
+An identifier cannot be used if it matches a keyword or is otherwise reserved.
+The lexer already handles the former case by tokenizing keywords differently from identifiers.
+
+There are three categories of reserved words:
+- **Reserved identifiers**: Words that cannot be used as identifiers. 
+  - The strictest category.
+  - These words cannot be used at all.
+  - Enforced by the lexer.
+  - Generally used for words that may become keywords in the future.
+- **Reserved names**: Words that cannot be used as names. 
+  - Less strict than reserved identifiers.
+  - Reserved names can be referenced, but cannot be used to introduce new bindings.
+  - Enforced by the type checker.
+  - Used for words that reference some existing construct in the language, such as built-in types.
+- **Reserved symbols**: Words that cannot be used as symbols.
+  - Least strict category.
+  - Reserved symbols cannot be referenced, but new bindings generally will not conflict with them.
+  - Due to the name mangling scheme, only unmangled symbols can conflict with reserved symbols.
+  - Enforced by the type checker.
+  - Used for words that are needed for code generation, like "main" and "$script".
+
+A *name* is, in essense, a position in the symbol tree.
+You could say that an entry is bound to a name from the moment the entry is inserted into the symbol tree.
+The symbol is then assigned to the entry afterward.
+
+In other words:
+- A symbol tree entry first gets its name, then its symbol.
+
+This also means that:
+- A new entry is checked for *reserved name* conflicts first,
+- Then checked for *reserved symbol* conflicts second.
+
+This should make intuitive sense: you can insert a node in the tree and have a symbol conflict, but if there is a name conflict, you cannot insert the node at all.
+
+*Reserved names*, like "i32" or "f64", are designed to be referenced.
+Therefore, they must have a real entry somewhere in the symbol tree.
+This entry must be checked first before any new bindings are introduced.
+
+We can accomplish this in a few ways:
+- Create a mapping of reserved names to their entries using an internal hash map.
+  - An effective way to look up reserved names quickly.
+- Pre-insert reserved name entries into the global scope of the symbol tree.
+  - Keeps the tree symbol, but makes it difficult to distinguish between user-defined entries and reserved name entries.
+- Create a separate reserved names tree that is checked before the main symbol tree.
+  - Allows us to reuse our tree lookup algorithm, but adds an extra tree to maintain.
+
+We will choose the third option, as it allows us to keep the symbol tree structure and lookup algorithm consistent.
+
+*Reserved symbols*, like "main" or "$script", are not meant to be referenced directly.
+After all, users cannot use symbols to reference variables or functions; only names.
+Therefore, they do not need real entries in the symbol tree.
+When reporting symbol collisions, if the conflicting symbol is a reserved symbol, we can simply report the conflict without needing to point to an entry in the tree.
+
+We can maintain a map of reserved symbols to optional location information for error reporting.
+If the symbol has a location information, it means that the symbol was introduced by the user.
+If the symbol does not have location information, it means that the symbol is reserved by the compiler.
