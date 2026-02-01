@@ -1577,12 +1577,14 @@ TEST_CASE("Local function call", "[checker]") {
 
 TEST_CASE("Local function overload calls", "[checker]") {
     SECTION("Valid overload call 1") {
-        run_checker_test(R"(
+        run_checker_test(
+            R"(
         func add(a: i32, b: i32) -> i32 => a + b
         func add(a: f64, b: f64) -> f64 => a + b
         let result1: i32 = add(1, 2)
         let result2: f64 = add(1.0, 2.0)
-        )");
+        )"
+        );
     }
 
     SECTION("Valid overload call 2") {

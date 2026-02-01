@@ -5,6 +5,7 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 
 #include "nico/frontend/utils/ast_node.h"
@@ -60,19 +61,19 @@ public:
     // The root scope of the symbol tree, which is the top-level scope that
     // contains all other scopes.
     std::shared_ptr<Node::RootScope> root_scope;
-    // The current scope in the symbol tree, which is the scope that is
-    // currently being modified or accessed.
-    std::shared_ptr<Node::IScope> current_scope;
     // A special scope for reserved names. Reserved names cannot be shadowed in
     // any scope. This scope is searched first, regardless of what scope is
     // currently active.
     std::shared_ptr<Node::RootScope> reserved_scope;
 
-    // A map of symbols to their corresponding nodes for quick lookup.
-    // The node may be std::nullopt if the symbol is reserved but has no
-    // associated node.
-    std::unordered_map<std::string, std::optional<std::shared_ptr<Node>>>
-        symbol_map;
+    // A map of user-defined symbols to their corresponding locations.
+    std::unordered_map<std::string, const Location*> symbol_map;
+    // A set of reserved symbols that cannot be used by user-defined nodes.
+    std::unordered_set<std::string> reserved_symbols;
+
+    // The current scope in the symbol tree, which is the scope that is
+    // currently being modified or accessed.
+    std::shared_ptr<Node::IScope> current_scope;
 
     /**
      * @brief Constructs a symbol tree with a root scope and installs primitive

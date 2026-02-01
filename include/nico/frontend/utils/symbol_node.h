@@ -130,7 +130,9 @@ public:
         return node;
     }
 
-    virtual std::string to_string() const override { return "ROOT " + symbol; }
+    virtual std::string to_string() const override {
+        return "ROOT \"" + symbol + "\"";
+    }
 };
 
 /**
@@ -168,7 +170,9 @@ public:
     static std::shared_ptr<Namespace>
     create(std::shared_ptr<Node::IScope> parent, std::shared_ptr<Token> token);
 
-    virtual std::string to_string() const override { return "NS " + symbol; }
+    virtual std::string to_string() const override {
+        return "NS \"" + symbol + "\"";
+    }
 };
 
 /**
@@ -210,7 +214,7 @@ public:
     );
 
     virtual std::string to_string() const override {
-        return "PTYPE " + symbol + " : " + type->to_string();
+        return "PTYPE \"" + symbol + "\" : " + type->to_string();
     }
 };
 
@@ -270,7 +274,7 @@ public:
     );
 
     virtual std::string to_string() const override {
-        return "STRUCT " + symbol;
+        return "STRUCT \"" + symbol + "\"";
     }
 };
 
@@ -321,7 +325,7 @@ public:
     );
 
     virtual std::string to_string() const override {
-        return "LSCOPE " + symbol;
+        return "LSCOPE \"" + symbol + "\"";
     }
 };
 
@@ -429,7 +433,7 @@ public:
     }
 
     virtual std::string to_string() const override {
-        return "ENTRY " + symbol + " : " + field.type->to_string();
+        return "ENTRY \"" + symbol + "\" : " + field.type->to_string();
     }
 };
 
@@ -504,7 +508,9 @@ public:
         // before code generation.
     }
 
-    virtual std::string to_string() const override { return "FUNC " + symbol; }
+    virtual std::string to_string() const override {
+        return "FUNC \"" + symbol + "\"";
+    }
 
     virtual std::string to_tree_string(size_t indent = 0) const override {
         std::string indent_str(indent, ' ');

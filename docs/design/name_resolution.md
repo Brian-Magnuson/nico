@@ -341,6 +341,6 @@ After all, users cannot use symbols to reference variables or functions; only na
 Therefore, they do not need real entries in the symbol tree.
 When reporting symbol collisions, if the conflicting symbol is a reserved symbol, we can simply report the conflict without needing to point to an entry in the tree.
 
-We can maintain a map of reserved symbols to optional location information for error reporting.
-If the symbol has a location information, it means that the symbol was introduced by the user.
-If the symbol does not have location information, it means that the symbol is reserved by the compiler.
+We can accomplish this by:
+- Creating a set of reserved symbols separate from the symbols map.
+  - This is analogous to our tree, where we have a main tree for user declarations and a separate tree for reserved names.

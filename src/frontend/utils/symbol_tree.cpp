@@ -1,5 +1,7 @@
 #include "nico/frontend/utils/symbol_tree.h"
 
+#include <vector>
+
 #include "nico/shared/logger.h"
 #include "nico/shared/sets.h"
 #include "nico/shared/utils.h"
@@ -8,98 +10,78 @@ namespace nico {
 
 void SymbolTree::install_primitive_types() {
     modified = true;
-    std::shared_ptr<Node::PrimitiveType> node;
-
-    node = Node::PrimitiveType::create(
-        reserved_scope,
-        "i8",
-        std::make_shared<Type::Int>(true, 8)
-    );
-    reserved_scope->children[node->short_name] = node;
-
-    node = Node::PrimitiveType::create(
-        reserved_scope,
-        "i16",
-        std::make_shared<Type::Int>(true, 16)
-    );
-    reserved_scope->children[node->short_name] = node;
-
-    node = Node::PrimitiveType::create(
-        reserved_scope,
-        "i32",
-        std::make_shared<Type::Int>(true, 32)
-    );
-    reserved_scope->children[node->short_name] = node;
-
-    node = Node::PrimitiveType::create(
-        reserved_scope,
-        "i64",
-        std::make_shared<Type::Int>(true, 64)
-    );
-    reserved_scope->children[node->short_name] = node;
-
-    node = Node::PrimitiveType::create(
-        reserved_scope,
-        "u8",
-        std::make_shared<Type::Int>(false, 8)
-    );
-    reserved_scope->children[node->short_name] = node;
-
-    node = Node::PrimitiveType::create(
-        reserved_scope,
-        "u16",
-        std::make_shared<Type::Int>(false, 16)
-    );
-    reserved_scope->children[node->short_name] = node;
-
-    node = Node::PrimitiveType::create(
-        reserved_scope,
-        "u32",
-        std::make_shared<Type::Int>(false, 32)
-    );
-    reserved_scope->children[node->short_name] = node;
-
-    node = Node::PrimitiveType::create(
-        reserved_scope,
-        "u64",
-        std::make_shared<Type::Int>(false, 64)
-    );
-    reserved_scope->children[node->short_name] = node;
-
-    node = Node::PrimitiveType::create(
-        reserved_scope,
-        "f32",
-        std::make_shared<Type::Float>(32)
-    );
-    reserved_scope->children[node->short_name] = node;
-
-    node = Node::PrimitiveType::create(
-        reserved_scope,
-        "f64",
-        std::make_shared<Type::Float>(64)
-    );
-    reserved_scope->children[node->short_name] = node;
-
-    node = Node::PrimitiveType::create(
-        reserved_scope,
-        "bool",
-        std::make_shared<Type::Bool>()
-    );
-    reserved_scope->children[node->short_name] = node;
-
-    node = Node::PrimitiveType::create(
-        reserved_scope,
-        "str",
-        std::make_shared<Type::Str>()
-    );
-    reserved_scope->children[node->short_name] = node;
-
-    node = Node::PrimitiveType::create(
-        reserved_scope,
-        "anyptr",
-        std::make_shared<Type::Anyptr>()
-    );
-    reserved_scope->children[node->short_name] = node;
+    std::vector<std::shared_ptr<Node::PrimitiveType>> primitive_types = {
+        Node::PrimitiveType::create(
+            reserved_scope,
+            "i8",
+            std::make_shared<Type::Int>(true, 8)
+        ),
+        Node::PrimitiveType::create(
+            reserved_scope,
+            "i16",
+            std::make_shared<Type::Int>(true, 16)
+        ),
+        Node::PrimitiveType::create(
+            reserved_scope,
+            "i32",
+            std::make_shared<Type::Int>(true, 32)
+        ),
+        Node::PrimitiveType::create(
+            reserved_scope,
+            "i64",
+            std::make_shared<Type::Int>(true, 64)
+        ),
+        Node::PrimitiveType::create(
+            reserved_scope,
+            "u8",
+            std::make_shared<Type::Int>(false, 8)
+        ),
+        Node::PrimitiveType::create(
+            reserved_scope,
+            "u16",
+            std::make_shared<Type::Int>(false, 16)
+        ),
+        Node::PrimitiveType::create(
+            reserved_scope,
+            "u32",
+            std::make_shared<Type::Int>(false, 32)
+        ),
+        Node::PrimitiveType::create(
+            reserved_scope,
+            "u64",
+            std::make_shared<Type::Int>(false, 64)
+        ),
+        Node::PrimitiveType::create(
+            reserved_scope,
+            "f32",
+            std::make_shared<Type::Float>(32)
+        ),
+        Node::PrimitiveType::create(
+            reserved_scope,
+            "f64",
+            std::make_shared<Type::Float>(64)
+        ),
+        Node::PrimitiveType::create(
+            reserved_scope,
+            "bool",
+            std::make_shared<Type::Bool>()
+        ),
+        Node::PrimitiveType::create(
+            reserved_scope,
+            "str",
+            std::make_shared<Type::Str>()
+        ),
+        Node::PrimitiveType::create(
+            reserved_scope,
+            "anyptr",
+            std::make_shared<Type::Anyptr>()
+        )
+    };
+    for (auto& ptype : primitive_types) {
+        reserved_scope->children[ptype->short_name] = ptype;
+        ptype->symbol = reserved_scope->symbol + "::" + ptype->short_name;
+        reserved_symbols.insert(ptype->symbol);
+    }
 
     modified = true;
 }
@@ -157,8 +139,11 @@ std::optional<std::shared_ptr<Node>> SymbolTree::search_name_from_scope(
 
 void SymbolTree::reset() {
     root_scope = Node::RootScope::create();
+    root_scope->symbol = "";
     current_scope = root_scope;
     reserved_scope = Node::RootScope::create(":");
+    reserved_scope->symbol = ":";
+    reserved_symbols = {"", ":", "main", "$script"};
     modified = false;
 
     install_primitive_types();
@@ -170,6 +155,17 @@ bool SymbolTree::register_symbol(
     auto is_symbol_autogenerated = !symbol.has_value();
     auto the_symbol =
         symbol.value_or(node->parent.lock()->symbol + "::" + node->short_name);
+
+    if (reserved_symbols.contains(the_symbol)) {
+        Logger::inst().log_error(
+            Err::SymbolIsReserved,
+            node->location,
+            "Symbol `" + the_symbol + "` is reserved and cannot be used."
+        );
+        return false;
+    }
+
+    // At this point, the symbol is not reserved.
 
     auto it = symbol_map.find(the_symbol);
     if (it != symbol_map.end()) {
@@ -187,42 +183,29 @@ bool SymbolTree::register_symbol(
             // Your system would probably run out of memory long before that.
 
             node->symbol = the_symbol;
-            symbol_map[the_symbol] = node;
+            symbol_map[the_symbol] = node->location;
             modified = true;
             return true;
         }
 
-        if (!it->second.has_value() ||
-            !PTR_INSTANCEOF(it->second.value(), Node::ILocatable)) {
-            // If the symbol is in the map, but has no locatable node...
-            Logger::inst().log_error(
-                Err::SymbolIsReserved,
-                node->location,
-                "Symbol `" + the_symbol + "` is reserved and cannot be used."
-            );
-        }
-        else {
-            // If the symbol is already in use by another node...
-            Logger::inst().log_error(
-                Err::SymbolAlreadyExists,
-                node->location,
-                "Symbol `" + the_symbol + "` already exists."
-            );
-            auto locatable_node =
-                std::dynamic_pointer_cast<Node::ILocatable>(it->second.value());
-            Logger::inst().log_note(
-                locatable_node->location,
-                "Previous declaration of symbol `" + the_symbol +
-                    "` found here."
-            );
-        }
+        // If the symbol is already in use by another node...
+        Logger::inst().log_error(
+            Err::SymbolAlreadyExists,
+            node->location,
+            "Symbol `" + the_symbol + "` already exists."
+        );
+        Logger::inst().log_note(
+            it->second,
+            "Previous declaration of symbol `" + the_symbol + "` found here."
+        );
+
         // Regardless, we cannot register the symbol.
         return false;
     }
 
     // Register the symbol.
     node->symbol = the_symbol;
-    symbol_map[the_symbol] = node;
+    symbol_map[the_symbol] = node->location;
     modified = true;
     return true;
 }
