@@ -365,32 +365,6 @@ public:
     static std::shared_ptr<FieldEntry>
     create(std::shared_ptr<Node::IScope> parent, const Field& field);
 
-    // TODO: Clean this up later.
-    // /**
-    //  * @brief Creates a new field entry node for an overloadable function and
-    //  * attempts to add it to the given overload group.
-    //  *
-    //  * If the node cannot be added, an error will be *logged*.
-    //  *
-    //  * This function is used for overload entries, which are stored
-    //  differently
-    //  * from regular field entries.
-    //  *
-    //  * @param symbol_tree The symbol tree to which the overload group will be
-    //  * added.
-    //  * @param overload_group The overload group to add this overload to.
-    //  * @param field The field object that this entry represents.
-    //  * @return If the creation was successful, a pair containing the newly
-    //  * created field entry node and `Err::Null`. If there was an error, a
-    //  pair
-    //  * containing the problematic node and the corresponding error code.
-    //  */
-    // static std::pair<std::shared_ptr<FieldEntry>, Err> create_as_overload(
-    //     const SymbolTree* symbol_tree,
-    //     std::shared_ptr<Node::OverloadGroup> overload_group,
-    //     const Field& field
-    // );
-
     /**
      * @brief Gets the LLVM allocation for this field entry.
      *
