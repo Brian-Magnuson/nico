@@ -54,7 +54,7 @@ class SymbolTree {
      * std::nullopt if not found.
      */
     std::optional<std::shared_ptr<Node>> search_name_from_scope(
-        const Name& name, std::shared_ptr<Node::IScope> scope
+        const OldName& name, std::shared_ptr<Node::IScope> scope
     ) const;
 
 public:
@@ -196,6 +196,13 @@ public:
      */
     std::optional<std::shared_ptr<Node::IScope>> exit_scope();
 
+    bool resolve_name_from_scope(
+        std::shared_ptr<Name> name,
+        std::shared_ptr<Node::IScope> searching_scope
+    );
+
+    bool resolve_name(std::shared_ptr<Name> name);
+
     /**
      * @brief Searches the symbol tree for a node with the matching name.
      *
@@ -211,7 +218,7 @@ public:
      * @return std::optional<std::shared_ptr<Node>> The node if found, or
      * std::nullopt if not found.
      */
-    std::optional<std::shared_ptr<Node>> search_name(const Name& name) const;
+    std::optional<std::shared_ptr<Node>> search_name(const OldName& name) const;
 
     /**
      * @brief Retrieves the nearest local scope of the specified kind, starting

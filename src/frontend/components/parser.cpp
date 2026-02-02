@@ -515,7 +515,10 @@ std::optional<std::shared_ptr<Expr>> Parser::primary() {
         return std::make_shared<Expr::Literal>(previous());
     }
     if (match({Tok::Identifier})) {
-        return std::make_shared<Expr::NameRef>(previous());
+        return std::make_shared<Expr::NameRef>(
+            // TODO: Extract name construction to a utility function
+            std::make_shared<Name>(previous())
+        );
     }
     if (match({Tok::KwBlock, Tok::KwUnsafe})) {
         return block(Expr::Block::Kind::Plain);
@@ -1227,7 +1230,7 @@ std::optional<std::shared_ptr<Annotation>> Parser::annotation() {
     }
     if (match({Tok::Identifier})) {
         auto token = previous();
-        return std::make_shared<Annotation::NameRef>(Name(token));
+        return std::make_shared<Annotation::NameRef>(OldName(token));
     }
     if (match({Tok::Nullptr})) {
         return std::make_shared<Annotation::Nullptr>(previous());

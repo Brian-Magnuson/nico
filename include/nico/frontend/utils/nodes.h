@@ -3,6 +3,7 @@
 
 #include <any>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -352,6 +353,7 @@ public:
     class SizeOf;
     class Alloc;
     class NameRef;
+    class OldNameRef;
     class Literal;
 
     class Tuple;
@@ -382,6 +384,7 @@ public:
         virtual std::any visit(SizeOf* expr, bool as_lvalue) = 0;
         virtual std::any visit(Alloc* expr, bool as_lvalue) = 0;
         virtual std::any visit(NameRef* expr, bool as_lvalue) = 0;
+        virtual std::any visit(OldNameRef* expr, bool as_lvalue) = 0;
         virtual std::any visit(Literal* expr, bool as_lvalue) = 0;
         virtual std::any visit(Tuple* expr, bool as_lvalue) = 0;
         virtual std::any visit(Array* expr, bool as_lvalue) = 0;
@@ -479,6 +482,36 @@ public:
 /**
  * @brief A name class used to represent names with multiple parts.
  *
+ * Names should not be compared directly as different names may refer to the
+ * same thing and similar names may refer to different things. Instead, search
+ * for the name in the symbol tree and resolve it to a node.
+ */
+class Name {
+public:
+    std::optional<std::shared_ptr<Name>> base;
+    std::shared_ptr<Token> identifier;
+    std::weak_ptr<Node> node;
+
+    Name(std::shared_ptr<Name> base, std::shared_ptr<Token> identifier)
+        : base(base), identifier(identifier) {}
+
+    Name(std::shared_ptr<Token> identifier)
+        : base(std::nullopt), identifier(identifier) {}
+
+    std::string to_string() const {
+        if (base.has_value()) {
+            return base.value()->to_string() +
+                   "::" + std::string(identifier->lexeme);
+        }
+        else {
+            return std::string(identifier->lexeme);
+        }
+    }
+};
+
+/**
+ * @brief A name class used to represent names with multiple parts.
+ *
  * Name should only be used where multi-part names are allowed.
  * Multi-part names are not allowed in declarations, but are in name expressions
  * and annotations.
@@ -486,8 +519,10 @@ public:
  * Names should not be compared directly as different names may refer to the
  * same thing and similar names may refer to different things. Instead, search
  * for the name in the symbol tree and resolve it to a node.
+ *
+ * @deprecated Use the new Expr::NameRef class instead.
  */
-class Name {
+class OldName {
 public:
     /**
      * @brief A part of a name.
@@ -503,16 +538,16 @@ public:
         // The token representing this part of the name.
         std::shared_ptr<Token> token;
         // The arguments for this part of the name, if any.
-        std::vector<std::shared_ptr<Name>> args;
+        std::vector<std::shared_ptr<OldName>> args;
     };
 
     // The parts of the name.
     std::vector<Part> parts;
 
-    Name(std::shared_ptr<Token> token)
+    OldName(std::shared_ptr<Token> token)
         : parts({{token, {}}}) {}
 
-    Name(std::vector<Part> elements)
+    OldName(std::vector<Part> elements)
         : parts(elements) {
         if (parts.empty()) {
             panic("Name::Name: parts cannot be empty");

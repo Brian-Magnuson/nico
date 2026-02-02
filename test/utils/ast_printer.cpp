@@ -204,6 +204,10 @@ std::any AstPrinter::visit(Expr::Alloc* expr, bool as_lvalue) {
 }
 
 std::any AstPrinter::visit(Expr::NameRef* expr, bool as_lvalue) {
+    return std::string("(nameref " + expr->name->to_string() + ")");
+}
+
+std::any AstPrinter::visit(Expr::OldNameRef* expr, bool as_lvalue) {
     return std::string("(nameref " + expr->name.to_string() + ")");
 }
 

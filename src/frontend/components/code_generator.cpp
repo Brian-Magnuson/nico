@@ -862,6 +862,22 @@ std::any CodeGenerator::visit(Expr::NameRef* expr, bool as_lvalue) {
     return result;
 }
 
+std::any CodeGenerator::visit(Expr::OldNameRef* expr, bool as_lvalue) {
+    llvm::Value* result = nullptr;
+    llvm::Value* ptr = expr->field_entry.lock()->get_llvm_allocation(builder);
+
+    if (as_lvalue) {
+        // We use the pointer to the variable (its alloca inst or global ptr)
+        result = ptr;
+    }
+    else {
+        // We load the value from the variable's memory location
+        result = builder->CreateLoad(expr->type->get_llvm_type(builder), ptr);
+    }
+
+    return result;
+}
+
 std::any CodeGenerator::visit(Expr::Literal* expr, bool as_lvalue) {
     llvm::Value* result = nullptr;
 
