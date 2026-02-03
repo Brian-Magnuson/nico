@@ -48,7 +48,7 @@ class MIRBuilder : public Stmt::Visitor, public Expr::Visitor {
     std::any visit(Expr::Call* expr, bool as_lvalue) override;
     std::any visit(Expr::SizeOf* expr, bool as_lvalue) override;
     std::any visit(Expr::Alloc* expr, bool as_lvalue) override;
-    std::any visit(Expr::OldNameRef* expr, bool as_lvalue) override;
+    std::any visit(Expr::NameRef* expr, bool as_lvalue) override;
     std::any visit(Expr::Literal* expr, bool as_lvalue) override;
     std::any visit(Expr::Tuple* expr, bool as_lvalue) override;
     std::any visit(Expr::Array* expr, bool as_lvalue) override;

@@ -8,22 +8,17 @@ namespace nico {
 
 std::any AnnotationChecker::visit(Annotation::NameRef* annotation) {
     std::shared_ptr<Type> type = nullptr;
-    auto node = symbol_tree->search_name(annotation->name);
-    if (auto type_node = std::dynamic_pointer_cast<Node::ITypeNode>(
-            node.value_or(nullptr)
-        )) {
-        type = type_node->type;
-    }
-    else {
-        Logger::inst().log_error(
-            Err::UnknownAnnotationName,
-            annotation->location,
-            "Unknown type annotation: `" + annotation->name.to_string() + "`."
-        );
-        return std::any();
+    if (symbol_tree->resolve_name(annotation->name)) {
+        auto node = annotation->name->node.lock();
+        if (auto type_node = std::dynamic_pointer_cast<Node::ITypeNode>(node)) {
+            type = type_node->type;
+            return type;
+        }
     }
 
-    return type;
+    // No need to log an error; the resolve name function already does that.
+
+    return std::any();
 }
 
 std::any AnnotationChecker::visit(Annotation::Pointer* annotation) {

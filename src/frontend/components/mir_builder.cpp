@@ -137,7 +137,7 @@ std::any MIRBuilder::visit(Expr::Alloc* expr, bool as_lvalue) {
     return {};
 }
 
-std::any MIRBuilder::visit(Expr::OldNameRef* expr, bool as_lvalue) {
+std::any MIRBuilder::visit(Expr::NameRef* expr, bool as_lvalue) {
     // TODO: Implementation for visiting NameRef expressions goes here.
     return {};
 }

@@ -207,10 +207,6 @@ std::any AstPrinter::visit(Expr::NameRef* expr, bool as_lvalue) {
     return std::string("(nameref " + expr->name->to_string() + ")");
 }
 
-std::any AstPrinter::visit(Expr::OldNameRef* expr, bool as_lvalue) {
-    return std::string("(nameref " + expr->name.to_string() + ")");
-}
-
 std::any AstPrinter::visit(Expr::Literal* expr, bool as_lvalue) {
     std::string value;
     switch (expr->token->tok_type) {

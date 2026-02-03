@@ -1468,11 +1468,9 @@ std::any LocalChecker::visit(Expr::Alloc* expr, bool as_lvalue) {
 
 std::any LocalChecker::visit(Expr::NameRef* expr, bool as_lvalue) {
     if (!symbol_tree->resolve_name(expr->name)) {
-        Logger::inst().log_error(
-            Err::UndeclaredName,
-            expr->location,
-            "Name `" + expr->name->to_string() + "` was not declared."
-        );
+
+        // No need to log an error here; resolve_name already does that.
+
         if (repl_mode) {
             static std::unordered_set<std::string> possible_commands = {
                 "help",
@@ -1504,58 +1502,6 @@ std::any LocalChecker::visit(Expr::NameRef* expr, bool as_lvalue) {
         );
         return std::any();
     }
-    // Set assignability and possible error location based on whether the
-    // field is mutable.
-    if (field_entry->field.is_var) {
-        expr->assignable = true;
-    }
-    else {
-        expr->assignable = false;
-        expr->error_location = field_entry->field.location;
-    }
-
-    expr->type = field_entry->field.type;
-    expr->field_entry = field_entry;
-    return std::any();
-}
-
-std::any LocalChecker::visit(Expr::OldNameRef* expr, bool as_lvalue) {
-    auto node = symbol_tree->search_name(expr->name);
-
-    if (!node) {
-        Logger::inst().log_error(
-            Err::UndeclaredName,
-            expr->name.parts.back().token->location,
-            "Name `" + expr->name.to_string() + "` was not declared."
-        );
-        if (repl_mode) {
-            static std::unordered_set<std::string> possible_commands = {
-                "help",
-                "h",
-                "version",
-                "license",
-                "discard",
-                "reset",
-                "exit",
-                "quit",
-                "q"
-            };
-            auto it = possible_commands.find(expr->name.to_string());
-            if (it != possible_commands.end()) {
-                Logger::inst().log_note("Did you mean `:" + *it + "`?");
-            }
-        }
-        return std::any();
-    }
-    if (!PTR_INSTANCEOF(*node, Node::FieldEntry)) {
-        Logger::inst().log_error(
-            Err::NotAVariable,
-            expr->name.parts.back().token->location,
-            "Name reference `" + expr->name.to_string() + "` is not a variable."
-        );
-        return std::any();
-    }
-    auto field_entry = std::dynamic_pointer_cast<Node::FieldEntry>(*node);
     // Set assignability and possible error location based on whether the
     // field is mutable.
     if (field_entry->field.is_var) {

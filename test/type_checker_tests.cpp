@@ -158,7 +158,7 @@ TEST_CASE("Local variable declarations", "[checker]") {
     }
 
     SECTION("Undeclared identifier") {
-        run_checker_test("let a = b", Err::UndeclaredName);
+        run_checker_test("let a = b", Err::NameNotFound);
     }
 
     SECTION("Immutable variables") {
@@ -1471,7 +1471,7 @@ TEST_CASE("Local function call", "[checker]") {
     }
 
     SECTION("Function call undeclared name") {
-        run_checker_test("let result = add(1, 2)", Err::UndeclaredName);
+        run_checker_test("let result = add(1, 2)", Err::NameNotFound);
     }
 
     SECTION("Function call wrong number of arguments") {
@@ -1520,7 +1520,7 @@ TEST_CASE("Local function call", "[checker]") {
         func add(a: i32, b: i32) -> i32 => a + b
         let result: i32 = add(1, undeclared_var)
         )",
-            Err::UndeclaredName
+            Err::NameNotFound
         );
     }
 

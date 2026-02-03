@@ -764,12 +764,8 @@ The `using` keyword declares a using declaration:
 using nameN from name1::name2
 ```
 
-A using declaration consists of a name reference to an entry and a name reference to a global scope, such as a namespace or struct (only shared members can be imported).
+A using declaration consists of an identifier for an entry, and a name reference to a global scope, such as a namespace or struct (only shared members can be imported), from which to import the entry.
 A search will be performed from the targeted scope for the specified entry name.
-
-The `from` keyword may be omitted. 
-In this case the current namespace is used as the target scope. 
-This is useful for aliasing names (see `as` keyword below).
 
 You can use multiple using declarations to bring in names from multiple namespaces.
 ```
@@ -788,7 +784,7 @@ You can use the `as` keyword to create aliases for the imported names:
 using a as x, b as y from ns1
 ```
 
-If you use the `as` keyword and omit the `from` keyword, you can assign an alias to an entry in the current namespace:
+When using the `as` keyword, you can omit the `from` keyword to create an alias for a name in the current scope:
 ```
 using my_function as mf
 ```
@@ -802,8 +798,6 @@ Note: `ns1::*` is not valid syntax.
 You cannot use `as` with wildcard using declarations.
 
 Using declarations may only appear at the beginning of the current scope, before any other declarations or statements.
-
-The name reference in a using declaration must have at least two parts (i.e., it must contain at least one `::`).
 
 Once a using declaration is made, the targeted entry becomes accessible in the current scope without needing to use its fully-qualified name.
 ```
@@ -1527,10 +1521,6 @@ There are two ways to pass arguments to a function:
 When a function is called, every parameter must be matched with an argument, or the call is invalid. You can use a mix of positional, named, and default arguments, as long as the positional arguments come first and every parameter is matched with an argument.
 
 ### Allocation expressions
-
-> [!CAUTION]
-> The information in this section is currently inconsistent with the current implementation.
-> The current implementation is planned to be updated to match this documentation.
 
 An allocation expression is used to manually allocate heap memory for a type. This uses the `alloc` keyword:
 ```

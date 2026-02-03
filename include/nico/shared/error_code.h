@@ -129,8 +129,6 @@ enum class Err {
     SymbolAlreadyExists,
     // An attempt was made to use a symbol that is reserved.
     SymbolIsReserved,
-    // An annotation referenced a name that could not be found.
-    UnknownAnnotationName,
     // A type-of annotation has no way to type-check the inner expression.
     UncheckableTypeofAnnotation,
     // A function declaration contained duplicate parameter names.
@@ -171,7 +169,7 @@ enum class Err {
     // An rvalue expression has an unsized type.
     UnsizedRValue,
     // An name was not found in the symbol table.
-    UndeclaredName,
+    NameNotFound,
     // An name was matched to a non-FieldEntry node where one was expected.
     NotAVariable,
     // An attempt was made to call a non-callable type.

@@ -35,28 +35,6 @@ class SymbolTree {
      */
     void install_primitive_types();
 
-    /**
-     * @brief Helper function to search a name, starting from a specific
-     * location.
-     *
-     * The search algorithm comes in two parts: upward search and downward
-     * search.
-     *
-     * Upward search: Search from the current scope upward until the first part
-     * of the Name matches. Downward search: Search from the matched scope
-     * downward for the remaining parts of the Name. If downward search fails,
-     * resume upward search until the next match is found or the root scope is
-     * reached.
-     *
-     * @param name The name to search for.
-     * @param scope The scope to start the search from.
-     * @return std::optional<std::shared_ptr<Node>> The node if found, or
-     * std::nullopt if not found.
-     */
-    std::optional<std::shared_ptr<Node>> search_name_from_scope(
-        const OldName& name, std::shared_ptr<Node::IScope> scope
-    ) const;
-
 public:
     // The root scope of the symbol tree, which is the top-level scope that
     // contains all other scopes.
@@ -196,29 +174,14 @@ public:
      */
     std::optional<std::shared_ptr<Node::IScope>> exit_scope();
 
+    // TODO: Add doc comments here.
+
     bool resolve_name_from_scope(
         std::shared_ptr<Name> name,
         std::shared_ptr<Node::IScope> searching_scope
     );
 
     bool resolve_name(std::shared_ptr<Name> name);
-
-    /**
-     * @brief Searches the symbol tree for a node with the matching name.
-     *
-     * First, the search is performed starting from the reserved scope.
-     * Then, if the node wasn't found, the search is performed starting from the
-     * current scope.
-     *
-     * Note: If the desired node is a FieldEntry, this function does not reveal
-     * whether the field entry is currently declared. Consider adding a check in
-     * the type checker.
-     *
-     * @param name The name to search for.
-     * @return std::optional<std::shared_ptr<Node>> The node if found, or
-     * std::nullopt if not found.
-     */
-    std::optional<std::shared_ptr<Node>> search_name(const OldName& name) const;
 
     /**
      * @brief Retrieves the nearest local scope of the specified kind, starting

@@ -86,57 +86,6 @@ void SymbolTree::install_primitive_types() {
     modified = true;
 }
 
-std::optional<std::shared_ptr<Node>> SymbolTree::search_name_from_scope(
-    const OldName& name, std::shared_ptr<Node::IScope> scope
-) const {
-    auto& parts = name.parts;
-
-    // Upward search: Search from the current scope upward until the first part
-    // of the Name matches.
-    while (scope) {
-        auto it = scope->children.at(std::string(parts[0].token->lexeme));
-        if (it) {
-            // Found a match for the first part, now do downward search for the
-            // remaining parts.
-            auto node = it.value();
-            bool found = true;
-
-            // Downward search: Search from the matched scope downward for the
-            // remaining parts of the Name.
-            for (size_t i = 1; i < parts.size(); ++i) {
-                if (PTR_INSTANCEOF(node, Node::IScope)) {
-                    auto scope_node =
-                        std::dynamic_pointer_cast<Node::IScope>(node);
-                    auto child_it = scope_node->children.at(
-                        std::string(parts[i].token->lexeme)
-                    );
-                    if (child_it) {
-                        node = child_it.value();
-                    }
-                    else {
-                        found = false;
-                        break;
-                    }
-                }
-                else {
-                    found = false;
-                    break;
-                }
-            }
-
-            if (found) {
-                return node; // Successfully found the full Name
-            }
-        }
-        // Move up to the parent scope for the next iteration
-        scope = scope->parent.lock();
-        // If the current scope is the root scope, the `scope->parent.lock()`
-        // will return an empty shared_ptr, causing the loop to terminate.
-    }
-
-    return std::nullopt; // Not found
-}
-
 void SymbolTree::reset() {
     root_scope = Node::RootScope::create();
     root_scope->symbol = "";
@@ -356,22 +305,29 @@ bool SymbolTree::resolve_name_from_scope(
 }
 
 bool SymbolTree::resolve_name(std::shared_ptr<Name> name) {
-    auto searching_scope = current_scope;
     bool found = false;
-    while (searching_scope) {
+
+    // First, search the reserved scope.
+    if (resolve_name_from_scope(name, reserved_scope)) {
+        found = true;
+    }
+
+    // If not found, search from the current scope upward.
+    auto searching_scope = current_scope;
+    while (!found && searching_scope) {
         if (resolve_name_from_scope(name, searching_scope)) {
             found = true;
-            break;
         }
         searching_scope = searching_scope->parent.lock();
     }
 
     if (!found) {
         Logger::inst().log_error(
-            Err::UndeclaredName,
+            Err::NameNotFound,
             name->identifier->location,
-            "Name `" + name->to_string() + "` is not declared."
+            "Could not resolve name `" + name->to_string() + "`."
         );
+        return false;
     }
 
     // If the resolved name is an OverloadGroup with exactly one overload, set
@@ -389,28 +345,6 @@ bool SymbolTree::resolve_name(std::shared_ptr<Name> name) {
     // group later.
 
     return true;
-}
-
-std::optional<std::shared_ptr<Node>>
-SymbolTree::search_name(const OldName& name) const {
-    // First, search the reserved scope.
-    auto node = search_name_from_scope(name, reserved_scope);
-    // If not found, search from the current scope.
-    if (!node.has_value()) {
-        node = search_name_from_scope(name, current_scope);
-    }
-    // If the found node is an OverloadGroup with exactly one overload, return
-    // the single overload instead.
-    if (node.has_value()) {
-        if (auto overload_group =
-                std::dynamic_pointer_cast<Node::OverloadGroup>(node.value())) {
-            if (overload_group->overloads.size() == 1) {
-                return overload_group->overloads.at(0);
-            }
-        }
-    }
-
-    return node;
 }
 
 std::optional<std::shared_ptr<Node::LocalScope>>

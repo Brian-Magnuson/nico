@@ -667,38 +667,6 @@ public:
 };
 
 /**
- * @brief A name reference expression.
- *
- * Name reference expressions refer to variables or functions by name.
- *
- * Note: This class used to be called Expr::Identifier, but was changed to
- * use more consistent name terminology.
- *
- * @deprecated Use the new Expr::NameRef class instead.
- */
-class Expr::OldNameRef : public Expr::IPLValue {
-public:
-    // The token representing the identifier.
-    OldName name;
-    // The field entry associated with the identifier.
-    std::weak_ptr<Node::FieldEntry> field_entry;
-
-    OldNameRef(std::shared_ptr<Token> token)
-        : name(token) {
-        location = &token->location;
-    }
-
-    OldNameRef(OldName name)
-        : name(name) {
-        location = &name.parts[0].token->location;
-    }
-
-    std::any accept(Visitor* visitor, bool as_lvalue) override {
-        return visitor->visit(this, as_lvalue);
-    }
-};
-
-/**
  * @brief A literal expression.
  *
  * Literal expressions are expressions that represent a literal value like a
@@ -920,19 +888,16 @@ public:
 class Annotation::NameRef : public Annotation {
 public:
     // The name in the name reference annotation.
-    const OldName name;
+    const std::shared_ptr<Name> name;
 
-    NameRef(OldName name)
-        : name(std::move(name)) {
-        if (this->name.parts.empty()) {
-            panic("Annotation::NameRef::NameRef: name has no parts.");
-        }
-        location = &this->name.parts.back().token->location;
+    NameRef(std::shared_ptr<Name> name)
+        : name(name) {
+        location = &name->identifier->location;
     }
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 
-    std::string to_string() const override { return name.to_string(); }
+    std::string to_string() const override { return name->to_string(); }
 };
 
 /**

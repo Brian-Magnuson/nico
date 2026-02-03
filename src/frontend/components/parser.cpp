@@ -1230,7 +1230,9 @@ std::optional<std::shared_ptr<Annotation>> Parser::annotation() {
     }
     if (match({Tok::Identifier})) {
         auto token = previous();
-        return std::make_shared<Annotation::NameRef>(OldName(token));
+        return std::make_shared<Annotation::NameRef>(
+            std::make_shared<Name>(token)
+        );
     }
     if (match({Tok::Nullptr})) {
         return std::make_shared<Annotation::Nullptr>(previous());
