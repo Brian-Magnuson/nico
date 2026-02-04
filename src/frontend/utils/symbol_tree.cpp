@@ -86,6 +86,50 @@ void SymbolTree::install_primitive_types() {
     modified = true;
 }
 
+bool SymbolTree::resolve_name_from_scope(
+    std::shared_ptr<Name> name, std::shared_ptr<Node::IScope> searching_scope
+) {
+    // If the NameRef has a base...
+    if (name->base.has_value()) {
+        if (!resolve_name_from_scope(name->base.value(), searching_scope)) {
+            // If we could not resolve the base, return false.
+            return false;
+        }
+        // Ensure the base's node is a scope.
+        auto base_scope = std::dynamic_pointer_cast<Node::IScope>(
+            name->base.value()->node.lock()
+        );
+        if (!base_scope) {
+            // This isn't necesarily an error.
+            // It could be we just didn't search high enough.
+            return false;
+        }
+        // Search from the base scope for the identifier.
+        auto it =
+            base_scope->children.find(std::string(name->identifier->lexeme));
+        if (it == base_scope->children.end()) {
+            // This isn't necessarily an error.
+            // It could be we just didn't search high enough.
+            return false;
+        }
+        name->node = it->second;
+        return true;
+    }
+    // If the NameRef does not have a base...
+    else {
+        auto it = searching_scope->children.find(
+            std::string(name->identifier->lexeme)
+        );
+        if (it == searching_scope->children.end()) {
+            // This isn't necessarily an error.
+            // It could be we just didn't search high enough.
+            return false;
+        }
+        name->node = it->second;
+        return true;
+    }
+}
+
 void SymbolTree::reset() {
     root_scope = Node::RootScope::create();
     root_scope->symbol = "";
@@ -258,50 +302,6 @@ std::optional<std::shared_ptr<Node::IScope>> SymbolTree::exit_scope() {
     current_scope = current_scope->parent.lock();
     modified = true;
     return current_scope;
-}
-
-bool SymbolTree::resolve_name_from_scope(
-    std::shared_ptr<Name> name, std::shared_ptr<Node::IScope> searching_scope
-) {
-    // If the NameRef has a base...
-    if (name->base.has_value()) {
-        if (!resolve_name_from_scope(name->base.value(), searching_scope)) {
-            // If we could not resolve the base, return false.
-            return false;
-        }
-        // Ensure the base's node is a scope.
-        auto base_scope = std::dynamic_pointer_cast<Node::IScope>(
-            name->base.value()->node.lock()
-        );
-        if (!base_scope) {
-            // This isn't necesarily an error.
-            // It could be we just didn't search high enough.
-            return false;
-        }
-        // Search from the base scope for the identifier.
-        auto it =
-            base_scope->children.find(std::string(name->identifier->lexeme));
-        if (it == base_scope->children.end()) {
-            // This isn't necessarily an error.
-            // It could be we just didn't search high enough.
-            return false;
-        }
-        name->node = it->second;
-        return true;
-    }
-    // If the NameRef does not have a base...
-    else {
-        auto it = searching_scope->children.find(
-            std::string(name->identifier->lexeme)
-        );
-        if (it == searching_scope->children.end()) {
-            // This isn't necessarily an error.
-            // It could be we just didn't search high enough.
-            return false;
-        }
-        name->node = it->second;
-        return true;
-    }
 }
 
 bool SymbolTree::resolve_name(std::shared_ptr<Name> name) {

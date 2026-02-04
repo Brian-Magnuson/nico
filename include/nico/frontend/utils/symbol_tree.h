@@ -35,6 +35,29 @@ class SymbolTree {
      */
     void install_primitive_types();
 
+    /**
+     * @brief Attempts to fully resolve a name starting from a given scope and
+     * searching downward.
+     *
+     * When a name is resolved, its node fields are set to the corresponding
+     * nodes in the symbol tree. The name is considered fully resolved iff all
+     * parts of the name are resolved to nodes.
+     *
+     * The searching scope is used as the starting point and is searched
+     * downward. If the name cannot be resolved, the caller should reattempt
+     * from the parent scope (upward search).
+     *
+     * If the name cannot be resolved, this function will not log an error.
+     *
+     * @param name The name to resolve.
+     * @param searching_scope The scope to start searching from.
+     * @return True if the name was fully resolved, false otherwise.
+     */
+    bool resolve_name_from_scope(
+        std::shared_ptr<Name> name,
+        std::shared_ptr<Node::IScope> searching_scope
+    );
+
 public:
     // The root scope of the symbol tree, which is the top-level scope that
     // contains all other scopes.
@@ -174,13 +197,23 @@ public:
      */
     std::optional<std::shared_ptr<Node::IScope>> exit_scope();
 
-    // TODO: Add doc comments here.
-
-    bool resolve_name_from_scope(
-        std::shared_ptr<Name> name,
-        std::shared_ptr<Node::IScope> searching_scope
-    );
-
+    /**
+     * @brief Attempts to fully resolve a name starting from the current scope.
+     *
+     * When a name is resolved, its node fields are set to the corresponding
+     * nodes in the symbol tree. The name is considered fully resolved iff all
+     * parts of the name are resolved to nodes.
+     *
+     * Search starts at the current scope and searches downward. If the name
+     * cannot be resolved, the search is reattempted from the parent scope. This
+     * process continues until the name is resolved or there are no more parent
+     * scopes to search.
+     *
+     * If the name cannot be resolved, this function will log an error.
+     *
+     * @param name The name to resolve.
+     * @return True if the name was fully resolved, false otherwise.
+     */
     bool resolve_name(std::shared_ptr<Name> name);
 
     /**
