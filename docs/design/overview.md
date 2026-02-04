@@ -736,6 +736,31 @@ namespace my_namespace:
 Declaring multiple anonymous namespaces in the same scope is allowed, but each declaration creates a new unique namespace. 
 I.e., you cannot reopen an anonymous namespace.
 
+In a file, before any other statements, you may declare a namespace that encompasses the entire file using a special syntax:
+```
+namespace my_namespace
+
+statement1
+statement2
+```
+
+A file namespace does not use a colon or braces. 
+It is implicitly closed at the end of the file.
+This makes it convenient for organizing an entire file under a single namespace without needing to indent the whole file or use braces.
+```
+namespace ns1
+
+let x = 42                      // part of ns1
+
+namespace ns2:
+    func my_function() -> i32:  // part of ns1::ns2
+        yield 42
+```
+
+A file may only have, at most, one file namespace declaration.
+File namespaces cannot be nested within other namespaces.
+A file namespace may be reopened in a different file using the normal namespace declaration syntax.
+
 You may reference functions, structs, and classes declared in a later namespace declaration.
 This is because the compiler checks all namespace declarations before checking other statements.
 ```
@@ -860,6 +885,106 @@ namespace ns2:
 namespace ns2:
     func another_function() -> i32:
         yield my_function() + 1 // Error: my_function is not accessible here
+```
+
+### Imports
+
+Imports are used to bring in declarations and run code from other files. 
+The `import` keyword declares an import:
+```
+import "file_path"
+```
+
+If the file name without the extension can be a valid identifier, then the file is imported as a namespace with the same name as the file.
+A name can be a valid identifier if it matches the regex `[a-zA-Z_][a-zA-Z0-9_]*`.
+
+You can also specify a custom namespace name for the imported file using the `as` keyword:
+```
+import "file_path" as my_file
+```
+
+This can be done even if the file name would not be a valid identifier.
+
+Note: `import *` is not a valid syntax.
+
+Import statements may only appear in the root scope or within namespaces. 
+They cannot be used within functions, control structures, or other blocks.
+
+When the compiler encounters an import statement, it will look for the specified file and check if it has been visited. The file path is resolved relative to the directory of the file containing the import statement.
+- If the file does not exist, a compile-time error is raised.
+- If the file exists and has not been visited, the file is immediately marked as visited. The file is then processed and the namespace becomes available. This is done before continuing to process the rest of the current file.
+- If the file has already been visited, the namespace becomes available, but the file is not processed again.
+
+When a file is processed, its top-level statements are added to the script function as if they were written at the location of the import statement.
+```
+// "my_file.nico"
+printout 1
+
+// "main.nico"
+printout 2
+import "my_file.nico"
+printout 3
+
+// Output: 213
+```
+
+When a file is imported, its contents are made available in the current file under the namespace specified by the import statement.
+```
+// "my_file.nico"
+func my_function() -> i32:
+
+// "main.nico"
+import "my_file.nico" as my_file
+let x = my_file::my_function()
+```
+
+It is neither an error nor a warning to import a file without a valid namespace name. 
+The file will be imported and processed, but its contents will not be accessible in the current file.
+```
+import "my-file.nico"   // OK, but contents are not accessible
+```
+
+When a file ends, any namespaces made available via an import statement are "cleared", meaning they won't affect later imports or namespace declarations.
+This prevents imports from being transitive.
+
+Imports are not transitive. If file A imports file B, and file B imports file C, the contents of file C will not be accessible in file A unless file A also imports file C.
+```
+// file_a.nico
+let x = 42
+
+// file_b.nico
+import "file_a.nico"
+printout file_a::x    // OK
+
+// file_c.nico
+import "file_b.nico"
+printout file_a::x    // Error: file_a is not accessible here
+```
+
+It is not an error to have circular imports. 
+If there is a cycle, the compiler will recognize that it has already visited files and will not attempt to process them again, thus preventing infinite loops.
+```
+// file_a.nico
+import "file_b.nico"
+
+// file_b.nico
+import "file_a.nico"   // Perfectly fine, no infinite loop occurs
+```
+
+Imports are designed to behave deterministically. 
+File processing always starts somewhere and proceeds based on the order of the import statements.
+It might be confusing if multiple files have top-level code, which is why it is generally recommended to keep top-level code to a single file.
+
+You can use imports with `using` declarations to further organize your code and avoid having to use fully-qualified names for imported declarations.
+```
+// file_a.nico
+namespace ns1:
+    func my_function() -> i32:
+        yield 42
+
+// file_b.nico
+import "file_a.nico" as file_a
+using my_function from file_a::ns1
 ```
 
 ### Variables
