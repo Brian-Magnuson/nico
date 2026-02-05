@@ -688,303 +688,94 @@ x; -y
 
 ## Declarations
 
-### Namespaces
-
-Namespaces are used to organize declarations in global scope.
-The `namespace` keyword declares a namespace. It may be written in indented form or braced form:
-```
-namespace my_namespace: // Indented form
-    declaration1
-
-namespace my_namespace { // Braced form
-    declaration1
-}
-```
-
-You can omit the name of a namespace to create an anonymous namespace:
-```
-namespace: // Indented form
-    declaration1
-
-namespace { // Braced form
-    declaration1
-}
-```
-
-The namespace receives an internal unique name that cannot be referenced, effectively making all declarations within it private.
-
-A namespace may only be opened in the root scope or other namespaces.
-
-You can nest namespaces within other namespaces. You can even name the nested namespace the same as the outer namespace:
-```
-namespace my_namespace:
-    namespace inner_namespace:
-        declaration1
-    namespace my_namespace:
-        declaration2
-```
-
-You can declare multiple namespaces with the same name in the same scope. The second declaration "reopens" the namespace, allowing you to add more declarations to it.
-```
-namespace my_namespace:
-    declaration1
-
-namespace my_namespace:
-    declaration2
-```
-
-Declaring multiple anonymous namespaces in the same scope is allowed, but each declaration creates a new unique namespace. 
-I.e., you cannot reopen an anonymous namespace.
-
-In a file, before any other statements, you may declare a namespace that encompasses the entire file using a special syntax:
-```
-namespace my_namespace
-
-statement1
-statement2
-```
-
-A file namespace does not use a colon or braces. 
-It is implicitly closed at the end of the file.
-This makes it convenient for organizing an entire file under a single namespace without needing to indent the whole file or use braces.
-```
-namespace ns1
-
-let x = 42                      // part of ns1
-
-namespace ns2:
-    func my_function() -> i32:  // part of ns1::ns2
-        yield 42
-```
-
-A file may only have, at most, one file namespace declaration.
-File namespaces cannot be nested within other namespaces.
-A file namespace may be reopened in a different file using the normal namespace declaration syntax.
-
-You may reference functions, structs, and classes declared in a later namespace declaration.
-This is because the compiler checks all namespace declarations before checking other statements.
-```
-let x = my_namespace::my_function(1, 2)
-
-namespace my_namespace:
-    func my_function(a: i32, b: i32) -> i32:
-        yield a + b
-```
-
-Because of this, top-level declarations cannot use identifiers that are later used to declare namespaces.
-```
-block { let x = 64 } // OK - x is scoped to the block.
-let x = 42 // Error: x is the name of a namespace.
-
-namespace x:
-    func my_function() -> i32:
-        yield 0
-```
-
-### Using declarations
-
-Using declarations are used to bring names from a namespace into the current scope. 
-The `using` keyword declares a using declaration:
-```
-using nameN from name1::name2
-```
-
-A using declaration consists of an identifier for an entry, and a name reference to a global scope, such as a namespace or struct (only shared members can be imported), from which to import the entry.
-A search will be performed from the targeted scope for the specified entry name.
-
-You can use multiple using declarations to bring in names from multiple namespaces.
-```
-using nameN from name1::name2
-using nameZ from nameA::nameB
-```
-
-You can use commas to bring in multiple names from the same namespace:
-```
-using x, y, z from ns1::ns2
-```
-Commas are not allowed after the `from` keyword.
-
-You can use the `as` keyword to create aliases for the imported names:
-```
-using a as x, b as y from ns1
-```
-
-When using the `as` keyword, you can omit the `from` keyword to create an alias for a name in the current scope:
-```
-using my_function as mf
-```
-
-You can use the `*` wildcard to bring in all names from a namespace:
-```
-using * from ns1
-```
-This is equivalent to writing a using declaration for every name in the target namespace.
-Note: `ns1::*` is not valid syntax.
-You cannot use `as` with wildcard using declarations.
-
-Using declarations may only appear at the beginning of the current scope, before any other declarations or statements.
-
-Once a using declaration is made, the targeted entry becomes accessible in the current scope without needing to use its fully-qualified name.
-```
-namespace ns1:
-    func my_function() -> i32:
-        yield 42
-
-namespace ns2:
-    using ns1::my_function
-
-    func another_function() -> i32:
-        yield ns1::my_function() + 1   // OK: using fully-qualified name
-        yield my_function() + 1        // OK: using declaration brings in my_function
-```
-
-You cannot use a name reference to reference a name imported in another namespace via a using declaration.
-Using declarations are not transitive.
-```
-namespace ns1:
-    func my_function() -> i32:
-        yield 42
-
-namespace ns2:
-    using ns1::my_function
-    let x = my_function() // OK
-
-namespace ns3:
-    using ns2::ns1::my_function  // Error: ns2 has no entry named ns1
-    let y = my_function()        // Error: my_function is not accessible here
-```
-
-It is not a name conflict to:
-- Have a using declaration that brings in a name that is already available in the current scope, or
-- Introduce a binding with a name that is already imported via a using declaration.
-
-In such cases, the local declaration takes precedence, followed by declarations imported first-to-last.
-```
-namespace ns3:
-    using x, y from ns1
-    using y from ns2
-
-    let x = 64    // OK: `x` is not an existing member of `ns3`
-    let z = x     // OK: refers to local `x`, not `ns1::x`
-    let w = y     // OK: refers to `ns1::y` since its using declaration comes before `ns2::y`
-```
-
-It is not a name conflict to have overlapping using declarations.
-```
-namespace ns4:
-    using ns2 from ns1
-    using ns3 from ns1::ns2
-    using my_function from ns1::ns2::ns3
-```
-
-When a namespace is closed, any using declarations made within that namespace are "cleared", meaning they won't affect reopened namespaces declared later.
-```
-namespace ns2:
-    using ns1::my_function
-
-namespace ns2:
-    func another_function() -> i32:
-        yield my_function() + 1 // Error: my_function is not accessible here
-```
-
 ### Imports
 
 Imports are used to bring in declarations and run code from other files. 
+
+Imports must be written at the top level of a file before any other declarations or statements.
+
 The `import` keyword declares an import:
 ```
-import "file_path"
+import name from "path/to/file.nico"
 ```
 
-If the file name without the extension can be a valid identifier, then the file is imported as a namespace with the same name as the file.
-A name can be a valid identifier if it matches the regex `[a-zA-Z_][a-zA-Z0-9_]*`.
-
-You can also specify a custom namespace name for the imported file using the `as` keyword:
+You can use curly braces to specify a list of imports from the same file:
 ```
-import "file_path" as my_file
+import { name1, name2 } from "path/to/file.nico"
 ```
 
-This can be done even if the file name would not be a valid identifier.
-
-Note: `import *` is not a valid syntax.
-
-Import statements may only appear in the root scope or within namespaces. 
-They cannot be used within functions, control structures, or other blocks.
-
-When the compiler encounters an import statement, it will look for the specified file and check if it has been visited. The file path is resolved relative to the directory of the file containing the import statement.
-- If the file does not exist, a compile-time error is raised.
-- If the file exists and has not been visited, the file is immediately marked as visited. The file is then processed and the namespace becomes available. This is done before continuing to process the rest of the current file.
-- If the file has already been visited, the namespace becomes available, but the file is not processed again.
-
-When a file is processed, its top-level statements are added to the script function as if they were written at the location of the import statement.
+You can use a wildcard `*` to import all exported names from a file:
 ```
-// "my_file.nico"
-printout 1
-
-// "main.nico"
-printout 2
-import "my_file.nico"
-printout 3
-
-// Output: 213
+import * from "path/to/file.nico"
 ```
 
-When a file is imported, its contents are made available in the current file under the namespace specified by the import statement.
+You can use the `as` keyword to rename an import:
 ```
-// "my_file.nico"
-func my_function() -> i32:
-
-// "main.nico"
-import "my_file.nico" as my_file
-let x = my_file::my_function()
+import name as new_name from "path/to/file.nico"
+import { name1 as new_name1, name2 as new_name2 } from "path/to/file.nico"
 ```
 
-It is neither an error nor a warning to import a file without a valid namespace name. 
-The file will be imported and processed, but its contents will not be accessible in the current file.
+This allows you to avoid name conflicts or to use more convenient names.
+
+The file path should be relative to the location of the current file.
+
+When a file is imported, all top-level code in that file is executed. This includes variable initializations and any other statements outside of declarations.
+
+The order of imports is designed to be deterministic. 
+By default, execution begins in one file.
+When an import is encountered, the code in that file is executed before continuing with the current file.
+If that file imports another file, the process continues recursively.
+
+A file will not be imported if it is currently being imported or has already been imported. This prevents circular imports and multiple executions of the same file.
+
+Once an import is complete, all names specified become available in the current file.
+
+Imports are not transitive. 
+This means that names imported in one file are not automatically available in files that import that file.
+You can change this behavior by using export declarations (see the following section for more information).
+
+### Exports
+
+You can only import names that the file exports. 
+By default, files export all declarations made within them, except for imports.
+
+You can use export declarations to make the current file's imports available to other files that import the current file.
+
+The `export` keyword declares an export:
 ```
-import "my-file.nico"   // OK, but contents are not accessible
-```
-
-When a file ends, any namespaces made available via an import statement are "cleared", meaning they won't affect later imports or namespace declarations.
-This prevents imports from being transitive.
-
-Imports are not transitive. If file A imports file B, and file B imports file C, the contents of file C will not be accessible in file A unless file A also imports file C.
-```
-// file_a.nico
-let x = 42
-
-// file_b.nico
-import "file_a.nico"
-printout file_a::x    // OK
-
-// file_c.nico
-import "file_b.nico"
-printout file_a::x    // Error: file_a is not accessible here
-```
-
-It is not an error to have circular imports. 
-If there is a cycle, the compiler will recognize that it has already visited files and will not attempt to process them again, thus preventing infinite loops.
-```
-// file_a.nico
-import "file_b.nico"
-
-// file_b.nico
-import "file_a.nico"   // Perfectly fine, no infinite loop occurs
+export name
 ```
 
-Imports are designed to behave deterministically. 
-File processing always starts somewhere and proceeds based on the order of the import statements.
-It might be confusing if multiple files have top-level code, which is why it is generally recommended to keep top-level code to a single file.
-
-You can use imports with `using` declarations to further organize your code and avoid having to use fully-qualified names for imported declarations.
+You can use curly braces to specify a list of exports:
 ```
-// file_a.nico
-namespace ns1:
-    func my_function() -> i32:
-        yield 42
+export { name1, name2 }
+```
 
-// file_b.nico
-import "file_a.nico" as file_a
-using my_function from file_a::ns1
+You can use a wildcard `*` to export all imported names:
+```
+export *
+```
+
+You can specify multiple export declarations in a single file.
+```
+export name1
+export name2
+```
+
+Exporting only *adds* to the set of exported names. It does not remove any names from the export set.
+
+Exports can be used to create aggregate files that re-export names from other files.
+```
+// collections.nico
+import List from "collections/list.nico"
+import Map from "collections/map.nico"
+
+export { List, Map }
+```
+
+Other files can then use the aggregate file.
+```
+import { List, Map } from "collections.nico"
 ```
 
 ### Variables
