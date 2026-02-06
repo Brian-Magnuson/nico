@@ -691,6 +691,8 @@ x; -y
 ### Imports
 
 Imports are used to bring in declarations and run code from other files. 
+When a file is imported, all top-level code in that file is executed. 
+This includes variable initializations and any other statements outside of declarations.
 
 Imports must be written at the top level of a file before any other declarations or statements.
 
@@ -716,10 +718,21 @@ import { name1 as new_name1, name2 as new_name2 } from "path/to/file.nico"
 ```
 
 This allows you to avoid name conflicts or to use more convenient names.
+Name conflicts may occur with imports like any other declaration.
+```
+import x from "file1.nico"
+import x from "file2.nico" // Error: name conflict
+
+let x = 42  // Error: name conflict
+```
 
 The file path should be relative to the location of the current file.
 
-When a file is imported, all top-level code in that file is executed. This includes variable initializations and any other statements outside of declarations.
+You can import a file without specifying any names from it.
+This will execute the file if it is not already being imported or has not already been imported, but will not make any of its names available in the current file.
+```
+import "path/to/file.nico"
+```
 
 The order of imports is designed to be deterministic. 
 By default, execution begins in one file.
@@ -737,7 +750,10 @@ You can change this behavior by using export declarations (see the following sec
 ### Exports
 
 You can only import names that the file exports. 
-By default, files export all declarations made within them, except for imports.
+
+By default, files export all names declared within them, except:
+- Names made available through imports
+- Names introduced via external declaration blocks
 
 You can use export declarations to make the current file's imports available to other files that import the current file.
 
@@ -745,15 +761,11 @@ The `export` keyword declares an export:
 ```
 export name
 ```
+You can only export a name after the name is made available in the current file.
 
 You can use curly braces to specify a list of exports:
 ```
 export { name1, name2 }
-```
-
-You can use a wildcard `*` to export all imported names:
-```
-export *
 ```
 
 You can specify multiple export declarations in a single file.
@@ -776,6 +788,69 @@ export { List, Map }
 Other files can then use the aggregate file.
 ```
 import { List, Map } from "collections.nico"
+```
+
+### Namespaces
+
+Namespaces are used to group related declarations together. They are declared using the `namespace` keyword:
+```
+namespace ns1:  // Indented form
+    declaration1
+    declaration2
+    
+namespace ns2 { // Braced form
+    declaration1
+    declaration2
+}
+```
+
+You may declare a namespace within another namespace. This creates a nested namespace.
+```
+namespace ns1:
+    namespace ns2:
+        declaration1
+```
+
+Once, at the top level, you may declare a namespace without a block opening token. 
+This is a file-level namespace.
+All declarations under the file-level namespace are considered to be part of the namespace until the end of the file.
+This is useful for wrapping an entire file in a namespace without needing to indent the entire file.
+```
+namespace ns1  // Extends to end of file
+
+declaration1
+declaration2
+```
+
+Once a namespace is closed, it cannot be reopened. This means that all declarations within a namespace must be declared together.
+```
+namespace ns1:
+    declaration1
+
+namespace ns1: // Error: ns1 already exists
+    declaration2
+```
+
+Although this rule may seem restrictive, it ensures that all declarations have a clear, tracable origin.
+
+Outside of a namespace, you can access declarations within the namespace using the `::` operator (also called the scope resolution operator):
+```
+let x = ns1::x
+```
+
+Namespaces are useful for files that declare many related declarations.
+When wrapped in a namespace, the declarations can be imported all at once without polluting the global namespace.
+```
+// colors.nico
+namespace colors:
+    func red() -> str => "FF0000"
+    func green() -> str => "00FF00"
+    func blue() -> str => "0000FF"
+    ...
+
+// main.nico
+import colors from "colors.nico"
+let red_color = colors::red()
 ```
 
 ### Variables
