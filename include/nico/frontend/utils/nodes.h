@@ -300,6 +300,8 @@ public:
     class Yield;
     class Continue;
 
+    class Extern;
+
     class Eof;
 
     virtual ~Stmt() {}
@@ -317,6 +319,7 @@ public:
         virtual std::any visit(Pass* stmt) = 0;
         virtual std::any visit(Yield* stmt) = 0;
         virtual std::any visit(Continue* stmt) = 0;
+        virtual std::any visit(Extern* stmt) = 0;
         virtual std::any visit(Eof* stmt) = 0;
     };
 

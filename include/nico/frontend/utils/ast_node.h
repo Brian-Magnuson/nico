@@ -203,6 +203,24 @@ public:
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };
 
+class Stmt::Extern : public Stmt {
+public:
+    // An ABI enumeration for different calling conventions.
+    enum class ABI {
+        C,
+    };
+
+    // The ABI for the extern declaration block.
+    ABI abi;
+    // The declarations in the extern block.
+    std::vector<std::shared_ptr<Stmt>> stmts;
+
+    Extern(std::vector<std::shared_ptr<Stmt>>&& stmts, ABI abi = ABI::C)
+        : abi(abi), stmts(std::move(stmts)) {}
+
+    std::any accept(Visitor* visitor) override { return visitor->visit(this); }
+};
+
 /**
  * @brief An EOF statement.
  *

@@ -592,6 +592,12 @@ std::any LocalChecker::visit(Stmt::Dealloc* stmt) {
     return std::any();
 }
 
+std::any LocalChecker::visit(Stmt::Extern* /*stmt*/) {
+    // TODO: Implement local checking for extern blocks. For now, we'll just
+    // ignore them.
+    return std::any();
+}
+
 std::any LocalChecker::visit(Stmt::Eof* stmt) {
     return std::any();
 }

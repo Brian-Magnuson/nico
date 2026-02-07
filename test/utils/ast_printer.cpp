@@ -92,6 +92,15 @@ std::any AstPrinter::visit(Stmt::Continue* /*stmt*/) {
     return std::string("(stmt:continue)");
 }
 
+std::any AstPrinter::visit(Stmt::Extern* stmt) {
+    std::string str = "(stmt:extern";
+    for (const auto& inner_stmt : stmt->stmts) {
+        str += " " + std::any_cast<std::string>(inner_stmt->accept(this));
+    }
+    str += ")";
+    return str;
+}
+
 std::any AstPrinter::visit(Stmt::Eof* /*stmt*/) {
     return std::string("(stmt:eof)");
 }

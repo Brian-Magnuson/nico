@@ -45,6 +45,7 @@ std::unordered_map<std::string_view, Tok> Lexer::keywords = {
     {"sizeof", Tok::KwSizeof},
     {"alloc", Tok::KwAlloc},
     {"transmute", Tok::KwTransmute},
+    {"extern", Tok::KwExtern},
 
     {"typeof", Tok::KwTypeof},
 

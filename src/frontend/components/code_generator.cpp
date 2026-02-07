@@ -285,6 +285,11 @@ std::any CodeGenerator::visit(Stmt::Continue* /*stmt*/) {
     return std::any();
 }
 
+std::any CodeGenerator::visit(Stmt::Extern* stmt) {
+    // TODO: Implement code generation for extern blocks.
+    return std::any();
+}
+
 std::any CodeGenerator::visit(Stmt::Eof* stmt) {
     // Generate code for the end-of-file (EOF) statement
     return std::any();

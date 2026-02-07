@@ -51,6 +51,11 @@ std::any MIRBuilder::visit(Stmt::Yield* stmt) {
     return {};
 }
 
+std::any MIRBuilder::visit(Stmt::Extern* stmt) {
+    // TODO: Implementation for visiting Extern statements goes here.
+    return {};
+}
+
 std::any MIRBuilder::visit(Stmt::Continue* stmt) {
     // TODO: Implementation for visiting Continue statements goes here.
     return {};
