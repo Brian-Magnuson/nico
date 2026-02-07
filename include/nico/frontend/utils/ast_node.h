@@ -100,7 +100,7 @@ public:
     // The parameters of the function.
     std::vector<Param> parameters;
     // The body of the function.
-    std::shared_ptr<Expr::Block> body;
+    std::optional<std::shared_ptr<Expr::Block>> body;
     // A weak pointer to the field entry in the symbol table.
     std::weak_ptr<Node::FieldEntry> field_entry;
 
@@ -108,7 +108,7 @@ public:
         std::shared_ptr<Token> identifier,
         std::optional<std::shared_ptr<Annotation>> annotation,
         std::vector<Param>&& parameters,
-        std::shared_ptr<Expr::Block> body
+        std::optional<std::shared_ptr<Expr::Block>> body
     )
         : identifier(identifier),
           annotation(annotation),

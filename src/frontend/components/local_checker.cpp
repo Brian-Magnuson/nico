@@ -393,7 +393,7 @@ std::any LocalChecker::visit(Stmt::Func* stmt) {
         );
     }
 
-    symbol_tree->add_local_scope(stmt->body);
+    symbol_tree->add_local_scope(stmt->body.value());
 
     bool has_error = false;
     // Check the parameters.
@@ -436,7 +436,7 @@ std::any LocalChecker::visit(Stmt::Func* stmt) {
     }
 
     // Check the body.
-    auto body_type = expr_check(stmt->body, false);
+    auto body_type = expr_check(stmt->body.value(), false);
     if (!body_type) {
         // Ignore error, already reported.
     }
@@ -444,7 +444,7 @@ std::any LocalChecker::visit(Stmt::Func* stmt) {
     else if (!body_type->is_assignable_to(*func_type->return_type)) {
         Logger::inst().log_error(
             Err::FunctionReturnTypeMismatch,
-            stmt->body->location,
+            stmt->body.value()->location,
             std::string("Function body type `") + body_type->to_string() +
                 "` is not compatible with declared return type `" +
                 func_type->return_type->to_string() + "`."

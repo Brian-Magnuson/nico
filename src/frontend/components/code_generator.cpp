@@ -137,7 +137,7 @@ std::any CodeGenerator::visit(Stmt::Func* stmt) {
     );
 
     // Generate code for the function body.
-    stmt->body->accept(this, false);
+    stmt->body.value()->accept(this, false);
     // The body is always a block.
 
     // Jump to the exit block.
@@ -160,6 +160,9 @@ std::any CodeGenerator::visit(Stmt::Func* stmt) {
         false,
         llvm::GlobalValue::ExternalLinkage,
         function,
+        // This has to be named the same as the symbol.
+        // Because this is a global variable, it is searched by name when we
+        // look up the field entry for a function call.
         stmt->field_entry.lock()->symbol
     );
     // `new` is safe here because the module manages the memory.

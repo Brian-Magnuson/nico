@@ -54,8 +54,8 @@ std::any AstPrinter::visit(Stmt::Func* stmt) {
                          );
         }
     }
-    str +=
-        ") => " + std::any_cast<std::string>(stmt->body->accept(this, false));
+    str += ") => " +
+           std::any_cast<std::string>(stmt->body.value()->accept(this, false));
     str += ")";
     return str;
 }
