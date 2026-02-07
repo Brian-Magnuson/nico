@@ -1169,46 +1169,45 @@ Classes differ from structs in the following ways:
 Classes are designed to support object-oriented programming features, making them more suitable for complex data structures and behaviors.
 The drawback is that instances of classes require additional memory overhead due to features like virtual method tables and inheritance.
 
-### External declaration blocks
+### External declaration namespaces
 
-External declaration blocks are used to declare functions or variables that are defined outside of the current module. This is useful for interfacing with code written in other programming languages or for linking to external libraries.
+An external declaration namespace, or simply "extern namespace", is a special namespace that is used to contain declarations for external code. This is useful for interfacing with code written in other programming languages or for linking to external libraries.
 
-To create an external declaration block, use the `extern` keyword followed by either a colon or an opening curly brace. The block may be written in indented form or braced form:
+To create an external declaration namespace, use the `extern` keyword followed by an identifier for the namespace name and either a colon or an opening curly brace. The block may be written in indented form or braced form:
 ```
-extern:
+extern lib_foo:
     func external_function(a: i32) -> i32
-    let external_variable: f64
 
-extern {
+extern lib_bar {
     func external_function(a: i32) -> i32
-    let external_variable: f64
 }
 ```
 
-Despite using a similar syntax to block expressions, extern blocks are not block expressions. They are a kind of declaration, i.e., a statement.
+Because these are namespaces, the internal members must be accessed using the scope resolution operator:
+```
+let result = lib_foo::external_function(42)
+```
 
-Inside an external declaration block, you may only declare the following:
+Inside an external declaration namespace, you may only declare the following:
 - Variables using `let` with a type annotation and no initializer.
 - Functions using `func` without a body (function headers).
 
-External declaration blocks allow you to declare variables and functions that are defined in external code, such as C libraries.
+External declaration namespaces allow you to declare variables and functions that are defined in external code, such as C libraries.
 - With variables, the identifier and type should match the external definition.
 - With functions, the identifier, parameter types (but not parameter identifiers), and return type should match the external definition.
 
 Currently there is no way to specify a different linkage name for an external variable or function. You can, however, create a wrapper function or variable with the desired name.
 
-You can add a string literal after the `extern` keyword to specify the ABI to use.
-Currently, the only supported ABI is `"C"`.
+You can add a string literal between the `extern` keyword and the namespace name to specify the ABI (application binary interface) of the external code. This is useful for ensuring compatibility with code written in different programming languages or compiled with different compilers.
 ```
-extern "C":
+extern "C" c_funcs:
     func c_function(a: i32) -> i32
     let c_variable: f64
 ```
 Using an unsupported ABI will result in a compile-time error.
 If you do not specify an ABI, the default ABI for the target platform will be used (currently "C").
 
-Extern blocks may only be placed at the top level. 
-They cannot be nested inside other blocks, functions, or complex types.
+External declaration namespaces can be declared in any global scope, including within other namespaces.
 
 Externally-declared variables/functions may be referenced/called in safe contexts without requiring an `unsafe` block.
 It is the user's responsibility to ensure that the external code is safe to use.
