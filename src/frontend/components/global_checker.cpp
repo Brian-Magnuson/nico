@@ -121,6 +121,11 @@ std::any GlobalChecker::visit(Stmt::Continue*) {
     return std::any();
 }
 
+std::any GlobalChecker::visit(Stmt::Namespace* stmt) {
+    // TODO: Implement global checking for namespace blocks.
+    return std::any();
+}
+
 std::any GlobalChecker::visit(Stmt::Extern*) {
     // TODO: Implement global checking for extern blocks.
     return std::any();

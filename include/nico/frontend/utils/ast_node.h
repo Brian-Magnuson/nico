@@ -203,6 +203,35 @@ public:
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };
 
+/**
+ * @brief A namespace declaration statement.
+ *
+ * Namespace declarations introduce a new namespace into the current scope and
+ * contain a block of statements that are part of the namespace.
+ */
+class Stmt::Namespace : public Stmt {
+public:
+    // The name of the namespace.
+    std::shared_ptr<Token> identifier;
+    // The statements in the namespace block.
+    std::vector<std::shared_ptr<Stmt>> stmts;
+
+    Namespace(
+        std::shared_ptr<Token> identifier,
+        std::vector<std::shared_ptr<Stmt>>&& stmts
+    )
+        : identifier(identifier), stmts(std::move(stmts)) {}
+
+    std::any accept(Visitor* visitor) override { return visitor->visit(this); }
+};
+
+/**
+ * @brief An extern declaration namespace statement.
+ *
+ * Extern declaration statements introduce a new namespace for external
+ * declarations and contain a block of statements that are part of the extern
+ * namespace.
+ */
 class Stmt::Extern : public Stmt {
 public:
     // An ABI enumeration for different calling conventions.
@@ -210,13 +239,19 @@ public:
         C,
     };
 
+    // The name of the extern block.
+    std::shared_ptr<Token> identifier;
     // The ABI for the extern declaration block.
     ABI abi;
     // The declarations in the extern block.
     std::vector<std::shared_ptr<Stmt>> stmts;
 
-    Extern(std::vector<std::shared_ptr<Stmt>>&& stmts, ABI abi = ABI::C)
-        : abi(abi), stmts(std::move(stmts)) {}
+    Extern(
+        std::shared_ptr<Token> identifier,
+        std::vector<std::shared_ptr<Stmt>>&& stmts,
+        ABI abi = ABI::C
+    )
+        : identifier(identifier), abi(abi), stmts(std::move(stmts)) {}
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };

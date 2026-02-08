@@ -300,6 +300,7 @@ public:
     class Yield;
     class Continue;
 
+    class Namespace;
     class Extern;
 
     class Eof;
@@ -319,6 +320,7 @@ public:
         virtual std::any visit(Pass* stmt) = 0;
         virtual std::any visit(Yield* stmt) = 0;
         virtual std::any visit(Continue* stmt) = 0;
+        virtual std::any visit(Namespace* stmt) = 0;
         virtual std::any visit(Extern* stmt) = 0;
         virtual std::any visit(Eof* stmt) = 0;
     };

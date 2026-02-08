@@ -92,12 +92,23 @@ std::any AstPrinter::visit(Stmt::Continue* /*stmt*/) {
     return std::string("(stmt:continue)");
 }
 
-std::any AstPrinter::visit(Stmt::Extern* stmt) {
-    std::string str = "(stmt:extern";
+std::any AstPrinter::visit(Stmt::Namespace* stmt) {
+    std::string str =
+        "(stmt:namespace " + std::string(stmt->identifier->lexeme) + " {";
     for (const auto& inner_stmt : stmt->stmts) {
         str += " " + std::any_cast<std::string>(inner_stmt->accept(this));
     }
-    str += ")";
+    str += "})";
+    return str;
+}
+
+std::any AstPrinter::visit(Stmt::Extern* stmt) {
+    std::string str =
+        "(stmt:extern " + std::string(stmt->identifier->lexeme) + " {";
+    for (const auto& inner_stmt : stmt->stmts) {
+        str += " " + std::any_cast<std::string>(inner_stmt->accept(this));
+    }
+    str += "})";
     return str;
 }
 
