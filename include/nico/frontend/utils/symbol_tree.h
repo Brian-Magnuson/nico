@@ -137,14 +137,8 @@ public:
      * If the current scope does not allow namespaces, this function does not
      * add the namespace and returns a pair with false and nullptr.
      *
-     * If the namespace already exists, the namespace will not be added, and the
-     * existing namespace will be entered.
-     * The function will return a pair with true and the existing namespace
-     * node.
-     *
-     * If the name already exists in the current scope and does not correspond
-     * to a namespace, this function does not add the namespace and returns a
-     * pair with false and nullptr.
+     * If the name already exists, this function does not add the namespace and
+     * returns a pair with false and nullptr.
      *
      * @param name The name of the namespace.
      * @return std::pair<bool, std::shared_ptr<Node>> The result of adding the

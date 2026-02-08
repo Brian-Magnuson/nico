@@ -207,35 +207,55 @@ std::pair<bool, std::shared_ptr<Node>>
 SymbolTree::add_namespace(std::shared_ptr<Token> token) {
     // Namespaces cannot be added in a local scope
     if (PTR_INSTANCEOF(current_scope, Node::LocalScope)) {
-        // return std::make_pair(nullptr, Err::NamespaceInLocalScope);
+        Logger::inst().log_error(
+            Err::NamespaceInLocalScope,
+            token->location,
+            "Cannot declare a namespace in a local scope."
+        );
         return {false, nullptr};
     }
     // Namespaces cannot be added in a struct definition
     if (PTR_INSTANCEOF(current_scope, Node::StructDef)) {
-        // return std::make_pair(nullptr, Err::NamespaceInStructDef);
+        Logger::inst().log_error(
+            Err::NamespaceInStructDef,
+            token->location,
+            "Cannot declare a namespace in a struct definition."
+        );
         return {false, nullptr};
     }
     // Check if the name is reserved.
     if (auto node = reserved_scope->children.at(std::string(token->lexeme))) {
-        // return std::make_pair(node.value(), Err::NameIsReserved);
+        Logger::inst().log_error(
+            Err::NameIsReserved,
+            token->location,
+            "Name `" + std::string(token->lexeme) +
+                "` is reserved and cannot be used."
+        );
         return {false, nullptr};
     }
 
     // Check if the name already exists.
     if (auto node = current_scope->children.at(std::string(token->lexeme))) {
-        if (auto ns_node =
-                std::dynamic_pointer_cast<Node::Namespace>(node.value())) {
-            // If existing name is a namespace...
-            current_scope = ns_node;
-            modified = true;
-            // return std::make_pair(ns_node, Err::Null);
-            return {true, ns_node};
+        Logger::inst().log_error(
+            Err::NameAlreadyExists,
+            token->location,
+            "Name `" + std::string(token->lexeme) +
+                "` already exists in the current scope."
+        );
+        if (auto locatable =
+                std::dynamic_pointer_cast<Node::ILocatable>(node.value())) {
+            Logger::inst().log_note(
+                locatable->location,
+                "Previous declaration of name `" + std::string(token->lexeme) +
+                    "` found here."
+            );
         }
-        else {
-            // If existing name is not a namespace...
-            // return std::make_pair(node.value(), Err::NameAlreadyExists);
-            return {false, nullptr};
-        }
+
+        // We planned previously to allow namespaces to be reopened.
+        // To ensure code has a single, tracable origin, we decided to disallow
+        // this.
+
+        return {false, nullptr};
     }
     else {
         // If name does not exist...
