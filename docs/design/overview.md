@@ -853,9 +853,31 @@ import colors from "colors.nico"
 let red_color = colors::red()
 ```
 
+A namespace and all of its contents are in declaration space, meaning they are processed before execution space code.
+Like all declaration space code, namespaces can be accessed before they are declared.
+```
+ns1::x = 42
+namespace ns1:
+    static var x: i32
+```
+
+This also means you cannot declare an execution space variable if it conflicts with a declaration space name later in the code:
+```
+let x = 42 // Error: x is the name of a namespace
+namespace x:
+    static var y: i32
+```
+
+You cannot write an execution space statement in a namespace.
+Namespaces are for declaration space only.
+```
+namespace ns1:
+    let x = 42  // Error: Execution space statement in namespace.
+```
+
 ### Variables
 
-Variables are used to store data. The `let` keyword declares a local variable:
+Variables are used to store data. The `let` keyword declares an execution-space variable:
 ```
 let x = 42
 ```
@@ -865,13 +887,32 @@ Optionally, a data type may be specified:
 let x: i32 = 42
 ```
 
-A variable must always be initialized when declared. If no value is provided, a type annotation is required. The variable will be initialized to the default value for the specified type. If this default value is never used, it may be optimized out.
+An execution-space variable must at least have a type annotation or an initialization expression. 
+The variable will be initialized to the default value for the specified type. 
+If this default value is never used, it may be optimized out.
 
 If the the type from the type annotation and the type of the initialization expression do not match, the types may still be assignment-compatible.
 In such cases, the type from the annotation takes precedence, and the newly declared variable will have that type.
 ```
 let a = nullptr       // The type of `a` is `nullptr`
 let b: @i32 = nullptr // The type of `b` is `@i32`
+```
+
+To declare a declaration-space variable, use the `static` keyword:
+```
+static var x: i32
+```
+This variable will be initialized to the default value for its type at the start of the program (before any execution-space code is executed).
+
+Like all declaration-space code, declaration-space variables can be accessed before they are declared.
+```
+x = 42
+static var x: i32
+```
+You cannot declare an execution-space variable if it conflicts with a declaration-space name later in the code:
+```
+let x = 42 // Error: x is the name of a static variable
+static var x: i32
 ```
 
 Variables are immutable by default. To declare a mutable variable, use the `var` keyword:
@@ -893,8 +934,8 @@ func my_function() { // Braced form
 func my_function() => expression // Short form
 ```
 
-If you omit the block opening token or `=>`, the function becomes a function header, having no implementation (the declaration ends there).
-Function headers are not allowed outside of external declaration blocks. See the corresponding section for more information.
+If you omit the block opening token or `=>`, the function has no implementation (the declaration ends there).
+Function headers without an implementation are not allowed outside of external declaration blocks. See the corresponding section for more information.
 
 Functions may accept arguments by listing parameters in parentheses. Types are always required when listing parameters (except for the instance parameter in methods):
 ```
@@ -962,19 +1003,26 @@ func f3() -> i32:
     pass // Bad
 ```
 
-Functions can be called before they are declared. This is because the compiler checks all function declarations before checking other statements.
+A function header is declaration space code. This means functions can be referenced before they are declared.
 ```
 let x = my_function(1, 2)
 func my_function(a: i32, b: i32) -> i32:
     yield a + b
 ```
 
-This has the side effect of disallowing top-level declarations if their identifiers are used to declare functions *later* in the code.
+Like all declaration-space code, you cannot declare an execution-space variable if it conflicts with a function name later in the code:
 ```
 block { let x = 64 } // OK - x is scoped to the block.
 let x = 42 // Error: x is the name of a function.
 func x() -> i32:
     yield 0
+```
+
+A function body is execution space code only. You cannot write declaration-space code within a function body.
+```
+func my_function() -> i32:
+    static var x: i32 // Error: declaration-space variable in local scope.
+    namespace ns {}   // Error: namespace in local scope
 ```
 
 You can declare a function in the same scope with the same name as another function. This is called function overloading.
@@ -1910,6 +1958,108 @@ let p: @i32 = alloc 42
 unsafe:
     dealloc p
 ```
+
+# Execution
+
+Sections of code are labeled as either being in declaration space or execution space.
+
+Declaration and execution space affect the order in which statements are processed.
+Whether something is in declaration space or execution space is determined by the type of statement and its scope, not by its position in the source code.
+```
+                       // Execution space
+
+namespace ns:          // Declaration space
+    func foo() {       // Declaration space
+        statement1     // Execution space
+    }      
+    static var x: i32  // Declaration space
+
+statement1             // Execution space
+
+func bar():            // Declaration space
+    statement2         // Execution space
+```
+
+As shown above, execution space can appear between declaration spaces, and declaration space can appear between execution spaces.
+
+**Declaration space** is where declarations are processed.
+This includes static variables, function headers, structs, classes, namespaces, external declaration namespaces, and exports.
+Imports are special; refer to the section below on execution order.
+Order does not matter in declaration space as long as all dependencies are satisfied by the end of the declaration space.
+For example, the following is valid:
+```
+func foo() -> i32:
+    return bar()
+
+func bar() -> i32:
+    return foo() + 1
+```
+
+Additionally, anything in execution space may reference anything in declaration space, even if the declaration comes after the execution code. For example, the following is valid:
+```
+main()
+
+func main():
+    return foo()
+```
+
+**Execution space** is where statements are executed in the order they are written.
+Statements that are not in declaration space are in execution space.
+This includes but is not limited to assignments, `let` variable declarations, function calls, loops, conditionals, block expressions, print statements, and heap allocations.
+Order matters in execution space, and statements are processed sequentially from top to bottom.
+For example, the following is valid:
+```
+let x = 0
+x = x + 1
+printout x // Prints 1
+```
+
+The following would not be valid:
+```
+x = x + 1  // Error: x is not declared
+let x = 0
+```
+
+If a name in execution space references something declared in execution space, then the declaration must come before the reference.
+
+Some scopes, like namespaces and structs, do not allow execution space statements.
+```
+namespace ns:          // Declaration space
+    static var x: i32  // Declaration space
+    x = 42             // Error: execution space statement in declaration space
+```
+
+Local scopes are the opposite; they do not allow declaration space statements.
+```
+func foo():
+    static var x: i32  // Error: declaration space statement in execution space
+```
+
+Execution space should not be confused with "runtime". 
+Runtime refers to the period when a program is running, while execution space refers to the sections of code that the compiler processes and arranges to run sequentially at runtime.
+Execution space is about the order of *processing* during compilation, while runtime is about the *execution* of the compiled program.
+
+Consider this example:
+```
+printout 1
+printout 2
+```
+Both print statements are in execution space. The compiler will process these in order, so that, during runtime, the first statement will run before the second statement.
+
+## Execution order
+
+Execution, by default, begins in a single file. All declaration spaces in that file are processed first, then execution space is executed sequentially from top to
+
+Imports are special: they are processed both in declaration and execution space.
+When declaration space is processed, all declaration spaces in the imported file are processed (order does not matter).
+During execution, when an import statement is reached, all execution space in the imported file is processed before continuing with the current file.
+
+To avoid confusion with imports, we enforce certain rules:
+- Import statements may only appear at the top level of a file.
+- Imports must appear before other declaration space statements.
+- Circular imports are allowed, but a file will not be processed again if it is already being processed or has already been processed.
+
+For more information, refer to the section on imports.
 
 # Core Library
 
