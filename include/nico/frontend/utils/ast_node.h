@@ -213,14 +213,20 @@ class Stmt::Namespace : public Stmt {
 public:
     // The name of the namespace.
     std::shared_ptr<Token> identifier;
+    // Whether this namespace is meant to span the entire file (should only be
+    // allowed if the current scope is the root scope).
+    bool is_file_spanning;
     // The statements in the namespace block.
     std::vector<std::shared_ptr<Stmt>> stmts;
 
     Namespace(
         std::shared_ptr<Token> identifier,
+        bool is_file_spanning,
         std::vector<std::shared_ptr<Stmt>>&& stmts
     )
-        : identifier(identifier), stmts(std::move(stmts)) {}
+        : identifier(identifier),
+          is_file_spanning(is_file_spanning),
+          stmts(std::move(stmts)) {}
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };

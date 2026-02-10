@@ -94,11 +94,17 @@ std::any AstPrinter::visit(Stmt::Continue* /*stmt*/) {
 
 std::any AstPrinter::visit(Stmt::Namespace* stmt) {
     std::string str =
-        "(stmt:namespace " + std::string(stmt->identifier->lexeme) + " {";
+        "(stmt:namespace " + std::string(stmt->identifier->lexeme);
+
+    if (stmt->is_file_spanning) {
+        str += " file";
+    }
+    str += " {";
+
     for (const auto& inner_stmt : stmt->stmts) {
         str += " " + std::any_cast<std::string>(inner_stmt->accept(this));
     }
-    str += "})";
+    str += " })";
     return str;
 }
 
@@ -108,7 +114,7 @@ std::any AstPrinter::visit(Stmt::Extern* stmt) {
     for (const auto& inner_stmt : stmt->stmts) {
         str += " " + std::any_cast<std::string>(inner_stmt->accept(this));
     }
-    str += "})";
+    str += " })";
     return str;
 }
 

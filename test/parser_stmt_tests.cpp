@@ -245,6 +245,76 @@ TEST_CASE("Parser function statements", "[parser]") {
     }
 }
 
+TEST_CASE("Parser namespace statements", "[parser]") {
+    SECTION("Empty namespace braced") {
+        run_parser_stmt_test(
+            "namespace ns1 {}",
+            {"(stmt:namespace ns1 { })", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Braced namespace with statements 1") {
+        run_parser_stmt_test(
+            "namespace ns1 { pass pass } pass",
+            {"(stmt:namespace ns1 { (stmt:pass) (stmt:pass) })",
+             "(stmt:pass)",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Braced namespace with statements 2") {
+        run_parser_stmt_test(
+            "namespace ns1 { let x = 1 if x > 1 then true else false }",
+            {"(stmt:namespace ns1 { (stmt:let x (lit i32 1)) (expr (if (binary "
+             "> (nameref x) (lit i32 1)) then (lit true) else (lit false))) })",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Empty namespace indented") {
+        run_parser_stmt_test(
+            "namespace ns2:\n  // empty namespace\n",
+            {"(stmt:namespace ns2 { })", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Indented namespace with statements 1") {
+        run_parser_stmt_test(
+            "namespace ns2:\n    pass\n    pass\npass\n",
+            {"(stmt:namespace ns2 { (stmt:pass) (stmt:pass) })",
+             "(stmt:pass)",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Indented namespace with statements 2") {
+        run_parser_stmt_test(
+            "namespace ns2:\n    let x = 1\n    if x > 1 then true else "
+            "false\n",
+            {"(stmt:namespace ns2 { (stmt:let x (lit i32 1)) (expr (if (binary "
+             "> (nameref x) (lit i32 1)) then (lit true) else (lit false))) })",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Nested namespaces") {
+        run_parser_stmt_test(
+            "namespace outer:\n"
+            "    namespace inner1 {\n"
+            "        pass\n"
+            "    }\n"
+            "    namespace inner2:\n"
+            "        let x = 42\n"
+            "    pass\n",
+            {"(stmt:namespace outer { "
+             "(stmt:namespace inner1 { (stmt:pass) }) "
+             "(stmt:namespace inner2 { (stmt:let x (lit i32 42)) }) "
+             "(stmt:pass) })",
+             "(stmt:eof)"}
+        );
+    }
+}
+
 TEST_CASE("Parser tuple annotations", "[parser]") {
     SECTION("Tuple annotation 1") {
         run_parser_stmt_test(

@@ -390,6 +390,16 @@ class Parser {
     std::optional<std::shared_ptr<Stmt>> func_statement();
 
     /**
+     * @brief Parses a namespace statement.
+     *
+     * A namespace statement introduces a new namespace into the current scope.
+     *
+     * @return A shared pointer to the parsed statement, or nullopt if the
+     * statement could not be parsed.
+     */
+    std::optional<std::shared_ptr<Stmt>> namespace_statement();
+
+    /**
      * @brief Parses a print statement.
      *
      * Print statements print a series of expressions to the console.

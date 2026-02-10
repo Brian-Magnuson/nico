@@ -811,17 +811,6 @@ namespace ns1:
         declaration1
 ```
 
-Once, at the top level, you may declare a namespace without a block opening token. 
-This is a file-level namespace.
-All declarations under the file-level namespace are considered to be part of the namespace until the end of the file.
-This is useful for wrapping an entire file in a namespace without needing to indent the entire file.
-```
-namespace ns1  // Extends to end of file
-
-declaration1
-declaration2
-```
-
 Once a namespace is closed, it cannot be reopened. This means that all declarations within a namespace must be declared together.
 ```
 namespace ns1:

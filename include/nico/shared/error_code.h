@@ -100,6 +100,8 @@ enum class Err {
     DoWhileLoopWithoutWhile,
     // A function declaration was found without an arrow or block.
     FuncWithoutArrowOrBlock,
+    // A namespace declaration was found without a block.
+    NamespaceWithoutBlock,
     // A `var` keyword was found without an address-of operator.
     UnexpectedVarInExpression,
     // A variable annotation contained an unexpected `var` keyword.

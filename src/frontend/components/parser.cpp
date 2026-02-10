@@ -1082,6 +1082,53 @@ std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
     );
 }
 
+std::optional<std::shared_ptr<Stmt>> Parser::namespace_statement() {
+    // Identifier
+    if (!match({Tok::Identifier})) {
+        Logger::inst().log_error(
+            Err::NotAnIdentifier,
+            peek()->location,
+            "Expected identifier in namespace declaration."
+        );
+        return std::nullopt;
+    }
+    auto identifier = previous();
+
+    Tok closing_token_type;
+    bool is_file_spanning = false;
+    if (match({Tok::Indent})) {
+        closing_token_type = Tok::Dedent;
+    }
+    else if (match({Tok::LBrace})) {
+        closing_token_type = Tok::RBrace;
+    }
+    else {
+        Logger::inst().log_error(
+            Err::NamespaceWithoutBlock,
+            peek()->location,
+            "Expected indented block or '{' after namespace declaration."
+        );
+        return std::nullopt;
+    }
+
+    // Body
+    std::vector<std::shared_ptr<Stmt>> body_stmts;
+    while (!match({closing_token_type})) {
+        auto stmt = statement();
+        if (!stmt) {
+            // At this point, an error has already been logged.
+            return std::nullopt;
+        }
+        body_stmts.push_back(*stmt);
+    }
+
+    return std::make_shared<Stmt::Namespace>(
+        identifier,
+        is_file_spanning,
+        std::move(body_stmts)
+    );
+}
+
 std::optional<std::shared_ptr<Stmt>> Parser::print_statement() {
     std::vector<std::shared_ptr<Expr>> expressions;
     auto expr = expression();
@@ -1132,6 +1179,9 @@ std::optional<std::shared_ptr<Stmt>> Parser::statement() {
     }
     else if (match({Tok::KwFunc})) {
         return func_statement();
+    }
+    else if (match({Tok::KwNamespace})) {
+        return namespace_statement();
     }
     else if (match({Tok::Eof})) {
         return std::make_shared<Stmt::Eof>();
