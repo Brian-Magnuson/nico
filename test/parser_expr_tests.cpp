@@ -239,6 +239,31 @@ TEST_CASE("Parser numbers", "[parser]") {
              "(stmt:eof)"}
         );
     }
+
+    SECTION("Int 32 Max Plus One") {
+        run_parser_expr_error_test(
+            "2147483648", // One more than max int32_t
+            Err::NumberOutOfRange
+        );
+    }
+
+    SECTION("Int 32 Min Minus One") {
+        run_parser_expr_error_test(
+            "-2147483649", // One less than min int32_t
+            Err::NumberOutOfRange
+        );
+    }
+
+    SECTION("Int 32 Min With Parentheses") {
+        run_parser_expr_error_test(
+            "-(2147483648)", // Min int32_t inside parentheses
+            Err::NumberOutOfRange
+        );
+    }
+
+    SECTION("Negative UInt") {
+        run_parser_expr_error_test("-1_u32", Err::NegativeOnUnsignedLiteral);
+    }
 }
 
 TEST_CASE("Parser expressions", "[parser]") {
@@ -541,6 +566,10 @@ TEST_CASE("Parser groupings and tuples", "[parser]") {
             {"(expr (tuple (lit i32 1) (lit i32 2) (lit i32 3)))", "(stmt:eof)"}
         );
     }
+
+    SECTION("Semicolon in grouping") {
+        run_parser_expr_error_test("(1;)", Err::UnexpectedToken);
+    }
 }
 
 TEST_CASE("Parser blocks", "[parser]") {
@@ -623,6 +652,17 @@ TEST_CASE("Parser blocks", "[parser]") {
             {"(expr (block unsafe (expr (lit i32 123))))", "(stmt:eof)"}
         );
     }
+
+    SECTION("Not a block") {
+        run_parser_expr_error_test("block 123", Err::NotABlock);
+    }
+
+    SECTION("Conditional without then or block") {
+        run_parser_expr_error_test(
+            "if true 123",
+            Err::ConditionalWithoutThenOrBlock
+        );
+    }
 }
 
 TEST_CASE("Parser tuples", "[parser]") {
@@ -699,6 +739,14 @@ TEST_CASE("Parser dot access", "[parser]") {
             {"(expr (access . (access . (access . (nameref a) 0) 1) 2))",
              "(stmt:eof)"}
         );
+    }
+
+    SECTION("Unexpected token after dot 1") {
+        run_parser_expr_error_test("a.+b", Err::UnexpectedTokenAfterDot);
+    }
+
+    SECTION("Unexpected token after dot 2") {
+        run_parser_expr_error_test("a.(b)", Err::UnexpectedTokenAfterDot);
     }
 }
 
@@ -950,6 +998,17 @@ TEST_CASE("Parser call expressions", "[parser]") {
             "f(1, y: 2)",
             {"(expr (call (nameref f) (lit i32 1) (y: (lit i32 2))))",
              "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Semicolon in func call args") {
+        run_parser_expr_error_test("f(1; 2)", Err::UnexpectedToken);
+    }
+
+    SECTION("Positional argument after named argument") {
+        run_parser_expr_error_test(
+            "f(x: 1, 2)",
+            Err::PosArgumentAfterNamedArgument
         );
     }
 }
@@ -1234,70 +1293,7 @@ TEST_CASE("Parser alloc expressions", "[parser]") {
              "(stmt:eof)"}
         );
     }
-}
 
-// MARK: Error tests
-
-TEST_CASE("Parser number errors", "[parser]") {
-    SECTION("Int 32 Max Plus One") {
-        run_parser_expr_error_test(
-            "2147483648", // One more than max int32_t
-            Err::NumberOutOfRange
-        );
-    }
-
-    SECTION("Int 32 Min Minus One") {
-        run_parser_expr_error_test(
-            "-2147483649", // One less than min int32_t
-            Err::NumberOutOfRange
-        );
-    }
-
-    SECTION("Int 32 Min With Parentheses") {
-        run_parser_expr_error_test(
-            "-(2147483648)", // Min int32_t inside parentheses
-            Err::NumberOutOfRange
-        );
-    }
-
-    SECTION("Negative UInt") {
-        run_parser_expr_error_test("-1_u32", Err::NegativeOnUnsignedLiteral);
-    }
-}
-
-TEST_CASE("Parser block errors", "[parser]") {
-    SECTION("Not a block") {
-        run_parser_expr_error_test("block 123", Err::NotABlock);
-    }
-
-    SECTION("Conditional without then or block") {
-        run_parser_expr_error_test(
-            "if true 123",
-            Err::ConditionalWithoutThenOrBlock
-        );
-    }
-}
-
-TEST_CASE("Parser access errors", "[parser]") {
-    SECTION("Unexpected token after dot 1") {
-        run_parser_expr_error_test("a.+b", Err::UnexpectedTokenAfterDot);
-    }
-
-    SECTION("Unexpected token after dot 2") {
-        run_parser_expr_error_test("a.(b)", Err::UnexpectedTokenAfterDot);
-    }
-}
-
-TEST_CASE("Parser call errors", "[parser]") {
-    SECTION("Positional argument after named argument") {
-        run_parser_expr_error_test(
-            "f(x: 1, 2)",
-            Err::PosArgumentAfterNamedArgument
-        );
-    }
-}
-
-TEST_CASE("Parser alloc errors", "[parser]") {
     SECTION("Alloc without expression") {
         run_parser_expr_error_test("alloc", Err::NotAType);
     }

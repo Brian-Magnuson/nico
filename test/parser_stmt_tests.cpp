@@ -111,6 +111,20 @@ TEST_CASE("Parser let statements", "[parser]") {
         );
     }
 
+    SECTION("Let missing identifier 1") {
+        run_parser_stmt_error_test("let", Err::NotAnIdentifier);
+    }
+
+    SECTION("Let missing identifier 2") {
+        run_parser_stmt_error_test("let var", Err::NotAnIdentifier);
+    }
+
+    SECTION("Let without type or value") {
+        run_parser_stmt_error_test("let a", Err::LetWithoutTypeOrValue);
+    }
+}
+
+TEST_CASE("Parser let stmt type annotations", "[parser]") {
     SECTION("Let statements pointers 1") {
         run_parser_stmt_test(
             "let var a: @i32 = 10",
@@ -184,6 +198,31 @@ TEST_CASE("Parser let statements", "[parser]") {
             {"(stmt:let var empty [f64; 0])", "(stmt:eof)"}
         );
     }
+
+    SECTION("Let improper type") {
+        run_parser_stmt_error_test("let a: 1 = 1", Err::NotAType);
+    }
+
+    SECTION("Unexpected var in annotation") {
+        run_parser_stmt_error_test(
+            "let a: var i32 = 1",
+            Err::UnexpectedVarInAnnotation
+        );
+    }
+
+    SECTION("Typeof missing opening parenthesis") {
+        run_parser_stmt_error_test(
+            "let a: typeof x = 1",
+            Err::TypeofWithoutOpeningParen
+        );
+    }
+
+    SECTION("Comma in typeof annotation") {
+        run_parser_stmt_error_test(
+            "let a: typeof(x,) = 1",
+            Err::UnexpectedToken
+        );
+    }
 }
 
 TEST_CASE("Parser function statements", "[parser]") {
@@ -241,6 +280,44 @@ TEST_CASE("Parser function statements", "[parser]") {
             "func f7() { pass pass pass }",
             {"(stmt:func f7 () => (block (stmt:pass) (stmt:pass) (stmt:pass)))",
              "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Func missing identifier") {
+        run_parser_stmt_error_test("func {}", Err::NotAnIdentifier);
+    }
+
+    SECTION("Func missing opening parenthesis") {
+        run_parser_stmt_error_test("func f1 {}", Err::FuncWithoutOpeningParen);
+    }
+
+    SECTION("Func missing annotation after arrow") {
+        run_parser_stmt_error_test("func f() -> {}", Err::NotAType);
+    }
+
+    SECTION("Func missing arrow or block") {
+        run_parser_stmt_error_test("func f() 10", Err::FuncWithoutArrowOrBlock);
+    }
+
+    SECTION("Func missing parameter type") {
+        run_parser_stmt_error_test("func f(x) {}", Err::NotAType);
+    }
+
+    SECTION("Func missing parameter identifier") {
+        run_parser_stmt_error_test("func f(: i32) {}", Err::NotAnIdentifier);
+    }
+
+    SECTION("Func parameter missing expr after equals") {
+        run_parser_stmt_error_test(
+            "func f(x: i32 = ) {}",
+            Err::NotAnExpression
+        );
+    }
+
+    SECTION("Semicolon in func declaration parameters") {
+        run_parser_stmt_error_test(
+            "func f(a: i32; b: i32) {}",
+            Err::UnexpectedToken
         );
     }
 }
@@ -313,6 +390,10 @@ TEST_CASE("Parser namespace statements", "[parser]") {
              "(stmt:eof)"}
         );
     }
+
+    SECTION("Namespace without block") {
+        run_parser_stmt_error_test("namespace ns3", Err::NamespaceWithoutBlock);
+    }
 }
 
 TEST_CASE("Parser tuple annotations", "[parser]") {
@@ -346,6 +427,10 @@ TEST_CASE("Parser tuple annotations", "[parser]") {
 
     SECTION("Tuple annotation 5") {
         run_parser_stmt_test("let a: ()", {"(stmt:let a ())", "(stmt:eof)"});
+    }
+
+    SECTION("Semicolon in tuple annotation") {
+        run_parser_stmt_error_test("let a: (i32; f64)", Err::UnexpectedToken);
     }
 }
 
@@ -422,6 +507,18 @@ TEST_CASE("Parser non-declaring statements", "[parser]") {
             {"(stmt:yield break (lit i32 10))", "(stmt:eof)"}
         );
     }
+
+    SECTION("Yield missing expression") {
+        run_parser_stmt_error_test("yield", Err::NotAnExpression);
+    }
+
+    SECTION("Break missing expression") {
+        run_parser_stmt_error_test("break", Err::NotAnExpression);
+    }
+
+    SECTION("Dealloc missing expression") {
+        run_parser_stmt_error_test("dealloc", Err::NotAnExpression);
+    }
 }
 
 TEST_CASE("Parser dealloc statement", "[parser]") {
@@ -472,116 +569,5 @@ TEST_CASE("Parser dealloc statement", "[parser]") {
             "dealloc ptr as @[i32; 10]",
             {"(stmt:dealloc (cast (nameref ptr) as @[i32; 10]))", "(stmt:eof)"}
         );
-    }
-}
-
-// MARK: Error tests
-
-TEST_CASE("Parser let stmt errors", "[parser]") {
-    SECTION("Let missing identifier 1") {
-        run_parser_stmt_error_test("let", Err::NotAnIdentifier);
-    }
-
-    SECTION("Let missing identifier 2") {
-        run_parser_stmt_error_test("let var", Err::NotAnIdentifier);
-    }
-
-    SECTION("Let without type or value") {
-        run_parser_stmt_error_test("let a", Err::LetWithoutTypeOrValue);
-    }
-}
-
-TEST_CASE("Parser func stmt errors", "[parser]") {
-    SECTION("Func missing identifier") {
-        run_parser_stmt_error_test("func {}", Err::NotAnIdentifier);
-    }
-
-    SECTION("Func missing opening parenthesis") {
-        run_parser_stmt_error_test("func f1 {}", Err::FuncWithoutOpeningParen);
-    }
-
-    SECTION("Func missing annotation after arrow") {
-        run_parser_stmt_error_test("func f() -> {}", Err::NotAType);
-    }
-
-    SECTION("Func missing arrow or block") {
-        run_parser_stmt_error_test("func f() 10", Err::FuncWithoutArrowOrBlock);
-    }
-
-    SECTION("Func missing parameter type") {
-        run_parser_stmt_error_test("func f(x) {}", Err::NotAType);
-    }
-
-    SECTION("Func missing parameter identifier") {
-        run_parser_stmt_error_test("func f(: i32) {}", Err::NotAnIdentifier);
-    }
-
-    SECTION("Func parameter missing expr after equals") {
-        run_parser_stmt_error_test(
-            "func f(x: i32 = ) {}",
-            Err::NotAnExpression
-        );
-    }
-}
-
-TEST_CASE("Parser annotation errors", "[parser]") {
-    SECTION("Let improper type") {
-        run_parser_stmt_error_test("let a: 1 = 1", Err::NotAType);
-    }
-
-    SECTION("Unexpected var in annotation") {
-        run_parser_stmt_error_test(
-            "let a: var i32 = 1",
-            Err::UnexpectedVarInAnnotation
-        );
-    }
-
-    SECTION("Typeof missing opening parenthesis") {
-        run_parser_stmt_error_test(
-            "let a: typeof x = 1",
-            Err::TypeofWithoutOpeningParen
-        );
-    }
-}
-
-TEST_CASE("Parser unexpected token errors", "[parser]") {
-    SECTION("Comma in typeof annotation") {
-        run_parser_stmt_error_test(
-            "let a: typeof(x,) = 1",
-            Err::UnexpectedToken
-        );
-    }
-
-    SECTION("Semicolon in grouping") {
-        run_parser_stmt_error_test("(1;)", Err::UnexpectedToken);
-    }
-
-    SECTION("Semicolon in func declaration parameters") {
-        run_parser_stmt_error_test(
-            "func f(a: i32; b: i32) {}",
-            Err::UnexpectedToken
-        );
-    }
-
-    SECTION("Semicolon in func call arguments") {
-        run_parser_stmt_error_test("f(1; 2)", Err::UnexpectedToken);
-    }
-
-    SECTION("Semicolon in tuple annotation") {
-        run_parser_stmt_error_test("let a: (i32; f64)", Err::UnexpectedToken);
-    }
-}
-
-TEST_CASE("Parser non-declaring stmt without expr", "[parser]") {
-    SECTION("Yield missing expression") {
-        run_parser_stmt_error_test("yield", Err::NotAnExpression);
-    }
-
-    SECTION("Break missing expression") {
-        run_parser_stmt_error_test("break", Err::NotAnExpression);
-    }
-
-    SECTION("Dealloc missing expression") {
-        run_parser_stmt_error_test("dealloc", Err::NotAnExpression);
     }
 }
