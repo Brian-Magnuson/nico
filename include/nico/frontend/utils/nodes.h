@@ -288,9 +288,13 @@ public:
  */
 class Stmt : public std::enable_shared_from_this<Stmt> {
 public:
+    class IDeclAllowed;
+    class IExecAllowed;
+
     class Expression;
 
     class Let;
+    class Static;
     class Func;
 
     class Print;
@@ -314,6 +318,7 @@ public:
     public:
         virtual std::any visit(Expression* stmt) = 0;
         virtual std::any visit(Let* stmt) = 0;
+        virtual std::any visit(Static* stmt) = 0;
         virtual std::any visit(Func* stmt) = 0;
         virtual std::any visit(Print* stmt) = 0;
         virtual std::any visit(Dealloc* stmt) = 0;
@@ -358,7 +363,6 @@ public:
     class SizeOf;
     class Alloc;
     class NameRef;
-    // class OldNameRef;
     class Literal;
 
     class Tuple;

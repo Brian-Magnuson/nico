@@ -83,6 +83,12 @@ std::any CodeGenerator::visit(Stmt::Let* stmt) {
     return std::any();
 }
 
+std::any CodeGenerator::visit(Stmt::Static* stmt) {
+    // TODO: Implement static variables. This will likely involve creating a
+    // global variable
+    return std::any();
+}
+
 std::any CodeGenerator::visit(Stmt::Func* stmt) {
 
     auto script_block = builder->GetInsertBlock();

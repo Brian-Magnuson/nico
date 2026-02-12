@@ -62,6 +62,9 @@ enum class Err {
     NotAnExpression,
     // A statement was found where an identifier was expected but not found.
     NotAnIdentifier,
+    // A non-execution-space statement was found in a region that only allows
+    // execution-space statements.
+    NonExecAllowedStmt,
     // A numeric literal could not be parsed due to being out of range for the
     // expected type.
     NumberOutOfRange,

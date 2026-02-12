@@ -381,6 +381,12 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
     return std::any();
 }
 
+std::any LocalChecker::visit(Stmt::Static* /*stmt*/) {
+    // TODO: Implement static variables. This will likely involve creating a
+    // global variable.
+    return std::any();
+}
+
 std::any LocalChecker::visit(Stmt::Func* stmt) {
     // Get the function's type
     auto func_type = std::dynamic_pointer_cast<Type::Function>(

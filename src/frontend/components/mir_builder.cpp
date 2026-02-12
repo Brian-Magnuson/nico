@@ -26,6 +26,12 @@ std::any MIRBuilder::visit(Stmt::Let* stmt) {
     return std::any();
 }
 
+std::any MIRBuilder::visit(Stmt::Static* stmt) {
+    // TODO: Implement static variables. This will likely involve creating a
+    // global variable.
+    return std::any();
+}
+
 std::any MIRBuilder::visit(Stmt::Func* stmt) {
     // TODO: Implementation for visiting Func statements goes here.
     return {};

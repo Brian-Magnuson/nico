@@ -16,6 +16,12 @@ std::any GlobalChecker::visit(Stmt::Let*) {
     return std::any();
 }
 
+std::any GlobalChecker::visit(Stmt::Static* stmt) {
+    // TODO: Implement static variables. This will likely involve creating a
+    // global variable.
+    return std::any();
+}
+
 std::any GlobalChecker::visit(Stmt::Func* stmt) {
     // Start with the parameters.
     Dictionary<std::string, Field> parameter_fields;

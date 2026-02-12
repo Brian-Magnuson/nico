@@ -114,12 +114,22 @@ std::optional<std::shared_ptr<Expr>> Parser::block(Expr::Block::Kind kind) {
     }
     auto opening_tok = advance();
 
-    std::vector<std::shared_ptr<Stmt>> statements;
+    std::vector<std::shared_ptr<Stmt::IExecAllowed>> statements;
     while (!match({closing_token_type})) {
         auto stmt = statement();
         if (!stmt)
             return std::nullopt;
-        statements.push_back(*stmt);
+        auto exec_allowed_stmt =
+            std::dynamic_pointer_cast<Stmt::IExecAllowed>(*stmt);
+        if (!exec_allowed_stmt) {
+            Logger::inst().log_error(
+                Err::NonExecAllowedStmt,
+                "Only execution-space statements are allowed in block "
+                "expressions."
+            );
+            return std::nullopt;
+        }
+        statements.push_back(exec_allowed_stmt);
     }
 
     return std::make_shared<Expr::Block>(
@@ -285,7 +295,7 @@ std::optional<std::shared_ptr<Expr>> Parser::loop() {
     if (!body) {
         body = std::make_shared<Expr::Block>(
             loop_kw,
-            std::vector<std::shared_ptr<Stmt>>{
+            std::vector<std::shared_ptr<Stmt::IExecAllowed>>{
                 std::make_shared<Stmt::Expression>(expr_body.value())
             },
             Expr::Block::Kind::Loop
@@ -1046,7 +1056,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
         // For simplicity, wrap it in a block.
         body_expr = std::make_shared<Expr::Block>(
             previous(),
-            std::vector<std::shared_ptr<Stmt>>{std::make_shared<Stmt::Yield>(
+            std::vector<std::shared_ptr<Stmt::IExecAllowed>>{std::make_shared<
+                Stmt::Yield>(
                 std::make_shared<Token>(Tok::KwReturn, previous()->location),
                 *expression()
             )},

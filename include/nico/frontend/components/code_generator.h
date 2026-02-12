@@ -58,6 +58,7 @@ class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
 
     std::any visit(Stmt::Expression* stmt) override;
     std::any visit(Stmt::Let* stmt) override;
+    std::any visit(Stmt::Static* stmt) override;
     std::any visit(Stmt::Func* stmt) override;
     std::any visit(Stmt::Print* stmt) override;
     std::any visit(Stmt::Dealloc* stmt) override;

@@ -15,11 +15,29 @@ namespace nico {
 // MARK: Statements
 
 /**
+ * @brief A statement in the AST that is allowed in a region that is strictly
+ * declaration space.
+ *
+ * This class adds no additional members to Stmt.
+ * It is used for organizational purposes.
+ */
+class Stmt::IDeclAllowed : virtual public Stmt {};
+
+/**
+ * @brief A statement in the AST that is allowed in a region that is strictly
+ * execution space.
+ *
+ * This class adds no additional members to Stmt.
+ * It is used for organizational purposes.
+ */
+class Stmt::IExecAllowed : virtual public Stmt {};
+
+/**
  * @brief An expression statement.
  *
  * Expression statements are statements that consist of an expression.
  */
-class Stmt::Expression : public Stmt {
+class Stmt::Expression : public Stmt::IExecAllowed {
 public:
     // The expression in the statement.
     std::shared_ptr<Expr> expression;
@@ -33,9 +51,9 @@ public:
 /**
  * @brief A let statement.
  *
- * Let statements introduce a new variable into the current scope.
+ * Let statements introduce an execution-space variable into the current scope.
  */
-class Stmt::Let : public Stmt {
+class Stmt::Let : public Stmt::IExecAllowed {
 public:
     // The identifier token.
     std::shared_ptr<Token> identifier;
@@ -61,11 +79,44 @@ public:
 };
 
 /**
+ * @brief A static variable declaration statement.
+ *
+ * Static statements introduce a declaration-space variable into the current
+ * scope.
+ */
+class Stmt::Static : public Stmt::IDeclAllowed {
+public:
+    // The identifier token.
+    std::shared_ptr<Token> identifier;
+    // The expression in the statement; nullopt if absent.
+    std::optional<std::shared_ptr<Expr>> expression;
+    // Whether the variable is declared as mutable.
+    bool has_var;
+    // The type annotation; should be type-checked, even if not nullopt.
+    std::optional<std::shared_ptr<Annotation>> annotation;
+    // A weak pointer to the field entry in the symbol table.
+    std::weak_ptr<Node::FieldEntry> field_entry;
+
+    Static(
+        std::shared_ptr<Token> identifier,
+        std::optional<std::shared_ptr<Expr>> expression,
+        bool has_var,
+        std::optional<std::shared_ptr<Annotation>> annotation
+    )
+        : identifier(identifier),
+          expression(expression),
+          has_var(has_var),
+          annotation(annotation) {}
+
+    std::any accept(Visitor* visitor) override { return visitor->visit(this); }
+};
+
+/**
  * @brief A function declaration statement.
  *
  * Function declarations introduce a new function into the current scope.
  */
-class Stmt::Func : public Stmt {
+class Stmt::Func : public Stmt::IDeclAllowed {
 public:
     /**
      * @brief A parameter in a function declaration.
@@ -124,7 +175,7 @@ public:
  * Since a proper print function is not yet implemented, this is a temporary
  * statement for development and will be removed in the future.
  */
-class Stmt::Print : public Stmt {
+class Stmt::Print : public Stmt::IExecAllowed {
 public:
     // The expressions to print.
     std::vector<std::shared_ptr<Expr>> expressions;
@@ -140,7 +191,7 @@ public:
  *
  * Deallocation statements free memory allocated for a given expression.
  */
-class Stmt::Dealloc : public Stmt {
+class Stmt::Dealloc : public Stmt::IExecAllowed {
 public:
     // The expression to deallocate.
     std::shared_ptr<Expr> expression;
@@ -159,8 +210,10 @@ public:
  *
  * Even if `pass` is supposed to do nothing, we do treat it as a real statement
  * to uphold the principles of consistency and extensibility in the compiler.
+ *
+ * Pass is allowed in both declaration and execution spaces.
  */
-class Stmt::Pass : public Stmt {
+class Stmt::Pass : public Stmt::IExecAllowed, public Stmt::IDeclAllowed {
 public:
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };
@@ -171,7 +224,7 @@ public:
  * Yield statements set the value to be yielded by a block expression.
  * They may also be used to break out of loops or return from functions.
  */
-class Stmt::Yield : public Stmt {
+class Stmt::Yield : public Stmt::IExecAllowed {
 public:
     // The token representing the kind of yield (yield, break, return).
     std::shared_ptr<Token> yield_token;
@@ -192,7 +245,7 @@ public:
  * Continue statements skip the current iteration of a loop and proceed to the
  * next iteration.
  */
-class Stmt::Continue : public Stmt {
+class Stmt::Continue : public Stmt::IExecAllowed {
 public:
     // The token representing the continue statement.
     std::shared_ptr<Token> continue_token;
@@ -209,7 +262,7 @@ public:
  * Namespace declarations introduce a new namespace into the current scope and
  * contain a block of statements that are part of the namespace.
  */
-class Stmt::Namespace : public Stmt {
+class Stmt::Namespace : public Stmt::IDeclAllowed {
 public:
     // The name of the namespace.
     std::shared_ptr<Token> identifier;
@@ -238,7 +291,7 @@ public:
  * declarations and contain a block of statements that are part of the extern
  * namespace.
  */
-class Stmt::Extern : public Stmt {
+class Stmt::Extern : public Stmt::IDeclAllowed {
 public:
     // An ABI enumeration for different calling conventions.
     enum class ABI {
@@ -266,8 +319,10 @@ public:
  * @brief An EOF statement.
  *
  * The EOF statement represents the end of the file.
+ *
+ * EOF is allowed in both declaration and execution spaces.
  */
-class Stmt::Eof : public Stmt {
+class Stmt::Eof : public Stmt::IDeclAllowed, public Stmt::IExecAllowed {
 public:
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };
@@ -838,7 +893,7 @@ public:
     // The token that opened this block.
     std::shared_ptr<Token> opening_tok;
     // The statements contained within the block.
-    std::vector<std::shared_ptr<Stmt>> statements;
+    std::vector<std::shared_ptr<Stmt::IExecAllowed>> statements;
     // An optional label for the block.
     std::optional<std::string> label;
     // The kind of block.
@@ -848,7 +903,7 @@ public:
 
     Block(
         std::shared_ptr<Token> opening_tok,
-        std::vector<std::shared_ptr<Stmt>>&& statements,
+        std::vector<std::shared_ptr<Stmt::IExecAllowed>>&& statements,
         Kind kind,
         bool is_unsafe = false
     )
