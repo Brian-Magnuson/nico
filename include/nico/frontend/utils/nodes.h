@@ -330,6 +330,9 @@ public:
         virtual std::any visit(Eof* stmt) = 0;
     };
 
+    // The location of the statement.
+    const Location* location;
+
     /**
      * @brief Accept a visitor.
      *

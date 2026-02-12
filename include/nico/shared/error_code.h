@@ -65,6 +65,9 @@ enum class Err {
     // A non-execution-space statement was found in a region that only allows
     // execution-space statements.
     NonExecAllowedStmt,
+    // A non-declaration-space statement was found in a region that only allows
+    // declaration-space statements.
+    NonDeclAllowedStmt,
     // A numeric literal could not be parsed due to being out of range for the
     // expected type.
     NumberOutOfRange,

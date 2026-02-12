@@ -115,6 +115,7 @@ std::optional<std::shared_ptr<Expr>> Parser::block(Expr::Block::Kind kind) {
     auto opening_tok = advance();
 
     std::vector<std::shared_ptr<Stmt::IExecAllowed>> statements;
+    bool defer_error = false;
     while (!match({closing_token_type})) {
         auto stmt = statement();
         if (!stmt)
@@ -124,13 +125,22 @@ std::optional<std::shared_ptr<Expr>> Parser::block(Expr::Block::Kind kind) {
         if (!exec_allowed_stmt) {
             Logger::inst().log_error(
                 Err::NonExecAllowedStmt,
+                stmt.value()->location,
+                "Block expression does not allow this kind of statement."
+            );
+            Logger::inst().log_note(
                 "Only execution-space statements are allowed in block "
+                "expressions. Declarations must be made outside of block "
                 "expressions."
             );
-            return std::nullopt;
+            defer_error = true;
+            continue;
         }
         statements.push_back(exec_allowed_stmt);
     }
+
+    if (defer_error)
+        return std::nullopt;
 
     return std::make_shared<Expr::Block>(
         opening_tok,
@@ -912,6 +922,7 @@ std::optional<std::shared_ptr<Expr>> Parser::expression() {
 // MARK: Statements
 
 std::optional<std::shared_ptr<Stmt>> Parser::let_statement() {
+    auto start_token = previous();
     // Check for `var`
     bool has_var = match({Tok::KwVar});
 
@@ -956,10 +967,17 @@ std::optional<std::shared_ptr<Stmt>> Parser::let_statement() {
         return std::nullopt;
     }
 
-    return std::make_shared<Stmt::Let>(identifier, expr, has_var, anno);
+    return std::make_shared<Stmt::Let>(
+        start_token,
+        identifier,
+        expr,
+        has_var,
+        anno
+    );
 }
 
 std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
+    auto start_token = previous();
     // Identifier
     if (!match({Tok::Identifier})) {
         Logger::inst().log_error(
@@ -1086,6 +1104,7 @@ std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
 
     // Put it all together
     return std::make_shared<Stmt::Func>(
+        start_token,
         identifier,
         return_type,
         std::move(parameters),
@@ -1094,6 +1113,7 @@ std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
 }
 
 std::optional<std::shared_ptr<Stmt>> Parser::namespace_statement() {
+    auto start_token = previous();
     // Identifier
     if (!match({Tok::Identifier})) {
         Logger::inst().log_error(
@@ -1123,17 +1143,45 @@ std::optional<std::shared_ptr<Stmt>> Parser::namespace_statement() {
     }
 
     // Body
-    std::vector<std::shared_ptr<Stmt>> body_stmts;
+    std::vector<std::shared_ptr<Stmt::IDeclAllowed>> body_stmts;
+    bool defer_error = false;
     while (!match({closing_token_type})) {
         auto stmt = statement();
         if (!stmt) {
             // At this point, an error has already been logged.
             return std::nullopt;
         }
-        body_stmts.push_back(*stmt);
+        auto decl_allowed_stmt =
+            std::dynamic_pointer_cast<Stmt::IDeclAllowed>(*stmt);
+        if (!decl_allowed_stmt) {
+            Logger::inst().log_error(
+                Err::NonDeclAllowedStmt,
+                stmt.value()->location,
+                "Namespace does not allow this kind of statement."
+            );
+            Logger::inst().log_note(
+                "Only declaration-space statements are allowed directly inside "
+                "a namespace. Execution-space statements must be in a local "
+                "scope or at the top level."
+            );
+            if (PTR_INSTANCEOF(stmt.value(), Stmt::Let)) {
+                Logger::inst().log_note(
+                    "Variables declared with `let` are execution-space "
+                    "statements. Consider using `static` instead of `let`."
+                );
+            }
+            defer_error = true;
+            continue;
+        }
+        body_stmts.push_back(decl_allowed_stmt);
+    }
+
+    if (defer_error) {
+        return std::nullopt;
     }
 
     return std::make_shared<Stmt::Namespace>(
+        start_token,
         identifier,
         is_file_spanning,
         std::move(body_stmts)
@@ -1141,6 +1189,7 @@ std::optional<std::shared_ptr<Stmt>> Parser::namespace_statement() {
 }
 
 std::optional<std::shared_ptr<Stmt>> Parser::print_statement() {
+    auto print_token = previous();
     std::vector<std::shared_ptr<Expr>> expressions;
     auto expr = expression();
     if (!expr)
@@ -1154,7 +1203,7 @@ std::optional<std::shared_ptr<Stmt>> Parser::print_statement() {
         expressions.push_back(*expr);
     }
 
-    return std::make_shared<Stmt::Print>(std::move(expressions));
+    return std::make_shared<Stmt::Print>(print_token, std::move(expressions));
 }
 
 std::optional<std::shared_ptr<Stmt>> Parser::yield_statement() {
@@ -1195,13 +1244,13 @@ std::optional<std::shared_ptr<Stmt>> Parser::statement() {
         return namespace_statement();
     }
     else if (match({Tok::Eof})) {
-        return std::make_shared<Stmt::Eof>();
+        return std::make_shared<Stmt::Eof>(previous());
     }
     else if (match({Tok::KwPrintout})) {
         return print_statement();
     }
     else if (match({Tok::KwPass})) {
-        return std::make_shared<Stmt::Pass>();
+        return std::make_shared<Stmt::Pass>(previous());
     }
     else if (match({Tok::KwYield, Tok::KwBreak, Tok::KwReturn})) {
         return yield_statement();
@@ -1210,10 +1259,11 @@ std::optional<std::shared_ptr<Stmt>> Parser::statement() {
         return std::make_shared<Stmt::Continue>(previous());
     }
     else if (match({Tok::KwDealloc})) {
+        auto token = previous();
         auto expr = expression();
         if (!expr)
             return std::nullopt;
-        return std::make_shared<Stmt::Dealloc>(*expr);
+        return std::make_shared<Stmt::Dealloc>(token, *expr);
     }
     return expression_statement();
 }

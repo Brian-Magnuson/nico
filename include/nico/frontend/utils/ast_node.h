@@ -43,7 +43,9 @@ public:
     std::shared_ptr<Expr> expression;
 
     Expression(std::shared_ptr<Expr> expression)
-        : expression(expression) {}
+        : expression(expression) {
+        location = expression->location;
+    }
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };
@@ -66,14 +68,17 @@ public:
     // A weak pointer to the field entry in the symbol table.
     std::weak_ptr<Node::FieldEntry> field_entry;
 
-    Let(std::shared_ptr<Token> identifier,
+    Let(std::shared_ptr<Token> start_token,
+        std::shared_ptr<Token> identifier,
         std::optional<std::shared_ptr<Expr>> expression,
         bool has_var,
         std::optional<std::shared_ptr<Annotation>> annotation)
         : identifier(identifier),
           expression(expression),
           has_var(has_var),
-          annotation(annotation) {}
+          annotation(annotation) {
+        location = &start_token->location;
+    }
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };
@@ -98,6 +103,7 @@ public:
     std::weak_ptr<Node::FieldEntry> field_entry;
 
     Static(
+        std::shared_ptr<Token> start_token,
         std::shared_ptr<Token> identifier,
         std::optional<std::shared_ptr<Expr>> expression,
         bool has_var,
@@ -106,7 +112,9 @@ public:
         : identifier(identifier),
           expression(expression),
           has_var(has_var),
-          annotation(annotation) {}
+          annotation(annotation) {
+        location = &start_token->location;
+    }
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };
@@ -156,6 +164,7 @@ public:
     std::weak_ptr<Node::FieldEntry> field_entry;
 
     Func(
+        std::shared_ptr<Token> start_token,
         std::shared_ptr<Token> identifier,
         std::optional<std::shared_ptr<Annotation>> annotation,
         std::vector<Param>&& parameters,
@@ -164,7 +173,9 @@ public:
         : identifier(identifier),
           annotation(annotation),
           parameters(std::move(parameters)),
-          body(body) {}
+          body(body) {
+        location = &start_token->location;
+    }
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };
@@ -180,8 +191,22 @@ public:
     // The expressions to print.
     std::vector<std::shared_ptr<Expr>> expressions;
 
+    Print(
+        std::shared_ptr<Token> start_token,
+        std::vector<std::shared_ptr<Expr>>&& expressions
+    )
+        : expressions(std::move(expressions)) {
+
+        location = &start_token->location;
+    }
+
     Print(std::vector<std::shared_ptr<Expr>>&& expressions)
-        : expressions(std::move(expressions)) {}
+        : expressions(std::move(expressions)) {
+        if (this->expressions.empty()) {
+            panic("Stmt::Print::Print: expressions cannot be empty.");
+        }
+        location = this->expressions.at(0)->location;
+    }
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };
@@ -196,8 +221,12 @@ public:
     // The expression to deallocate.
     std::shared_ptr<Expr> expression;
 
-    Dealloc(std::shared_ptr<Expr> expression)
-        : expression(expression) {}
+    Dealloc(
+        std::shared_ptr<Token> start_token, std::shared_ptr<Expr> expression
+    )
+        : expression(expression) {
+        location = &start_token->location;
+    }
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };
@@ -208,13 +237,18 @@ public:
  * Pass statements do nothing and may be used in places where a statement is
  * required but no action is desired.
  *
- * Even if `pass` is supposed to do nothing, we do treat it as a real statement
- * to uphold the principles of consistency and extensibility in the compiler.
+ * Even if `pass` is supposed to do nothing, we do treat it as a real
+ * statement to uphold the principles of consistency and extensibility in
+ * the compiler.
  *
  * Pass is allowed in both declaration and execution spaces.
  */
 class Stmt::Pass : public Stmt::IExecAllowed, public Stmt::IDeclAllowed {
 public:
+    Pass(std::shared_ptr<Token> pass_token) {
+        location = &pass_token->location;
+    }
+
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };
 
@@ -234,7 +268,9 @@ public:
     std::weak_ptr<Expr::Block> target_block;
 
     Yield(std::shared_ptr<Token> yield_token, std::shared_ptr<Expr> expression)
-        : yield_token(yield_token), expression(expression) {}
+        : yield_token(yield_token), expression(expression) {
+        location = &yield_token->location;
+    }
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };
@@ -242,8 +278,8 @@ public:
 /**
  * @brief A continue statement.
  *
- * Continue statements skip the current iteration of a loop and proceed to the
- * next iteration.
+ * Continue statements skip the current iteration of a loop and proceed to
+ * the next iteration.
  */
 class Stmt::Continue : public Stmt::IExecAllowed {
 public:
@@ -251,7 +287,9 @@ public:
     std::shared_ptr<Token> continue_token;
 
     Continue(std::shared_ptr<Token> continue_token)
-        : continue_token(continue_token) {}
+        : continue_token(continue_token) {
+        location = &continue_token->location;
+    }
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };
@@ -259,27 +297,30 @@ public:
 /**
  * @brief A namespace declaration statement.
  *
- * Namespace declarations introduce a new namespace into the current scope and
- * contain a block of statements that are part of the namespace.
+ * Namespace declarations introduce a new namespace into the current scope
+ * and contain a block of statements that are part of the namespace.
  */
 class Stmt::Namespace : public Stmt::IDeclAllowed {
 public:
     // The name of the namespace.
     std::shared_ptr<Token> identifier;
-    // Whether this namespace is meant to span the entire file (should only be
-    // allowed if the current scope is the root scope).
+    // Whether this namespace is meant to span the entire file (should only
+    // be allowed if the current scope is the root scope).
     bool is_file_spanning;
     // The statements in the namespace block.
-    std::vector<std::shared_ptr<Stmt>> stmts;
+    std::vector<std::shared_ptr<Stmt::IDeclAllowed>> stmts;
 
     Namespace(
+        std::shared_ptr<Token> start_token,
         std::shared_ptr<Token> identifier,
         bool is_file_spanning,
-        std::vector<std::shared_ptr<Stmt>>&& stmts
+        std::vector<std::shared_ptr<Stmt::IDeclAllowed>>&& stmts
     )
         : identifier(identifier),
           is_file_spanning(is_file_spanning),
-          stmts(std::move(stmts)) {}
+          stmts(std::move(stmts)) {
+        location = &start_token->location;
+    }
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };
@@ -288,8 +329,8 @@ public:
  * @brief An extern declaration namespace statement.
  *
  * Extern declaration statements introduce a new namespace for external
- * declarations and contain a block of statements that are part of the extern
- * namespace.
+ * declarations and contain a block of statements that are part of the
+ * extern namespace.
  */
 class Stmt::Extern : public Stmt::IDeclAllowed {
 public:
@@ -303,14 +344,17 @@ public:
     // The ABI for the extern declaration block.
     ABI abi;
     // The declarations in the extern block.
-    std::vector<std::shared_ptr<Stmt>> stmts;
+    std::vector<std::shared_ptr<Stmt::IDeclAllowed>> stmts;
 
     Extern(
+        std::shared_ptr<Token> start_token,
         std::shared_ptr<Token> identifier,
-        std::vector<std::shared_ptr<Stmt>>&& stmts,
+        std::vector<std::shared_ptr<Stmt::IDeclAllowed>>&& stmts,
         ABI abi = ABI::C
     )
-        : identifier(identifier), abi(abi), stmts(std::move(stmts)) {}
+        : identifier(identifier), abi(abi), stmts(std::move(stmts)) {
+        location = &start_token->location;
+    }
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };
@@ -324,6 +368,8 @@ public:
  */
 class Stmt::Eof : public Stmt::IDeclAllowed, public Stmt::IExecAllowed {
 public:
+    Eof(std::shared_ptr<Token> eof_token) { location = &eof_token->location; }
+
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };
 
@@ -339,8 +385,8 @@ public:
  * Only certain types of expressions may be possible lvalues, including
  * NameRef, Access, and Deref expressions.
  *
- * Note: This class should not be used by the parser to catch lvalue errors as
- * some lvalue errors can only be caught during type checking.
+ * Note: This class should not be used by the parser to catch lvalue errors
+ * as some lvalue errors can only be caught during type checking.
  */
 class Expr::IPLValue : public Expr {
 public:
@@ -356,8 +402,8 @@ public:
  * @brief An assignment expression.
  *
  * Assignment expressions assign an rvalue to an lvalue.
- * Although structurally similar to binary expressions, a separate class is used
- * for organization.
+ * Although structurally similar to binary expressions, a separate class is
+ * used for organization.
  */
 class Expr::Assign : public Expr {
 public:
@@ -388,8 +434,9 @@ public:
  * Logical expressions are expressions with two operands and a logical
  * operator (and, or).
  *
- * Although structurally similar to binary expressions, a separate class is used
- * due to the additional short-circuiting semantics required during codegen.
+ * Although structurally similar to binary expressions, a separate class is
+ * used due to the additional short-circuiting semantics required during
+ * codegen.
  */
 class Expr::Logical : public Expr {
 public:
@@ -446,7 +493,8 @@ public:
 /**
  * @brief A unary expression.
  *
- * Unary expressions are expressions with a single operand and prefix operator.
+ * Unary expressions are expressions with a single operand and prefix
+ * operator.
  */
 class Expr::Unary : public Expr {
 public:
@@ -471,8 +519,8 @@ public:
  * Address-of expressions are used to get the address of a variable using
  * the `@` or `&` operator.
  * They are similar to unary expressions but specifically for address-of
- * operations and carry an extra boolean field for when `var` is included in the
- * expression.
+ * operations and carry an extra boolean field for when `var` is included in
+ * the expression.
  */
 class Expr::Address : public Expr {
 public:
@@ -498,7 +546,8 @@ public:
 /**
  * @brief A dereference expression.
  *
- * Dereference expressions are used to dereference pointer and reference types.
+ * Dereference expressions are used to dereference pointer and reference
+ * types.
  */
 class Expr::Deref : public Expr::IPLValue {
 public:
@@ -531,7 +580,8 @@ public:
     enum class Operation {
         // The cast operation is not yet determined.
         Null,
-        // No operation (used when the LLVM type is unchanged) e.g. ptr -> ptr
+        // No operation (used when the LLVM type is unchanged) e.g. ptr ->
+        // ptr
         NoOp,
         // Sign extend integer (sext) e.g. i8 -> i16
         SignExt,
@@ -549,7 +599,8 @@ public:
         FPToUInt,
         // Signed integer to floating point (sitofp) e.g. i32 -> f32
         SIntToFP,
-        // Unsigned integer to floating point (uitofp) e.g. u32 -> f32, bool ->
+        // Unsigned integer to floating point (uitofp) e.g. u32 -> f32, bool
+        // ->
         // f32
         UIntToFP,
         // Integer to boolean (icmp with zero)
@@ -566,9 +617,11 @@ public:
     std::shared_ptr<Token> as_token;
     // The target type annotation.
     std::shared_ptr<Annotation> annotation;
-    // The target type in the expression; to be filled in by the type checker.
+    // The target type in the expression; to be filled in by the type
+    // checker.
     std::shared_ptr<Type> target_type;
-    // The cast operation to be performed; to be filled in by the type checker.
+    // The cast operation to be performed; to be filled in by the type
+    // checker.
     Operation operation = Operation::Null;
 
     Cast(
@@ -591,11 +644,11 @@ public:
  * Access expressions are used to access members of objects or elements of
  * tuples.
  *
- * The right token can be either an identifier token (for member access) or a
- * tuple index token (for tuple element access).
+ * The right token can be either an identifier token (for member access) or
+ * a tuple index token (for tuple element access).
  *
- * Although structurally similar to binary expressions, a separate class is used
- * for organization.
+ * Although structurally similar to binary expressions, a separate class is
+ * used for organization.
  */
 class Expr::Access : public Expr::IPLValue {
 public:
@@ -672,8 +725,8 @@ public:
     // The named arguments that were provided for the call.
     Dictionary<std::string, std::shared_ptr<Expr>> provided_named_args;
 
-    // The actual arguments to be used in the call; to be filled in by the type
-    // checker.
+    // The actual arguments to be used in the call; to be filled in by the
+    // type checker.
     Dictionary<std::string, std::weak_ptr<Expr>> actual_args;
 
     Call(
@@ -700,8 +753,8 @@ public:
  * Sizeof expressions are used to get the size of a type in bytes using the
  * `sizeof` keyword.
  *
- * A sizeof expression consists of the `sizeof` keyword token followed by a type
- * annotation.
+ * A sizeof expression consists of the `sizeof` keyword token followed by a
+ * type annotation.
  */
 class Expr::SizeOf : public Expr {
 public:
@@ -733,7 +786,8 @@ public:
  *
  * They consist of the `alloc` keyword and either:
  * - A type annotation and an optional initialization expression, or
- * - `for` keyword, an amount expression, `of` keyword, and a type annotation.
+ * - `for` keyword, an amount expression, `of` keyword, and a type
+ * annotation.
  */
 class Expr::Alloc : public Expr {
 public:
@@ -743,7 +797,8 @@ public:
     std::optional<std::shared_ptr<Annotation>> type_annotation;
     // The optional expression to initialize the allocated memory.
     std::optional<std::shared_ptr<Expr>> expression;
-    // An optional expression for the amount to allocate (for dynamic arrays).
+    // An optional expression for the amount to allocate (for dynamic
+    // arrays).
     std::optional<std::shared_ptr<Expr>> amount_expr;
 
     Alloc(
@@ -834,8 +889,8 @@ public:
  *
  * Used to represent the unit value `()`.
  *
- * A subclass of `Expr::Tuple` with no elements. This class does not override
- * `Expr::Tuple::accept` and can thus be visited as a `Tuple`.
+ * A subclass of `Expr::Tuple` with no elements. This class does not
+ * override `Expr::Tuple::accept` and can thus be visited as a `Tuple`.
  */
 class Expr::Unit : public Expr::Tuple {
 public:
@@ -882,11 +937,12 @@ public:
     /**
      * @brief Enumeration of block kinds.
      *
-     * There are only 3 kinds: plain blocks, loop blocks, and function blocks.
-     * Conditional blocks are considered plain blocks.
+     * There are only 3 kinds: plain blocks, loop blocks, and function
+     * blocks. Conditional blocks are considered plain blocks.
      *
-     * Loop and function blocks are separate because they both have associated
-     * statements (break and return) that can affect control flow.
+     * Loop and function blocks are separate because they both have
+     * associated statements (break and return) that can affect control
+     * flow.
      */
     enum class Kind { Plain, Loop, Function };
 
@@ -1046,9 +1102,9 @@ public:
 /**
  * @brief An annotation representing a nullptr type.
  *
- * This annotation is used to represent the nullptr type. It is separate from
- * named annotations because `nullptr` is not an identifier. It is separate from
- * pointer annotations because it does not point to any type.
+ * This annotation is used to represent the nullptr type. It is separate
+ * from named annotations because `nullptr` is not an identifier. It is
+ * separate from pointer annotations because it does not point to any type.
  */
 class Annotation::Nullptr : public Annotation {
 public:
@@ -1203,8 +1259,8 @@ public:
  * A type-of annotation is an annotation, meaning it can only appear where
  * annotations are expected.
  *
- * When printed, a type-of annotation displays the location of the expression it
- * references.
+ * When printed, a type-of annotation displays the location of the
+ * expression it references.
  */
 class Annotation::TypeOf : public Annotation {
 public:
