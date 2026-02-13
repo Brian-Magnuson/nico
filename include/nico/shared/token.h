@@ -144,6 +144,7 @@ enum class Tok {
     KwPass,
 
     KwLet,
+    KwStatic,
     KwVar,
     KwConst,
     KwGlobal,

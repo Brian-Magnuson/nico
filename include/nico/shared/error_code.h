@@ -68,6 +68,8 @@ enum class Err {
     // A non-declaration-space statement was found in a region that only allows
     // declaration-space statements.
     NonDeclAllowedStmt,
+    // A compile-time constant expression was expected but not found.
+    NonCompileTimeExpr,
     // A numeric literal could not be parsed due to being out of range for the
     // expected type.
     NumberOutOfRange,
@@ -85,7 +87,7 @@ enum class Err {
     // An unexpected token was found where specific token was expected.
     UnexpectedToken,
     // A let statement was found without a type or value.
-    LetWithoutTypeOrValue,
+    VariableWithoutTypeOrValue,
     // A typeof annotation was found without an opening parenthesis.
     TypeofWithoutOpeningParen,
     // A function statement was found without an opening parenthesis.

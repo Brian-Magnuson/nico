@@ -120,7 +120,7 @@ TEST_CASE("Parser let statements", "[parser]") {
     }
 
     SECTION("Let without type or value") {
-        run_parser_stmt_error_test("let a", Err::LetWithoutTypeOrValue);
+        run_parser_stmt_error_test("let a", Err::VariableWithoutTypeOrValue);
     }
 }
 
@@ -203,6 +203,10 @@ TEST_CASE("Parser let stmt type annotations", "[parser]") {
         run_parser_stmt_error_test("let a: 1 = 1", Err::NotAType);
     }
 
+    SECTION("Let without ident") {
+        run_parser_stmt_error_test("let : i32 = 1", Err::NotAnIdentifier);
+    }
+
     SECTION("Unexpected var in annotation") {
         run_parser_stmt_error_test(
             "let a: var i32 = 1",
@@ -225,6 +229,29 @@ TEST_CASE("Parser let stmt type annotations", "[parser]") {
     }
 }
 
+TEST_CASE("Parser static statements", "[parser]") {
+    SECTION("Static statement 1") {
+        run_parser_stmt_test(
+            "static s1: i32",
+            {"(stmt:static s1 i32)", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Static statement 2") {
+        run_parser_stmt_test(
+            "static var s2: @f64",
+            {"(stmt:static var s2 @f64)", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Static without compile-time constant value") {
+        run_parser_stmt_error_test(
+            "static s: i32 = x",
+            Err::NonCompileTimeExpr
+        );
+    }
+}
+
 TEST_CASE("Parser function statements", "[parser]") {
     SECTION("Func statement 1") {
         run_parser_stmt_test(
@@ -243,7 +270,8 @@ TEST_CASE("Parser function statements", "[parser]") {
     SECTION("Func statement 3") {
         run_parser_stmt_test(
             "func f3() -> i32 => 10",
-            {"(stmt:func f3 i32 () => (block (stmt:yield => (lit i32 10))))",
+            {"(stmt:func f3 i32 () => (block (stmt:yield => (lit i32 "
+             "10))))",
              "(stmt:eof)"}
         );
     }
@@ -260,7 +288,8 @@ TEST_CASE("Parser function statements", "[parser]") {
     SECTION("Func statement 5") {
         run_parser_stmt_test(
             "func f5(var y: f64) { y += 1.0 }",
-            {"(stmt:func f5 (var y f64) => (block (expr (assign (nameref y) "
+            {"(stmt:func f5 (var y f64) => (block (expr (assign (nameref "
+             "y) "
              "(binary + (nameref y) (lit f64 1.000000))))))",
              "(stmt:eof)"}
         );
@@ -269,7 +298,8 @@ TEST_CASE("Parser function statements", "[parser]") {
     SECTION("Func statement 6") {
         run_parser_stmt_test(
             "func f6(a: i32 = 0) -> i32 => a * 2",
-            {"(stmt:func f6 i32 (a i32 (lit i32 0)) => (block (stmt:yield => "
+            {"(stmt:func f6 i32 (a i32 (lit i32 0)) => (block (stmt:yield "
+             "=> "
              "(binary * (nameref a) (lit i32 2)))))",
              "(stmt:eof)"}
         );
@@ -278,7 +308,8 @@ TEST_CASE("Parser function statements", "[parser]") {
     SECTION("Func statement 7") {
         run_parser_stmt_test(
             "func f7() { pass pass pass }",
-            {"(stmt:func f7 () => (block (stmt:pass) (stmt:pass) (stmt:pass)))",
+            {"(stmt:func f7 () => (block (stmt:pass) (stmt:pass) "
+             "(stmt:pass)))",
              "(stmt:eof)"}
         );
     }
@@ -345,7 +376,8 @@ TEST_CASE("Parser namespace statements", "[parser]") {
     //         "namespace ns1 { let x = 1 if x > 1 then true else false }",
     //         {"(stmt:namespace ns1 { (stmt:let x (lit i32 1)) (expr (if
     //         (binary "
-    //          "> (nameref x) (lit i32 1)) then (lit true) else (lit false)))
+    //          "> (nameref x) (lit i32 1)) then (lit true) else (lit
+    //          false)))
     //          })",
     //          "(stmt:eof)"}
     //     );
@@ -373,7 +405,8 @@ TEST_CASE("Parser namespace statements", "[parser]") {
     //         "false\n",
     //         {"(stmt:namespace ns2 { (stmt:let x (lit i32 1)) (expr (if
     //         (binary "
-    //          "> (nameref x) (lit i32 1)) then (lit true) else (lit false)))
+    //          "> (nameref x) (lit i32 1)) then (lit true) else (lit
+    //          false)))
     //          })",
     //          "(stmt:eof)"}
     //     );

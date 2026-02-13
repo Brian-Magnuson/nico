@@ -370,14 +370,16 @@ class Parser {
     // MARK: Statements
 
     /**
-     * @brief Parses a let statement.
+     * @brief Parses a variable statement.
      *
-     * A let statement introduces a new variable into the current scope.
+     * Includes both execution-space (let) variables and declaration-space
+     * (static) variables. A variable statement introduces a new variable into
+     * the current scope.
      *
      * @return A shared pointer to the parsed statement, or nullopt if the
      * statement could not be parsed.
      */
-    std::optional<std::shared_ptr<Stmt>> let_statement();
+    std::optional<std::shared_ptr<Stmt>> variable_statement();
 
     /**
      * @brief Parses a function statement.

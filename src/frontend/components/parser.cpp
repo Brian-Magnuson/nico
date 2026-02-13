@@ -921,7 +921,7 @@ std::optional<std::shared_ptr<Expr>> Parser::expression() {
 
 // MARK: Statements
 
-std::optional<std::shared_ptr<Stmt>> Parser::let_statement() {
+std::optional<std::shared_ptr<Stmt>> Parser::variable_statement() {
     auto start_token = previous();
     // Check for `var`
     bool has_var = match({Tok::KwVar});
@@ -931,7 +931,7 @@ std::optional<std::shared_ptr<Stmt>> Parser::let_statement() {
         Logger::inst().log_error(
             Err::NotAnIdentifier,
             peek()->location,
-            "Expected identifier in let statement."
+            "Expected identifier in declaration."
         );
         return std::nullopt;
     }
@@ -955,25 +955,53 @@ std::optional<std::shared_ptr<Stmt>> Parser::let_statement() {
             // At this point, an error has already been logged.
             return std::nullopt;
         }
+
+        if (start_token->tok_type == Tok::KwStatic) {
+            // Currently, we do not allow static variables to have initializers
+            // because we have no way of guaranteeing that the initializer is a
+            // compile-time constant. In the future, we may want to add support
+            // for this.
+            Logger::inst().log_error(
+                Err::NonCompileTimeExpr,
+                peek()->location,
+                "Static variable initializer is currently not supported."
+            );
+            return std::nullopt;
+        }
     }
 
     // If expr and annotation are both nullopt, we have an error.
     if (!expr && !anno) {
         Logger::inst().log_error(
-            Err::LetWithoutTypeOrValue,
+            Err::VariableWithoutTypeOrValue,
             peek()->location,
-            "Let statement must have a type annotation or value."
+            "Variable declaration must have a type annotation or value."
         );
         return std::nullopt;
     }
 
-    return std::make_shared<Stmt::Let>(
-        start_token,
-        identifier,
-        expr,
-        has_var,
-        anno
-    );
+    if (start_token->tok_type == Tok::KwLet) {
+        return std::make_shared<Stmt::Let>(
+            start_token,
+            identifier,
+            expr,
+            has_var,
+            anno
+        );
+    }
+    else if (start_token->tok_type == Tok::KwStatic) {
+        return std::make_shared<Stmt::Static>(
+            start_token,
+            identifier,
+            expr,
+            has_var,
+            anno
+        );
+    }
+    else {
+        panic("Parser::variable_statement: Unexpected starting token.");
+        return std::nullopt;
+    }
 }
 
 std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
@@ -983,7 +1011,7 @@ std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
         Logger::inst().log_error(
             Err::NotAnIdentifier,
             peek()->location,
-            "Expected identifier in let statement."
+            "Expected identifier in declaration."
         );
         return std::nullopt;
     }
@@ -1234,8 +1262,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::statement() {
     while (match({Tok::Semicolon}))
         ;
 
-    if (match({Tok::KwLet})) {
-        return let_statement();
+    if (match({Tok::KwLet, Tok::KwStatic})) {
+        return variable_statement();
     }
     else if (match({Tok::KwFunc})) {
         return func_statement();
