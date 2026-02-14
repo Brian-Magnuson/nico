@@ -110,6 +110,9 @@ std::optional<std::shared_ptr<Expr>> Parser::block(Expr::Block::Kind kind) {
             peek()->location,
             "Expected '{' or an indent to start a block expression."
         );
+        if (peek()->tok_type == Tok::Colon) {
+            Logger::inst().log_note("Indentation is possibly ignored here.");
+        }
         return std::nullopt;
     }
     auto opening_tok = advance();
@@ -173,6 +176,9 @@ std::optional<std::shared_ptr<Expr>> Parser::conditional() {
             peek()->location,
             "Conditional expression requires `then` keyword or a block."
         );
+        if (peek()->tok_type == Tok::Colon) {
+            Logger::inst().log_note("Indentation is possibly ignored here.");
+        }
         return std::nullopt;
     }
 
@@ -244,6 +250,11 @@ std::optional<std::shared_ptr<Expr>> Parser::loop() {
                 peek()->location,
                 "While loop requires `do` keyword or a block."
             );
+            if (peek()->tok_type == Tok::Colon) {
+                Logger::inst().log_note(
+                    "Indentation is possibly ignored here."
+                );
+            }
             return std::nullopt;
         }
         if (!expr_body)
@@ -1127,6 +1138,9 @@ std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
             peek()->location,
             "Expected '=>' or a block for function body."
         );
+        if (peek()->tok_type == Tok::Colon) {
+            Logger::inst().log_note("Indentation is possibly ignored here.");
+        }
         return std::nullopt;
     }
 
@@ -1167,6 +1181,9 @@ std::optional<std::shared_ptr<Stmt>> Parser::namespace_statement() {
             peek()->location,
             "Expected indented block or '{' after namespace declaration."
         );
+        if (peek()->tok_type == Tok::Colon) {
+            Logger::inst().log_note("Indentation is possibly ignored here.");
+        }
         return std::nullopt;
     }
 

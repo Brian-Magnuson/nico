@@ -663,6 +663,14 @@ TEST_CASE("Parser blocks", "[parser]") {
             Err::ConditionalWithoutThenOrBlock
         );
     }
+
+    SECTION("Declaration space stmt in block") {
+        run_parser_expr_error_test(
+            "block { static var x: i32 }",
+            Err::NonExecAllowedStmt,
+            true
+        );
+    }
 }
 
 TEST_CASE("Parser tuples", "[parser]") {
