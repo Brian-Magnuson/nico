@@ -17,8 +17,60 @@ std::any GlobalChecker::visit(Stmt::Let*) {
 }
 
 std::any GlobalChecker::visit(Stmt::Static* stmt) {
-    // TODO: Implement static variables. This will likely involve creating a
-    // global variable.
+    std::shared_ptr<Type> expr_type = nullptr;
+
+    // Check the type annotation.
+    if (stmt->annotation.has_value()) {
+        auto anno_any = stmt->annotation.value()->accept(&annotation_checker);
+        if (!anno_any.has_value())
+            return std::any();
+        expr_type = std::any_cast<std::shared_ptr<Type>>(anno_any);
+    }
+    else {
+        Logger::inst().log_error(
+            Err::StaticVarWithoutType,
+            stmt->identifier->location,
+            "Static variable declarations must have a type annotation."
+        );
+        return std::any();
+    }
+
+    if (!expr_type->is_sized_type()) {
+        Logger::inst().log_error(
+            Err::UnsizedTypeAllocation,
+            stmt->identifier->location,
+            "Cannot allocate variable `" +
+                std::string(stmt->identifier->lexeme) + "` of unsized type `" +
+                expr_type->to_string() + "`."
+        );
+        return std::any();
+    }
+
+    // Create the field entry.
+    Field field(
+        stmt->has_var,
+        stmt->identifier->lexeme,
+        &stmt->identifier->location,
+        expr_type,
+        stmt->expression
+    );
+
+    auto [ok, node] = symbol_tree->add_field_entry(field);
+    if (!ok) {
+        return std::any();
+    }
+    else if (auto field_entry =
+                 std::dynamic_pointer_cast<Node::FieldEntry>(node)) {
+        stmt->field_entry = field_entry;
+        return std::any();
+    }
+    else {
+        panic(
+            "GlobalChecker::visit(Stmt::Static*): Symbol tree returned a "
+            "non-field entry for a field entry."
+        );
+    }
+
     return std::any();
 }
 

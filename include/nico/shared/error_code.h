@@ -146,6 +146,11 @@ enum class Err {
     // An attempt was made to declare a function that conflicts with an existing
     // overload.
     FunctionOverloadConflict,
+    // An attempt was made to declare a static variable without a type
+    // annotation.
+    StaticVarWithoutType,
+    // An attempt was made to allocate memory for an unsized type.
+    UnsizedTypeAllocation,
 
     // Local type check error
     LocalTypeError = 5000,
@@ -167,8 +172,6 @@ enum class Err {
     FunctionReturnTypeMismatch,
     // An array literal element had a type inconsistent with previous elements.
     ArrayElementTypeMismatch,
-    // An attempt was made to allocate memory for an unsized type.
-    UnsizedTypeAllocation,
     // A sizeof expression was found with an unsized type.
     SizeOfUnsizedType,
     // An alloc amount expression was not of an integer type.

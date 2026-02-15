@@ -46,7 +46,7 @@ std::any CodeGenerator::visit(Stmt::Let* stmt) {
 
     llvm::Value* allocation = nullptr;
 
-    if (control_stack.top_block_is_script()) {
+    if (field_entry->is_global) {
         // In REPL mode, global variables have external linkage so that they can
         // be accessed across multiple submissions.
         auto linkage = repl_mode ? llvm::GlobalValue::ExternalLinkage

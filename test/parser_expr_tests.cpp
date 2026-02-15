@@ -667,8 +667,7 @@ TEST_CASE("Parser blocks", "[parser]") {
     SECTION("Declaration space stmt in block") {
         run_parser_expr_error_test(
             "block { static var x: i32 }",
-            Err::NonExecAllowedStmt,
-            true
+            Err::NonExecAllowedStmt
         );
     }
 }
