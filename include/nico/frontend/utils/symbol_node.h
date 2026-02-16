@@ -373,22 +373,27 @@ public:
      * stored in the node.
      *
      * @param builder The IRBuilder used to create the allocation if needed.
+     * @param extern_linkage Whether to use external linkage for global
+     * variables.
      */
-    virtual llvm::Value*
-    get_llvm_allocation(std::unique_ptr<llvm::IRBuilder<>>& builder) {
+    virtual llvm::Value* get_llvm_allocation(
+        std::unique_ptr<llvm::IRBuilder<>>& builder, bool extern_linkage = false
+    ) {
         llvm::Value* ptr;
         if (is_global) {
             auto ir_module = builder->GetInsertBlock()->getModule();
             // Attempt to get the global variable.
             ptr = ir_module->getGlobalVariable(symbol, true);
             // If it doesn't exist, declare it.
+            auto llvm_type = field.type->get_llvm_type(builder);
             if (ptr == nullptr) {
                 ptr = new llvm::GlobalVariable(
                     *ir_module,
-                    field.type->get_llvm_type(builder),
+                    llvm_type,
                     false, // isConstant
-                    llvm::GlobalValue::ExternalLinkage,
-                    nullptr, // Initializer
+                    extern_linkage ? llvm::GlobalValue::ExternalLinkage
+                                   : llvm::GlobalValue::InternalLinkage,
+                    llvm::Constant::getNullValue(llvm_type), // Initializer
                     symbol
                 );
             }
@@ -466,8 +471,9 @@ public:
         const Location* first_overload_location
     );
 
-    virtual llvm::Value*
-    get_llvm_allocation(std::unique_ptr<llvm::IRBuilder<>>& builder) override {
+    virtual llvm::Value* get_llvm_allocation(
+        std::unique_ptr<llvm::IRBuilder<>>& builder, bool /*extern_linkage*/
+    ) override {
         return llvm::UndefValue::get(
             llvm::PointerType::get(builder->getContext(), 0)
         );

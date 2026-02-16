@@ -178,6 +178,24 @@ TEST_CASE("Local variable declarations", "[checker]") {
     }
 }
 
+TEST_CASE("Static variable declarations", "[checker]") {
+    SECTION("Static variable assigned after declaration") {
+        run_checker_test("static var a: i32 a = 37");
+    }
+
+    SECTION("Static variable assigned before declaration") {
+        run_checker_test("a = 37 static var a: i32");
+    }
+
+    SECTION("Immutable static variable 1") {
+        run_checker_test("static a: i32 a = 73", Err::AssignToImmutable);
+    }
+
+    SECTION("Immutable static variable 2") {
+        run_checker_test("a = 73 static a: i32", Err::AssignToImmutable);
+    }
+}
+
 TEST_CASE("Local unary expressions", "[checker]") {
     SECTION("Valid unary expression 1") {
         run_checker_test("let a = -1");

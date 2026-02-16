@@ -83,9 +83,16 @@ std::any CodeGenerator::visit(Stmt::Let* stmt) {
     return std::any();
 }
 
-std::any CodeGenerator::visit(Stmt::Static* stmt) {
-    // TODO: Implement static variables. This will likely involve creating a
-    // global variable
+std::any CodeGenerator::visit(Stmt::Static* /*stmt*/) {
+    /*
+    We don't actually need to do anything here.
+
+    Static variables are always global.
+    When attempting to access a global variable, the `get_llvm_allocation`
+    function will create a global variable if it doesn't already exist. We can
+    rely on this behavior to create the global variable on the first access.
+    */
+
     return std::any();
 }
 
@@ -867,7 +874,8 @@ std::any CodeGenerator::visit(Expr::Alloc* expr, bool as_lvalue) {
 
 std::any CodeGenerator::visit(Expr::NameRef* expr, bool as_lvalue) {
     llvm::Value* result = nullptr;
-    llvm::Value* ptr = expr->field_entry.lock()->get_llvm_allocation(builder);
+    llvm::Value* ptr =
+        expr->field_entry.lock()->get_llvm_allocation(builder, repl_mode);
 
     if (as_lvalue) {
         // We use the pointer to the variable (its alloca inst or global ptr)

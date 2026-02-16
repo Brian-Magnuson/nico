@@ -382,8 +382,7 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
 }
 
 std::any LocalChecker::visit(Stmt::Static* /*stmt*/) {
-    // TODO: Implement static variables. This will likely involve creating a
-    // global variable.
+    // Do nothing. Static variables are handled by the global checker.
     return std::any();
 }
 

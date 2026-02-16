@@ -1102,6 +1102,30 @@ TEST_CASE("JIT pointers", "[jit]") {
     }
 }
 
+TEST_CASE("JIT static vars", "[jit]") {
+    SECTION("Static variable assigned after declaration") {
+        run_jit_test(
+            R"(
+            static var counter: i32
+            counter = 42
+            printout counter
+            )",
+            "42"
+        );
+    }
+
+    SECTION("Static variable assigned before declaration") {
+        run_jit_test(
+            R"(
+            counter = 37
+            static var counter: i32
+            printout counter
+            )",
+            "37"
+        );
+    }
+}
+
 TEST_CASE("JIT functions", "[jit]") {
     SECTION("Simple function") {
         run_jit_test(
