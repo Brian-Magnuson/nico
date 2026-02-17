@@ -14,6 +14,7 @@
 
 #include "nico/frontend/utils/ast_node.h"
 #include "nico/frontend/utils/frontend_context.h"
+#include "nico/frontend/utils/nodes.h"
 #include "nico/shared/status.h"
 #include "nico/shared/token.h"
 
@@ -179,6 +180,21 @@ class Parser {
      * parsed.
      */
     std::optional<size_t> array_size();
+
+    /**
+     * @brief Parses a name.
+     *
+     * The first identifier should have been matched before calling this
+     * function.
+     *
+     * A name is a sequence of identifiers separated by `::`. For example,
+     * `foo::bar::baz` is a name with three identifiers: `foo`, `bar`, and
+     * `baz`.
+     *
+     * @return A shared pointer to a Name object representing the parsed name,
+     * or nullopt if a name could not be parsed.
+     */
+    std::optional<std::shared_ptr<Name>> name();
 
     // MARK: Expressions
 

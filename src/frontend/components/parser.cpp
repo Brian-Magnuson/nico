@@ -3,7 +3,6 @@
 #include <cctype>
 #include <cstdint>
 
-#include "nico/frontend/utils/nodes.h"
 #include "nico/shared/logger.h"
 #include "nico/shared/utils.h"
 
@@ -439,6 +438,30 @@ std::optional<size_t> Parser::array_size() {
     return std::any_cast<size_t>(any_val);
 }
 
+std::optional<std::shared_ptr<Name>> Parser::name() {
+    std::shared_ptr<Token> identifier = previous();
+    if (identifier->tok_type != Tok::Identifier) {
+        panic(
+            "Parser::name: Attempted to parse a name, but previous token is "
+            "not an identifier."
+        );
+    }
+    auto name = std::make_shared<Name>(identifier);
+
+    while (match({Tok::ColonColon})) {
+        if (!match({Tok::Identifier})) {
+            Logger::inst().log_error(
+                Err::Unimplemented,
+                peek()->location,
+                "Expected an identifier after `::`."
+            );
+            return std::nullopt;
+        }
+        name = std::make_shared<Name>(name, previous());
+    }
+    return name;
+}
+
 std::optional<std::shared_ptr<Expr>> Parser::number_literal() {
     std::string numeric_string;
     if (current > 0 && previous()->tok_type == Tok::Negative) {
@@ -446,7 +469,7 @@ std::optional<std::shared_ptr<Expr>> Parser::number_literal() {
             Logger::inst().log_error(
                 Err::NegativeOnUnsignedLiteral,
                 previous()->location,
-                "Cannot use unary '-' on unsigned integer literal."
+                "Cannot use unary `-` on unsigned integer literal."
             );
             return std::nullopt;
         }
@@ -546,10 +569,10 @@ std::optional<std::shared_ptr<Expr>> Parser::primary() {
         return std::make_shared<Expr::Literal>(previous());
     }
     if (match({Tok::Identifier})) {
-        return std::make_shared<Expr::NameRef>(
-            // TODO: Extract name construction to a utility function
-            std::make_shared<Name>(previous())
-        );
+        auto name_opt = name();
+        if (!name_opt)
+            return std::nullopt;
+        return std::make_shared<Expr::NameRef>(*name_opt);
     }
     if (match({Tok::KwBlock, Tok::KwUnsafe})) {
         return block(Expr::Block::Kind::Plain);
@@ -595,7 +618,7 @@ std::optional<std::shared_ptr<Expr>> Parser::primary() {
             Logger::inst().log_error(
                 Err::UnexpectedToken,
                 peek()->location,
-                "Expected ')' after expression grouping."
+                "Expected `)` after expression grouping."
             );
             return std::nullopt;
         }
@@ -633,7 +656,7 @@ std::optional<std::shared_ptr<Expr>> Parser::primary() {
             Logger::inst().log_error(
                 Err::UnexpectedToken,
                 peek()->location,
-                "Expected ']' after array literal."
+                "Expected `]` after array literal."
             );
             return std::nullopt;
         }
@@ -682,7 +705,7 @@ std::optional<std::shared_ptr<Expr>> Parser::postfix() {
                 Logger::inst().log_error(
                     Err::UnexpectedToken,
                     peek()->location,
-                    "Expected ']' after array subscript."
+                    "Expected `]` after array subscript."
                 );
                 return std::nullopt;
             }
@@ -732,7 +755,7 @@ std::optional<std::shared_ptr<Expr>> Parser::postfix() {
                 Logger::inst().log_error(
                     Err::UnexpectedToken,
                     peek()->location,
-                    "Expected ')' after arguments in function call."
+                    "Expected `)` after arguments in function call."
                 );
                 return std::nullopt;
             }
@@ -1033,7 +1056,7 @@ std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
         Logger::inst().log_error(
             Err::FuncWithoutOpeningParen,
             peek()->location,
-            "Expected '(' after function name."
+            "Expected `(` after function name."
         );
         return std::nullopt;
     }
@@ -1091,7 +1114,7 @@ std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
         Logger::inst().log_error(
             Err::UnexpectedToken,
             peek()->location,
-            "Expected ')' after parsing parameters."
+            "Expected `)` after parsing parameters."
         );
         return std::nullopt;
     }
@@ -1136,7 +1159,7 @@ std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
         Logger::inst().log_error(
             Err::FuncWithoutArrowOrBlock,
             peek()->location,
-            "Expected '=>' or a block for function body."
+            "Expected `=>` or a block for function body."
         );
         if (peek()->tok_type == Tok::Colon) {
             Logger::inst().log_note("Indentation is possibly ignored here.");
@@ -1179,7 +1202,7 @@ std::optional<std::shared_ptr<Stmt>> Parser::namespace_statement() {
         Logger::inst().log_error(
             Err::NamespaceWithoutBlock,
             peek()->location,
-            "Expected indented block or '{' after namespace declaration."
+            "Expected indented block or `{` after namespace declaration."
         );
         if (peek()->tok_type == Tok::Colon) {
             Logger::inst().log_note("Indentation is possibly ignored here.");
@@ -1363,7 +1386,7 @@ std::optional<std::shared_ptr<Annotation>> Parser::annotation() {
             Logger::inst().log_error(
                 Err::TypeofWithoutOpeningParen,
                 peek()->location,
-                "Expected '(' after 'typeof'."
+                "Expected `(` after `typeof`."
             );
             return std::nullopt;
         }
@@ -1372,7 +1395,7 @@ std::optional<std::shared_ptr<Annotation>> Parser::annotation() {
             Logger::inst().log_error(
                 Err::UnexpectedToken,
                 peek()->location,
-                "Expected ')' after expression in "
+                "Expected `)` after expression in "
                 "typeof annotation."
             );
             return std::nullopt;
@@ -1412,7 +1435,7 @@ std::optional<std::shared_ptr<Annotation>> Parser::annotation() {
             Logger::inst().log_error(
                 Err::UnexpectedToken,
                 peek()->location,
-                "Expected ')' after expression in "
+                "Expected `)` after expression in "
                 "tuple annotation."
             );
             return std::nullopt;
@@ -1435,7 +1458,7 @@ std::optional<std::shared_ptr<Annotation>> Parser::annotation() {
             Logger::inst().log_error(
                 Err::UnexpectedToken,
                 peek()->location,
-                "Expected ';' after element type in array annotation."
+                "Expected `;` after element type in array annotation."
             );
             return std::nullopt;
         }
@@ -1452,7 +1475,7 @@ std::optional<std::shared_ptr<Annotation>> Parser::annotation() {
             Logger::inst().log_error(
                 Err::UnexpectedToken,
                 peek()->location,
-                "Expected ']' after size in array annotation."
+                "Expected `]` after size in array annotation."
             );
             return std::nullopt;
         }
