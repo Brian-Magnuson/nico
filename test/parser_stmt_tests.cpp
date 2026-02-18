@@ -122,6 +122,13 @@ TEST_CASE("Parser let statements", "[parser]") {
     SECTION("Let without type or value") {
         run_parser_stmt_error_test("let a", Err::VariableWithoutTypeOrValue);
     }
+
+    SECTION("Let with colon colon in identifier") {
+        run_parser_stmt_error_test(
+            "let a::b = 1",
+            Err::DeclarationIdentWithColonColon
+        );
+    }
 }
 
 TEST_CASE("Parser let stmt type annotations", "[parser]") {
@@ -351,6 +358,13 @@ TEST_CASE("Parser function statements", "[parser]") {
             Err::UnexpectedToken
         );
     }
+
+    SECTION("Func with colon colon in identifier") {
+        run_parser_stmt_error_test(
+            "func f::g() {}",
+            Err::DeclarationIdentWithColonColon
+        );
+    }
 }
 
 TEST_CASE("Parser namespace statements", "[parser]") {
@@ -388,8 +402,6 @@ TEST_CASE("Parser namespace statements", "[parser]") {
              "(stmt:eof)"}
         );
     }
-
-    // TODO: Replace these tests with tests for the new namespace rules.
 
     SECTION("Empty namespace indented") {
         run_parser_stmt_test(
@@ -442,6 +454,13 @@ TEST_CASE("Parser namespace statements", "[parser]") {
         run_parser_stmt_error_test(
             "namespace ns4 { let x = 10 }",
             Err::NonDeclAllowedStmt
+        );
+    }
+
+    SECTION("Namespace with colon colon in identifier") {
+        run_parser_stmt_error_test(
+            "namespace ns::inner {}",
+            Err::DeclarationIdentWithColonColon
         );
     }
 }

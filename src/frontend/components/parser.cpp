@@ -451,7 +451,7 @@ std::optional<std::shared_ptr<Name>> Parser::name() {
     while (match({Tok::ColonColon})) {
         if (!match({Tok::Identifier})) {
             Logger::inst().log_error(
-                Err::Unimplemented,
+                Err::NotAnIdentifier,
                 peek()->location,
                 "Expected an identifier after `::`."
             );
@@ -971,6 +971,15 @@ std::optional<std::shared_ptr<Stmt>> Parser::variable_statement() {
     }
     auto identifier = previous();
 
+    if (match({Tok::ColonColon})) {
+        Logger::inst().log_error(
+            Err::DeclarationIdentWithColonColon,
+            previous()->location,
+            "Declaration identifier cannot contain `::`."
+        );
+        return std::nullopt;
+    }
+
     // Check for type annotation
     std::optional<std::shared_ptr<Annotation>> anno = std::nullopt;
     if (match({Tok::Colon})) {
@@ -1050,6 +1059,15 @@ std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
         return std::nullopt;
     }
     auto identifier = previous();
+
+    if (match({Tok::ColonColon})) {
+        Logger::inst().log_error(
+            Err::DeclarationIdentWithColonColon,
+            previous()->location,
+            "Declaration identifier cannot contain `::`."
+        );
+        return std::nullopt;
+    }
 
     // Open parenthesis
     if (!match({Tok::LParen})) {
@@ -1189,6 +1207,15 @@ std::optional<std::shared_ptr<Stmt>> Parser::namespace_statement() {
         return std::nullopt;
     }
     auto identifier = previous();
+
+    if (match({Tok::ColonColon})) {
+        Logger::inst().log_error(
+            Err::DeclarationIdentWithColonColon,
+            previous()->location,
+            "Declaration identifier cannot contain `::`."
+        );
+        return std::nullopt;
+    }
 
     Tok closing_token_type;
     bool is_file_spanning = false;

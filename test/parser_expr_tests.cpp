@@ -266,6 +266,37 @@ TEST_CASE("Parser numbers", "[parser]") {
     }
 }
 
+TEST_CASE("Parser namerefs", "[parser]") {
+    SECTION("Basic namerefs") {
+        run_parser_expr_test(
+            "x my_var _hidden _10",
+            {"(expr (nameref x))",
+             "(expr (nameref my_var))",
+             "(expr (nameref _hidden))",
+             "(expr (nameref _10))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Namerefs with multiple parts") {
+        run_parser_expr_test(
+            "a::b c::d::e",
+            {"(expr (nameref a::b))", "(expr (nameref c::d::e))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Nameref with many parts") {
+        run_parser_expr_test(
+            "a::b::c::d::e::f::g",
+            {"(expr (nameref a::b::c::d::e::f::g))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Nameref with non-identifier part") {
+        run_parser_expr_error_test("a::1", Err::NotAnIdentifier);
+    }
+}
+
 TEST_CASE("Parser expressions", "[parser]") {
     SECTION("Unary 1") {
         run_parser_expr_test(
