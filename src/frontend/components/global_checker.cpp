@@ -180,7 +180,18 @@ std::any GlobalChecker::visit(Stmt::Continue*) {
 }
 
 std::any GlobalChecker::visit(Stmt::Namespace* stmt) {
-    // TODO: Implement global checking for namespace blocks.
+    auto [ok, _] = symbol_tree->add_namespace(stmt->identifier);
+    if (!ok) {
+        return std::any();
+    }
+
+    for (auto& stmt : stmt->stmts) {
+        stmt->accept(this);
+    }
+    // Errors may occur, but we can still continue processing the rest of the
+    // statements in the namespace.
+
+    symbol_tree->exit_scope();
     return std::any();
 }
 

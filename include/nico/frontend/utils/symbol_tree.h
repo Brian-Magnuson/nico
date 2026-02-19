@@ -131,8 +131,11 @@ public:
     );
 
     /**
-     * @brief Enters the namespace with the name contained in token, adding it
-     * if it does not exist.
+     * @brief Adds a new namespace to the symbol tree, then enters the namespace
+     * scope.
+     *
+     * If successful, this function returns true and a shared pointer to the
+     * newly created namespace node.
      *
      * If the current scope does not allow namespaces, this function does not
      * add the namespace and returns a pair with false and nullptr.

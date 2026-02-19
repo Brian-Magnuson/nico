@@ -598,8 +598,8 @@ std::any LocalChecker::visit(Stmt::Dealloc* stmt) {
 }
 
 std::any LocalChecker::visit(Stmt::Namespace* stmt) {
-    // TODO: Implement local checking for namespace blocks. For now, we'll just
-    // ignore them.
+    // Do nothing. There are no execution-space statements in namespaces.
+    // The parser enforces this.
     return std::any();
 }
 

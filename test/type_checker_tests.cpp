@@ -70,7 +70,7 @@ void run_checker_test(
     nico::Logger::inst().reset();
 }
 
-TEST_CASE("Local variable declarations", "[checker]") {
+TEST_CASE("Check variable declarations", "[checker]") {
     SECTION("Valid local variable declarations 1") {
         run_checker_test("let a = 1");
     }
@@ -178,7 +178,7 @@ TEST_CASE("Local variable declarations", "[checker]") {
     }
 }
 
-TEST_CASE("Static variable declarations", "[checker]") {
+TEST_CASE("Check static variable declarations", "[checker]") {
     SECTION("Static variable assigned after declaration") {
         run_checker_test("static var a: i32 a = 37");
     }
@@ -196,7 +196,7 @@ TEST_CASE("Static variable declarations", "[checker]") {
     }
 }
 
-TEST_CASE("Local unary expressions", "[checker]") {
+TEST_CASE("Check unary expressions", "[checker]") {
     SECTION("Valid unary expression 1") {
         run_checker_test("let a = -1");
     }
@@ -226,7 +226,7 @@ TEST_CASE("Local unary expressions", "[checker]") {
     }
 }
 
-TEST_CASE("Local sizeof expressions", "[checker]") {
+TEST_CASE("Check sizeof expressions", "[checker]") {
     SECTION("Valid sizeof expression 1") {
         run_checker_test("let a: u64 = sizeof i32");
     }
@@ -251,7 +251,7 @@ TEST_CASE("Local sizeof expressions", "[checker]") {
     }
 }
 
-TEST_CASE("Local alloc expressions", "[checker]") {
+TEST_CASE("Check alloc expressions", "[checker]") {
     SECTION("Valid alloc type expr 1") {
         run_checker_test("let a: @i32 = alloc i32");
     }
@@ -349,7 +349,7 @@ TEST_CASE("Local alloc expressions", "[checker]") {
     }
 }
 
-TEST_CASE("Local alloc-for expressions", "[checker]") {
+TEST_CASE("Check alloc-for expressions", "[checker]") {
     SECTION("Valid alloc-for expression 1") {
         run_checker_test("let a: @[i32; ?] = alloc for 1 of i32");
     }
@@ -381,7 +381,7 @@ TEST_CASE("Local alloc-for expressions", "[checker]") {
     }
 }
 
-TEST_CASE("Local dealloc statements", "[checker]") {
+TEST_CASE("Check dealloc statements", "[checker]") {
     SECTION("Valid dealloc statement 1") {
         run_checker_test("let a: @i32 = alloc i32 unsafe { dealloc a }");
     }
@@ -431,7 +431,7 @@ TEST_CASE("Local dealloc statements", "[checker]") {
     }
 }
 
-TEST_CASE("Local non pointer cast expressions") {
+TEST_CASE("Check non pointer cast expressions") {
     SECTION("Valid cast NoOp") {
         run_checker_test("let a: i32 = 1 let b: i32 = a as i32");
     }
@@ -500,13 +500,13 @@ TEST_CASE("Local non pointer cast expressions") {
     }
 }
 
-TEST_CASE("Local pointer cast expressions", "[checker]") {
+TEST_CASE("Check pointer cast expressions", "[checker]") {
     SECTION("Valid nullptr cast to pointer") {
         run_checker_test("let a: @i32 = nullptr as @i32");
     }
 }
 
-TEST_CASE("Local address-of expressions", "[checker]") {
+TEST_CASE("Check address-of expressions", "[checker]") {
     SECTION("Valid address-of expression 1") {
         run_checker_test("let a = 1 let b: @i32 = @a");
     }
@@ -555,7 +555,7 @@ TEST_CASE("Local address-of expressions", "[checker]") {
     }
 }
 
-TEST_CASE("Local dereference expressions", "[checker]") {
+TEST_CASE("Check dereference expressions", "[checker]") {
     SECTION("Dereference without unsafe") {
         run_checker_test(
             "let a = 1 let b: @i32 = @a let c = ^b",
@@ -624,7 +624,7 @@ TEST_CASE("Local dereference expressions", "[checker]") {
     }
 }
 
-TEST_CASE("Local binary expressions", "[checker]") {
+TEST_CASE("Check binary expressions", "[checker]") {
     SECTION("Valid binary expressions 1") {
         run_checker_test("let a = 1 + 2");
     }
@@ -646,7 +646,7 @@ TEST_CASE("Local binary expressions", "[checker]") {
     }
 }
 
-TEST_CASE("Local comparison expressions", "[checker]") {
+TEST_CASE("Check comparison expressions", "[checker]") {
     SECTION("Valid comparison expressions 1") {
         run_checker_test("let a = 1 < 2");
     }
@@ -704,7 +704,7 @@ TEST_CASE("Local comparison expressions", "[checker]") {
     }
 }
 
-TEST_CASE("Local logical expressions", "[checker]") {
+TEST_CASE("Check logical expressions", "[checker]") {
     SECTION("Valid logical expressions 1") {
         run_checker_test("let a = true and false");
     }
@@ -730,7 +730,7 @@ TEST_CASE("Local logical expressions", "[checker]") {
     }
 }
 
-TEST_CASE("Local assignment expressions", "[checker]") {
+TEST_CASE("Check assignment expressions", "[checker]") {
     SECTION("Valid assignment expressions") {
         run_checker_test("let var a = 1 a = 2");
     }
@@ -766,13 +766,13 @@ TEST_CASE("Local assignment expressions", "[checker]") {
     }
 }
 
-TEST_CASE("Local print statements", "[checker]") {
+TEST_CASE("Check print statements", "[checker]") {
     SECTION("Print hello world") {
         run_checker_test("printout \"Hello, World!\"");
     }
 }
 
-TEST_CASE("Local block expressions", "[checker]") {
+TEST_CASE("Check block expressions", "[checker]") {
     SECTION("Valid block expression") {
         run_checker_test("block { let a = 1 printout a }");
     }
@@ -812,7 +812,7 @@ TEST_CASE("Local block expressions", "[checker]") {
     }
 }
 
-TEST_CASE("Local tuple expressions", "[checker]") {
+TEST_CASE("Check tuple expressions", "[checker]") {
     SECTION("Valid tuple expression 1") {
         run_checker_test("let a = (1, 2.1, true)");
     }
@@ -917,7 +917,7 @@ TEST_CASE("Local tuple expressions", "[checker]") {
     }
 }
 
-TEST_CASE("Local array expressions", "[checker]") {
+TEST_CASE("Check array expressions", "[checker]") {
     SECTION("Valid array expression 1") {
         run_checker_test("let a = [1, 2, 3, 4, 5]");
     }
@@ -1043,7 +1043,7 @@ TEST_CASE("Local array expressions", "[checker]") {
     }
 }
 
-TEST_CASE("Local subscript expressions", "[checker]") {
+TEST_CASE("Check subscript expressions", "[checker]") {
     SECTION("Valid subscript expression 1") {
         run_checker_test("let a = [10, 20, 30] let b: i32 = a[1]");
     }
@@ -1078,7 +1078,7 @@ TEST_CASE("Local subscript expressions", "[checker]") {
     }
 }
 
-TEST_CASE("Local conditional expressions", "[checker]") {
+TEST_CASE("Check conditional expressions", "[checker]") {
     SECTION("Valid conditional expression 1") {
         run_checker_test("if true { 1 } else { false }");
     }
@@ -1194,7 +1194,7 @@ TEST_CASE("Local conditional expressions", "[checker]") {
     }
 }
 
-TEST_CASE("Local loop expressions", "[checker]") {
+TEST_CASE("Check loop expressions", "[checker]") {
     SECTION("Valid loop expression 1") {
         run_checker_test("loop { printout \"Hello, World!\" }");
     }
@@ -1281,7 +1281,7 @@ TEST_CASE("Local loop expressions", "[checker]") {
     }
 }
 
-TEST_CASE("Local function declarations", "[checker]") {
+TEST_CASE("Check function declarations", "[checker]") {
     SECTION("Valid function declaration braced form") {
         run_checker_test(R"(
         func add(a: i32, b: i32) -> i32 {
@@ -1361,7 +1361,7 @@ TEST_CASE("Local function declarations", "[checker]") {
     }
 }
 
-TEST_CASE("Local function overload declarations", "[checker]") {
+TEST_CASE("Check function overload declarations", "[checker]") {
     SECTION("Valid overloads 1") {
         run_checker_test(R"(
         func add(a: i32, b: i32) -> i32 => a + b
@@ -1473,7 +1473,7 @@ TEST_CASE("Local function overload declarations", "[checker]") {
     }
 }
 
-TEST_CASE("Local function call", "[checker]") {
+TEST_CASE("Check function call", "[checker]") {
     SECTION("Valid function call") {
         run_checker_test(R"(
         func add(a: i32, b: i32) -> i32 => a + b
@@ -1593,7 +1593,7 @@ TEST_CASE("Local function call", "[checker]") {
     }
 }
 
-TEST_CASE("Local function overload calls", "[checker]") {
+TEST_CASE("Check function overload calls", "[checker]") {
     SECTION("Valid overload call 1") {
         run_checker_test(
             R"(
@@ -1754,6 +1754,54 @@ TEST_CASE("Local function overload calls", "[checker]") {
         let func_ptr = f
         let result1: i32 = func_ptr(10)
         let result2: f64 = func_ptr(10.0)
+        )"
+        );
+    }
+}
+
+TEST_CASE("Check namespace declarations", "[checker]") {
+    SECTION("Valid namespace declaration") {
+        run_checker_test(R"(
+        namespace ns {
+            static var x: i32
+            func add(a: i32, b: i32) -> i32 => a + b
+        }
+        )");
+    }
+
+    SECTION("Namespace name already exists") {
+        run_checker_test(
+            R"(
+        namespace ns {
+            static var x: i32
+        }
+        namespace ns {
+            func add(a: i32, b: i32) -> i32 => a + b
+        }
+        )",
+            Err::NameAlreadyExists
+        );
+    }
+
+    SECTION("Namespace name conflicts with variable") {
+        run_checker_test(
+            R"(
+        let ns = 1
+        namespace ns {
+            static var x: i32
+        }
+        )",
+            Err::NameAlreadyExists
+        );
+    }
+
+    SECTION("Reference variable in namespace") {
+        run_checker_test(
+            R"(
+        ns::x = 1
+        namespace ns {
+            static var x: i32
+        }
         )"
         );
     }
