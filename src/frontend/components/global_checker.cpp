@@ -180,10 +180,12 @@ std::any GlobalChecker::visit(Stmt::Continue*) {
 }
 
 std::any GlobalChecker::visit(Stmt::Namespace* stmt) {
-    auto [ok, _] = symbol_tree->add_namespace(stmt->identifier);
+    auto [ok, node] = symbol_tree->add_namespace(stmt->identifier);
     if (!ok) {
         return std::any();
     }
+
+    stmt->namespace_node = node;
 
     for (auto& stmt : stmt->stmts) {
         stmt->accept(this);

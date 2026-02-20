@@ -144,10 +144,10 @@ public:
      * returns a pair with false and nullptr.
      *
      * @param name The name of the namespace.
-     * @return std::pair<bool, std::shared_ptr<Node>> The result of adding the
-     * namespace (see description).
+     * @return std::pair<bool, std::shared_ptr<Node::Namespace>> The result of
+     * adding the namespace (see description).
      */
-    std::pair<bool, std::shared_ptr<Node>>
+    std::pair<bool, std::shared_ptr<Node::Namespace>>
     add_namespace(std::shared_ptr<Token> token);
 
     /**

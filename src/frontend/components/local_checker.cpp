@@ -598,8 +598,23 @@ std::any LocalChecker::visit(Stmt::Dealloc* stmt) {
 }
 
 std::any LocalChecker::visit(Stmt::Namespace* stmt) {
-    // Do nothing. There are no execution-space statements in namespaces.
-    // The parser enforces this.
+    auto previous_scope = symbol_tree->current_scope;
+    symbol_tree->current_scope = stmt->namespace_node.lock();
+
+    for (auto& stmt : stmt->stmts) {
+        stmt->accept(this);
+    }
+    // Namespaces may contain functions.
+    // Functions may contain execution-space statements.
+    // Therefore, namespaces may contain execution-space statements.
+    // Therefore, we need to check namespaces.
+    // Non-execution-space statements will still be ignored.
+
+    symbol_tree->current_scope = previous_scope;
+    // We could probably do `symbol_tree->exit_scope()` here and that would be
+    // fine and possibly just as safe, but this is more predictable and saves us
+    // the trouble of proving that `exit_scope()` works.
+
     return std::any();
 }
 

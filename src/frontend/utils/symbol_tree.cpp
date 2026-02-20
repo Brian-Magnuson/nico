@@ -203,7 +203,7 @@ bool SymbolTree::register_symbol(
     return true;
 }
 
-std::pair<bool, std::shared_ptr<Node>>
+std::pair<bool, std::shared_ptr<Node::Namespace>>
 SymbolTree::add_namespace(std::shared_ptr<Token> token) {
     // Namespaces cannot be added in a local scope
     if (PTR_INSTANCEOF(current_scope, Node::LocalScope)) {

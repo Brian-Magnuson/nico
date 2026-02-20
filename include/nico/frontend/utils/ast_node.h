@@ -309,6 +309,8 @@ public:
     bool is_file_spanning;
     // The statements in the namespace block.
     std::vector<std::shared_ptr<Stmt::IDeclAllowed>> stmts;
+    // A weak pointer to the namespace node in the symbol tree.
+    std::weak_ptr<Node::Namespace> namespace_node;
 
     Namespace(
         std::shared_ptr<Token> start_token,

@@ -194,6 +194,20 @@ TEST_CASE("Check static variable declarations", "[checker]") {
     SECTION("Immutable static variable 2") {
         run_checker_test("a = 73 static a: i32", Err::AssignToImmutable);
     }
+
+    SECTION("Static variable name conflict 1") {
+        run_checker_test(
+            "static var a: i32 static var a: i32",
+            Err::NameAlreadyExists
+        );
+    }
+
+    SECTION("Static variable name conflict 1") {
+        run_checker_test(
+            "let var a: i32 static var a: i32",
+            Err::NameAlreadyExists
+        );
+    }
 }
 
 TEST_CASE("Check unary expressions", "[checker]") {
@@ -1803,6 +1817,92 @@ TEST_CASE("Check namespace declarations", "[checker]") {
             static var x: i32
         }
         )"
+        );
+    }
+
+    SECTION("Reference function in namespace") {
+        run_checker_test(
+            R"(
+        let result = ns::add(1, 2)
+        namespace ns {
+            func add(a: i32, b: i32) -> i32 => a + b
+        }
+        )"
+        );
+    }
+
+    SECTION("Name reference in nested namespace") {
+        run_checker_test(
+            R"(
+        let result = ns::inner::add(1, 2)
+        namespace ns {
+            namespace inner {
+                func add(a: i32, b: i32) -> i32 => a + b
+            }
+        }
+        )"
+        );
+    }
+
+    SECTION("Namespace tree search 1") {
+        run_checker_test(
+            R"(
+        namespace ns1:
+          namespace ns2:
+            namespace ns3:
+              func add(a: i32, b: i32) -> i32 => a + b
+              func test() -> i32:
+                let result0 = add(1, 2)
+                let result1 = ns3::add(1, 2)
+                let result2 = ns2::ns3::add(3, 4)
+                let result3 = ns1::ns2::ns3::add(5, 6)
+                return result0 + result1 + result2 + result3
+        )"
+        );
+    }
+
+    SECTION("Namespace tree search 2") {
+        run_checker_test(
+            R"(
+        namespace ns1:
+          namespace ns2:
+            func add(a: i32, b: i32) -> i32 => a + b
+          namespace ns3:
+            func test() -> i32:
+              let result1 = ns2::add(1, 2)
+              let result2 = ns1::ns2::add(3, 4)
+              return result1 + result2
+        )"
+        );
+    }
+
+    SECTION("Namespace tree search not found 1") {
+        run_checker_test(
+            R"(
+        namespace ns1:
+          namespace ns2:
+            func add(a: i32, b: i32) -> i32 => a + b
+          namespace ns3:
+            func test() -> i32:
+              let result = subtract(1, 2)
+              return result
+        )",
+            Err::NameNotFound
+        );
+    }
+
+    SECTION("Namespace tree search not found 2") {
+        run_checker_test(
+            R"(
+        namespace ns1:
+          namespace ns2:
+            func add(a: i32, b: i32) -> i32 => a + b
+          namespace ns3:
+            func test() -> i32:
+              let result = add(1, 2)
+              return result
+        )",
+            Err::NameNotFound
         );
     }
 }
