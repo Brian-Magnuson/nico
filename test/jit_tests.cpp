@@ -1489,3 +1489,88 @@ TEST_CASE("JIT alloc and dealloc", "[jit]") {
         );
     }
 }
+
+TEST_CASE("JIT namespaces", "[jit]") {
+    SECTION("Namespace declaration and access") {
+        run_jit_test(
+            R"(
+            namespace math {
+                func add(a: i32, b: i32) -> i32 => a + b
+            }
+            printout math::add(3, 4)
+            )",
+            "7"
+        );
+    }
+
+    SECTION("Nested namespaces") {
+        run_jit_test(
+            R"(
+            namespace outer {
+                namespace inner {
+                    func greet() -> str => "Hello from inner!"
+                }
+            }
+            printout outer::inner::greet()
+            )",
+            "Hello from inner!"
+        );
+    }
+
+    SECTION("Namespace with variables") {
+        run_jit_test(
+            R"(
+            namespace config {
+                static var version: str
+            }
+            config::version = "1.0.0"
+            printout config::version
+            )",
+            "1.0.0"
+        );
+    }
+
+    SECTION("Namespace with functions and variables") {
+        run_jit_test(
+            R"(
+            namespace utils {
+                static var count: i32
+                func increment() {
+                    count += 1
+                }
+                func get_count() -> i32 => count
+            }
+            utils::count = 0
+            utils::increment()
+            utils::increment()
+            printout utils::get_count()
+            )",
+            "2"
+        );
+    }
+
+    SECTION("Namespace access before declaration") {
+        run_jit_test(
+            R"(
+            printout math::add(1, 2)
+            namespace math {
+                func add(a: i32, b: i32) -> i32 => a + b
+            }
+            )",
+            "3"
+        );
+    }
+
+    SECTION("Namespace with overloaded functions") {
+        run_jit_test(
+            R"(
+            namespace math {
+                func add(a: i32, b: i32) -> i32 => a + b
+                func add(a: f64, b: f64) -> f64 => a + b
+            }
+            printout math::add(1, 2), ", ", math::add(1.5, 2.5)
+            )",
+            "3, 4"
+        );
+    }
+}

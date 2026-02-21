@@ -166,21 +166,17 @@ std::any CodeGenerator::visit(Stmt::Func* stmt) {
     // Pop the function block from the control stack.
     control_stack.pop_block();
 
-    // Create a global variable to hold the function pointer.
-    new llvm::GlobalVariable(
-        *mod_ctx.ir_module,
-        function->getType(),
-        false,
-        llvm::GlobalValue::ExternalLinkage,
-        function,
-        // This has to be named the same as the symbol.
-        // Because this is a global variable, it is searched by name when we
-        // look up the field entry for a function call.
-        stmt->field_entry.lock()->symbol
+    // Use a global variable to hold the function pointer.
+    llvm::GlobalVariable* llvm_global = llvm::cast<llvm::GlobalVariable>(
+        stmt->field_entry.lock()->get_llvm_allocation(builder, true)
     );
-    // `new` is safe here because the module manages the memory.
-    // Also, we don't store this in the field entry; we reference global
-    // variables by name.
+    // `get_llvm_allocation` will create a global variable if it doesn't already
+    // exist. The variable may already exist if it was referenced before the
+    // function was declared.
+
+    // New variable or not, the initializer is initialially set to null.
+    llvm_global->setInitializer(function);
+    // We set the initializer to the function.
 
     builder->SetInsertPoint(script_block);
 
@@ -299,7 +295,10 @@ std::any CodeGenerator::visit(Stmt::Continue* /*stmt*/) {
 }
 
 std::any CodeGenerator::visit(Stmt::Namespace* stmt) {
-    // TODO: Implement code generation for namespace blocks.
+    // Visit each statement in the namespace block.
+    for (const auto& decl : stmt->stmts) {
+        decl->accept(this);
+    }
     return std::any();
 }
 

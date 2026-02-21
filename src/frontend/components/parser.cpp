@@ -1006,7 +1006,7 @@ std::optional<std::shared_ptr<Stmt>> Parser::variable_statement() {
             // for this.
             Logger::inst().log_error(
                 Err::NonCompileTimeExpr,
-                peek()->location,
+                previous()->location,
                 "Static variable initializer is currently not supported."
             );
             return std::nullopt;
