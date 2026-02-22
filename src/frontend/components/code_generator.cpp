@@ -390,108 +390,100 @@ std::any CodeGenerator::visit(Expr::Binary* expr, bool as_lvalue) {
     auto left = std::any_cast<llvm::Value*>(expr->left->accept(this, false));
     auto right = std::any_cast<llvm::Value*>(expr->right->accept(this, false));
 
-    if (PTR_INSTANCEOF(expr->left->type, Type::Float)) {
-        switch (expr->op->tok_type) {
-        case Tok::Plus:
-            result = builder->CreateFAdd(left, right);
-            break;
-        case Tok::Minus:
-            result = builder->CreateFSub(left, right);
-            break;
-        case Tok::Star:
-            result = builder->CreateFMul(left, right);
-            break;
-        case Tok::Slash:
-            result = builder->CreateFDiv(left, right);
-            break;
-        case Tok::EqEq:
-            result = builder->CreateFCmpUEQ(left, right);
-            break;
-        case Tok::Percent:
-            result = builder->CreateFRem(left, right);
-            break;
-        case Tok::BangEq:
-            result = builder->CreateFCmpUNE(left, right);
-            break;
-        case Tok::Lt:
-            result = builder->CreateFCmpULT(left, right);
-            break;
-        case Tok::LtEq:
-            result = builder->CreateFCmpULE(left, right);
-            break;
-        case Tok::Gt:
-            result = builder->CreateFCmpUGT(left, right);
-            break;
-        case Tok::GtEq:
-            result = builder->CreateFCmpUGE(left, right);
-            break;
-        default:
-            panic(
-                "CodeGenerator::visit(Expr::Binary*): Unknown binary operator "
-                "for floating-point number."
-            );
-        }
-    }
-    else if (PTR_INSTANCEOF(expr->left->type, Type::Int) ||
-             PTR_INSTANCEOF(expr->left->type, Type::Bool) ||
-             PTR_INSTANCEOF(expr->left->type, Type::RawTypedPtr)) {
-        auto int_type = std::dynamic_pointer_cast<Type::Int>(expr->left->type);
-        auto is_signed_int = int_type ? int_type->is_signed : false;
-
-        switch (expr->op->tok_type) {
-        case Tok::Plus:
-            result = builder->CreateAdd(left, right);
-            break;
-        case Tok::Minus:
-            result = builder->CreateSub(left, right);
-            break;
-        case Tok::Star:
-            result = builder->CreateMul(left, right);
-            break;
-        case Tok::Slash:
-            add_div_zero_check(right, &expr->op->location);
-            result = is_signed_int ? builder->CreateSDiv(left, right)
-                                   : builder->CreateUDiv(left, right);
-            break;
-        case Tok::Percent:
-            add_div_zero_check(right, &expr->op->location);
-            result = is_signed_int ? builder->CreateSRem(left, right)
-                                   : builder->CreateURem(left, right);
-            break;
-        case Tok::EqEq:
-            result = builder->CreateICmpEQ(left, right);
-            break;
-        case Tok::BangEq:
-            result = builder->CreateICmpNE(left, right);
-            break;
-        case Tok::Lt:
-            result = is_signed_int ? builder->CreateICmpSLT(left, right)
-                                   : builder->CreateICmpULT(left, right);
-            break;
-        case Tok::LtEq:
-            result = is_signed_int ? builder->CreateICmpSLE(left, right)
-                                   : builder->CreateICmpULE(left, right);
-            break;
-        case Tok::Gt:
-            result = is_signed_int ? builder->CreateICmpSGT(left, right)
-                                   : builder->CreateICmpUGT(left, right);
-            break;
-        case Tok::GtEq:
-            result = is_signed_int ? builder->CreateICmpSGE(left, right)
-                                   : builder->CreateICmpUGE(left, right);
-            break;
-        default:
-            panic(
-                "CodeGenerator::visit(Expr::Binary*): Unknown binary operator "
-                "for integer."
-            );
-        }
-    }
-    else {
+    switch (expr->operation) {
+    case Expr::Binary::Operation::Null:
         panic(
-            "CodeGenerator::visit(Expr::Binary*): Unsupported type for binary "
-            "operation."
+            "CodeGenerator::visit(Expr::Binary*): Binary operation not set. "
+            "This "
+            "should have been filled in by the type checker."
         );
+        break;
+    case Expr::Binary::Operation::IntAdd:
+        result = builder->CreateAdd(left, right);
+        break;
+    case Expr::Binary::Operation::IntSub:
+        result = builder->CreateSub(left, right);
+        break;
+    case Expr::Binary::Operation::IntMul:
+        result = builder->CreateMul(left, right);
+        break;
+    case Expr::Binary::Operation::SIntDiv:
+        result = builder->CreateSDiv(left, right);
+        break;
+    case Expr::Binary::Operation::UIntDiv:
+        result = builder->CreateUDiv(left, right);
+        break;
+    case Expr::Binary::Operation::SIntRem:
+        result = builder->CreateSRem(left, right);
+        break;
+    case Expr::Binary::Operation::UIntRem:
+        result = builder->CreateURem(left, right);
+        break;
+    case Expr::Binary::Operation::IntEq:
+        result = builder->CreateICmpEQ(left, right);
+        break;
+    case Expr::Binary::Operation::IntNeq:
+        result = builder->CreateICmpNE(left, right);
+        break;
+    case Expr::Binary::Operation::SIntLT:
+        result = builder->CreateICmpSLT(left, right);
+        break;
+    case Expr::Binary::Operation::SIntLE:
+        result = builder->CreateICmpSLE(left, right);
+        break;
+    case Expr::Binary::Operation::UIntLT:
+        result = builder->CreateICmpULT(left, right);
+        break;
+    case Expr::Binary::Operation::UIntLE:
+        result = builder->CreateICmpULE(left, right);
+        break;
+    case Expr::Binary::Operation::SIntGT:
+        result = builder->CreateICmpSGT(left, right);
+        break;
+    case Expr::Binary::Operation::SIntGE:
+        result = builder->CreateICmpSGE(left, right);
+        break;
+    case Expr::Binary::Operation::UIntGT:
+        result = builder->CreateICmpUGT(left, right);
+        break;
+    case Expr::Binary::Operation::UIntGE:
+        result = builder->CreateICmpUGE(left, right);
+        break;
+    case Expr::Binary::Operation::FPAdd:
+        result = builder->CreateFAdd(left, right);
+        break;
+    case Expr::Binary::Operation::FPSub:
+        result = builder->CreateFSub(left, right);
+        break;
+    case Expr::Binary::Operation::FPMul:
+        result = builder->CreateFMul(left, right);
+        break;
+    case Expr::Binary::Operation::FPDiv:
+        result = builder->CreateFDiv(left, right);
+        break;
+    case Expr::Binary::Operation::FPRem:
+        result = builder->CreateFRem(left, right);
+        break;
+    case Expr::Binary::Operation::FPEq:
+        result = builder->CreateFCmpUEQ(left, right);
+        break;
+    case Expr::Binary::Operation::FPNeq:
+        result = builder->CreateFCmpUNE(left, right);
+        break;
+    case Expr::Binary::Operation::FPLT:
+        result = builder->CreateFCmpULT(left, right);
+        break;
+    case Expr::Binary::Operation::FPLE:
+        result = builder->CreateFCmpULE(left, right);
+        break;
+    case Expr::Binary::Operation::FPGT:
+        result = builder->CreateFCmpUGT(left, right);
+        break;
+    case Expr::Binary::Operation::FPGE:
+        result = builder->CreateFCmpUGE(left, right);
+        break;
+    default:
+        panic("CodeGenerator::visit(Expr::Binary*): Unknown binary operation.");
     }
 
     return result;
@@ -571,6 +563,12 @@ std::any CodeGenerator::visit(Expr::Cast* expr, bool as_lvalue) {
         std::any_cast<llvm::Value*>(expr->expression->accept(this, false));
 
     switch (expr->operation) {
+    case Expr::Cast::Operation::Null:
+        panic(
+            "CodeGenerator::visit(Expr::Cast*): Cast operation not set. This "
+            "should have been filled in by the type checker."
+        );
+        break;
     case Expr::Cast::Operation::NoOp:
         result = inner_expr;
         break;

@@ -471,12 +471,76 @@ public:
  */
 class Expr::Binary : public Expr {
 public:
+    enum class Operation {
+        // The binary operation is not yet determined.
+        Null,
+        // Integer addition (add)
+        IntAdd,
+        // Integer subtraction (sub)
+        IntSub,
+        // Integer multiplication (mul)
+        IntMul,
+        // Signed integer division (sdiv)
+        SIntDiv,
+        // Unsigned integer division (udiv)
+        UIntDiv,
+        // Signed integer remainder (srem)
+        SIntRem,
+        // Unsigned integer remainder (urem)
+        UIntRem,
+        // Integer equals comparison (icmp eq)
+        IntEq,
+        // Integer not equals comparison (icmp ne)
+        IntNeq,
+        // Signed integer less than comparison (icmp slt)
+        SIntLT,
+        // Unsigned integer less than comparison (icmp ult)
+        UIntLT,
+        // Signed integer less than or equal comparison (icmp sle)
+        SIntLE,
+        // Unsigned integer less than or equal comparison (icmp ule)
+        UIntLE,
+        // Signed integer greater than comparison (icmp sgt)
+        SIntGT,
+        // Unsigned integer greater than comparison (icmp ugt)
+        UIntGT,
+        // Signed integer greater than or equal comparison (icmp sge)
+        SIntGE,
+        // Unsigned integer greater than or equal comparison (icmp uge)
+        UIntGE,
+        // Floating point addition (fadd)
+        FPAdd,
+        // Floating point subtraction (fsub)
+        FPSub,
+        // Floating point multiplication (fmul)
+        FPMul,
+        // Floating point division (fdiv)
+        FPDiv,
+        // Floating point remainder (frem)
+        FPRem,
+        // Floating point equals unordered comparison (fcmp ueq)
+        FPEq,
+        // Floating point not equals unordered comparison (fcmp une)
+        FPNeq,
+        // Floating point less than unordered comparison (fcmp ult)
+        FPLT,
+        // Floating point less than or equal unordered comparison (fcmp ule)
+        FPLE,
+        // Floating point greater than unordered comparison (fcmp ugt)
+        FPGT,
+        // Floating point greater than or equal unordered comparison (fcmp uge)
+        FPGE,
+    };
+
     // The left operand expression.
     std::shared_ptr<Expr> left;
     // The operator token.
     std::shared_ptr<Token> op;
     // The right operand expression.
     std::shared_ptr<Expr> right;
+    // The binary operation to be performed; to be filled in by the type
+    // checker.
+    Operation operation = Operation::Null;
 
     Binary(
         std::shared_ptr<Expr> left,

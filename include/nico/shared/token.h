@@ -47,15 +47,6 @@ enum class Tok {
     Comma,
     Semicolon,
 
-    Plus,
-    Minus,
-    Star,
-    Slash,
-    Percent,
-    Negative,
-    Bar,
-    Bang,
-
     _CompoundOperatorsStart,
     PlusEq,
     MinusEq,
@@ -65,10 +56,19 @@ enum class Tok {
     BarEq,
     _CompoundOperatorsEnd,
 
-    BangEq,
-    EqEq,
+    Negative,
+    Bar,
+    Bang,
+
+    Plus,
+    Minus,
+    Star,
+    Slash,
+    Percent,
 
     _ComparisonsStart,
+    BangEq,
+    EqEq,
     Gt,
     GtEq,
     Lt,

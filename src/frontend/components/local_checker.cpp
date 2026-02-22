@@ -747,96 +747,146 @@ std::any LocalChecker::visit(Expr::Binary* expr, bool as_lvalue) {
     if (has_error)
         return std::any();
 
-    switch (expr->op->tok_type) {
-    case Tok::Plus:
-    case Tok::Minus:
-    case Tok::Star:
-    case Tok::Slash:
-    case Tok::Percent:
-        // Types must inherit from `Type::INumeric`.
-        if (!PTR_INSTANCEOF(l_type, Type::INumeric)) {
+    if (PTR_INSTANCEOF(l_type, Type::Int) && *l_type == *r_type) {
+        bool is_signed =
+            std::dynamic_pointer_cast<Type::Int>(l_type)->is_signed;
+        switch (expr->op->tok_type) {
+        case Tok::Plus:
+            expr->operation = Expr::Binary::Operation::IntAdd;
+            break;
+        case Tok::Minus:
+            expr->operation = Expr::Binary::Operation::IntSub;
+            break;
+        case Tok::Star:
+            expr->operation = Expr::Binary::Operation::IntMul;
+            break;
+        case Tok::Slash:
+            expr->operation = is_signed ? Expr::Binary::Operation::SIntDiv
+                                        : Expr::Binary::Operation::UIntDiv;
+            break;
+        case Tok::Percent:
+            expr->operation = is_signed ? Expr::Binary::Operation::SIntRem
+                                        : Expr::Binary::Operation::UIntRem;
+            break;
+        case Tok::EqEq:
+            expr->operation = Expr::Binary::Operation::IntEq;
+            break;
+        case Tok::BangEq:
+            expr->operation = Expr::Binary::Operation::IntNeq;
+            break;
+        case Tok::Gt:
+            expr->operation = is_signed ? Expr::Binary::Operation::SIntGT
+                                        : Expr::Binary::Operation::UIntGT;
+            break;
+        case Tok::GtEq:
+            expr->operation = is_signed ? Expr::Binary::Operation::SIntGE
+                                        : Expr::Binary::Operation::UIntGE;
+            break;
+        case Tok::Lt:
+            expr->operation = is_signed ? Expr::Binary::Operation::SIntLT
+                                        : Expr::Binary::Operation::UIntLT;
+            break;
+        case Tok::LtEq:
+            expr->operation = is_signed ? Expr::Binary::Operation::SIntLE
+                                        : Expr::Binary::Operation::UIntLE;
+            break;
+        default:
             Logger::inst().log_error(
                 Err::NoOperatorOverload,
                 expr->op->location,
-                "Operands must be of a numeric type."
+                "Operator `" + std::string(expr->op->lexeme) +
+                    "` is not supported for type `" + l_type->to_string() + "`."
             );
-            return std::any();
         }
-        // Both operands must be of the same type.
-        if (*l_type != *r_type) {
+    }
+    else if (PTR_INSTANCEOF(l_type, Type::Float) && *l_type == *r_type) {
+        switch (expr->op->tok_type) {
+        case Tok::Plus:
+            expr->operation = Expr::Binary::Operation::FPAdd;
+            break;
+        case Tok::Minus:
+            expr->operation = Expr::Binary::Operation::FPSub;
+            break;
+        case Tok::Star:
+            expr->operation = Expr::Binary::Operation::FPMul;
+            break;
+        case Tok::Slash:
+            expr->operation = Expr::Binary::Operation::FPDiv;
+            break;
+        case Tok::Percent:
+            expr->operation = Expr::Binary::Operation::FPRem;
+            break;
+        case Tok::EqEq:
+            expr->operation = Expr::Binary::Operation::FPEq;
+            break;
+        case Tok::BangEq:
+            expr->operation = Expr::Binary::Operation::FPNeq;
+            break;
+        case Tok::Gt:
+            expr->operation = Expr::Binary::Operation::FPGT;
+            break;
+        case Tok::GtEq:
+            expr->operation = Expr::Binary::Operation::FPGE;
+            break;
+        case Tok::Lt:
+            expr->operation = Expr::Binary::Operation::FPLT;
+            break;
+        case Tok::LtEq:
+            expr->operation = Expr::Binary::Operation::FPLE;
+            break;
+        default:
             Logger::inst().log_error(
                 Err::NoOperatorOverload,
                 expr->op->location,
-                std::string("Type `") + r_type->to_string() +
-                    "` is not compatible with type `" + l_type->to_string() +
-                    "`."
+                "Operator `" + std::string(expr->op->lexeme) +
+                    "` is not supported for type `" + l_type->to_string() + "`."
             );
-            return std::any();
         }
-        expr->type = l_type; // The result type is the same as the operand type.
-        break;
-    case Tok::EqEq:
-    case Tok::BangEq:
-        // Types must inherit from `Type::INumeric` or be `Type::Bool` or
-        // `Type::IRawPtr`.
-        if (!PTR_INSTANCEOF(l_type, Type::INumeric) &&
-            !PTR_INSTANCEOF(l_type, Type::Bool) &&
-            !PTR_INSTANCEOF(l_type, Type::IRawPtr)) {
+    }
+    else if ((PTR_INSTANCEOF(l_type, Type::Bool) &&
+              PTR_INSTANCEOF(r_type, Type::Bool)) ||
+             (PTR_INSTANCEOF(l_type, Type::IRawPtr) &&
+              PTR_INSTANCEOF(r_type, Type::IRawPtr))) {
+        switch (expr->op->tok_type) {
+        case Tok::EqEq:
+            expr->operation = Expr::Binary::Operation::IntEq;
+            break;
+        case Tok::BangEq:
+            expr->operation = Expr::Binary::Operation::IntNeq;
+            break;
+        default:
             Logger::inst().log_error(
                 Err::NoOperatorOverload,
                 expr->op->location,
-                "Operands must be of a numeric, boolean, or raw pointer type."
+                "Operator `" + std::string(expr->op->lexeme) +
+                    "` is not supported for type `" + l_type->to_string() + "`."
             );
-            return std::any();
         }
-        // Both operands must be of the same type, OR both operands must be
-        // pointers.
-        // NOT (A == B OR (isptr(A) AND isptr(B)))
-        if (!(*l_type == *r_type || (PTR_INSTANCEOF(l_type, Type::IRawPtr) &&
-                                     PTR_INSTANCEOF(r_type, Type::IRawPtr)))) {
-            Logger::inst().log_error(
-                Err::NoOperatorOverload,
-                expr->op->location,
-                std::string("Type `") + r_type->to_string() +
-                    "` is not compatible with type `" + l_type->to_string() +
-                    "`."
-            );
-            return std::any();
-        }
-        expr->type = std::make_shared<Type::Bool>(); // The result type is Bool.
-        break;
-    case Tok::Gt:
-    case Tok::GtEq:
-    case Tok::Lt:
-    case Tok::LtEq:
-        // Types must inherit from `Type::INumeric`.
-        if (!PTR_INSTANCEOF(l_type, Type::INumeric)) {
-            Logger::inst().log_error(
-                Err::NoOperatorOverload,
-                expr->op->location,
-                "Operands must be of a numeric type."
-            );
-            return std::any();
-        }
-        // Both operands must be of the same type.
-        if (*l_type != *r_type) {
-            Logger::inst().log_error(
-                Err::NoOperatorOverload,
-                expr->op->location,
-                std::string("Type `") + r_type->to_string() +
-                    "` is not compatible with type `" + l_type->to_string() +
-                    "`."
-            );
-            return std::any();
-        }
-        expr->type = std::make_shared<Type::Bool>(); // The result type is Bool.
-        break;
-    default:
-        panic(
-            "LocalChecker::visit(Expr::Binary*): Could not handle case for "
-            "operator of token type " +
-            std::to_string(static_cast<int>(expr->op->tok_type))
+    }
+    else {
+        // Types are not compatible with each other.
+        Logger::inst().log_error(
+            Err::NoOperatorOverload,
+            expr->op->location,
+            std::string("Type `") + r_type->to_string() +
+                "` is not compatible with type `" + l_type->to_string() +
+                "` for this operation."
         );
+        if (PTR_INSTANCEOF(l_type, Type::INumeric) &&
+            PTR_INSTANCEOF(r_type, Type::INumeric)) {
+            Logger::inst().log_note(
+                expr->op->location,
+                "Basic numeric types must be exactly the same for this "
+                "operation."
+            );
+        }
+    }
+
+    if (tokens::is_comparison_operator(expr->op->tok_type)) {
+        expr->type = std::make_shared<Type::Bool>(); // The result type is Bool.
+    }
+    else {
+        expr->type = l_type; // The result type is the same as the left operand.
     }
     return std::any();
 }
