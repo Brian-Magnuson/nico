@@ -499,8 +499,14 @@ public:
  */
 class Name {
 public:
+    // The left side of the name. For example, in `foo::bar::baz`, the base is
+    // `foo::bar`.
     std::optional<std::shared_ptr<Name>> base;
+    // The identifier on the right side of the name. For example, in
+    // `foo::bar::baz`, the identifier is `baz`.
     std::shared_ptr<Token> identifier;
+    // A weak pointer to the node that this name resolves to. To be filled in by
+    // the type checker.
     std::weak_ptr<Node> node;
 
     Name(std::shared_ptr<Name> base, std::shared_ptr<Token> identifier)

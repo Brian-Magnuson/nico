@@ -822,9 +822,18 @@ public:
     }
 };
 
+/**
+ * @brief A name reference expression.
+ *
+ * A name reference expression is used to refer to a variable, function, or
+ * other entity by name.
+ */
 class Expr::NameRef : public Expr::IPLValue {
 public:
+    // The name being referenced.
     std::shared_ptr<Name> name;
+    // A weak pointer to the field entry in the symbol table. To be filled in by
+    // the type checker.
     std::weak_ptr<Node::FieldEntry> field_entry;
 
     NameRef(std::shared_ptr<Name> name)
