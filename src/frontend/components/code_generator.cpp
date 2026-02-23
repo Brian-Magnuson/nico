@@ -83,15 +83,20 @@ std::any CodeGenerator::visit(Stmt::Let* stmt) {
     return std::any();
 }
 
-std::any CodeGenerator::visit(Stmt::Static* /*stmt*/) {
-    /*
-    We don't actually need to do anything here.
+std::any CodeGenerator::visit(Stmt::Static* stmt) {
 
-    Static variables are always global.
-    When attempting to access a global variable, the `get_llvm_allocation`
-    function will create a global variable if it doesn't already exist. We can
-    rely on this behavior to create the global variable on the first access.
-    */
+    llvm::GlobalVariable* llvm_global = llvm::cast<llvm::GlobalVariable>(
+        stmt->field_entry.lock()->get_llvm_allocation(builder, true)
+    );
+
+    if (stmt->expression.has_value()) {
+        auto initializer = std::any_cast<llvm::Value*>(
+            stmt->expression.value()->accept(this, false)
+        );
+        auto const_initializer = llvm::cast<llvm::Constant>(initializer);
+        // The initializer is a constant expression. The parser enforces this.
+        llvm_global->setInitializer(const_initializer);
+    }
 
     return std::any();
 }
@@ -1009,17 +1014,7 @@ std::any CodeGenerator::visit(Expr::Tuple* expr, bool as_lvalue) {
         for (const auto& element : expr->elements) {
             auto value =
                 std::any_cast<llvm::Value*>(element->accept(this, false));
-            if (auto constant = llvm::dyn_cast<llvm::Constant>(value)) {
-                element_constants.push_back(constant);
-            }
-            else {
-                panic(
-                    "CodeGenerator::visit(Expr::Tuple*): Expected constant "
-                    "value "
-                    "for tuple element, but got non-constant."
-                );
-                return std::any();
-            }
+            element_constants.push_back(llvm::cast<llvm::Constant>(value));
         }
         result = llvm::ConstantStruct::get(tuple_type, element_constants);
     }
@@ -1055,17 +1050,7 @@ std::any CodeGenerator::visit(Expr::Array* expr, bool as_lvalue) {
         for (const auto& element : expr->elements) {
             auto value =
                 std::any_cast<llvm::Value*>(element->accept(this, false));
-            if (auto constant = llvm::dyn_cast<llvm::Constant>(value)) {
-                element_constants.push_back(constant);
-            }
-            else {
-                panic(
-                    "CodeGenerator::visit(Expr::Array*): Expected constant "
-                    "value "
-                    "for array element, but got non-constant."
-                );
-                return std::any();
-            }
+            element_constants.push_back(llvm::cast<llvm::Constant>(value));
         }
         result = llvm::ConstantArray::get(array_type, element_constants);
     }

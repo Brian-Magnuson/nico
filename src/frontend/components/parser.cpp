@@ -999,15 +999,18 @@ std::optional<std::shared_ptr<Stmt>> Parser::variable_statement() {
             return std::nullopt;
         }
 
-        if (start_token->tok_type == Tok::KwStatic) {
-            // Currently, we do not allow static variables to have initializers
-            // because we have no way of guaranteeing that the initializer is a
-            // compile-time constant. In the future, we may want to add support
-            // for this.
+        if (start_token->tok_type == Tok::KwStatic &&
+            !expr.value()->is_constant()) {
+
             Logger::inst().log_error(
                 Err::NonCompileTimeExpr,
                 previous()->location,
-                "Static variable initializer is currently not supported."
+                "Static variable initializer is not a compile-time constant."
+            );
+            Logger::inst().log_note(
+                "Static variables must be initialized with compile-time "
+                "constant "
+                "expressions."
             );
             return std::nullopt;
         }

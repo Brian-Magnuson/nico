@@ -893,6 +893,14 @@ static var x: i32
 ```
 This variable will be initialized to the default value for its type at the start of the program (before any execution-space code is executed).
 
+Static variables may be initialized with a constant expression only:
+```
+static var x: i32 = 42
+```
+Only certain kinds of expressions are considered constant expressions.
+These expressions can be evaluated at compile time.
+For more information, refer to the section on constant expressions.
+
 Like all declaration-space code, declaration-space variables can be accessed before they are declared.
 ```
 x = 42
@@ -908,6 +916,13 @@ Variables are immutable by default. To declare a mutable variable, use the `var`
 ```
 let var x = 42
 ```
+
+You cannot declare an immutable variable without an initializer.
+```
+let x: i32     // Error: immutable variable must have an initializer
+static x: i32  // Error: immutable variable must have an initializer
+```
+We consider it an error to rely on the default value to initialize an immutable variable.
 
 ### Functions
 
@@ -1850,6 +1865,25 @@ unsafe:
         statement_2 // In safe context; error if unsafe operation
     statement_3 // In unsafe context
 ```
+
+### Constant expressions
+
+A constant expression is an expression that can be evaluated at compile time.
+It is not a separate kind of expression, but a property of certain expressions.
+
+Constant expressions can be used in contexts that require compile-time evaluation, 
+mainly in initializers for static variables.
+```
+static var x: i32 = 1   // OK
+let y: i32 = 1      
+static var z: i32 = y   // Error; y is not a constant expression
+```
+
+Currently, only the following kinds of expressions are considered constant expressions:
+- Any literal number, boolean, character, string, or raw pointer value
+- Array literals where all elements are constant expressions
+- Tuple literals where all elements are constant expressions
+- Struct literals where all fields are constant expressions
 
 ## Non-declaring statements
 
