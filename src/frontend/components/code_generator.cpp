@@ -1001,57 +1001,103 @@ std::any CodeGenerator::visit(Expr::Literal* expr, bool as_lvalue) {
 
 std::any CodeGenerator::visit(Expr::Tuple* expr, bool as_lvalue) {
     llvm::Value* result = nullptr;
-    std::vector<llvm::Value*> element_values;
-    for (const auto& element : expr->elements) {
-        element_values.push_back(
-            std::any_cast<llvm::Value*>(element->accept(this, false))
-        );
-    }
     llvm::StructType* tuple_type =
         llvm::cast<llvm::StructType>(expr->type->get_llvm_type(builder));
-    llvm::Value* tuple_alloc =
-        builder->CreateAlloca(tuple_type, nullptr, "tuple");
 
-    for (size_t i = 0; i < element_values.size(); ++i) {
-        llvm::Value* element_ptr =
-            builder->CreateStructGEP(tuple_type, tuple_alloc, i, "element");
-        builder->CreateStore(element_values[i], element_ptr);
+    if (expr->is_constant()) {
+        std::vector<llvm::Constant*> element_constants;
+        for (const auto& element : expr->elements) {
+            auto value =
+                std::any_cast<llvm::Value*>(element->accept(this, false));
+            if (auto constant = llvm::dyn_cast<llvm::Constant>(value)) {
+                element_constants.push_back(constant);
+            }
+            else {
+                panic(
+                    "CodeGenerator::visit(Expr::Tuple*): Expected constant "
+                    "value "
+                    "for tuple element, but got non-constant."
+                );
+                return std::any();
+            }
+        }
+        result = llvm::ConstantStruct::get(tuple_type, element_constants);
+    }
+    else {
+        std::vector<llvm::Value*> element_values;
+        for (const auto& element : expr->elements) {
+            element_values.push_back(
+                std::any_cast<llvm::Value*>(element->accept(this, false))
+            );
+        }
+        llvm::Value* tuple_alloc =
+            builder->CreateAlloca(tuple_type, nullptr, "tuple");
+
+        for (size_t i = 0; i < element_values.size(); ++i) {
+            llvm::Value* element_ptr =
+                builder->CreateStructGEP(tuple_type, tuple_alloc, i, "element");
+            builder->CreateStore(element_values[i], element_ptr);
+        }
+
+        result = builder->CreateLoad(tuple_type, tuple_alloc);
     }
 
-    result = builder->CreateLoad(tuple_type, tuple_alloc);
     return result;
 }
 
 std::any CodeGenerator::visit(Expr::Array* expr, bool as_lvalue) {
     llvm::Value* result = nullptr;
-    std::vector<llvm::Value*> element_values;
-    for (const auto& element : expr->elements) {
-        element_values.push_back(
-            std::any_cast<llvm::Value*>(element->accept(this, false))
-        );
-    }
     llvm::ArrayType* array_type =
         llvm::cast<llvm::ArrayType>(expr->type->get_llvm_type(builder));
-    llvm::Value* array_alloc =
-        builder->CreateAlloca(array_type, nullptr, "array");
 
-    for (size_t i = 0; i < element_values.size(); ++i) {
-        llvm::Value* element_ptr = builder->CreateGEP(
-            array_type,
-            array_alloc,
-            {llvm::ConstantInt::get(
-                 llvm::Type::getInt64Ty(*mod_ctx.llvm_context),
-                 0
-             ),
-             llvm::ConstantInt::get(
-                 llvm::Type::getInt64Ty(*mod_ctx.llvm_context),
-                 i
-             )},
-            "element"
-        );
-        builder->CreateStore(element_values[i], element_ptr);
+    if (expr->is_constant()) {
+        std::vector<llvm::Constant*> element_constants;
+        for (const auto& element : expr->elements) {
+            auto value =
+                std::any_cast<llvm::Value*>(element->accept(this, false));
+            if (auto constant = llvm::dyn_cast<llvm::Constant>(value)) {
+                element_constants.push_back(constant);
+            }
+            else {
+                panic(
+                    "CodeGenerator::visit(Expr::Array*): Expected constant "
+                    "value "
+                    "for array element, but got non-constant."
+                );
+                return std::any();
+            }
+        }
+        result = llvm::ConstantArray::get(array_type, element_constants);
     }
-    result = builder->CreateLoad(array_type, array_alloc);
+    else {
+
+        std::vector<llvm::Value*> element_values;
+        for (const auto& element : expr->elements) {
+            element_values.push_back(
+                std::any_cast<llvm::Value*>(element->accept(this, false))
+            );
+        }
+        llvm::Value* array_alloc =
+            builder->CreateAlloca(array_type, nullptr, "array");
+
+        for (size_t i = 0; i < element_values.size(); ++i) {
+            llvm::Value* element_ptr = builder->CreateGEP(
+                array_type,
+                array_alloc,
+                {llvm::ConstantInt::get(
+                     llvm::Type::getInt64Ty(*mod_ctx.llvm_context),
+                     0
+                 ),
+                 llvm::ConstantInt::get(
+                     llvm::Type::getInt64Ty(*mod_ctx.llvm_context),
+                     i
+                 )},
+                "element"
+            );
+            builder->CreateStore(element_values[i], element_ptr);
+        }
+        result = builder->CreateLoad(array_type, array_alloc);
+    }
 
     return result;
 }

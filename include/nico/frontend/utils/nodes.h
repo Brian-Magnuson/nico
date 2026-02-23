@@ -418,6 +418,21 @@ public:
      * @return The return value from the visitor.
      */
     virtual std::any accept(Visitor* visitor, bool as_lvalue) = 0;
+
+    /**
+     * @brief Check if the expression is a constant expression.
+     *
+     * A constant expression is an expression that can be evaluated at compile
+     * time.
+     * Some code, such as static variable initializers, requires constant
+     * expressions.
+     *
+     * For the LLVM code generator, expressions for which this returns true
+     * *can* and *should* yield an `llvm::Constant` value.
+     *
+     * @return True if the expression is a constant expression, false otherwise.
+     */
+    virtual bool is_constant() const { return false; }
 };
 
 // MARK: Annotation

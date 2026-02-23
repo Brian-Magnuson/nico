@@ -929,6 +929,11 @@ public:
     std::any accept(Visitor* visitor, bool as_lvalue) override {
         return visitor->visit(this, as_lvalue);
     }
+
+    bool is_constant() const override {
+        // Literals are always constant.
+        return true;
+    }
 };
 
 /**
@@ -957,6 +962,16 @@ public:
     std::any accept(Visitor* visitor, bool as_lvalue) override {
         return visitor->visit(this, as_lvalue);
     }
+
+    bool is_constant() const override {
+        // A tuple is constant if all of its elements are constant.
+        for (const auto& element : elements) {
+            if (!element->is_constant()) {
+                return false;
+            }
+        }
+        return true;
+    }
 };
 
 /**
@@ -971,6 +986,11 @@ class Expr::Unit : public Expr::Tuple {
 public:
     Unit(std::shared_ptr<Token> token)
         : Tuple(token, {}) {}
+
+    bool is_constant() const override {
+        // The unit value is always constant.
+        return true;
+    }
 };
 
 /**
@@ -996,6 +1016,16 @@ public:
 
     std::any accept(Visitor* visitor, bool as_lvalue) override {
         return visitor->visit(this, as_lvalue);
+    }
+
+    bool is_constant() const override {
+        // An array is constant if all of its elements are constant.
+        for (const auto& element : elements) {
+            if (!element->is_constant()) {
+                return false;
+            }
+        }
+        return true;
     }
 };
 
