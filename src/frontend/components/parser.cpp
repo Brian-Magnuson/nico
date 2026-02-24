@@ -1025,6 +1025,15 @@ std::optional<std::shared_ptr<Stmt>> Parser::variable_statement() {
         );
         return std::nullopt;
     }
+    // If we don't have `var`, we require an initializer.
+    if (!has_var && !expr) {
+        Logger::inst().log_error(
+            Err::ImmutableWithoutInitializer,
+            peek()->location,
+            "Immutable variable declaration must have an initializer."
+        );
+        return std::nullopt;
+    }
 
     if (start_token->tok_type == Tok::KwLet) {
         return std::make_shared<Stmt::Let>(

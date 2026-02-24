@@ -165,10 +165,6 @@ TEST_CASE("Check variable declarations", "[checker]") {
         run_checker_test("let a = 1 let b = 2 a = b", Err::AssignToImmutable);
     }
 
-    SECTION("Immutable without initializer") {
-        run_checker_test("let a: i32", Err::ImmutableWithoutInitializer);
-    }
-
     SECTION("Variable name conflict") {
         run_checker_test("let a = 1 let a = 2", Err::NameAlreadyExists);
     }
@@ -188,11 +184,11 @@ TEST_CASE("Check static variable declarations", "[checker]") {
     }
 
     SECTION("Immutable static variable 1") {
-        run_checker_test("static a: i32 a = 73", Err::AssignToImmutable);
+        run_checker_test("static a: i32 = 0 a = 73", Err::AssignToImmutable);
     }
 
     SECTION("Immutable static variable 2") {
-        run_checker_test("a = 73 static a: i32", Err::AssignToImmutable);
+        run_checker_test("a = 73 static a: i32 = 0", Err::AssignToImmutable);
     }
 
     SECTION("Static variable name conflict 1") {

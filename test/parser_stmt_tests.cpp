@@ -92,22 +92,22 @@ TEST_CASE("Parser let statements", "[parser]") {
 
     SECTION("Let statements 4") {
         run_parser_stmt_test(
-            "let a: i32 let b: f64",
-            {"(stmt:let a i32)", "(stmt:let b f64)", "(stmt:eof)"}
+            "let var a: i32 let var b: f64",
+            {"(stmt:let var a i32)", "(stmt:let var b f64)", "(stmt:eof)"}
         );
     }
 
     SECTION("Let statements 5") {
         run_parser_stmt_test(
-            "let a: Vector2D",
-            {"(stmt:let a Vector2D)", "(stmt:eof)"}
+            "let var a: Vector2D",
+            {"(stmt:let var a Vector2D)", "(stmt:eof)"}
         );
     }
 
     SECTION("Let statements 6") {
         run_parser_stmt_test(
-            "let a: i32 let b = 2",
-            {"(stmt:let a i32)", "(stmt:let b (lit i32 2))", "(stmt:eof)"}
+            "let var a: i32 let b = 2",
+            {"(stmt:let var a i32)", "(stmt:let b (lit i32 2))", "(stmt:eof)"}
         );
     }
 
@@ -127,6 +127,13 @@ TEST_CASE("Parser let statements", "[parser]") {
         run_parser_stmt_error_test(
             "let a::b = 1",
             Err::DeclarationIdentWithColonColon
+        );
+    }
+
+    SECTION("Let immutable without initializer") {
+        run_parser_stmt_error_test(
+            "let a: i32",
+            Err::ImmutableWithoutInitializer
         );
     }
 }
@@ -155,40 +162,40 @@ TEST_CASE("Parser let stmt type annotations", "[parser]") {
 
     SECTION("Let statements typeof 1") {
         run_parser_stmt_test(
-            "let x: i32 let size: typeof(x)",
-            {"(stmt:let x i32)",
-             "(stmt:let size typeof(<expr@1:29>))",
+            "let var x: i32 let var size: typeof(x)",
+            {"(stmt:let var x i32)",
+             "(stmt:let var size typeof(<expr@1:37>))",
              "(stmt:eof)"}
         );
     }
 
     SECTION("Let statements typeof 2") {
         run_parser_stmt_test(
-            "let x: i32 let len: typeof(x + 1)",
-            {"(stmt:let x i32)",
-             "(stmt:let len typeof(<expr@1:30>))",
+            "let var x: i32 let var len: typeof(x + 1)",
+            {"(stmt:let var x i32)",
+             "(stmt:let var len typeof(<expr@1:38>))",
              "(stmt:eof)"}
         );
     }
 
     SECTION("Let statements arrays 1") {
         run_parser_stmt_test(
-            "let arr: [i32; 10]",
-            {"(stmt:let arr [i32; 10])", "(stmt:eof)"}
+            "let var arr: [i32; 10]",
+            {"(stmt:let var arr [i32; 10])", "(stmt:eof)"}
         );
     }
 
     SECTION("Let statements arrays 2") {
         run_parser_stmt_test(
-            "let matrix: [[f64; 5]; 10]",
-            {"(stmt:let matrix [[f64; 5]; 10])", "(stmt:eof)"}
+            "let var matrix: [[f64; 5]; 10]",
+            {"(stmt:let var matrix [[f64; 5]; 10])", "(stmt:eof)"}
         );
     }
 
     SECTION("Let statements arrays 3") {
         run_parser_stmt_test(
-            "let buffer: [u8; ?]",
-            {"(stmt:let buffer [u8; ?])", "(stmt:eof)"}
+            "let var buffer: [u8; ?]",
+            {"(stmt:let var buffer [u8; ?])", "(stmt:eof)"}
         );
     }
 
@@ -239,8 +246,8 @@ TEST_CASE("Parser let stmt type annotations", "[parser]") {
 TEST_CASE("Parser static statements", "[parser]") {
     SECTION("Static statement 1") {
         run_parser_stmt_test(
-            "static s1: i32",
-            {"(stmt:static s1 i32)", "(stmt:eof)"}
+            "static var s1: i32",
+            {"(stmt:static var s1 i32)", "(stmt:eof)"}
         );
     }
 
@@ -255,6 +262,41 @@ TEST_CASE("Parser static statements", "[parser]") {
         run_parser_stmt_error_test(
             "static s: i32 = x",
             Err::NonCompileTimeExpr
+        );
+    }
+
+    SECTION("Static with compile-time initializer 1") {
+        run_parser_stmt_test(
+            "static s: i32 = 10",
+            {"(stmt:static s i32 (lit i32 10))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Static with compile-time initializer 2") {
+        run_parser_stmt_test(
+            "static s = [1, 2]",
+            {"(stmt:static s (array (lit i32 1) (lit i32 2)))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Static with compile-time initializer 3") {
+        run_parser_stmt_test(
+            "static s = ()",
+            {"(stmt:static s (tuple))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Static with compile-time initializer 4") {
+        run_parser_stmt_test(
+            "static s = (1, 2)",
+            {"(stmt:static s (tuple (lit i32 1) (lit i32 2)))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Static immutable without initializer") {
+        run_parser_stmt_error_test(
+            "static s: i32",
+            Err::ImmutableWithoutInitializer
         );
     }
 }
@@ -468,38 +510,44 @@ TEST_CASE("Parser namespace statements", "[parser]") {
 TEST_CASE("Parser tuple annotations", "[parser]") {
     SECTION("Tuple annotation 1") {
         run_parser_stmt_test(
-            "let a: (i32)",
-            {"(stmt:let a (i32))", "(stmt:eof)"}
+            "let var a: (i32)",
+            {"(stmt:let var a (i32))", "(stmt:eof)"}
         );
     }
 
     SECTION("Tuple annotation 2") {
         run_parser_stmt_test(
-            "let a: (i32, f64, String)",
-            {"(stmt:let a (i32, f64, String))", "(stmt:eof)"}
+            "let var a: (i32, f64, String)",
+            {"(stmt:let var a (i32, f64, String))", "(stmt:eof)"}
         );
     }
 
     SECTION("Tuple annotation 3") {
         run_parser_stmt_test(
-            "let a: (i32,)",
-            {"(stmt:let a (i32))", "(stmt:eof)"}
+            "let var a: (i32,)",
+            {"(stmt:let var a (i32))", "(stmt:eof)"}
         );
     }
 
     SECTION("Tuple annotation 4") {
         run_parser_stmt_test(
-            "let a: ((i32, f64), String)",
-            {"(stmt:let a ((i32, f64), String))", "(stmt:eof)"}
+            "let var a: ((i32, f64), String)",
+            {"(stmt:let var a ((i32, f64), String))", "(stmt:eof)"}
         );
     }
 
     SECTION("Tuple annotation 5") {
-        run_parser_stmt_test("let a: ()", {"(stmt:let a ())", "(stmt:eof)"});
+        run_parser_stmt_test(
+            "let var a: ()",
+            {"(stmt:let var a ())", "(stmt:eof)"}
+        );
     }
 
     SECTION("Semicolon in tuple annotation") {
-        run_parser_stmt_error_test("let a: (i32; f64)", Err::UnexpectedToken);
+        run_parser_stmt_error_test(
+            "let var a: (i32; f64)",
+            Err::UnexpectedToken
+        );
     }
 }
 

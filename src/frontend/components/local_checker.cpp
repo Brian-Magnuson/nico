@@ -307,16 +307,7 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
         if (!expr_type)
             return std::any();
     }
-    else if (!stmt->has_var) {
-        // If there is no initializer, the statement must have var.
-        Logger::inst().log_error(
-            Err::ImmutableWithoutInitializer,
-            stmt->identifier->location,
-            "Immutable variable `" + std::string(stmt->identifier->lexeme) +
-                "` must have an initializer."
-        );
-        return std::any();
-    }
+
     // If the initializer is not present, the annotation will be (this is
     // checked in the parser).
 
