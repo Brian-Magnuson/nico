@@ -44,7 +44,7 @@ set(FRONT_END_UTILS_SRC
     src/frontend/utils/type_node.cpp
     src/frontend/utils/symbol_tree.cpp
     src/frontend/utils/control_stack.cpp
-    src/frontend/utils/annotation_checker.cpp
+    src/frontend/utils/expression_checker.cpp
     src/frontend/utils/mir.cpp
 )
 

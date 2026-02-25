@@ -17,6 +17,9 @@ namespace nico {
  * to proper type nodes.
  *
  * Visit functions in this class return shared pointers to type nodes.
+ *
+ * @deprecated This class is now deprecated. Use the ExpressionChecker class
+ * instead, which also checks annotations.
  */
 class AnnotationChecker : public Annotation::Visitor {
     // The symbol tree used for type checking.
