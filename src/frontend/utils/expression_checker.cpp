@@ -58,25 +58,15 @@ ExpressionChecker::implicit_full_dereference(std::shared_ptr<Expr>& expr) {
 }
 
 bool ExpressionChecker::check_pointer_cast(
-    std::shared_ptr<Type> expr_type,
-    std::shared_ptr<Type> target_type,
+    std::shared_ptr<Type::IPointer> expr_type,
+    std::shared_ptr<Type::IPointer> target_type,
     std::shared_ptr<Token> as_token
 ) {
-    auto expr_ptr_type = std::dynamic_pointer_cast<Type::IPointer>(expr_type);
-    auto target_ptr_type =
-        std::dynamic_pointer_cast<Type::IPointer>(target_type);
-    if (!expr_ptr_type || !target_ptr_type) {
-        panic(
-            "ExpressionChecker::check_pointer_cast: Both types must be pointer "
-            "types."
-        );
-    }
-
     // Beyond this point, both types must be raw pointer types.
     auto expr_raw_ptr_type =
-        std::dynamic_pointer_cast<Type::IRawPtr>(expr_ptr_type);
+        std::dynamic_pointer_cast<Type::IRawPtr>(expr_type);
     auto target_raw_ptr_type =
-        std::dynamic_pointer_cast<Type::IRawPtr>(target_ptr_type);
+        std::dynamic_pointer_cast<Type::IRawPtr>(target_type);
     if (!expr_raw_ptr_type || !target_raw_ptr_type) {
         Logger::inst().log_error(
             Err::InvalidCastOperation,
@@ -114,9 +104,13 @@ bool ExpressionChecker::check_pointer_cast(
     }
 
     // Multi-level pointer cast.
-    if (PTR_INSTANCEOF(expr_typed_ptr_type->base, Type::IPointer) ||
-        PTR_INSTANCEOF(target_typed_ptr_type->base, Type::IPointer)) {
-        if (!PTR_INSTANCEOF(target_typed_ptr_type->base, Type::IPointer)) {
+    auto expr_base_ptr_type =
+        std::dynamic_pointer_cast<Type::IPointer>(expr_typed_ptr_type->base);
+    auto target_base_ptr_type =
+        std::dynamic_pointer_cast<Type::IPointer>(target_typed_ptr_type->base);
+
+    if (expr_base_ptr_type || target_base_ptr_type) {
+        if (!target_base_ptr_type) {
             Logger::inst().log_error(
                 Err::InvalidCastOperation,
                 as_token->location,
@@ -128,7 +122,7 @@ bool ExpressionChecker::check_pointer_cast(
             );
             return false;
         }
-        else if (!PTR_INSTANCEOF(expr_typed_ptr_type->base, Type::IPointer)) {
+        else if (!expr_base_ptr_type) {
             Logger::inst().log_error(
                 Err::InvalidCastOperation,
                 as_token->location,
@@ -143,8 +137,8 @@ bool ExpressionChecker::check_pointer_cast(
 
         // Recursively check the inner pointer cast.
         return check_pointer_cast(
-            expr_typed_ptr_type->base,
-            target_typed_ptr_type->base,
+            expr_base_ptr_type,
+            target_base_ptr_type,
             as_token
         );
     }
@@ -719,8 +713,16 @@ std::any ExpressionChecker::visit(Expr::Cast* expr, bool as_lvalue) {
     }
     else if (PTR_INSTANCEOF(expr_type, Type::IPointer) &&
              PTR_INSTANCEOF(target_type, Type::IPointer)) {
+        auto expr_ptr_type =
+            std::dynamic_pointer_cast<Type::IPointer>(expr_type);
+        auto target_ptr_type =
+            std::dynamic_pointer_cast<Type::IPointer>(target_type);
         // Pointer cast
-        if (!check_pointer_cast(expr_type, target_type, expr->as_token)) {
+        if (!check_pointer_cast(
+                expr_ptr_type,
+                target_ptr_type,
+                expr->as_token
+            )) {
             return std::any();
         }
         // A pointer cast is a NoOp cast.

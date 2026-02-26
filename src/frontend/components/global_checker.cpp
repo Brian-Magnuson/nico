@@ -21,8 +21,6 @@ std::any GlobalChecker::visit(Stmt::Static* stmt) {
 
     // Check the type annotation.
     if (stmt->annotation.has_value()) {
-        // auto anno_any =
-        // stmt->annotation.value()->accept(&annotation_checker);
         auto anno_type =
             expression_checker.annotation_check(stmt->annotation.value());
         if (!anno_type)
