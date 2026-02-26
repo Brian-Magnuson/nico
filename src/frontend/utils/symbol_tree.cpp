@@ -547,6 +547,12 @@ SymbolTree::add_overloadable_func(const Field& field) {
     return {true, new_node};
 }
 
+bool SymbolTree::is_context_unsafe() const {
+    auto local_scope =
+        std::dynamic_pointer_cast<Node::LocalScope>(current_scope);
+    return local_scope && local_scope->block->is_unsafe;
+}
+
 std::string SymbolTree::to_tree_string() const {
     std::string result;
     result += "RESERVED SCOPE:\n";

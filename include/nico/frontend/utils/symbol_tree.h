@@ -271,6 +271,19 @@ public:
     add_overloadable_func(const Field& field);
 
     /**
+     * @brief Checks if the current context is unsafe.
+     *
+     * An unsafe context is a context in which unsafe language features are
+     * allowed (e.g. dereferencing raw pointers).
+     *
+     * The context is considered unsafe if the current scope is a local scope,
+     * and that local scope is tied to a block marked as unsafe.
+     *
+     * @return True if the current context is unsafe, false otherwise.
+     */
+    bool is_context_unsafe() const;
+
+    /**
      * @brief Returns a string representation of the symbol tree.
      *
      * The string representation uses indentation to represent the tree

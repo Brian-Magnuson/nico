@@ -34,16 +34,6 @@ class LocalChecker : public Stmt::Visitor {
           repl_mode(repl_mode),
           expression_checker(symbol_tree, this, repl_mode) {};
 
-    /**
-     * @brief Helper function to determine if the current context is unsafe.
-     *
-     * The context is unsafe if the current scope is a local scope, and that
-     * local scope is tied to a block marked as unsafe.
-     *
-     * @return True if the current context is unsafe, false otherwise.
-     */
-    bool is_in_unsafe_context();
-
     std::any visit(Stmt::Expression* stmt) override;
     std::any visit(Stmt::Let* stmt) override;
     std::any visit(Stmt::Static* stmt) override;

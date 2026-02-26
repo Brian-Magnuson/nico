@@ -5,12 +5,6 @@
 
 namespace nico {
 
-bool ExpressionChecker::is_in_unsafe_context() {
-    auto local_scope =
-        std::dynamic_pointer_cast<Node::LocalScope>(symbol_tree->current_scope);
-    return local_scope && local_scope->block->is_unsafe;
-}
-
 std::shared_ptr<Type>
 ExpressionChecker::implicit_full_dereference(std::shared_ptr<Expr>& expr) {
     if (!expr->type)
@@ -34,7 +28,7 @@ ExpressionChecker::implicit_full_dereference(std::shared_ptr<Expr>& expr) {
             return nullptr;
         }
         if (PTR_INSTANCEOF(i_pointer_type, Type::RawTypedPtr)) {
-            if (!is_in_unsafe_context()) {
+            if (!symbol_tree->is_context_unsafe()) {
                 Logger::inst().log_error(
                     Err::PtrDerefOutsideUnsafeBlock,
                     expr->location,
@@ -663,7 +657,7 @@ std::any ExpressionChecker::visit(Expr::Deref* expr, bool as_lvalue) {
         expr->assignable = ptr_type->is_mutable;
         expr->error_location = expr->right->location;
 
-        if (!is_in_unsafe_context()) {
+        if (!symbol_tree->is_context_unsafe()) {
             Logger::inst().log_error(
                 Err::PtrDerefOutsideUnsafeBlock,
                 expr->op->location,

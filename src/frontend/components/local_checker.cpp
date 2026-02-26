@@ -9,13 +9,6 @@
 
 namespace nico {
 
-// TODO: Change this to be a method of SymbolTree.
-bool LocalChecker::is_in_unsafe_context() {
-    auto local_scope =
-        std::dynamic_pointer_cast<Node::LocalScope>(symbol_tree->current_scope);
-    return local_scope && local_scope->block->is_unsafe;
-}
-
 // MARK: Statements
 
 std::any LocalChecker::visit(Stmt::Expression* stmt) {
@@ -304,7 +297,7 @@ std::any LocalChecker::visit(Stmt::Dealloc* stmt) {
         );
         return std::any();
     }
-    else if (!is_in_unsafe_context()) {
+    else if (!symbol_tree->is_context_unsafe()) {
         Logger::inst().log_error(
             Err::DeallocOutsideUnsafeBlock,
             stmt->expression->location,

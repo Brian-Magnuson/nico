@@ -32,19 +32,6 @@ class ExpressionChecker : public Expr::Visitor, public Annotation::Visitor {
     bool repl_mode;
 
     /**
-     * @brief Helper function to check if the current context is an unsafe
-     * context.
-     *
-     * The context is unsafe if the current scope is a local scope, and that
-     * local scope is tied to a block marked as unsafe. This is used to
-     * determine if certain operations, such as dereferencing raw pointers, are
-     * allowed.
-     *
-     * @return True if the current context is unsafe, false otherwise.
-     */
-    bool is_in_unsafe_context();
-
-    /**
      * @brief Checks if the given expression is a pointer and fully dereferences
      * it if it is.
      *
