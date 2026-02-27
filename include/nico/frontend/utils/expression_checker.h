@@ -146,9 +146,6 @@ public:
           stmt_visitor(stmt_visitor),
           repl_mode(repl_mode) {}
 
-    // TODO: These should return std::optional<std::shared_ptr<Type>> instead;
-    // we avoid the use of nullptr to indicate the absense of a type.
-
     /**
      * @brief Checks the given expression and returns its type if it is valid.
      *

@@ -148,9 +148,8 @@ enum class Err {
     // An attempt was made to declare a function that conflicts with an existing
     // overload.
     FunctionOverloadConflict,
-    // An attempt was made to declare a static variable without a type
-    // annotation.
-    StaticVarWithoutType,
+    // A type mismatch was found in a static variable declaration.
+    StaticTypeMismatch,
     // An attempt was made to allocate memory for an unsized type.
     UnsizedTypeAllocation,
 
@@ -160,7 +159,7 @@ enum class Err {
     NotAPossibleLValue,
     // A type mismatch was found in an expression.
     YieldTypeMismatch,
-    // A type mismatch was found in a variable declaration.
+    // A type mismatch was found in a let variable declaration.
     LetTypeMismatch,
     // An immutable variable was declared without an initializer.
     ImmutableWithoutInitializer,

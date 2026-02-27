@@ -1631,8 +1631,6 @@ std::any ExpressionChecker::visit(Annotation::Tuple* annotation) {
 
 std::any ExpressionChecker::visit(Annotation::TypeOf* annotation) {
     annotation->expression->accept(this, false);
-    // TODO: Now that expressions and annotations are handled in the same
-    // checker, we can be more flexible with typeof annotations.
     if (!annotation->expression->type) {
         panic(
             "Annotation::TypeOf::visit: expression has no type after checking."

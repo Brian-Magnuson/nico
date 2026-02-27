@@ -32,30 +32,33 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
     // If the initializer is not present, the annotation will be (this is
     // checked in the parser).
 
-    // If the type annotation is present, check that it matches the initializer.
+    // Check the type annotation.
     if (stmt->annotation.has_value()) {
-        auto annotation_type_opt =
+        auto anno_type_opt =
             expression_checker.annotation_check(stmt->annotation.value());
-        if (!annotation_type_opt.has_value())
+        if (!anno_type_opt.has_value())
             return std::any();
-        auto annotation_type = annotation_type_opt.value();
+        auto anno_type = anno_type_opt.value();
 
-        if (expr_type != nullptr &&
-            !expr_type->is_assignable_to(*annotation_type)) {
+        // If an initializer is present, check that the annotation type and
+        // initializer type are compatible.
+        if (expr_type != nullptr && !expr_type->is_assignable_to(*anno_type)) {
             Logger::inst().log_error(
                 Err::LetTypeMismatch,
                 stmt->expression.value()->location,
-                std::string("Type `") + expr_type->to_string() +
-                    "` is not compatible with type `" +
-                    annotation_type->to_string() + "`."
+                "Type of initializer expression `" + expr_type->to_string() +
+                    "` is not assignable to type in annotation `" +
+                    anno_type->to_string() + "`."
             );
             return std::any();
         }
         // On occassion, two different types are compatible with each other.
         // E.g., the annotation is @i32, but the expression is nullptr.
         // In such cases, the annotated type takes precedence.
-        expr_type = annotation_type;
+        expr_type = anno_type;
     }
+
+    // At this point, expr_type is not null.
 
     if (!expr_type->is_sized_type()) {
         Logger::inst().log_error(

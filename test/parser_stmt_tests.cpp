@@ -299,6 +299,10 @@ TEST_CASE("Parser static statements", "[parser]") {
             Err::ImmutableWithoutInitializer
         );
     }
+
+    SECTION("Static without type or value") {
+        run_parser_stmt_error_test("static s", Err::VariableWithoutTypeOrValue);
+    }
 }
 
 TEST_CASE("Parser function statements", "[parser]") {

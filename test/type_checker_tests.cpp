@@ -204,6 +204,14 @@ TEST_CASE("Check static variable declarations", "[checker]") {
             Err::NameAlreadyExists
         );
     }
+
+    SECTION("Static variable with initializer 1") {
+        run_checker_test("static var a: i32 = 42");
+    }
+
+    SECTION("Static variable with initializer 2") {
+        run_checker_test("static a = 42");
+    }
 }
 
 TEST_CASE("Check unary expressions", "[checker]") {

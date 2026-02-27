@@ -19,22 +19,47 @@ std::any GlobalChecker::visit(Stmt::Let*) {
 std::any GlobalChecker::visit(Stmt::Static* stmt) {
     std::shared_ptr<Type> expr_type = nullptr;
 
+    // Visit the initializer (if present).
+    if (stmt->expression.has_value()) {
+        auto expr_type_opt =
+            expression_checker.expr_check(stmt->expression.value(), false);
+        if (!expr_type_opt.has_value())
+            return std::any();
+        expr_type = expr_type_opt.value();
+    }
+
+    // If the initializer is not present, the annotation will be (this is
+    // checked in the parser).
+
     // Check the type annotation.
     if (stmt->annotation.has_value()) {
         auto anno_type_opt =
             expression_checker.annotation_check(stmt->annotation.value());
         if (!anno_type_opt.has_value())
             return std::any();
-        expr_type = anno_type_opt.value();
+        auto anno_type = anno_type_opt.value();
+
+        // If an initializer is present, check that the annotation type and
+        // initializer type are compatible.
+        if (stmt->expression.has_value() &&
+            !expr_type->is_assignable_to(*anno_type)) {
+            Logger::inst().log_error(
+                Err::StaticTypeMismatch,
+                stmt->expression.value()->location,
+                "Type of initializer expression `" + expr_type->to_string() +
+                    "` is not assignable to type in annotation `" +
+                    anno_type->to_string() + "`."
+            );
+            return std::any();
+        }
+
+        // On occassion, two different types are compatible with each other.
+        // E.g., the annotation is @i32, but the expression is nullptr.
+        // In such cases, the annotated type takes precedence.
+        expr_type = anno_type;
     }
-    else {
-        Logger::inst().log_error(
-            Err::StaticVarWithoutType,
-            stmt->identifier->location,
-            "Static variable declarations must have a type annotation."
-        );
-        return std::any();
-    }
+
+    // At this point, expr_type is not null.
 
     if (!expr_type->is_sized_type()) {
         Logger::inst().log_error(
