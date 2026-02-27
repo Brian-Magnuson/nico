@@ -21,11 +21,11 @@ std::any GlobalChecker::visit(Stmt::Static* stmt) {
 
     // Check the type annotation.
     if (stmt->annotation.has_value()) {
-        auto anno_type =
+        auto anno_type_opt =
             expression_checker.annotation_check(stmt->annotation.value());
-        if (!anno_type)
+        if (!anno_type_opt.has_value())
             return std::any();
-        expr_type = anno_type;
+        expr_type = anno_type_opt.value();
     }
     else {
         Logger::inst().log_error(
@@ -96,16 +96,16 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
             return std::any();
         }
         // Get the type from the annotation (which is always present).
-        auto annotation_type =
+        auto annotation_type_opt =
             expression_checker.annotation_check(param.annotation);
-        if (!annotation_type)
+        if (!annotation_type_opt.has_value())
             return std::any();
 
         Field param_field(
             param.has_var,
             param.identifier->lexeme,
             &param.identifier->location,
-            annotation_type,
+            annotation_type_opt.value(),
             param.expression
         );
         parameter_fields.insert(param_string, param_field);
@@ -113,11 +113,11 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
     // Next, get the return type.
     std::shared_ptr<Type> return_type = nullptr;
     if (stmt->annotation.has_value()) {
-        auto return_anno_type =
+        auto return_anno_type_opt =
             expression_checker.annotation_check(stmt->annotation.value());
-        if (!return_anno_type)
+        if (!return_anno_type_opt.has_value())
             return std::any();
-        return_type = return_anno_type;
+        return_type = return_anno_type_opt.value();
     }
     else {
         // If no return annotation is present, the return type is Unit.

@@ -164,10 +164,10 @@ public:
      * lvalue.
      * @param allow_unsized_rvalue Whether or not to allow rvalues of unsized
      * types. Default is false.
-     * @return The type of the expression if it is valid, or nullptr if it is
+     * @return The type of the expression if it is valid, or nullopt if it is
      * not valid.
      */
-    std::shared_ptr<Type> expr_check(
+    std::optional<std::shared_ptr<Type>> expr_check(
         std::shared_ptr<Expr> expr,
         bool as_lvalue,
         bool allow_unsized_rvalue = false
@@ -177,10 +177,10 @@ public:
      * @brief Checks the given annotation and returns its type if it is valid.
      *
      * @param annotation The annotation to check.
-     * @return The type of the annotation if it is valid, or nullptr if it is
+     * @return The type of the annotation if it is valid, or nullopt if it is
      * not valid.
      */
-    std::shared_ptr<Type>
+    std::optional<std::shared_ptr<Type>>
     annotation_check(std::shared_ptr<Annotation> annotation);
 };
 

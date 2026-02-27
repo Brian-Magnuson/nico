@@ -22,10 +22,11 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
 
     // Visit the initializer (if present).
     if (stmt->expression.has_value()) {
-        expr_type =
+        auto expr_type_opt =
             expression_checker.expr_check(stmt->expression.value(), false);
-        if (!expr_type)
+        if (!expr_type_opt.has_value())
             return std::any();
+        expr_type = expr_type_opt.value();
     }
 
     // If the initializer is not present, the annotation will be (this is
@@ -33,10 +34,12 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
 
     // If the type annotation is present, check that it matches the initializer.
     if (stmt->annotation.has_value()) {
-        auto annotation_type =
+        auto annotation_type_opt =
             expression_checker.annotation_check(stmt->annotation.value());
-        if (!annotation_type)
+        if (!annotation_type_opt.has_value())
             return std::any();
+        auto annotation_type = annotation_type_opt.value();
+
         if (expr_type != nullptr &&
             !expr_type->is_assignable_to(*annotation_type)) {
             Logger::inst().log_error(
@@ -121,16 +124,19 @@ std::any LocalChecker::visit(Stmt::Func* stmt) {
         // If the parameter has a default expression, check it.
         if (param_field.default_expr.has_value()) {
             auto default_expr_ptr = param_field.default_expr.value().lock();
-            auto default_expr_type =
+            auto default_expr_type_opt =
                 expression_checker.expr_check(default_expr_ptr, false);
-            if (!default_expr_type) {
+            if (!default_expr_type_opt.has_value()) {
                 has_error = true;
             }
-            else if (!default_expr_type->is_assignable_to(*param_field.type)) {
+            else if (!default_expr_type_opt.value()->is_assignable_to(
+                         *param_field.type
+                     )) {
                 Logger::inst().log_error(
                     Err::DefaultArgTypeMismatch,
                     default_expr_ptr->location,
-                    std::string("Type `") + default_expr_type->to_string() +
+                    std::string("Type `") +
+                        default_expr_type_opt.value()->to_string() +
                         "` is not compatible with parameter type `" +
                         param_field.type->to_string() + "`."
                 );
@@ -153,16 +159,20 @@ std::any LocalChecker::visit(Stmt::Func* stmt) {
     }
 
     // Check the body.
-    auto body_type = expression_checker.expr_check(stmt->body.value(), false);
-    if (!body_type) {
+    auto body_type_opt =
+        expression_checker.expr_check(stmt->body.value(), false);
+    if (!body_type_opt.has_value()) {
         // Ignore error, already reported.
     }
     // Body type must be assignable to the return type.
-    else if (!body_type->is_assignable_to(*func_type->return_type)) {
+    else if (!body_type_opt.value()->is_assignable_to(
+                 *func_type->return_type
+             )) {
         Logger::inst().log_error(
             Err::FunctionReturnTypeMismatch,
             stmt->body.value()->location,
-            std::string("Function body type `") + body_type->to_string() +
+            std::string("Function body type `") +
+                body_type_opt.value()->to_string() +
                 "` is not compatible with declared return type `" +
                 func_type->return_type->to_string() + "`."
         );
@@ -229,9 +239,10 @@ std::any LocalChecker::visit(Stmt::Yield* stmt) {
     stmt->target_block = local_scope->block;
 
     // Visit the expression in the yield statement.
-    auto expr_type = expression_checker.expr_check(stmt->expression, false);
-    if (!expr_type)
+    auto expr_type_opt = expression_checker.expr_check(stmt->expression, false);
+    if (!expr_type_opt.has_value())
         return std::any();
+    auto expr_type = expr_type_opt.value();
 
     if (!local_scope->yield_type) {
         // If this local scope does not currently have a yield type...
@@ -276,9 +287,10 @@ std::any LocalChecker::visit(Stmt::Print* stmt) {
 }
 
 std::any LocalChecker::visit(Stmt::Dealloc* stmt) {
-    auto expr_type = expression_checker.expr_check(stmt->expression, false);
-    if (!expr_type)
+    auto expr_type_opt = expression_checker.expr_check(stmt->expression, false);
+    if (!expr_type_opt.has_value())
         return std::any();
+    auto expr_type = expr_type_opt.value();
 
     if (PTR_INSTANCEOF(expr_type, Type::Nullptr)) {
         Logger::inst().log_error(

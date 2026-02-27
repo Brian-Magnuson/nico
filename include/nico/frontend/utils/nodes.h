@@ -244,6 +244,28 @@ public:
     }
 
     /**
+     * @brief Check if this type is assignable a binding of the target type.
+     *
+     * For clarification, for the assignment `a = b`, this checks if the type of
+     * `b` (this) is assignable to the type of `a` (other).
+     *
+     * This function is assymmetric; that is, `a.is_assignable_to(b)` may not
+     * return the same result as `b.is_assignable_to(a)`.
+     *
+     * For most cases, this is equivalent to checking for equality.
+     * For pointer types, assigning a mutable pointer to an immutable pointer is
+     * allowed.
+     *
+     * @param target_type The target type to check assignability against.
+     * @return True if this type is assignable to the target type. False
+     * otherwise.
+     */
+    virtual bool
+    is_assignable_to(const std::shared_ptr<Type>& target_type) const {
+        return is_assignable_to(*target_type);
+    }
+
+    /**
      * @brief Check if this type is sized, i.e., has a known size at compile
      * time.
      *

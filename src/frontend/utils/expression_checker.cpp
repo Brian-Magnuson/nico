@@ -268,10 +268,12 @@ std::any ExpressionChecker::visit(Expr::Assign* expr, bool as_lvalue) {
         );
     }
 
-    auto l_type = expr_check(expr->left, true);
+    auto l_type_opt = expr_check(expr->left, true);
     auto l_lvalue = std::dynamic_pointer_cast<Expr::IPLValue>(expr->left);
-    if (!l_type || !l_lvalue)
+    if (!l_type_opt.has_value() || !l_lvalue)
         return std::any();
+
+    auto l_type = l_type_opt.value();
 
     // The left side must be an assignable lvalue.
     if (!l_lvalue->assignable) {
@@ -289,9 +291,11 @@ std::any ExpressionChecker::visit(Expr::Assign* expr, bool as_lvalue) {
         return std::any();
     }
 
-    auto r_type = expr_check(expr->right, false);
-    if (!r_type)
+    auto r_type_opt = expr_check(expr->right, false);
+    if (!r_type_opt.has_value())
         return std::any();
+
+    auto r_type = r_type_opt.value();
 
     // The types of the left and right sides must match.
     // if (*l_type != *r_type) {
@@ -321,10 +325,10 @@ std::any ExpressionChecker::visit(Expr::Logical* expr, bool as_lvalue) {
 
     bool has_error = false;
 
-    auto l_type = expr_check(expr->left, false);
-    if (!l_type)
+    auto l_type_opt = expr_check(expr->left, false);
+    if (!l_type_opt.has_value())
         has_error = true;
-    else if (!PTR_INSTANCEOF(l_type, Type::Bool)) {
+    else if (!PTR_INSTANCEOF(l_type_opt.value(), Type::Bool)) {
         Logger::inst().log_error(
             Err::NoOperatorOverload,
             expr->op->location,
@@ -333,10 +337,10 @@ std::any ExpressionChecker::visit(Expr::Logical* expr, bool as_lvalue) {
         has_error = true;
     }
 
-    auto r_type = expr_check(expr->right, false);
-    if (!r_type)
+    auto r_type_opt = expr_check(expr->right, false);
+    if (!r_type_opt.has_value())
         has_error = true;
-    else if (!PTR_INSTANCEOF(r_type, Type::Bool)) {
+    else if (!PTR_INSTANCEOF(r_type_opt.value(), Type::Bool)) {
         Logger::inst().log_error(
             Err::NoOperatorOverload,
             expr->op->location,
@@ -364,16 +368,19 @@ std::any ExpressionChecker::visit(Expr::Binary* expr, bool as_lvalue) {
 
     bool has_error = false;
 
-    auto l_type = expr_check(expr->left, false);
-    if (!l_type)
+    auto l_type_opt = expr_check(expr->left, false);
+    if (!l_type_opt.has_value())
         has_error = true;
 
-    auto r_type = expr_check(expr->right, false);
-    if (!r_type)
+    auto r_type_opt = expr_check(expr->right, false);
+    if (!r_type_opt.has_value())
         has_error = true;
 
     if (has_error)
         return std::any();
+
+    auto l_type = l_type_opt.value();
+    auto r_type = r_type_opt.value();
 
     if (PTR_INSTANCEOF(l_type, Type::Int) && *l_type == *r_type) {
         bool is_signed =
@@ -530,9 +537,10 @@ std::any ExpressionChecker::visit(Expr::Unary* expr, bool as_lvalue) {
         return std::any();
     }
 
-    auto r_type = expr_check(expr->right, false);
-    if (!r_type)
+    auto r_type_opt = expr_check(expr->right, false);
+    if (!r_type_opt.has_value())
         return std::any();
+    auto r_type = r_type_opt.value();
 
     switch (expr->op->tok_type) {
     case Tok::Negative:
@@ -590,10 +598,12 @@ std::any ExpressionChecker::visit(Expr::Address* expr, bool as_lvalue) {
         return std::any();
     }
 
-    auto r_type = expr_check(expr->right, true);
+    auto r_type_opt = expr_check(expr->right, true);
     auto r_lvalue = std::dynamic_pointer_cast<Expr::IPLValue>(expr->right);
-    if (!r_type || !r_lvalue)
+    if (!r_type_opt.has_value() || !r_lvalue)
         return std::any();
+
+    auto r_type = r_type_opt.value();
 
     if (expr->op->tok_type == Tok::At) {
         expr->type = std::make_shared<Type::RawTypedPtr>(r_type, expr->has_var);
@@ -637,9 +647,10 @@ std::any ExpressionChecker::visit(Expr::Address* expr, bool as_lvalue) {
 
 std::any ExpressionChecker::visit(Expr::Deref* expr, bool as_lvalue) {
     // Dereference expressions *are* possible lvalues.
-    auto r_type = expr_check(expr->right, false);
-    if (!r_type)
+    auto r_type_opt = expr_check(expr->right, false);
+    if (!r_type_opt.has_value())
         return std::any();
+    auto r_type = r_type_opt.value();
 
     if (!PTR_INSTANCEOF(r_type, Type::IPointer)) {
         Logger::inst().log_error(
@@ -689,9 +700,10 @@ std::any ExpressionChecker::visit(Expr::Cast* expr, bool as_lvalue) {
         return std::any();
     }
 
-    auto expr_type = expr_check(expr->expression, false);
-    if (!expr_type)
+    auto expr_type_opt = expr_check(expr->expression, false);
+    if (!expr_type_opt.has_value())
         return std::any();
+    auto expr_type = expr_type_opt.value();
 
     auto anno_any = expr->annotation->accept(this);
     if (!anno_any.has_value())
@@ -897,9 +909,10 @@ std::any ExpressionChecker::visit(Expr::Subscript* expr, bool as_lvalue) {
     if (!l_type || !l_lvalue)
         return std::any();
 
-    auto index_type = expr_check(expr->index, false);
-    if (!index_type)
+    auto index_type_opt = expr_check(expr->index, false);
+    if (!index_type_opt.has_value())
         return std::any();
+    auto index_type = index_type_opt.value();
 
     if (auto array_l_type = std::dynamic_pointer_cast<Type::Array>(l_type)) {
         // Array element type must be a sized type.
@@ -947,9 +960,11 @@ std::any ExpressionChecker::visit(Expr::Call* expr, bool as_lvalue) {
     std::vector<std::shared_ptr<Type::Function>> candidate_funcs;
     std::vector<std::shared_ptr<Node::FieldEntry>> overload_field_entries;
 
-    auto callee_type = expr_check(expr->callee, false);
-    if (!callee_type)
+    auto callee_type_opt = expr_check(expr->callee, false);
+    if (!callee_type_opt.has_value())
         return std::any();
+    auto callee_type = callee_type_opt.value();
+
     // If the callee is an exact function, add it to the candidate list.
     if (auto func_type =
             std::dynamic_pointer_cast<Type::Function>(callee_type)) {
@@ -979,10 +994,10 @@ std::any ExpressionChecker::visit(Expr::Call* expr, bool as_lvalue) {
     // Check each argument once
     bool has_error = false;
     for (auto& arg : expr->provided_pos_args) {
-        has_error |= expr_check(arg, false) == nullptr;
+        has_error |= expr_check(arg, false) == std::nullopt;
     }
     for (auto& [_, arg] : expr->provided_named_args) {
-        has_error |= expr_check(arg, false) == nullptr;
+        has_error |= expr_check(arg, false) == std::nullopt;
     }
     if (has_error)
         return std::any();
@@ -1099,9 +1114,11 @@ std::any ExpressionChecker::visit(Expr::Alloc* expr, bool as_lvalue) {
 
     if (expr->amount_expr.has_value()) {
         // `alloc for <amount_expr> of <type_annotation>`
-        auto amount_type = expr_check(expr->amount_expr.value(), false);
-        if (!amount_type)
+        auto amount_type_opt = expr_check(expr->amount_expr.value(), false);
+        if (!amount_type_opt.has_value())
             return std::any();
+        auto amount_type = amount_type_opt.value();
+
         if (!PTR_INSTANCEOF(amount_type, Type::Int)) {
             Logger::inst().log_error(
                 Err::AllocAmountNotInteger,
@@ -1132,10 +1149,10 @@ std::any ExpressionChecker::visit(Expr::Alloc* expr, bool as_lvalue) {
     }
     else if (!expr->type_annotation.has_value()) {
         // `alloc with <init_expr>`
-        auto init_type = expr_check(expr->expression.value(), false);
-        if (!init_type)
+        auto init_type_opt = expr_check(expr->expression.value(), false);
+        if (!init_type_opt.has_value())
             return std::any();
-        alloc_type = init_type;
+        alloc_type = init_type_opt.value();
     }
     else {
         // `alloc <type_annotation> [with <init_expr>]`
@@ -1158,9 +1175,11 @@ std::any ExpressionChecker::visit(Expr::Alloc* expr, bool as_lvalue) {
         }
 
         if (expr->expression.has_value()) {
-            auto init_type = expr_check(expr->expression.value(), false);
-            if (!init_type)
+            auto init_type_opt = expr_check(expr->expression.value(), false);
+            if (!init_type_opt.has_value())
                 return std::any();
+            auto init_type = init_type_opt.value();
+
             if (!init_type->is_assignable_to(*alloc_inner_type)) {
                 Logger::inst().log_error(
                     Err::AllocInitTypeMismatch,
@@ -1412,30 +1431,37 @@ std::any ExpressionChecker::visit(Expr::Conditional* expr, bool as_lvalue) {
     bool has_error = false;
 
     // Check the condition.
-    auto cond_type = expr_check(expr->condition, false);
-    if (!cond_type)
+    auto cond_type_opt = expr_check(expr->condition, false);
+    if (!cond_type_opt.has_value())
         has_error = true;
+
     // The condition must be of type `bool`.
-    if (!has_error && !PTR_INSTANCEOF(cond_type, Type::Bool)) {
+    if (!has_error && !PTR_INSTANCEOF(cond_type_opt.value(), Type::Bool)) {
         Logger::inst().log_error(
             Err::ConditionNotBool,
             expr->condition->location,
             "Condition expression must be of type `bool`, not `" +
-                cond_type->to_string() + "`."
+                cond_type_opt.value()->to_string() + "`."
         );
         has_error = true;
     }
 
     // Check the branches.
-    auto then_type = expr_check(expr->then_branch, false);
-    if (!then_type)
+    auto then_type_opt = expr_check(expr->then_branch, false);
+    if (!then_type_opt.has_value())
         has_error = true;
-    auto else_type = expr_check(expr->else_branch, false);
-    if (!else_type)
+
+    auto else_type_opt = expr_check(expr->else_branch, false);
+    if (!else_type_opt.has_value())
         has_error = true;
+
     // If there was an error in any of the branches, return early.
     if (has_error)
         return std::any();
+
+    auto cond_type = cond_type_opt.value();
+    auto then_type = then_type_opt.value();
+    auto else_type = else_type_opt.value();
 
     // If all branches have the same type, use that type.
     if (*then_type != *else_type) {
@@ -1482,38 +1508,38 @@ std::any ExpressionChecker::visit(Expr::Loop* expr, bool as_lvalue) {
     bool has_error = false;
 
     if (expr->condition.has_value()) {
-        auto cond_type = expr_check(expr->condition.value(), false);
-        if (!cond_type)
+        auto cond_type_opt = expr_check(expr->condition.value(), false);
+        if (!cond_type_opt.has_value())
             has_error = true;
-        if (!has_error && !PTR_INSTANCEOF(cond_type, Type::Bool)) {
+        if (!has_error && !PTR_INSTANCEOF(cond_type_opt.value(), Type::Bool)) {
             Logger::inst().log_error(
                 Err::ConditionNotBool,
                 expr->condition.value()->location,
                 "Condition expression must be of type `bool`, not `" +
-                    cond_type->to_string() + "`."
+                    cond_type_opt.value()->to_string() + "`."
             );
             has_error = true;
         }
     }
 
-    auto body_type = expr_check(expr->body, false);
-    if (!body_type)
+    auto body_type_opt = expr_check(expr->body, false);
+    if (!body_type_opt.has_value())
         has_error = true;
     if (!has_error && expr->condition.has_value()) {
         // If the loop has a condition and its body does not yield unit...
-        if (!PTR_INSTANCEOF(body_type, Type::Unit)) {
+        if (!PTR_INSTANCEOF(body_type_opt.value(), Type::Unit)) {
             Logger::inst().log_error(
                 Err::WhileLoopYieldingNonUnit,
                 expr->body->location,
                 "Body of while loop must yield type `()`, not `" +
-                    body_type->to_string() + "`."
+                    body_type_opt.value()->to_string() + "`."
             );
             has_error = true;
         }
     }
 
     if (!has_error) {
-        expr->type = body_type;
+        expr->type = body_type_opt.value();
     }
 
     return std::any();
@@ -1616,12 +1642,12 @@ std::any ExpressionChecker::visit(Annotation::TypeOf* annotation) {
     return annotation->expression->type;
 }
 
-std::shared_ptr<Type> ExpressionChecker::expr_check(
+std::optional<std::shared_ptr<Type>> ExpressionChecker::expr_check(
     std::shared_ptr<Expr> expr, bool as_lvalue, bool allow_unsized_rvalue
 ) {
     expr->accept(this, as_lvalue);
     if (!expr->type)
-        return nullptr;
+        return std::nullopt;
     if (!expr->type->is_sized_type() && !as_lvalue && !allow_unsized_rvalue) {
         Logger::inst().log_error(
             Err::UnsizedRValue,
@@ -1629,16 +1655,16 @@ std::shared_ptr<Type> ExpressionChecker::expr_check(
             "Unsized type `" + expr->type->to_string() +
                 "` cannot be used as an rvalue."
         );
-        return nullptr;
+        return std::nullopt;
     }
     return expr->type;
 }
 
-std::shared_ptr<Type>
+std::optional<std::shared_ptr<Type>>
 ExpressionChecker::annotation_check(std::shared_ptr<Annotation> annotation) {
     auto annotation_any = annotation->accept(this);
     if (!annotation_any.has_value())
-        return nullptr;
+        return std::nullopt;
     return std::any_cast<std::shared_ptr<Type>>(annotation_any);
 }
 
