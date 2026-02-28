@@ -1124,6 +1124,47 @@ TEST_CASE("JIT static vars", "[jit]") {
             "37"
         );
     }
+
+    SECTION("Static variable with initializer 1") {
+        run_jit_test(
+            R"(
+            static var counter: i32 = 100
+            printout counter
+            )",
+            "100"
+        );
+    }
+
+    SECTION("Static variable with initializer 2") {
+        run_jit_test(
+            R"(
+            static var counter: i32 = 100
+            counter = 200
+            printout counter
+            )",
+            "200"
+        );
+    }
+
+    SECTION("Static variable with array initializer") {
+        run_jit_test(
+            R"(
+            static var arr = [1, 2, 3]
+            printout arr
+            )",
+            "[1, 2, 3]"
+        );
+    }
+
+    SECTION("Static variable printed before declaration") {
+        run_jit_test(
+            R"(
+            printout counter
+            static var counter: i32 = 50
+            )",
+            "50"
+        );
+    }
 }
 
 TEST_CASE("JIT functions", "[jit]") {
