@@ -176,6 +176,35 @@ public:
 };
 
 /**
+ * @brief An extern block scope in the symbol tree.
+ *
+ * Extern blocks are used to group together symbols that are defined in an
+ * external library. They are similar to namespaces, but with some restrictions:
+ * They are only allowed to contain entries for functions and static variables.
+ *
+ * An extern block may not be declared within a local scope or a struct
+ * definition.
+ */
+class Node::ExternBlock : public virtual Node::Namespace {
+public:
+    virtual ~ExternBlock() = default;
+
+    ExternBlock(Private)
+        : Node(Private()),
+          Node::IScope(Private()),
+          Node::IGlobalScope(Private()),
+          Node::ILocatable(Private()),
+          Node::Namespace(Private()) {}
+
+    static std::shared_ptr<ExternBlock>
+    create(std::shared_ptr<Node::IScope> parent, std::shared_ptr<Token> token);
+
+    virtual std::string to_string() const override {
+        return "EXTERN \"" + symbol + "\"";
+    }
+};
+
+/**
  * @brief A primitive type in the symbol tree.
  *
  * A primitive type node references a basic type object instead of a custom

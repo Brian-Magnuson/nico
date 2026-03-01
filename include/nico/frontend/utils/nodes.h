@@ -46,6 +46,7 @@ public:
 
     class RootScope;
     class Namespace;
+    class ExternBlock;
     class PrimitiveType;
     class StructDef;
     class LocalScope;

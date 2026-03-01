@@ -30,6 +30,16 @@ std::shared_ptr<Node::Namespace> Node::Namespace::create(
     return node;
 }
 
+std::shared_ptr<Node::ExternBlock> Node::ExternBlock::create(
+    std::shared_ptr<Node::IScope> parent, std::shared_ptr<Token> token
+) {
+    auto node = std::make_shared<ExternBlock>(Private());
+    node->parent = parent;
+    node->short_name = std::string(token->lexeme);
+    node->location = &token->location;
+    return node;
+}
+
 std::shared_ptr<Node::PrimitiveType> Node::PrimitiveType::create(
     std::shared_ptr<Node::IScope> parent,
     std::string_view short_name,
