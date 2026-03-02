@@ -142,6 +142,10 @@ void SymbolTree::reset() {
     install_primitive_types();
 }
 
+bool SymbolTree::is_name_reserved(const std::string& name) const {
+    return reserved_scope->children.contains(name);
+}
+
 bool SymbolTree::register_symbol(
     std::shared_ptr<Node::ILocatable> node, std::optional<std::string> symbol
 ) {
@@ -205,99 +209,23 @@ bool SymbolTree::register_symbol(
 
 std::pair<bool, std::shared_ptr<Node::Namespace>>
 SymbolTree::add_namespace(std::shared_ptr<Token> token) {
-    // Namespaces cannot be added in a local scope
-    if (PTR_INSTANCEOF(current_scope, Node::LocalScope)) {
-        Logger::inst().log_error(
-            Err::NamespaceInLocalScope,
-            token->location,
-            "Cannot declare a namespace in a local scope."
-        );
+    auto new_node = Node::Namespace::create(current_scope, token);
+    auto ok = current_scope->add_child(*this, new_node);
+    if (!ok) {
         return {false, nullptr};
     }
-    // Namespaces cannot be added in a struct definition
-    if (PTR_INSTANCEOF(current_scope, Node::StructDef)) {
-        Logger::inst().log_error(
-            Err::NamespaceInStructDef,
-            token->location,
-            "Cannot declare a namespace in a struct definition."
-        );
-        return {false, nullptr};
-    }
-    // Check if the name is reserved.
-    if (auto node = reserved_scope->children.at(std::string(token->lexeme))) {
-        Logger::inst().log_error(
-            Err::NameIsReserved,
-            token->location,
-            "Name `" + std::string(token->lexeme) +
-                "` is reserved and cannot be used."
-        );
-        return {false, nullptr};
-    }
+    current_scope = new_node;
 
-    // Check if the name already exists.
-    if (auto node = current_scope->children.at(std::string(token->lexeme))) {
-        Logger::inst().log_error(
-            Err::NameAlreadyExists,
-            token->location,
-            "Name `" + std::string(token->lexeme) +
-                "` already exists in the current scope."
-        );
-        if (auto locatable =
-                std::dynamic_pointer_cast<Node::ILocatable>(node.value())) {
-            Logger::inst().log_note(
-                locatable->location,
-                "Previous declaration of name `" + std::string(token->lexeme) +
-                    "` found here."
-            );
-        }
-
-        // We planned previously to allow namespaces to be reopened.
-        // To ensure code has a single, tracable origin, we decided to disallow
-        // this.
-
-        return {false, nullptr};
-    }
-    else {
-        // If name does not exist...
-        // Add the namespace to its parent scope's children.
-        auto new_node = Node::Namespace::create(current_scope, token);
-        current_scope->children[new_node->short_name] = new_node;
-        modified = true;
-        bool ok = register_symbol(new_node);
-        if (!ok) {
-            return {false, nullptr};
-        }
-
-        current_scope = new_node;
-        return {true, new_node};
-    }
+    return {true, new_node};
 }
 
 std::pair<bool, std::shared_ptr<Node>>
 SymbolTree::add_struct_def(std::shared_ptr<Token> token, bool is_class) {
-    // Structs cannot be added in a local scope
-    if (PTR_INSTANCEOF(current_scope, Node::LocalScope)) {
-        return {false, nullptr};
-    }
-    // Check if the name exists in the reserved scope
-    if (auto node = reserved_scope->children.at(std::string(token->lexeme))) {
-        return {false, nullptr};
-    }
-
-    // Check if the struct already exists in the current scope
-    if (auto node = current_scope->children.at(std::string(token->lexeme))) {
-        return {false, nullptr};
-    }
-
     auto new_node = Node::StructDef::create(current_scope, token, is_class);
-    current_scope->children[new_node->short_name] = new_node;
-    modified = true;
-
-    bool ok = register_symbol(new_node);
+    auto ok = current_scope->add_child(*this, new_node);
     if (!ok) {
         return {false, nullptr};
     }
-
     current_scope = new_node;
     return {true, new_node};
 }

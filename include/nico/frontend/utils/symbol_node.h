@@ -39,6 +39,30 @@ protected:
 
 public:
     virtual std::string to_tree_string(size_t indent = 0) const override;
+
+    /**
+     * @brief Adds a child node to this scope.
+     *
+     * If successful, the child node will be added to this scope and registered
+     * in the provided symbol tree.
+     *
+     * This function will check if the child node's name is reserved, if its
+     * symbol is reserved, and if its name already exists in this scope. If any
+     * of these checks fail, the child node will not be added and an error will
+     * be logged.
+     *
+     * @param symbol_tree A reference to the symbol tree, used for registering
+     * the child's symbol.
+     * @param child The child node to add.
+     * @param custom_symbol An optional custom symbol name to use for
+     * registration.
+     * @return True if the child was successfully added, false otherwise.
+     */
+    virtual bool add_child(
+        SymbolTree& symbol_tree,
+        std::shared_ptr<Node::ILocatable> child,
+        std::optional<std::string> custom_symbol = std::nullopt
+    );
 };
 
 /**
@@ -202,6 +226,12 @@ public:
     virtual std::string to_string() const override {
         return "EXTERN \"" + symbol + "\"";
     }
+
+    virtual bool add_child(
+        SymbolTree& symbol_tree,
+        std::shared_ptr<Node::ILocatable> child,
+        std::optional<std::string> custom_symbol = std::nullopt
+    ) override;
 };
 
 /**
@@ -302,6 +332,12 @@ public:
         bool is_class = false
     );
 
+    virtual bool add_child(
+        SymbolTree& symbol_tree,
+        std::shared_ptr<Node::ILocatable> child,
+        std::optional<std::string> custom_symbol = std::nullopt
+    ) override;
+
     virtual std::string to_string() const override {
         return "STRUCT \"" + symbol + "\"";
     }
@@ -352,6 +388,12 @@ public:
     static std::shared_ptr<LocalScope> create(
         std::shared_ptr<Node::IScope> parent, std::shared_ptr<Expr::Block> block
     );
+
+    virtual bool add_child(
+        SymbolTree& symbol_tree,
+        std::shared_ptr<Node::ILocatable> child,
+        std::optional<std::string> custom_symbol = std::nullopt
+    ) override;
 
     virtual std::string to_string() const override {
         return "LSCOPE \"" + symbol + "\"";

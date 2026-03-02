@@ -126,12 +126,21 @@ enum class Err {
 
     // Global type check error
     GlobalTypeError = 4000,
-    // An attempt was made to declare a namespace in a local scope.
-    NamespaceInLocalScope,
+    // An attempt was made to declare an extern block within another extern
+    // block.
+    ExternBlockInExternBlock,
+    // An attempt was made to declare a namespace within an extern block.
+    NamespaceInExternBlock,
+    // An attempt was made to declare a struct definition within an extern
+    // block.
+    StructDefInExternBlock,
+    // An attempt was made to declare a struct definition within another struct
+    StructDefInStructDef,
+    // An attempt was made to declare an extern block within a struct
+    // definition.
+    ExternBlockInStructDef,
     // An attempt was made to declare a namespace in a struct definition.
     NamespaceInStructDef,
-    // An attempt was made to declare a struct in a local scope.
-    StructInLocalScope,
     // An attempt was made to introduce a new name in a scope where the same
     // name already exists.
     NameAlreadyExists,

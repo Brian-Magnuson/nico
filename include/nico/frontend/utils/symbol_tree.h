@@ -131,6 +131,23 @@ public:
     );
 
     /**
+     * @brief Checks if a name is reserved in the symbol tree.
+     *
+     * This function does not log any errors. It simply checks if the name is
+     * reserved.
+     *
+     * Reserved names are names that have a special meaning in the language.
+     * E.g., "i32", "f64", "bool"
+     *
+     * A name is reserved if its short name is used in the tree's reserved
+     * scope.
+     *
+     * @param name The name to check.
+     * @return True if the name is reserved, false otherwise.
+     */
+    bool is_name_reserved(const std::string& name) const;
+
+    /**
      * @brief Adds a new namespace to the symbol tree, then enters the namespace
      * scope.
      *
