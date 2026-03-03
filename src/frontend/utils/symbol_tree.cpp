@@ -219,6 +219,18 @@ SymbolTree::add_namespace(std::shared_ptr<Token> token) {
     return {true, new_node};
 }
 
+std::pair<bool, std::shared_ptr<Node::ExternBlock>>
+SymbolTree::add_extern_block(std::shared_ptr<Token> token) {
+    auto new_node = Node::ExternBlock::create(current_scope, token);
+    auto ok = current_scope->add_child(*this, new_node);
+    if (!ok) {
+        return {false, nullptr};
+    }
+    current_scope = new_node;
+
+    return {true, new_node};
+}
+
 std::pair<bool, std::shared_ptr<Node>>
 SymbolTree::add_struct_def(std::shared_ptr<Token> token, bool is_class) {
     auto new_node = Node::StructDef::create(current_scope, token, is_class);

@@ -168,6 +168,26 @@ public:
     add_namespace(std::shared_ptr<Token> token);
 
     /**
+     * @brief Adds a new extern block to the symbol tree, then enters the extern
+     * block scope.
+     *
+     * If successful, this function returns true and a shared pointer to the
+     * newly created extern block node.
+     *
+     * If the current scope does not allow extern blocks, this function does not
+     * add the extern block and returns a pair with false and nullptr.
+     *
+     * If the name already exists, this function does not add the extern block
+     * and returns a pair with false and nullptr.
+     *
+     * @param token The token representing the extern block identifier.
+     * @return std::pair<bool, std::shared_ptr<Node::ExternBlock>> The result of
+     * adding the extern block (see description).
+     */
+    std::pair<bool, std::shared_ptr<Node::ExternBlock>>
+    add_extern_block(std::shared_ptr<Token> token);
+
+    /**
      * @brief Adds a struct definition to the symbol tree, then enters the
      * struct definition scope.
      *
