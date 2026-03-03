@@ -81,12 +81,13 @@ std::any GlobalChecker::visit(Stmt::Static* stmt) {
         stmt->expression
     );
 
-    auto [ok, node] = symbol_tree->add_field_entry(field);
-    if (!ok) {
+    auto node_opt = symbol_tree->add_field_entry(field);
+    if (!node_opt.has_value()) {
         return std::any();
     }
-    else if (auto field_entry =
-                 std::dynamic_pointer_cast<Node::FieldEntry>(node)) {
+    else if (auto field_entry = std::dynamic_pointer_cast<Node::FieldEntry>(
+                 node_opt.value()
+             )) {
         stmt->field_entry = field_entry;
         return std::any();
     }
@@ -161,12 +162,13 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
     );
     // Functions are always immutable.
 
-    auto [ok, node] = symbol_tree->add_overloadable_func(field);
-    if (!ok) {
+    auto node_opt = symbol_tree->add_overloadable_func(field);
+    if (!node_opt.has_value()) {
         return std::any();
     }
-    else if (auto field_entry =
-                 std::dynamic_pointer_cast<Node::FieldEntry>(node)) {
+    else if (auto field_entry = std::dynamic_pointer_cast<Node::FieldEntry>(
+                 node_opt.value()
+             )) {
         stmt->field_entry = field_entry;
         return std::any();
     }
@@ -206,12 +208,12 @@ std::any GlobalChecker::visit(Stmt::Continue*) {
 }
 
 std::any GlobalChecker::visit(Stmt::Namespace* stmt) {
-    auto [ok, node] = symbol_tree->add_namespace(stmt->identifier);
-    if (!ok) {
+    auto node_opt = symbol_tree->add_namespace(stmt->identifier);
+    if (!node_opt.has_value()) {
         return std::any();
     }
 
-    stmt->namespace_node = node;
+    stmt->namespace_node = node_opt.value();
 
     for (auto& stmt : stmt->stmts) {
         stmt->accept(this);

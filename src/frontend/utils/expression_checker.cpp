@@ -1397,10 +1397,10 @@ std::any ExpressionChecker::visit(Expr::Block* expr, bool as_lvalue) {
         );
         return std::any();
     }
-    auto [ok, local_scope] = symbol_tree->add_local_scope(
+    auto local_scope_opt = symbol_tree->add_local_scope(
         std::dynamic_pointer_cast<Expr::Block>(expr->shared_from_this())
     );
-    if (!ok) {
+    if (!local_scope_opt.has_value()) {
         panic(
             "ExpressionChecker::visit(Expr::Block*): Could not add local scope."
         );
@@ -1409,8 +1409,9 @@ std::any ExpressionChecker::visit(Expr::Block* expr, bool as_lvalue) {
         stmt->accept(stmt_visitor);
         // If the statement has an error, we continue as normal.
     }
-    auto yield_type =
-        local_scope->yield_type.value_or(std::make_shared<Type::Unit>());
+    auto yield_type = local_scope_opt.value()->yield_type.value_or(
+        std::make_shared<Type::Unit>()
+    );
     expr->type = yield_type;
     symbol_tree->exit_scope();
 

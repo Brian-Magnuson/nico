@@ -123,8 +123,8 @@ public:
      * @param node The node whose symbol is to be registered.
      * @param symbol An optional symbol to register. If not provided, a symbol
     will be generated.
-     * @return
-    j */
+     * @return True if the symbol was registered successfully, false otherwise.
+     */
     bool register_symbol(
         std::shared_ptr<Node::ILocatable> node,
         std::optional<std::string> symbol = std::nullopt
@@ -151,40 +151,38 @@ public:
      * @brief Adds a new namespace to the symbol tree, then enters the namespace
      * scope.
      *
-     * If successful, this function returns true and a shared pointer to the
-     * newly created namespace node.
+     * If successful, this function returns the newly created namespace node.
      *
      * If the current scope does not allow namespaces, this function does not
-     * add the namespace and returns a pair with false and nullptr.
+     * add the namespace and returns nullopt.
      *
      * If the name already exists, this function does not add the namespace and
-     * returns a pair with false and nullptr.
+     * returns nullopt.
      *
      * @param name The name of the namespace.
-     * @return std::pair<bool, std::shared_ptr<Node::Namespace>> The result of
-     * adding the namespace (see description).
+     * @return std::optional<std::shared_ptr<Node::Namespace>> The newly created
+     * namespace node if successful, or nullopt if not.
      */
-    std::pair<bool, std::shared_ptr<Node::Namespace>>
+    std::optional<std::shared_ptr<Node::Namespace>>
     add_namespace(std::shared_ptr<Token> token);
 
     /**
      * @brief Adds a new extern block to the symbol tree, then enters the extern
      * block scope.
      *
-     * If successful, this function returns true and a shared pointer to the
-     * newly created extern block node.
+     * If successful, this function returns the newly created extern block node.
      *
      * If the current scope does not allow extern blocks, this function does not
-     * add the extern block and returns a pair with false and nullptr.
+     * add the extern block and returns nullopt.
      *
      * If the name already exists, this function does not add the extern block
-     * and returns a pair with false and nullptr.
+     * and returns nullopt.
      *
      * @param token The token representing the extern block identifier.
-     * @return std::pair<bool, std::shared_ptr<Node::ExternBlock>> The result of
-     * adding the extern block (see description).
+     * @return std::optional<std::shared_ptr<Node::ExternBlock>> The newly
+     * created extern block node if successful, or nullopt if not.
      */
-    std::pair<bool, std::shared_ptr<Node::ExternBlock>>
+    std::optional<std::shared_ptr<Node::ExternBlock>>
     add_extern_block(std::shared_ptr<Token> token);
 
     /**
@@ -192,28 +190,24 @@ public:
      * struct definition scope.
      *
      * If the struct definition already exists, or the current scope does not
-     * allow structs, this function does not add the struct and returns a pair
-     * with false and nullptr.
+     * allow structs, this function does not add the struct and returns nullopt.
      *
      * @param name The name of the struct.
-     * @return std::pair<bool, std::shared_ptr<Node>> The struct definition if
-     * added successfully (first), or false and nullptr (second).
+     * @return std::optional<std::shared_ptr<Node>> The struct definition if
+     * added successfully, or nullopt if not.
      */
-    std::pair<bool, std::shared_ptr<Node>>
+    std::optional<std::shared_ptr<Node>>
     add_struct_def(std::shared_ptr<Token> token, bool is_class = false);
 
     /**
      * @brief Adds a new local scope to the symbol tree, then enters the local
      * scope.
      *
-     * Currently, this function has no restrictions on where local scopes can be
-     * added.
-     *
      * @param block The block expression representing the local scope.
-     * @return std::pair<bool, std::shared_ptr<Node::LocalScope>> The local
-     * scope if added successfully (first), or false and nullptr (second).
+     * @return std::optional<std::shared_ptr<Node::LocalScope>> The local scope
+     * if added successfully, or nullopt if not.
      */
-    std::pair<bool, std::shared_ptr<Node::LocalScope>>
+    std::optional<std::shared_ptr<Node::LocalScope>>
     add_local_scope(std::shared_ptr<Expr::Block> block);
 
     /**
@@ -271,16 +265,16 @@ public:
      * functions. For overloadable functions, use add_overloadable_func instead.
      *
      * If the field name already exists in the current scope, this function does
-     * not add the field and returns false and nullptr.
+     * not add the field and returns nullopt.
      *
      * Because a field entry carries a type object, the field's type must be
      * resolved before being added to the symbol tree.
      *
      * @param field The field to add.
-     * @return std::pair<bool, std::shared_ptr<Node>> The field entry if added
-     * successfully, or false and nullptr (second).
+     * @return std::optional<std::shared_ptr<Node>> The field entry if added
+     * successfully, or nullopt if not.
      */
-    std::pair<bool, std::shared_ptr<Node>> add_field_entry(const Field& field);
+    std::optional<std::shared_ptr<Node>> add_field_entry(const Field& field);
 
     /**
      * @brief Adds an overloadable function to the symbol tree in the current
@@ -293,18 +287,16 @@ public:
      * and the function will be added to it.
      *
      * If the function name already exists, but does not refer to an overload
-     * group, this function does not add the function and returns false and
-     * nullptr.
+     * group, this function does not add the function and returns nullopt.
      *
      * If the function overload group is found, but the new function conflicts
-     * with an existing function, the function is not added and returns false
-     * and nullptr.
+     * with an existing function, the function is not added and returns nullopt.
      *
      * @param field The field to add.
-     * @return std::pair<bool, std::shared_ptr<Node>> The field entry if added
-     * successfully, or false and nullptr (second).
+     * @return std::optional<std::shared_ptr<Node>> The field entry if added
+     * successfully, or nullopt if not.
      */
-    std::pair<bool, std::shared_ptr<Node>>
+    std::optional<std::shared_ptr<Node>>
     add_overloadable_func(const Field& field);
 
     /**

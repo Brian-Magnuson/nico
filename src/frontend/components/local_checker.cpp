@@ -79,12 +79,13 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
         expr_type
     );
 
-    auto [ok, node] = symbol_tree->add_field_entry(field);
-    if (!ok) {
+    auto node_opt = symbol_tree->add_field_entry(field);
+    if (!node_opt.has_value()) {
         return std::any();
     }
-    else if (auto field_node =
-                 std::dynamic_pointer_cast<Node::FieldEntry>(node)) {
+    else if (auto field_node = std::dynamic_pointer_cast<Node::FieldEntry>(
+                 node_opt.value()
+             )) {
         stmt->field_entry = field_node;
         return std::any();
     }
@@ -146,13 +147,13 @@ std::any LocalChecker::visit(Stmt::Func* stmt) {
                 has_error = true;
             }
         }
-        auto [ok, node] = symbol_tree->add_field_entry(param_field);
-        if (!ok) {
+        auto node_opt = symbol_tree->add_field_entry(param_field);
+        if (!node_opt.has_value()) {
             has_error = true;
         }
         else {
             param.field_entry =
-                std::dynamic_pointer_cast<Node::FieldEntry>(node);
+                std::dynamic_pointer_cast<Node::FieldEntry>(node_opt.value());
         }
     }
     // If there was an error in the parameters, avoid checking the body.

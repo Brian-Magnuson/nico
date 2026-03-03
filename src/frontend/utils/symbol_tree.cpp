@@ -207,42 +207,42 @@ bool SymbolTree::register_symbol(
     return true;
 }
 
-std::pair<bool, std::shared_ptr<Node::Namespace>>
+std::optional<std::shared_ptr<Node::Namespace>>
 SymbolTree::add_namespace(std::shared_ptr<Token> token) {
     auto new_node = Node::Namespace::create(current_scope, token);
     auto ok = current_scope->add_child(*this, new_node);
     if (!ok) {
-        return {false, nullptr};
+        return std::nullopt;
     }
     current_scope = new_node;
 
-    return {true, new_node};
+    return new_node;
 }
 
-std::pair<bool, std::shared_ptr<Node::ExternBlock>>
+std::optional<std::shared_ptr<Node::ExternBlock>>
 SymbolTree::add_extern_block(std::shared_ptr<Token> token) {
     auto new_node = Node::ExternBlock::create(current_scope, token);
     auto ok = current_scope->add_child(*this, new_node);
     if (!ok) {
-        return {false, nullptr};
+        return std::nullopt;
     }
     current_scope = new_node;
 
-    return {true, new_node};
+    return new_node;
 }
 
-std::pair<bool, std::shared_ptr<Node>>
+std::optional<std::shared_ptr<Node>>
 SymbolTree::add_struct_def(std::shared_ptr<Token> token, bool is_class) {
     auto new_node = Node::StructDef::create(current_scope, token, is_class);
     auto ok = current_scope->add_child(*this, new_node);
     if (!ok) {
-        return {false, nullptr};
+        return std::nullopt;
     }
     current_scope = new_node;
-    return {true, new_node};
+    return new_node;
 }
 
-std::pair<bool, std::shared_ptr<Node::LocalScope>>
+std::optional<std::shared_ptr<Node::LocalScope>>
 SymbolTree::add_local_scope(std::shared_ptr<Expr::Block> block) {
     auto new_local_scope = Node::LocalScope::create(current_scope, block);
     current_scope->local_scopes.push_back(new_local_scope);
@@ -251,7 +251,7 @@ SymbolTree::add_local_scope(std::shared_ptr<Expr::Block> block) {
 
     current_scope = new_local_scope;
     modified = true;
-    return {true, new_local_scope};
+    return new_local_scope;
 }
 
 std::optional<std::shared_ptr<Node::IScope>> SymbolTree::exit_scope() {
@@ -327,7 +327,7 @@ SymbolTree::get_local_scope_of_kind(Expr::Block::Kind kind) const {
     return std::nullopt;
 }
 
-std::pair<bool, std::shared_ptr<Node>>
+std::optional<std::shared_ptr<Node>>
 SymbolTree::add_field_entry(const Field& field) {
     // Make sure the name is not reserved.
     if (auto node = reserved_scope->children.at(field.name)) {
@@ -337,7 +337,7 @@ SymbolTree::add_field_entry(const Field& field) {
             "Name `" + std::string(field.name) +
                 "` is reserved and cannot be used."
         );
-        return {false, nullptr};
+        return std::nullopt;
     }
 
     if (auto node = current_scope->children.at(field.name)) {
@@ -353,7 +353,7 @@ SymbolTree::add_field_entry(const Field& field) {
                 "Previous declaration here."
             );
         }
-        return {false, nullptr};
+        return std::nullopt;
     }
 
     auto new_node = Node::FieldEntry::create(current_scope, field);
@@ -361,15 +361,15 @@ SymbolTree::add_field_entry(const Field& field) {
 
     bool ok = register_symbol(new_node);
     if (!ok) {
-        return {false, nullptr};
+        return std::nullopt;
     }
 
     modified = true;
 
-    return {true, new_node};
+    return new_node;
 }
 
-std::pair<bool, std::shared_ptr<Node>>
+std::optional<std::shared_ptr<Node>>
 SymbolTree::add_overloadable_func(const Field& field) {
     // Make sure the name is not reserved.
     if (auto node = reserved_scope->children.at(field.name)) {
@@ -378,7 +378,7 @@ SymbolTree::add_overloadable_func(const Field& field) {
             *field.location,
             "Name `" + field.name + "` is reserved and cannot be used."
         );
-        return {false, nullptr};
+        return std::nullopt;
     }
 
     // Check if the name already exists.
@@ -406,7 +406,7 @@ SymbolTree::add_overloadable_func(const Field& field) {
                     "Previous declaration here."
                 );
             }
-            return {false, nullptr};
+            return std::nullopt;
         }
     }
     else {
@@ -421,7 +421,7 @@ SymbolTree::add_overloadable_func(const Field& field) {
 
         bool ok = register_symbol(overload_group);
         if (!ok) {
-            return {false, nullptr};
+            return std::nullopt;
         }
     }
 
@@ -471,7 +471,7 @@ SymbolTree::add_overloadable_func(const Field& field) {
                 "parameters."
             );
         }
-        return {false, nullptr};
+        return std::nullopt;
     }
 
     auto new_node = Node::FieldEntry::create(current_scope, field);
@@ -479,12 +479,12 @@ SymbolTree::add_overloadable_func(const Field& field) {
                          std::to_string(overload_group->overloads.size() + 1);
     bool ok = register_symbol(new_node, custom_symbol);
     if (!ok) {
-        return {false, nullptr};
+        return std::nullopt;
     }
     overload_group->overloads.push_back(new_node);
     modified = true;
 
-    return {true, new_node};
+    return new_node;
 }
 
 bool SymbolTree::is_context_unsafe() const {
