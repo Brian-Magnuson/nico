@@ -103,15 +103,24 @@ std::optional<std::shared_ptr<Expr>> Parser::block(Expr::Block::Kind kind) {
     else if (peek()->tok_type == Tok::LBrace) {
         closing_token_type = Tok::RBrace;
     }
+    else if (peek()->tok_type == Tok::Colon) {
+        Logger::inst().log_error(
+            Err::ColonInsteadOfIndent,
+            peek()->location,
+            "Unexpected `:` after `block` keyword."
+        );
+        Logger::inst().log_note(
+            "Indentation is possibly ignored here. Consider using `{` for this "
+            "block or using indentation for the surrounding scope."
+        );
+        return std::nullopt;
+    }
     else {
         Logger::inst().log_error(
             Err::NotABlock,
             peek()->location,
             "Expected '{' or an indent to start a block expression."
         );
-        if (peek()->tok_type == Tok::Colon) {
-            Logger::inst().log_note("Indentation is possibly ignored here.");
-        }
         return std::nullopt;
     }
     auto opening_tok = advance();
@@ -169,15 +178,24 @@ std::optional<std::shared_ptr<Expr>> Parser::conditional() {
     else if (match({Tok::KwThen})) {
         then_branch = expression();
     }
+    else if (peek()->tok_type == Tok::Colon) {
+        Logger::inst().log_error(
+            Err::ColonInsteadOfIndent,
+            peek()->location,
+            "Unexpected `:` after condition clause."
+        );
+        Logger::inst().log_note(
+            "Indentation is possibly ignored here. Consider using `{` for this "
+            "block or using indentation for the surrounding scope."
+        );
+        return std::nullopt;
+    }
     else {
         Logger::inst().log_error(
             Err::ConditionalWithoutThenOrBlock,
             peek()->location,
             "Conditional expression requires `then` keyword or a block."
         );
-        if (peek()->tok_type == Tok::Colon) {
-            Logger::inst().log_note("Indentation is possibly ignored here.");
-        }
         return std::nullopt;
     }
 
@@ -243,17 +261,25 @@ std::optional<std::shared_ptr<Expr>> Parser::loop() {
         else if (match({Tok::KwDo})) {
             expr_body = expression();
         }
+        else if (peek()->tok_type == Tok::Colon) {
+            Logger::inst().log_error(
+                Err::ColonInsteadOfIndent,
+                peek()->location,
+                "Unexpected `:` after while loop condition."
+            );
+            Logger::inst().log_note(
+                "Indentation is possibly ignored here. Consider using `{` for "
+                "this "
+                "block or using indentation for the surrounding scope."
+            );
+            return std::nullopt;
+        }
         else {
             Logger::inst().log_error(
                 Err::WhileLoopWithoutDoOrBlock,
                 peek()->location,
                 "While loop requires `do` keyword or a block."
             );
-            if (peek()->tok_type == Tok::Colon) {
-                Logger::inst().log_note(
-                    "Indentation is possibly ignored here."
-                );
-            }
             return std::nullopt;
         }
         if (!expr_body)
@@ -275,6 +301,19 @@ std::optional<std::shared_ptr<Expr>> Parser::loop() {
         if (peek()->tok_type == Tok::Indent ||
             peek()->tok_type == Tok::LBrace) {
             expr_body = block(Expr::Block::Kind::Loop);
+        }
+        else if (peek()->tok_type == Tok::Colon) {
+            Logger::inst().log_error(
+                Err::ColonInsteadOfIndent,
+                peek()->location,
+                "Unexpected `:` after `do` keyword."
+            );
+            Logger::inst().log_note(
+                "Indentation is possibly ignored here. Consider using `{` for "
+                "this "
+                "block or using indentation for the surrounding scope."
+            );
+            return std::nullopt;
         }
         else {
             expr_body = expression();
@@ -1185,15 +1224,24 @@ std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
         }
         body_expr = std::dynamic_pointer_cast<Expr::Block>(*block_expr);
     }
+    else if (peek()->tok_type == Tok::Colon) {
+        Logger::inst().log_error(
+            Err::ColonInsteadOfIndent,
+            peek()->location,
+            "Unexpected `:` after `block` keyword."
+        );
+        Logger::inst().log_note(
+            "Indentation is possibly ignored here. Consider using `{` for this "
+            "block or using indentation for the surrounding scope."
+        );
+        return std::nullopt;
+    }
     else {
         Logger::inst().log_error(
             Err::FuncWithoutArrowOrBlock,
             peek()->location,
             "Expected `=>` or a block for function body."
         );
-        if (peek()->tok_type == Tok::Colon) {
-            Logger::inst().log_note("Indentation is possibly ignored here.");
-        }
         return std::nullopt;
     }
 
@@ -1237,15 +1285,24 @@ std::optional<std::shared_ptr<Stmt>> Parser::namespace_statement() {
     else if (match({Tok::LBrace})) {
         closing_token_type = Tok::RBrace;
     }
+    else if (peek()->tok_type == Tok::Colon) {
+        Logger::inst().log_error(
+            Err::ColonInsteadOfIndent,
+            peek()->location,
+            "Unexpected `:` after namespace identifier."
+        );
+        Logger::inst().log_note(
+            "Indentation is possibly ignored here. Consider using `{` for this "
+            "block or using indentation for the surrounding scope."
+        );
+        return std::nullopt;
+    }
     else {
         Logger::inst().log_error(
             Err::NamespaceWithoutBlock,
             peek()->location,
             "Expected indented block or `{` after namespace declaration."
         );
-        if (peek()->tok_type == Tok::Colon) {
-            Logger::inst().log_note("Indentation is possibly ignored here.");
-        }
         return std::nullopt;
     }
 

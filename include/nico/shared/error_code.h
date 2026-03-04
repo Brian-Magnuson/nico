@@ -98,6 +98,8 @@ enum class Err {
     UnexpectedClosingParen,
     // A block keyword was found without a proper opening token.
     NotABlock,
+    // A colon was found where an indent is normally expected to start a block.
+    ColonInsteadOfIndent,
     // A dot was not followed by an identifier or integer.
     UnexpectedTokenAfterDot,
     // An `alloc for` expression was found without an `of` keyword.

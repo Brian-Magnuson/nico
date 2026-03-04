@@ -684,6 +684,53 @@ TEST_CASE("Parser blocks", "[parser]") {
         );
     }
 
+    SECTION("Nested blocks 1") {
+        run_parser_expr_test(
+            "block { block { 123 } }",
+            {"(expr (block (expr (block (expr (lit i32 123))))))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Nested blocks 2") {
+        run_parser_expr_test(
+            "block { block { 123 } 456 block { 789 }}",
+            {"(expr (block (expr (block (expr (lit i32 123)))) (expr (lit i32 "
+             "456)) (expr (block (expr (lit i32 789))))))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Nested blocks 3") {
+        run_parser_expr_test(
+            "block:\n    block:\n        123\n",
+            {"(expr (block (expr (block (expr (lit i32 123))))))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Nested blocks 4") {
+        run_parser_expr_test(
+            "block:\n    block:\n        123\n    456\n    block:\n        "
+            "789\n",
+            {"(expr (block (expr (block (expr (lit i32 123)))) (expr (lit i32 "
+             "456)) (expr (block (expr (lit i32 789))))))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Braced block in indented block") {
+        run_parser_expr_test(
+            "block:\n    block { 123 }\n",
+            {"(expr (block (expr (block (expr (lit i32 123))))))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Indented block in braced block") {
+        run_parser_expr_error_test(
+            "block { block:\n    123\n}\n",
+            Err::ColonInsteadOfIndent
+        );
+    }
+
     SECTION("Not a block") {
         run_parser_expr_error_test("block 123", Err::NotABlock);
     }
@@ -885,6 +932,13 @@ TEST_CASE("Parser if expressions", "[parser]") {
              "(stmt:eof)"}
         );
     }
+
+    SECTION("Indented if expression in braced block") {
+        run_parser_expr_error_test(
+            "block { if true:\n    123\n}\n",
+            Err::ColonInsteadOfIndent
+        );
+    }
 }
 
 TEST_CASE("Parser loop expressions", "[parser]") {
@@ -942,6 +996,13 @@ TEST_CASE("Parser loop expressions", "[parser]") {
         );
     }
 
+    SECTION("Indented while loop in braced block") {
+        run_parser_expr_error_test(
+            "block { while condition:\n    123\n}\n",
+            Err::ColonInsteadOfIndent
+        );
+    }
+
     SECTION("Do-while loop 1") {
         run_parser_expr_test(
             "do 123 while condition\n",
@@ -973,6 +1034,13 @@ TEST_CASE("Parser loop expressions", "[parser]") {
         run_parser_expr_test(
             "do 123 while true\n",
             {"(expr (loop (block (expr (lit i32 123)))))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Indented do-while loop in braced block") {
+        run_parser_expr_error_test(
+            "block { do:\n    123\nwhile condition\n}\n",
+            Err::ColonInsteadOfIndent
         );
     }
 }
