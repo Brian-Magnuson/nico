@@ -116,6 +116,10 @@ std::any LocalChecker::visit(Stmt::Func* stmt) {
         );
     }
 
+    // The body is always present here.
+    // The body is only absent in extern blocks, which are not checked by this
+    // type checker.
+
     symbol_tree->add_local_scope(stmt->body.value());
 
     bool has_error = false;
@@ -347,8 +351,7 @@ std::any LocalChecker::visit(Stmt::Namespace* stmt) {
 }
 
 std::any LocalChecker::visit(Stmt::Extern* /*stmt*/) {
-    // TODO: Implement local checking for extern blocks. For now, we'll just
-    // ignore them.
+    // Extern blocks do not contain execution-space statements.
     return std::any();
 }
 

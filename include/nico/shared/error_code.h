@@ -159,8 +159,14 @@ enum class Err {
     // An attempt was made to declare a function that conflicts with an existing
     // overload.
     FunctionOverloadConflict,
+    // A function was declared in an extern block with a body.
+    ExternFuncWithBody,
+    // A non-extern function was declared without a body.
+    NonExternFuncWithoutBody,
     // A type mismatch was found in a static variable declaration.
     StaticTypeMismatch,
+    // A static variable was declared in an extern block with an initializer.
+    ExternStaticWithInitializer,
     // An attempt was made to allocate memory for an unsized type.
     UnsizedTypeAllocation,
 

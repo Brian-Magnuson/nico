@@ -21,6 +21,17 @@ std::any GlobalChecker::visit(Stmt::Static* stmt) {
 
     // Visit the initializer (if present).
     if (stmt->expression.has_value()) {
+        // Initializer expression is not allowed in extern blocks.
+        if (PTR_INSTANCEOF(symbol_tree->current_scope, Node::ExternBlock)) {
+            Logger::inst().log_error(
+                Err::ExternStaticWithInitializer,
+                stmt->identifier->location,
+                "Static variable declared in extern block cannot have an "
+                "initializer."
+            );
+            return std::any();
+        }
+
         auto expr_type_opt =
             expression_checker.expr_check(stmt->expression.value(), false);
         if (!expr_type_opt.has_value())
@@ -176,6 +187,25 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
         panic(
             "GlobalChecker::visit(Stmt::Func*): Symbol tree returned a "
             "non-field entry for a field entry."
+        );
+    }
+
+    // If the body of the function is present, this cannot be an extern block.
+    if (stmt->body.has_value() &&
+        PTR_INSTANCEOF(symbol_tree->current_scope, Node::ExternBlock)) {
+        Logger::inst().log_error(
+            Err::ExternFuncWithBody,
+            stmt->identifier->location,
+            "Function declared in extern block cannot have a body."
+        );
+    }
+    // If the body of the function is not present, this must be an extern block.
+    if (!stmt->body.has_value() &&
+        !PTR_INSTANCEOF(symbol_tree->current_scope, Node::ExternBlock)) {
+        Logger::inst().log_error(
+            Err::NonExternFuncWithoutBody,
+            stmt->identifier->location,
+            "Non-extern function is missing a body."
         );
     }
 
