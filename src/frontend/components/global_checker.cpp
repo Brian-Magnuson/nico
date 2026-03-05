@@ -255,8 +255,21 @@ std::any GlobalChecker::visit(Stmt::Namespace* stmt) {
     return std::any();
 }
 
-std::any GlobalChecker::visit(Stmt::Extern*) {
-    // TODO: Implement global checking for extern blocks.
+std::any GlobalChecker::visit(Stmt::Extern* stmt) {
+    auto node_opt = symbol_tree->add_extern_block(stmt->identifier);
+    if (!node_opt.has_value()) {
+        return std::any();
+    }
+
+    stmt->extern_block_node = node_opt.value();
+
+    for (auto& stmt : stmt->stmts) {
+        stmt->accept(this);
+    }
+    // Errors may occur, but we can still continue processing the rest of the
+    // statements in the extern block.
+
+    symbol_tree->exit_scope();
     return std::any();
 }
 

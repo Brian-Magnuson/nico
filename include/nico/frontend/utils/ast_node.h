@@ -347,6 +347,8 @@ public:
     ABI abi;
     // The declarations in the extern block.
     std::vector<std::shared_ptr<Stmt::IDeclAllowed>> stmts;
+    // A weak pointer to the extern block node in the symbol tree.
+    std::weak_ptr<Node::ExternBlock> extern_block_node;
 
     Extern(
         std::shared_ptr<Token> start_token,
