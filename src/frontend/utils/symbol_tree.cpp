@@ -327,8 +327,9 @@ SymbolTree::get_local_scope_of_kind(Expr::Block::Kind kind) const {
     return std::nullopt;
 }
 
-std::optional<std::shared_ptr<Node>>
-SymbolTree::add_field_entry(const Field& field) {
+std::optional<std::shared_ptr<Node::FieldEntry>> SymbolTree::add_field_entry(
+    const Field& field, std::optional<std::string> custom_symbol
+) {
     // Make sure the name is not reserved.
     if (auto node = reserved_scope->children.at(field.name)) {
         Logger::inst().log_error(
@@ -346,6 +347,15 @@ SymbolTree::add_field_entry(const Field& field) {
             *field.location,
             "Name `" + field.name + "` already exists in the current scope."
         );
+        if (PTR_INSTANCEOF(node.value(), Node::OverloadGroup) &&
+            PTR_INSTANCEOF(field.type, Type::Function)) {
+            // The field being declared is a non-overloadable function, but
+            // there is an overload group with the same name.
+            Logger::inst().log_note(
+                "This is a non-overloadable function, which cannot share a "
+                "name with an overloadable function."
+            );
+        }
         if (auto locatable =
                 std::dynamic_pointer_cast<Node::ILocatable>(node.value())) {
             Logger::inst().log_note(
@@ -359,7 +369,7 @@ SymbolTree::add_field_entry(const Field& field) {
     auto new_node = Node::FieldEntry::create(current_scope, field);
     current_scope->children[new_node->short_name] = new_node;
 
-    bool ok = register_symbol(new_node);
+    bool ok = register_symbol(new_node, custom_symbol);
     if (!ok) {
         return std::nullopt;
     }
@@ -369,7 +379,7 @@ SymbolTree::add_field_entry(const Field& field) {
     return new_node;
 }
 
-std::optional<std::shared_ptr<Node>>
+std::optional<std::shared_ptr<Node::FieldEntry>>
 SymbolTree::add_overloadable_func(const Field& field) {
     // Make sure the name is not reserved.
     if (auto node = reserved_scope->children.at(field.name)) {

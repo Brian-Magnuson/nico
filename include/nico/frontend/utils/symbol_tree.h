@@ -271,10 +271,16 @@ public:
      * resolved before being added to the symbol tree.
      *
      * @param field The field to add.
+     * @param custom_symbol An optional custom symbol to register for this
+     * field. If not provided, a symbol will be generated based on the field's
+     * position in the tree.
      * @return std::optional<std::shared_ptr<Node>> The field entry if added
      * successfully, or nullopt if not.
      */
-    std::optional<std::shared_ptr<Node>> add_field_entry(const Field& field);
+    std::optional<std::shared_ptr<Node::FieldEntry>> add_field_entry(
+        const Field& field,
+        std::optional<std::string> custom_symbol = std::nullopt
+    );
 
     /**
      * @brief Adds an overloadable function to the symbol tree in the current
@@ -293,10 +299,10 @@ public:
      * with an existing function, the function is not added and returns nullopt.
      *
      * @param field The field to add.
-     * @return std::optional<std::shared_ptr<Node>> The field entry if added
-     * successfully, or nullopt if not.
+     * @return std::optional<std::shared_ptr<Node::FieldEntry>> The field entry
+     * if added successfully, or nullopt if not.
      */
-    std::optional<std::shared_ptr<Node>>
+    std::optional<std::shared_ptr<Node::FieldEntry>>
     add_overloadable_func(const Field& field);
 
     /**

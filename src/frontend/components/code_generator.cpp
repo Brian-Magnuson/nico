@@ -87,7 +87,6 @@ std::any CodeGenerator::visit(Stmt::Static* stmt) {
 }
 
 std::any CodeGenerator::visit(Stmt::Func* stmt) {
-
     auto script_block = builder->GetInsertBlock();
 
     auto field_entry_type = stmt->field_entry.lock()->field.type;
@@ -105,56 +104,58 @@ std::any CodeGenerator::visit(Stmt::Func* stmt) {
         mod_ctx.ir_module.get()
     );
 
-    // Create the function's blocks.
-    llvm::BasicBlock* entry_block =
-        llvm::BasicBlock::Create(*mod_ctx.llvm_context, "entry", function);
-    llvm::BasicBlock* exit_block =
-        llvm::BasicBlock::Create(*mod_ctx.llvm_context, "exit", function);
+    if (stmt->body.has_value()) {
+        // Create the function's blocks.
+        llvm::BasicBlock* entry_block =
+            llvm::BasicBlock::Create(*mod_ctx.llvm_context, "entry", function);
+        llvm::BasicBlock* exit_block =
+            llvm::BasicBlock::Create(*mod_ctx.llvm_context, "exit", function);
 
-    // Start inserting into the entry block.
-    builder->SetInsertPoint(entry_block);
+        // Start inserting into the entry block.
+        builder->SetInsertPoint(entry_block);
 
-    // Allocate space for every parameter and store the incoming values.
-    for (size_t i = 0; i < stmt->parameters.size(); ++i) {
-        auto& param = stmt->parameters[i];
-        llvm::Argument* llvm_param = function->getArg(i);
-        llvm::AllocaInst* param_alloca = builder->CreateAlloca(
-            llvm_param->getType(),
+        // Allocate space for every parameter and store the incoming values.
+        for (size_t i = 0; i < stmt->parameters.size(); ++i) {
+            auto& param = stmt->parameters[i];
+            llvm::Argument* llvm_param = function->getArg(i);
+            llvm::AllocaInst* param_alloca = builder->CreateAlloca(
+                llvm_param->getType(),
+                nullptr,
+                param.field_entry.lock()->symbol
+            );
+            builder->CreateStore(llvm_param, param_alloca);
+            param.field_entry.lock()->llvm_ptr = param_alloca;
+        }
+        // Allocate space for the return value.
+        llvm::AllocaInst* return_alloca = builder->CreateAlloca(
+            func_type->return_type->get_llvm_type(builder),
             nullptr,
-            param.field_entry.lock()->symbol
+            "$retval"
         );
-        builder->CreateStore(llvm_param, param_alloca);
-        param.field_entry.lock()->llvm_ptr = param_alloca;
+        // Add the block to the control stack.
+        control_stack.add_function_block(
+            return_alloca,
+            exit_block,
+            stmt->identifier->lexeme
+        );
+
+        // Generate code for the function body.
+        stmt->body.value()->accept(this, false);
+        // The body is always a block.
+
+        // Jump to the exit block.
+        builder->CreateBr(exit_block);
+        builder->SetInsertPoint(exit_block);
+        // Load the return value and return it.
+        llvm::Value* return_value = builder->CreateLoad(
+            func_type->return_type->get_llvm_type(builder),
+            return_alloca
+        );
+        builder->CreateRet(return_value);
+
+        // Pop the function block from the control stack.
+        control_stack.pop_block();
     }
-    // Allocate space for the return value.
-    llvm::AllocaInst* return_alloca = builder->CreateAlloca(
-        func_type->return_type->get_llvm_type(builder),
-        nullptr,
-        "$retval"
-    );
-    // Add the block to the control stack.
-    control_stack.add_function_block(
-        return_alloca,
-        exit_block,
-        stmt->identifier->lexeme
-    );
-
-    // Generate code for the function body.
-    stmt->body.value()->accept(this, false);
-    // The body is always a block.
-
-    // Jump to the exit block.
-    builder->CreateBr(exit_block);
-    builder->SetInsertPoint(exit_block);
-    // Load the return value and return it.
-    llvm::Value* return_value = builder->CreateLoad(
-        func_type->return_type->get_llvm_type(builder),
-        return_alloca
-    );
-    builder->CreateRet(return_value);
-
-    // Pop the function block from the control stack.
-    control_stack.pop_block();
 
     // Use a global variable to hold the function pointer.
     llvm::GlobalVariable* llvm_global = llvm::cast<llvm::GlobalVariable>(
@@ -293,7 +294,10 @@ std::any CodeGenerator::visit(Stmt::Namespace* stmt) {
 }
 
 std::any CodeGenerator::visit(Stmt::Extern* stmt) {
-    // TODO: Implement code generation for extern blocks.
+    // Visit each statement in the extern block.
+    for (const auto& decl : stmt->stmts) {
+        decl->accept(this);
+    }
     return std::any();
 }
 
