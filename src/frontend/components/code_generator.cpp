@@ -47,22 +47,7 @@ std::any CodeGenerator::visit(Stmt::Let* stmt) {
     llvm::Value* allocation = nullptr;
 
     if (field_entry->is_global) {
-        // In REPL mode, global variables have external linkage so that they can
-        // be accessed across multiple submissions.
-        auto linkage = repl_mode ? llvm::GlobalValue::ExternalLinkage
-                                 : llvm::GlobalValue::InternalLinkage;
-
-        // If we are in a script, create a global variable instead of a local
-        allocation = new llvm::GlobalVariable(
-            *mod_ctx.ir_module,
-            llvm_type,
-            false,
-            linkage,
-            llvm::Constant::getNullValue(
-                llvm_type
-            ), // We cannot assign non-constants here, so we use this instead
-            symbol
-        );
+        allocation = field_entry->get_llvm_allocation(builder, repl_mode);
     }
     else {
         auto alloca_inst = builder->CreateAlloca(llvm_type, nullptr, symbol);

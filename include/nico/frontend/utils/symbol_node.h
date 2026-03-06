@@ -412,6 +412,8 @@ class Node::FieldEntry : public virtual Node::ILocatable {
 public:
     // Whether this field entry is declared in a global scope or not.
     bool is_global;
+
+    bool global_initialized = false;
     // The field object that this entry represents.
     Field field;
     // If this field is a local variable, the pointer to the LLVM
@@ -464,9 +466,33 @@ public:
                     false, // isConstant
                     extern_linkage ? llvm::GlobalValue::ExternalLinkage
                                    : llvm::GlobalValue::InternalLinkage,
-                    llvm::Constant::getNullValue(llvm_type), // Initializer
+                    global_initialized ? nullptr
+                                       : llvm::Constant::getNullValue(
+                                             llvm_type
+                                         ), // Initializer
                     symbol
                 );
+
+                /*
+                Note: Using `nullptr` is very different from using
+                `getNullValue`. `nullptr` means that the global variable is
+                declared but not defined. `getNullValue` means that the global
+                variable is defined and initialized to zero.
+
+                This is important, because global variables with external
+                linkage should be defined first, and then only declared in other
+                modules. If we define a variable multiple times, we may get
+                unusual errors involving missing symbols. If we declare a
+                variable multiple times, but never define it, we will also get
+                errors. The trick is to initialize the variable to zero on the
+                first definition, and then declare it without an initializer on
+                subsequent definitions.
+
+                TODO: Please review this setup and try to make it safer if
+                possible.
+                */
+
+                global_initialized = true;
             }
         }
         else {
