@@ -72,8 +72,15 @@ std::any AstPrinter::visit(Stmt::Func* stmt) {
                          );
         }
     }
-    str += ") => " +
-           std::any_cast<std::string>(stmt->body.value()->accept(this, false));
+    str += ")";
+    if (stmt->body.has_value()) {
+        str +=
+            " => " +
+            std::any_cast<std::string>(stmt->body.value()->accept(this, false));
+    }
+    else {
+        str += " no body";
+    }
     str += ")";
     return str;
 }

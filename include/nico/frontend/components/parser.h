@@ -418,6 +418,18 @@ class Parser {
     std::optional<std::shared_ptr<Stmt>> namespace_statement();
 
     /**
+     * @brief Parses an extern block statement.
+     *
+     * An extern block statement introduces a new extern block into the current
+     * scope. Extern blocks are like namespaces, but they are used to declare
+     * functions and variables that are defined in external libraries.
+     *
+     * @return A shared pointer to the parsed statement, or nullopt if the
+     * statement could not be parsed.
+     */
+    std::optional<std::shared_ptr<Stmt>> extern_block_statement();
+
+    /**
      * @brief Parses a print statement.
      *
      * Print statements print a series of expressions to the console.

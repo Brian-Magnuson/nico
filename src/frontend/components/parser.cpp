@@ -1352,6 +1352,103 @@ std::optional<std::shared_ptr<Stmt>> Parser::namespace_statement() {
     );
 }
 
+std::optional<std::shared_ptr<Stmt>> Parser::extern_block_statement() {
+    auto start_token = previous();
+    // Identifier
+    if (!match({Tok::Identifier})) {
+        Logger::inst().log_error(
+            Err::NotAnIdentifier,
+            peek()->location,
+            "Expected identifier in extern block declaration."
+        );
+        return std::nullopt;
+    }
+    auto identifier = previous();
+
+    if (match({Tok::ColonColon})) {
+        Logger::inst().log_error(
+            Err::DeclarationIdentWithColonColon,
+            previous()->location,
+            "Declaration identifier cannot contain `::`."
+        );
+        return std::nullopt;
+    }
+
+    Tok closing_token_type;
+    if (match({Tok::Indent})) {
+        closing_token_type = Tok::Dedent;
+    }
+    else if (match({Tok::LBrace})) {
+        closing_token_type = Tok::RBrace;
+    }
+    else if (peek()->tok_type == Tok::Colon) {
+        Logger::inst().log_error(
+            Err::ColonInsteadOfIndent,
+            peek()->location,
+            "Unexpected `:` after extern block identifier."
+        );
+        Logger::inst().log_note(
+            "Indentation is possibly ignored here. Consider using `{` for this "
+            "block or using indentation for the surrounding scope."
+        );
+        return std::nullopt;
+    }
+    else {
+        Logger::inst().log_error(
+            Err::ExternBlockWithoutBlock,
+            peek()->location,
+            "Expected indented block or `{` after extern block declaration."
+        );
+        return std::nullopt;
+    }
+
+    // Body
+    std::vector<std::shared_ptr<Stmt::IDeclAllowed>> body_stmts;
+    bool defer_error = false;
+    while (!match({closing_token_type})) {
+        std::optional<std::shared_ptr<Stmt>> stmt;
+        if (match({Tok::KwStatic})) {
+            stmt = variable_statement();
+        }
+        else if (match({Tok::KwFunc})) {
+            stmt = func_statement();
+        }
+        else {
+            Logger::inst().log_error(
+                Err::ExternBlockStmtNotVarOrFunc,
+                stmt.value()->location,
+                "Extern block does not allow this kind of statement."
+            );
+            Logger::inst().log_note(
+                "Only static variables and function headers are allowed in "
+                "extern declaration blocks."
+            );
+            if (peek()->tok_type == Tok::KwLet) {
+                Logger::inst().log_note(
+                    "Variables declared with `let` are execution-space "
+                    "statements. Consider using `static` instead of `let`."
+                );
+            }
+            defer_error = true;
+            continue;
+        }
+
+        auto decl_allowed_stmt =
+            std::dynamic_pointer_cast<Stmt::IDeclAllowed>(*stmt);
+        body_stmts.push_back(decl_allowed_stmt);
+    }
+
+    if (defer_error) {
+        return std::nullopt;
+    }
+
+    return std::make_shared<Stmt::Extern>(
+        start_token,
+        identifier,
+        std::move(body_stmts)
+    );
+}
+
 std::optional<std::shared_ptr<Stmt>> Parser::print_statement() {
     auto print_token = previous();
     std::vector<std::shared_ptr<Expr>> expressions;

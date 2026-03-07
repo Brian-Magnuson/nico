@@ -70,6 +70,8 @@ enum class Err {
     // A non-declaration-space statement was found in a region that only allows
     // declaration-space statements.
     NonDeclAllowedStmt,
+    // An extern block statement was neither a variable nor a function.
+    ExternBlockStmtNotVarOrFunc,
     // A compile-time constant expression was expected but not found.
     NonCompileTimeExpr,
     // A numeric literal could not be parsed due to being out of range for the
@@ -114,6 +116,8 @@ enum class Err {
     FuncWithoutArrowOrBlock,
     // A namespace declaration was found without a block.
     NamespaceWithoutBlock,
+    // An extern block declaration was found without a block.
+    ExternBlockWithoutBlock,
     // A `var` keyword was found without an address-of operator.
     UnexpectedVarInExpression,
     // A variable annotation contained an unexpected `var` keyword.
