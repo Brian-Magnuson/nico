@@ -367,6 +367,47 @@ TEST_CASE("Parser function statements", "[parser]") {
         );
     }
 
+    SECTION("Func header only 1") {
+        run_parser_stmt_test(
+            "func f1()",
+            {"(stmt:func f1 () no body)", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Func header only 2") {
+        run_parser_stmt_test(
+            "func f2() -> i32",
+            {"(stmt:func f2 i32 () no body)", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Func header only 3") {
+        run_parser_stmt_test(
+            "func f3(x: i32)",
+            {"(stmt:func f3 (x i32) no body)", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Multiple function headers") {
+        run_parser_stmt_test(
+            "func f4() func f5() func f6()",
+            {"(stmt:func f4 () no body)",
+             "(stmt:func f5 () no body)",
+             "(stmt:func f6 () no body)",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Function header surrounded by stmts") {
+        run_parser_stmt_test(
+            "pass func f() pass",
+            {"(stmt:pass)",
+             "(stmt:func f () no body)",
+             "(stmt:pass)",
+             "(stmt:eof)"}
+        );
+    }
+
     SECTION("Func missing identifier") {
         run_parser_stmt_error_test("func {}", Err::NotAnIdentifier);
     }
@@ -377,10 +418,6 @@ TEST_CASE("Parser function statements", "[parser]") {
 
     SECTION("Func missing annotation after arrow") {
         run_parser_stmt_error_test("func f() -> {}", Err::NotAType);
-    }
-
-    SECTION("Func missing arrow or block") {
-        run_parser_stmt_error_test("func f() 10", Err::FuncWithoutArrowOrBlock);
     }
 
     SECTION("Func missing parameter type") {

@@ -112,8 +112,6 @@ enum class Err {
     WhileLoopWithoutDoOrBlock,
     // A do-while loop was found without a `while` keyword.
     DoWhileLoopWithoutWhile,
-    // A function declaration was found without an arrow or block.
-    FuncWithoutArrowOrBlock,
     // A namespace declaration was found without a block.
     NamespaceWithoutBlock,
     // An extern block declaration was found without a block.

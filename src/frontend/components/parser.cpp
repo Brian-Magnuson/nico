@@ -1198,7 +1198,7 @@ std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
         }
     }
 
-    std::shared_ptr<Expr::Block> body_expr;
+    std::optional<std::shared_ptr<Expr::Block>> body_expr;
     // Function body
     if (match({Tok::DoubleArrow})) {
         // Single-expression function.
@@ -1237,12 +1237,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
         return std::nullopt;
     }
     else {
-        Logger::inst().log_error(
-            Err::FuncWithoutArrowOrBlock,
-            peek()->location,
-            "Expected `=>` or a block for function body."
-        );
-        return std::nullopt;
+        // No body provided. This is just a function header.
+        body_expr = std::nullopt;
     }
 
     // Put it all together
