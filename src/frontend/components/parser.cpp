@@ -1350,6 +1350,26 @@ std::optional<std::shared_ptr<Stmt>> Parser::namespace_statement() {
 
 std::optional<std::shared_ptr<Stmt>> Parser::extern_block_statement() {
     auto start_token = previous();
+    bool defer_error = false;
+
+    // Optional ABI string
+    auto abi = Stmt::Extern::ABI::C;
+    if (match({Tok::Str})) {
+        auto abi_string = previous()->lexeme;
+        if (abi_string == "C" || abi_string == "c") {
+            abi = Stmt::Extern::ABI::C;
+        }
+        else {
+            Logger::inst().log_error(
+                Err::ExternBlockUnrecognizedABI,
+                previous()->location,
+                "Unknown ABI specified in extern block declaration."
+            );
+            Logger::inst().log_note("Supported ABIs are: \"C\".");
+            defer_error = true;
+        }
+    }
+
     // Identifier
     if (!match({Tok::Identifier})) {
         Logger::inst().log_error(
@@ -1400,7 +1420,6 @@ std::optional<std::shared_ptr<Stmt>> Parser::extern_block_statement() {
 
     // Body
     std::vector<std::shared_ptr<Stmt::IDeclAllowed>> body_stmts;
-    bool defer_error = false;
     while (!match({closing_token_type})) {
         std::optional<std::shared_ptr<Stmt>> stmt;
         if (match({Tok::KwStatic})) {
@@ -1441,7 +1460,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::extern_block_statement() {
     return std::make_shared<Stmt::Extern>(
         start_token,
         identifier,
-        std::move(body_stmts)
+        std::move(body_stmts),
+        abi
     );
 }
 
@@ -1499,6 +1519,9 @@ std::optional<std::shared_ptr<Stmt>> Parser::statement() {
     }
     else if (match({Tok::KwNamespace})) {
         return namespace_statement();
+    }
+    else if (match({Tok::KwExtern})) {
+        return extern_block_statement();
     }
     else if (match({Tok::Eof})) {
         return std::make_shared<Stmt::Eof>(previous());
