@@ -1310,6 +1310,7 @@ std::optional<std::shared_ptr<Stmt>> Parser::namespace_statement() {
         if (!stmt) {
             // At this point, an error has already been logged.
             return std::nullopt;
+            // TODO: Consider synchronizing instead of returning immediately.
         }
         auto decl_allowed_stmt =
             std::dynamic_pointer_cast<Stmt::IDeclAllowed>(*stmt);
@@ -1356,7 +1357,7 @@ std::optional<std::shared_ptr<Stmt>> Parser::extern_block_statement() {
     auto abi = Stmt::Extern::ABI::C;
     if (match({Tok::Str})) {
         auto abi_string = previous()->lexeme;
-        if (abi_string == "C" || abi_string == "c") {
+        if (abi_string == "\"C\"" || abi_string == "\"c\"") {
             abi = Stmt::Extern::ABI::C;
         }
         else {
@@ -1421,24 +1422,23 @@ std::optional<std::shared_ptr<Stmt>> Parser::extern_block_statement() {
     // Body
     std::vector<std::shared_ptr<Stmt::IDeclAllowed>> body_stmts;
     while (!match({closing_token_type})) {
-        std::optional<std::shared_ptr<Stmt>> stmt;
-        if (match({Tok::KwStatic})) {
-            stmt = variable_statement();
+        auto stmt_opt = statement();
+        if (!stmt_opt) {
+            // At this point, an error has already been logged.
+            return std::nullopt;
+            // TODO: Consider synchronizing instead of returning immediately.
         }
-        else if (match({Tok::KwFunc})) {
-            stmt = func_statement();
-        }
-        else {
+        auto stmt = stmt_opt.value();
+
+        if (!PTR_INSTANCEOF(stmt, Stmt::Func) &&
+            !PTR_INSTANCEOF(stmt, Stmt::Static)) {
             Logger::inst().log_error(
                 Err::ExternBlockStmtNotVarOrFunc,
-                stmt.value()->location,
-                "Extern block does not allow this kind of statement."
+                stmt->location,
+                "Expected function declaration or static variable declaration "
+                "in extern block."
             );
-            Logger::inst().log_note(
-                "Only static variables and function headers are allowed in "
-                "extern declaration blocks."
-            );
-            if (peek()->tok_type == Tok::KwLet) {
+            if (PTR_INSTANCEOF(stmt, Stmt::Let)) {
                 Logger::inst().log_note(
                     "Variables declared with `let` are execution-space "
                     "statements. Consider using `static` instead of `let`."
@@ -1449,7 +1449,7 @@ std::optional<std::shared_ptr<Stmt>> Parser::extern_block_statement() {
         }
 
         auto decl_allowed_stmt =
-            std::dynamic_pointer_cast<Stmt::IDeclAllowed>(*stmt);
+            std::dynamic_pointer_cast<Stmt::IDeclAllowed>(stmt);
         body_stmts.push_back(decl_allowed_stmt);
     }
 

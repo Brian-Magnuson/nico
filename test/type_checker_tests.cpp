@@ -1609,6 +1609,13 @@ TEST_CASE("Check function call", "[checker]") {
         )"
         );
     }
+
+    SECTION("Non extern function without body") {
+        run_checker_test(
+            "func add(a: i32, b: i32) -> i32",
+            Err::NonExternFuncWithoutBody
+        );
+    }
 }
 
 TEST_CASE("Check function overload calls", "[checker]") {
@@ -1907,6 +1914,41 @@ TEST_CASE("Check namespace declarations", "[checker]") {
               return result
         )",
             Err::NameNotFound
+        );
+    }
+}
+
+TEST_CASE("Check extern block declarations", "[checker]") {
+    SECTION("Valid extern block declaration") {
+        run_checker_test(R"(
+        extern "C" ex1 {
+            func add(a: i32, b: i32) -> i32
+            func print_message(msg: &str) -> ()
+        }
+        )");
+    }
+
+    SECTION("Extern block with body") {
+        run_checker_test(
+            R"(
+        extern "C" ex2 {
+            func add(a: i32, b: i32) -> i32 {
+                return a + b
+            }
+        }
+        )",
+            Err::ExternFuncWithBody
+        );
+    }
+
+    SECTION("Extern block with non-extern function") {
+        run_checker_test(
+            R"(
+        extern "C" ex3 {
+            func add(a: i32, b: i32) -> i32 => a + b
+        }
+        )",
+            Err::ExternFuncWithBody
         );
     }
 }

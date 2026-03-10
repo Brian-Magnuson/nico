@@ -57,29 +57,30 @@ std::any AstPrinter::visit(Stmt::Func* stmt) {
     if (stmt->annotation.has_value()) {
         str += stmt->annotation.value()->to_string() + " ";
     }
-    str += "(";
-    for (const auto& param : stmt->parameters) {
 
+    for (const auto& param : stmt->parameters) {
+        std::string param_str = "(";
         if (param.has_var) {
-            str += "var ";
+            param_str += "var ";
         }
-        str += std::string(param.identifier->lexeme) + " " +
-               param.annotation->to_string();
+        param_str += std::string(param.identifier->lexeme) + " " +
+                     param.annotation->to_string();
 
         if (param.expression.has_value()) {
-            str += " " + std::any_cast<std::string>(
-                             param.expression.value()->accept(this, false)
-                         );
+            param_str += " " + std::any_cast<std::string>(
+                                   param.expression.value()->accept(this, false)
+                               );
         }
+        param_str += ") ";
+        str += param_str;
     }
-    str += ")";
     if (stmt->body.has_value()) {
         str +=
-            " => " +
+            "=> " +
             std::any_cast<std::string>(stmt->body.value()->accept(this, false));
     }
     else {
-        str += " no body";
+        str += "no body";
     }
     str += ")";
     return str;
@@ -134,8 +135,16 @@ std::any AstPrinter::visit(Stmt::Namespace* stmt) {
 }
 
 std::any AstPrinter::visit(Stmt::Extern* stmt) {
-    std::string str =
-        "(stmt:extern " + std::string(stmt->identifier->lexeme) + " {";
+    std::string str = "(stmt:extern ";
+    switch (stmt->abi) {
+    case Stmt::Extern::ABI::C:
+        str += "\"C\"";
+        break;
+    default:
+        str += "unknown";
+        break;
+    }
+    str += " " + std::string(stmt->identifier->lexeme) + " {";
     for (const auto& inner_stmt : stmt->stmts) {
         str += " " + std::any_cast<std::string>(inner_stmt->accept(this));
     }

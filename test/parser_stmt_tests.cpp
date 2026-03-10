@@ -309,21 +309,21 @@ TEST_CASE("Parser function statements", "[parser]") {
     SECTION("Func statement 1") {
         run_parser_stmt_test(
             "func f1() {}",
-            {"(stmt:func f1 () => (block))", "(stmt:eof)"}
+            {"(stmt:func f1 => (block))", "(stmt:eof)"}
         );
     }
 
     SECTION("Func statement 2") {
         run_parser_stmt_test(
             "func f2():\n    pass",
-            {"(stmt:func f2 () => (block (stmt:pass)))", "(stmt:eof)"}
+            {"(stmt:func f2 => (block (stmt:pass)))", "(stmt:eof)"}
         );
     }
 
     SECTION("Func statement 3") {
         run_parser_stmt_test(
             "func f3() -> i32 => 10",
-            {"(stmt:func f3 i32 () => (block (stmt:yield => (lit i32 "
+            {"(stmt:func f3 i32 => (block (stmt:yield => (lit i32 "
              "10))))",
              "(stmt:eof)"}
         );
@@ -358,10 +358,19 @@ TEST_CASE("Parser function statements", "[parser]") {
         );
     }
 
+    SECTION("Func statement multiple parameters") {
+        run_parser_stmt_test(
+            "func f(x: i32, y: f64) -> i32 => x",
+            {"(stmt:func f i32 (x i32) (y f64) => (block (stmt:yield => "
+             "(nameref x))))",
+             "(stmt:eof)"}
+        );
+    }
+
     SECTION("Func statement 7") {
         run_parser_stmt_test(
             "func f7() { pass pass pass }",
-            {"(stmt:func f7 () => (block (stmt:pass) (stmt:pass) "
+            {"(stmt:func f7 => (block (stmt:pass) (stmt:pass) "
              "(stmt:pass)))",
              "(stmt:eof)"}
         );
@@ -370,14 +379,14 @@ TEST_CASE("Parser function statements", "[parser]") {
     SECTION("Func header only 1") {
         run_parser_stmt_test(
             "func f1()",
-            {"(stmt:func f1 () no body)", "(stmt:eof)"}
+            {"(stmt:func f1 no body)", "(stmt:eof)"}
         );
     }
 
     SECTION("Func header only 2") {
         run_parser_stmt_test(
             "func f2() -> i32",
-            {"(stmt:func f2 i32 () no body)", "(stmt:eof)"}
+            {"(stmt:func f2 i32 no body)", "(stmt:eof)"}
         );
     }
 
@@ -391,9 +400,9 @@ TEST_CASE("Parser function statements", "[parser]") {
     SECTION("Multiple function headers") {
         run_parser_stmt_test(
             "func f4() func f5() func f6()",
-            {"(stmt:func f4 () no body)",
-             "(stmt:func f5 () no body)",
-             "(stmt:func f6 () no body)",
+            {"(stmt:func f4 no body)",
+             "(stmt:func f5 no body)",
+             "(stmt:func f6 no body)",
              "(stmt:eof)"}
         );
     }
@@ -402,7 +411,7 @@ TEST_CASE("Parser function statements", "[parser]") {
         run_parser_stmt_test(
             "pass func f() pass",
             {"(stmt:pass)",
-             "(stmt:func f () no body)",
+             "(stmt:func f no body)",
              "(stmt:pass)",
              "(stmt:eof)"}
         );
@@ -544,6 +553,115 @@ TEST_CASE("Parser namespace statements", "[parser]") {
         run_parser_stmt_error_test(
             "namespace ns::inner {}",
             Err::DeclarationIdentWithColonColon
+        );
+    }
+}
+
+TEST_CASE("Parser extern block statements", "[parser]") {
+    SECTION("Valid extern block 1") {
+        run_parser_stmt_test(
+            "extern ex1 {\n"
+            "    func add(a: i32, b: i32) -> i32\n"
+            "}\n",
+            {"(stmt:extern \"C\" ex1 { (stmt:func add i32 (a i32) (b i32) no "
+             "body) "
+             "})",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Valid extern block 2") {
+        run_parser_stmt_test(
+            "extern ex2 {\n"
+            "    static var x: f64\n"
+            "}\n",
+            {"(stmt:extern \"C\" ex2 { (stmt:static var x f64) })",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Extern block ABI specified") {
+        run_parser_stmt_test(
+            "extern \"C\" ex3 {\n"
+            "    func foo()\n"
+            "}\n",
+            {"(stmt:extern \"C\" ex3 { (stmt:func foo no body) })",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Extern block multiple statements") {
+        run_parser_stmt_test(
+            "extern ex4 {\n"
+            "    func foo()\n"
+            "    static var x: i32\n"
+            "}\n",
+            {"(stmt:extern \"C\" ex4 { (stmt:func foo no body) "
+             "(stmt:static var x i32) })",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Extern block indented form") {
+        run_parser_stmt_test(
+            "extern ex5:\n"
+            "    func foo()\n"
+            "    static var x: i32\n",
+            {"(stmt:extern \"C\" ex5 { (stmt:func foo no body) "
+             "(stmt:static var x i32) })",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Extern block missing block") {
+        run_parser_stmt_error_test("extern ex4", Err::ExternBlockWithoutBlock);
+    }
+
+    SECTION("Extern block unrecognized ABI") {
+        run_parser_stmt_error_test(
+            "extern \"UnknownABI\" ex5 {\n"
+            "    func bar()\n"
+            "}\n",
+            Err::ExternBlockUnrecognizedABI
+        );
+    }
+
+    SECTION("Extern block with non-var/non-func statement") {
+        run_parser_stmt_error_test(
+            "extern \"C\" ex3 {\n"
+            "    let x = 10\n"
+            "}\n",
+            Err::ExternBlockStmtNotVarOrFunc
+        );
+    }
+
+    SECTION("Extern block missing identifier") {
+        run_parser_stmt_error_test(
+            "extern {\n"
+            "    func foo()\n"
+            "}\n",
+            Err::NotAnIdentifier
+        );
+    }
+
+    SECTION("Extern block with colon colon in identifier") {
+        run_parser_stmt_error_test(
+            "extern ex::6 {\n"
+            "    func foo()\n"
+            "}\n",
+            Err::DeclarationIdentWithColonColon
+        );
+    }
+
+    SECTION("Extern block colon instead of indent") {
+        run_parser_stmt_error_test(
+            R"(
+            namespace ns1 {
+                extern ex6:
+                    func foo()
+            }
+            )",
+            Err::ColonInsteadOfIndent
         );
     }
 }
