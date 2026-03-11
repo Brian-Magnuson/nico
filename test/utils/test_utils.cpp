@@ -128,7 +128,7 @@ capture_stdout(std::function<void()> func, int buffer_size) {
 #else
     // Fallback: just call the function
     func();
-    return "";
+    return {"", ""};
 #endif
 }
 

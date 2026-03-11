@@ -445,6 +445,10 @@ public:
      * variable. If the field is local, it will return the LLVM pointer
      * stored in the node.
      *
+     * If the field is a function type, a special suffix is added to the symbol
+     * name (the symbol is not modified) to differentiate it from the function
+     * with the same name.
+     *
      * @param builder The IRBuilder used to create the allocation if needed.
      * @param extern_linkage Whether to use external linkage for global
      * variables.
@@ -453,10 +457,13 @@ public:
         std::unique_ptr<llvm::IRBuilder<>>& builder, bool extern_linkage = false
     ) {
         llvm::Value* ptr;
+        std::string suffix =
+            PTR_INSTANCEOF(field.type, Type::Function) ? "$var" : "";
+
         if (is_global) {
             auto ir_module = builder->GetInsertBlock()->getModule();
             // Attempt to get the global variable.
-            ptr = ir_module->getGlobalVariable(symbol, true);
+            ptr = ir_module->getGlobalVariable(symbol + suffix, true);
             // If it doesn't exist, declare it.
             auto llvm_type = field.type->get_llvm_type(builder);
             if (ptr == nullptr) {
@@ -470,7 +477,7 @@ public:
                                        : llvm::Constant::getNullValue(
                                              llvm_type
                                          ), // Initializer
-                    symbol
+                    symbol + suffix
                 );
 
                 /*

@@ -98,9 +98,7 @@ std::any CodeGenerator::visit(Stmt::Func* stmt) {
     llvm::Function* function = llvm::Function::Create(
         llvm_func_type,
         llvm::Function::ExternalLinkage,
-        // We add "$func" to differentiate this from the global variable
-        // declared below.
-        stmt->field_entry.lock()->symbol + "$func",
+        stmt->field_entry.lock()->symbol,
         mod_ctx.ir_module.get()
     );
 
@@ -164,6 +162,9 @@ std::any CodeGenerator::visit(Stmt::Func* stmt) {
     // `get_llvm_allocation` will create a global variable if it doesn't already
     // exist. The variable may already exist if it was referenced before the
     // function was declared.
+
+    // This global variable's name will not conflict with the function's name,
+    // because global variables that reference functions have a special suffix.
 
     // New variable or not, the initializer is initialially set to null.
     llvm_global->setInitializer(function);

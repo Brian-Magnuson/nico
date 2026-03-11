@@ -16,6 +16,7 @@
 #include "nico/shared/status.h"
 #include "nico/shared/token.h"
 
+#include "test_jit.h"
 #include "test_utils.h"
 
 /**
@@ -61,8 +62,17 @@ void run_jit_test(
         frontend.compile(file, false);
     REQUIRE(IS_VARIANT(context->status, nico::Status::Ok));
 
-    std::unique_ptr<nico::IJit> jit = std::make_unique<nico::SimpleJit>();
+    // std::unique_ptr<nico::IJit> jit = std::make_unique<nico::SimpleJit>();
+    auto jit = std::make_unique<nico::TestJit>();
+
     auto jit_err = jit->add_module_and_context(std::move(context->mod_ctx));
+    REQUIRE(!jit_err);
+
+    // TODO: This works, but not every test uses the example library.
+    // We should separate tests that require the example library into their own
+    // test case and only add the library for those tests.
+
+    jit_err = jit->add_static_library("test/examplelib/libexamplelib.a");
     REQUIRE(!jit_err);
 
     std::optional<llvm::Expected<int>> return_code;
@@ -72,6 +82,15 @@ void run_jit_test(
         },
         4096
     );
+
+    REQUIRE(return_code.has_value());
+    // If there is an error from the JIT...
+    if (!return_code.value()) {
+        FAIL(
+            "JIT execution failed with error: " +
+            llvm::toString(return_code->takeError())
+        );
+    }
 
     if (expected_output) {
         CHECK(out == *expected_output);
@@ -1612,6 +1631,32 @@ TEST_CASE("JIT namespaces", "[jit]") {
             printout math::add(1, 2), ", ", math::add(1.5, 2.5)
             )",
             "3, 4"
+        );
+    }
+}
+
+TEST_CASE("JIT extern block", "[jit]") {
+    SECTION("Extern block with real function") {
+        run_jit_test(
+            R"(
+            extern "C" math {
+                func sqrt(x: f64) -> f64
+            }
+            printout math::sqrt(16.0)
+            )",
+            "4"
+        );
+    }
+
+    SECTION("Extern block with custom example function") {
+        run_jit_test(
+            R"(
+            extern "C" example {
+                func examplelib_get_constant() -> i32
+            }
+            printout example::examplelib_get_constant()
+            )",
+            "42"
         );
     }
 }

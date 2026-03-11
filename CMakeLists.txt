@@ -99,6 +99,7 @@ set(MAIN_SRC
 set(TEST_UTILS_SRC
     test/utils/ast_printer.cpp
     test/utils/test_utils.cpp
+    test/utils/test_jit.cpp
 )
 
 # Test files
@@ -111,6 +112,9 @@ set(TEST_SRC
     test/jit_tests.cpp
     test/utils_tests.cpp
 )
+
+# Test example library
+add_subdirectory(test/examplelib)
 
 # Main executable
 add_executable(nico ${MAIN_SRC} ${CORE_SRC})
