@@ -25,9 +25,7 @@ namespace nico {
  * for ahead-of-time compilation may not be applicable in a JIT context.
  */
 class IJit {
-public:
-    virtual ~IJit() = default;
-
+protected:
     /**
      * @brief Adds a module to the JIT. Ownership of the module and context is
      * transferred to the JIT.
@@ -37,6 +35,19 @@ public:
      * @return An Error indicating success or failure of the operation.
      */
     virtual llvm::Error add_module(llvm::orc::ThreadSafeModule tsm) = 0;
+
+    /**
+     * @brief Looks up a symbol by name in the JIT.
+     *
+     * @param name The name of the symbol to look up.
+     * @return An Expected containing the address of the symbol if found, or an
+     * error if not found.
+     */
+    virtual llvm::Expected<llvm::orc::ExecutorAddr>
+    lookup(std::string_view name) = 0;
+
+public:
+    virtual ~IJit() = default;
 
     /**
      * @brief Adds an IRModuleContext to the JIT. Accepts ownership of both
@@ -53,17 +64,7 @@ public:
         return add_module(std::move(tsm));
     }
 
-    /**
-     * @brief Looks up a symbol by name in the JIT.
-     *
-     * @param name The name of the symbol to look up.
-     * @return An Expected containing the address of the symbol if found, or an
-     * error if not found.
-     */
-    virtual llvm::Expected<llvm::orc::ExecutorAddr>
-    lookup(std::string_view name) = 0;
-
-    /**
+        /**
      * @brief Runs the main function of the JIT-compiled module.
      *
      * @param argc The number of command-line arguments.
@@ -90,16 +91,19 @@ public:
  * symbols.
  */
 class SimpleJit : public IJit {
+protected:
     // LLJIT instance for managing JIT compilation.
     std::unique_ptr<llvm::orc::LLJIT> jit;
-
-public:
-    SimpleJit();
 
     llvm::Error add_module(llvm::orc::ThreadSafeModule tsm) override;
 
     llvm::Expected<llvm::orc::ExecutorAddr>
     lookup(std::string_view name) override;
+
+public:
+    virtual ~SimpleJit() = default;
+
+    SimpleJit();
 
     void reset() override;
 };
