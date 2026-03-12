@@ -1820,6 +1820,29 @@ TEST_CASE("Check namespace declarations", "[checker]") {
         );
     }
 
+    SECTION("Namespace name conflicts with function") {
+        run_checker_test(
+            R"(
+        func ns() -> i32 => 0
+        namespace ns {
+            static var x: i32
+        }
+        )",
+            Err::NameAlreadyExists
+        );
+    }
+
+    SECTION("Namespace name is reserved") {
+        run_checker_test(
+            R"(
+        namespace bool {
+            static var x: i32
+        }
+        )",
+            Err::NameIsReserved
+        );
+    }
+
     SECTION("Reference variable in namespace") {
         run_checker_test(
             R"(
@@ -1949,6 +1972,89 @@ TEST_CASE("Check extern block declarations", "[checker]") {
         }
         )",
             Err::ExternFuncWithBody
+        );
+    }
+
+    SECTION("Extern block referencing function") {
+        run_checker_test(
+            R"(
+        let result = ex1::add(1, 2)
+        extern "C" ex1 {
+            func add(a: i32, b: i32) -> i32
+        }
+        )"
+        );
+    }
+
+    SECTION("Extern block referencing variable") {
+        run_checker_test(
+            R"(
+        let result = ex1::x
+        extern "C" ex1 {
+            static var x: i32
+        }
+        )"
+        );
+    }
+
+    SECTION("Extern block referencing non-existent name") {
+        run_checker_test(
+            R"(
+        let result = ex1::add(1, 2)
+        extern "C" ex1 {
+            func subtract(a: i32, b: i32) -> i32
+        }
+        )",
+            Err::NameNotFound
+        );
+    }
+
+    SECTION("Extern block improper name qualification") {
+        run_checker_test(
+            R"(
+        let result = add(1, 2)
+        extern "C" ex1 {
+            func add(a: i32, b: i32) -> i32
+        }
+        )",
+            Err::NameNotFound
+        );
+    }
+
+    SECTION("Extern block name conflicts with namespace") {
+        run_checker_test(
+            R"(
+        namespace ex1 {
+            func add(a: i32, b: i32) -> i32 => a + b
+        }
+        extern "C" ex1 {
+            func add(a: i32, b: i32) -> i32
+        }
+        )",
+            Err::NameAlreadyExists
+        );
+    }
+
+    SECTION("Extern block name conflicts with variable") {
+        run_checker_test(
+            R"(
+        let ex1 = 1
+        extern "C" ex1 {
+            func add(a: i32, b: i32) -> i32
+        }
+        )",
+            Err::NameAlreadyExists
+        );
+    }
+
+    SECTION("Extern block name is reserved") {
+        run_checker_test(
+            R"(
+            extern bool {
+                func add(a: i32, b: i32) -> i32
+            }
+            )",
+            Err::NameIsReserved
         );
     }
 }
