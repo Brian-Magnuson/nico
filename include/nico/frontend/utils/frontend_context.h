@@ -55,6 +55,7 @@ public:
      */
     void reset() {
         status = Status::Ok();
+        scanned_tokens.clear();
         stmts.clear();
         mir_module = MIRModule::create();
         stmts_processed = 0;

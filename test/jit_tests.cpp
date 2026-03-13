@@ -1,3 +1,4 @@
+#include <iostream>
 #include <memory>
 #include <optional>
 #include <string_view>
@@ -12,6 +13,7 @@
 #include "nico/frontend/frontend.h"
 #include "nico/frontend/utils/frontend_context.h"
 #include "nico/shared/code_file.h"
+#include "nico/shared/error_code.h"
 #include "nico/shared/logger.h"
 #include "nico/shared/status.h"
 #include "nico/shared/token.h"
@@ -19,61 +21,87 @@
 #include "test_jit.h"
 #include "test_utils.h"
 
+using nico::Err;
+
 /**
- * @brief Run a JIT test with the given source code, expected output, and
- * expected return code.
+ * @brief An options struct for configuring JIT tests. This allows for more
+ * flexible and comprehensive testing of various JIT behaviors, including
+ * expected outputs, error codes, panics, and more.
+ */
+struct JitTestOptions {
+    // The expected output of the JIT, if any. If not provided, the output will
+    // not be checked.
+    std::optional<std::string_view> expected_output = std::nullopt;
+    // The expected error code to be logged, if any. This is not the same as a
+    // panic. If provided, the first error code logged will be checked against
+    // this value. Additionally, no further outputs will be checked.
+    std::optional<Err> expected_error_code = std::nullopt;
+    // Whether to expect the JIT to panic. If true, the code generator will be
+    // set to panic recoverable mode to avoid a signal termination. Defaults to
+    // false.
+    bool expect_panic = false;
+    // The panic return code to expect if expect_panic is true. Defaults to 101.
+    int panic_return_code = 101;
+    // Whether to load static libraries (e.g. the example library) into the JIT.
+    // Defaults to false.
+    bool load_static_libraries = false;
+    // The static library paths to load into the JIT if load_static_libraries is
+    // true. Default includes the example library, but can be overridden to
+    // include other libraries or exclude the example library.
+    std::vector<std::string> static_library_paths = {
+        "test/examplelib/libexamplelib.a"
+    };
+    // Whether to print the generated IR before verification. Defaults to false.
+    bool print_ir = false;
+    // Whether to print the stderr output of the JIT. Defaults to false.
+    bool print_stderr_output = false;
+};
+
+/**
+ * @brief Runs a JIT test with the given source code and options.
  *
- * This test will check that the source code compiles successfully.
+ * Depending on the options provided, this function will check the expected
+ * output, error codes, panics, and other behaviors of the JIT.
+ * See the JitTestOptions struct for more details on the available options and
+ * their effects.
  *
- * If expected_output is provided, this test will check that the output of the
- * JIT (written to stdout) matches the expected output.
- *
- * If expected_return_code is provided, this test will check that the return
- * code of the JIT matches the expected return code.
- * If expected_return_code is non-zero, the code generator will be set to panic
- * recoverable mode to avoid a signal termination.
- *
- * @param source The source code to test.
- * @param expected_output (Optional) The expected output, if any.
- * @param expected_return_code (Optional) The expected return code, if any.
- * @param print_ir Whether to print the generated IR before verification.
- * Defaults to false.
+ * @param source The source code to compile and run in the JIT.
+ * @param options The options for the JIT test, including expected output,
+ * expected error codes, whether to expect a panic, and other settings.
  */
 void run_jit_test(
-    std::string_view source,
-    std::optional<std::string_view> expected_output = std::nullopt,
-    std::optional<int> expected_return_code = std::nullopt,
-    bool print_ir = false
+    std::string_view source, JitTestOptions options = JitTestOptions()
 ) {
     auto file = nico::make_test_code_file(source);
 
+    // Note: When captured_stdout is used, the error message will appear in the
+    // stderr string.
     nico::Logger::inst().set_printing_enabled(true);
 
     nico::Frontend frontend;
-    if (expected_return_code.has_value() && *expected_return_code != 0) {
-        // If we expect a non-zero return code, enable panic recovery to avoid
+    if (options.expect_panic) {
+        // If we expect to panic, enable panic recovery to avoid
         // terminating the program.
         frontend.set_panic_recoverable(true);
     }
 
-    frontend.set_ir_printing_enabled(print_ir);
+    frontend.set_ir_printing_enabled(options.print_ir);
 
     std::unique_ptr<nico::FrontendContext>& context =
         frontend.compile(file, false);
     REQUIRE(IS_VARIANT(context->status, nico::Status::Ok));
 
-    // std::unique_ptr<nico::IJit> jit = std::make_unique<nico::SimpleJit>();
     auto jit = std::make_unique<nico::TestJit>();
 
     auto jit_err = jit->add_module_and_context(std::move(context->mod_ctx));
     REQUIRE(!jit_err);
 
-    // TODO: This works, but not every test uses the example library.
-    // We should separate tests that require the example library into their own
-    // test case and only add the library for those tests.
-
-    jit_err = jit->add_static_library("test/examplelib/libexamplelib.a");
-    REQUIRE(!jit_err);
+    if (options.load_static_libraries) {
+        for (const auto& lib_path : options.static_library_paths) {
+            auto err = jit->add_static_library(lib_path);
+            REQUIRE(!err);
+        }
+    }
 
     std::optional<llvm::Expected<int>> return_code;
     auto [out, err] = nico::capture_stdout(
@@ -82,27 +110,50 @@ void run_jit_test(
         },
         4096
     );
-
     REQUIRE(return_code.has_value());
-    // If there is an error from the JIT...
-    if (!return_code.value()) {
-        FAIL(
-            "JIT execution failed with error: " +
-            llvm::toString(return_code->takeError())
-        );
+
+    if (options.print_stderr_output) {
+        std::cerr << "JIT stderr output:\n" << err;
     }
 
-    if (expected_output) {
-        CHECK(out == *expected_output);
+    // Logged errors.
+    if (options.expected_error_code.has_value()) {
+        auto errors_logged = nico::Logger::inst().get_errors();
+        REQUIRE(!errors_logged.empty());
+        CHECK(errors_logged[0] == *options.expected_error_code);
     }
-    if (expected_return_code) {
-        REQUIRE(return_code.has_value());
-        REQUIRE(*return_code);
-        CHECK(return_code->get() == *expected_return_code);
+    // Normal output.
+    else if (options.expected_output) {
+        REQUIRE(return_code.value()); // JIT did not error.
+        CHECK(out == *options.expected_output);
+    }
+    // Panic behavior.
+    else if (options.expect_panic) {
+        REQUIRE(return_code.value()); // JIT did not error.
+        CHECK(return_code->get() == options.panic_return_code);
     }
 
     frontend.reset();
     jit->reset();
+    nico::Logger::inst().reset();
+}
+
+/**
+ * @brief Runs a simple JIT test with the given source code and expected output.
+ *
+ * This function is only for checking the expected output of the JIT. For all
+ * other checks, use the overload that accepts JitTestOptions.
+ *
+ * @param source The source code to compile and run in the JIT.
+ * @param expected_output The expected output of the JIT. If the output does not
+ * match, the test will fail.
+ */
+void run_jit_test(
+    std::string_view source, std::optional<std::string_view> expected_output
+) {
+    JitTestOptions options;
+    options.expected_output = expected_output;
+    run_jit_test(source, options);
 }
 
 TEST_CASE("JIT print statements", "[jit]") {
@@ -1411,8 +1462,7 @@ TEST_CASE("JIT arrays", "[jit]") {
             let arr = [1, 2, 3]
             printout arr[3]
             )",
-            std::nullopt,
-            101
+            JitTestOptions{.expect_panic = true}
         );
     }
 
@@ -1422,8 +1472,7 @@ TEST_CASE("JIT arrays", "[jit]") {
             let arr = [1, 2, 3]
             printout arr[-1]
             )",
-            std::nullopt,
-            101
+            JitTestOptions{.expect_panic = true}
         );
     }
 
@@ -1530,8 +1579,7 @@ TEST_CASE("JIT alloc and dealloc", "[jit]") {
             let size = -5
             let p = alloc for size of i32
             )",
-            std::nullopt,
-            101
+            JitTestOptions{.expect_panic = true}
         );
     }
 
@@ -1636,6 +1684,17 @@ TEST_CASE("JIT namespaces", "[jit]") {
 }
 
 TEST_CASE("JIT extern block", "[jit]") {
+    SECTION("Extern block with nonexistent function") {
+        run_jit_test(
+            R"(
+            extern "C" math {
+                func nonexistent_function(x: i32) -> i32
+            }
+            )",
+            JitTestOptions{.expected_error_code = Err::JitMissingEntryPoint}
+        );
+    }
+
     SECTION("Extern block with real function") {
         run_jit_test(
             R"(
@@ -1644,7 +1703,10 @@ TEST_CASE("JIT extern block", "[jit]") {
             }
             printout math::sqrt(16.0)
             )",
-            "4"
+            JitTestOptions{
+                .expected_output = "4",
+                .load_static_libraries = true
+            }
         );
     }
 
@@ -1656,7 +1718,10 @@ TEST_CASE("JIT extern block", "[jit]") {
             }
             printout example::examplelib_get_constant()
             )",
-            "42"
+            JitTestOptions{
+                .expected_output = "42",
+                .load_static_libraries = true
+            }
         );
     }
 }
