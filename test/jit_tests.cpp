@@ -1691,7 +1691,7 @@ TEST_CASE("JIT extern block", "[jit]") {
                 func nonexistent_function(x: i32) -> i32
             }
             )",
-            JitTestOptions{.expected_error_code = Err::JitMissingEntryPoint}
+            JitTestOptions{.expected_error_code = Err::JITMissingEntryPoint}
         );
     }
 

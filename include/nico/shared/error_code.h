@@ -281,12 +281,16 @@ enum class Err {
     // Backend error
     BackendError = 7000,
     // SimpleJIT could not create an LLJIT instance.
-    JitCannotInstantiate,
+    JITCannotInstantiate,
     // The JIT compiler could not find an entry point for the module to run.
-    JitMissingEntryPoint,
+    JITMissingEntryPoint,
     // The JIT compiler found a symbol for `main`, but could not cast it to a
     // function pointer.
-    JitBadMainPointer,
+    JITBadMainPointer,
+    // The JIT compiler could not add a static library to the JIT.
+    // Possibly because it cannot be found at the specified path, or because the
+    // library is malformed.
+    JITCannotAddStaticLibrary,
     // The emitter cannot look up a target machine.
     EmitterCannotLookupTarget,
     // The emitter cannot create a target machine.

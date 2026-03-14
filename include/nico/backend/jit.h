@@ -106,6 +106,22 @@ public:
     SimpleJIT();
 
     void reset() override;
+
+    /**
+     * @brief Adds a static library to the JIT.
+     *
+     * If the library cannot be added, an error will be logged, and an LLVM
+     * error object will be returned. The program will not exit, though the
+     * caller may be interested in exiting after this failure.
+     *
+     * Possible reasons for failure include the library not being found at the
+     * specified path, or the library being malformed.
+     *
+     * @param lib_path The path to the static library to be added. Paths are
+     * relative to CWD.
+     * @return An Error indicating success or failure of the operation.
+     */
+    llvm::Error add_static_library(const std::string& lib_path);
 };
 
 } // namespace nico

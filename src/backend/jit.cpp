@@ -14,7 +14,7 @@ IJIT::run_main_func(int argc, char** argv, std::string_view main_fn_name) {
         std::string err_msg =
             "Failed to find '" + std::string(main_fn_name) +
             "' function in JIT module: " + llvm::toString(symbol.takeError());
-        Logger::inst().log_error(Err::JitMissingEntryPoint, err_msg);
+        Logger::inst().log_error(Err::JITMissingEntryPoint, err_msg);
         return llvm::make_error<llvm::StringError>(
             err_msg,
             llvm::inconvertibleErrorCode()
@@ -23,7 +23,7 @@ IJIT::run_main_func(int argc, char** argv, std::string_view main_fn_name) {
     auto addr = symbol->getValue();
     if (!addr) {
         Logger::inst().log_error(
-            Err::JitBadMainPointer,
+            Err::JITBadMainPointer,
             "Cannot cast 'main' function address to a "
             "function pointer because it is null."
         );
@@ -36,7 +36,7 @@ IJIT::run_main_func(int argc, char** argv, std::string_view main_fn_name) {
     auto func = reinterpret_cast<FuncPtr>(addr);
     if (!func) {
         Logger::inst().log_error(
-            Err::JitBadMainPointer,
+            Err::JITBadMainPointer,
             "Failed to cast '" + std::string(main_fn_name) +
                 "' function address to a function pointer."
         );
@@ -57,7 +57,7 @@ SimpleJIT::SimpleJIT() {
     auto jit_or_err = llvm::orc::LLJITBuilder().create();
     if (!jit_or_err) {
         Logger::inst().log_error(
-            Err::JitCannotInstantiate,
+            Err::JITCannotInstantiate,
             "Failed to create LLJIT: " + llvm::toString(jit_or_err.takeError())
         );
         exit(1);
@@ -79,12 +79,29 @@ void SimpleJIT::reset() {
     auto jit_or_err = llvm::orc::LLJITBuilder().create();
     if (!jit_or_err) {
         Logger::inst().log_error(
-            Err::JitCannotInstantiate,
+            Err::JITCannotInstantiate,
             "Failed to create LLJIT: " + llvm::toString(jit_or_err.takeError())
         );
         exit(1);
     }
     jit = std::move(jit_or_err.get());
+}
+
+llvm::Error SimpleJIT::add_static_library(const std::string& lib_path) {
+    auto err =
+        jit->linkStaticLibraryInto(jit->getMainJITDylib(), lib_path.c_str());
+    if (err) {
+        std::string err_msg = "Failed to add static library '" + lib_path +
+                              "' to JIT: " + llvm::toString(std::move(err));
+
+        Logger::inst().log_error(Err::JITCannotAddStaticLibrary, err_msg);
+
+        return llvm::make_error<llvm::StringError>(
+            err_msg,
+            llvm::inconvertibleErrorCode()
+        );
+    }
+    return llvm::Error::success();
 }
 
 } // namespace nico
