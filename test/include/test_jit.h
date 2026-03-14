@@ -11,11 +11,11 @@ namespace nico {
 
 /**
  * @brief A JIT class specialized for testing purposes. This class extends the
- * SimpleJit implementation and adds functionality for loading static libraries,
+ * SimpleJIT implementation and adds functionality for loading static libraries,
  * which can be useful for testing interactions between JIT-compiled code and
  * external libraries.
  */
-class TestJit : public SimpleJit {
+class TestJit : public SimpleJIT {
 public:
     virtual ~TestJit() = default;
 

@@ -16,7 +16,7 @@ namespace nico {
  * @brief REPL (Read-Eval-Print Loop) class for handling user input and
  * commands.
  */
-class Repl {
+class REPL {
     /**
      * @brief Enumeration of REPL commands.
      *
@@ -59,7 +59,7 @@ class Repl {
     // The frontend instance for compiling code.
     Frontend frontend;
     // The JIT instance for executing compiled code.
-    std::unique_ptr<IJit> jit = std::make_unique<SimpleJit>();
+    std::unique_ptr<IJIT> jit = std::make_unique<SimpleJIT>();
     // The current input buffer.
     std::string input;
     // Whether the REPL is in "continue mode" (i.e., waiting for more input to
@@ -69,7 +69,7 @@ class Repl {
     // possibly corrupted).
     bool use_caution = false;
 
-    Repl(std::istream& in = std::cin, std::ostream& out = std::cout)
+    REPL(std::istream& in = std::cin, std::ostream& out = std::cout)
         : in(&in), out(&out) {}
 
     /**
@@ -161,7 +161,7 @@ public:
     /**
      * @brief Runs the REPL with the specified input and output streams.
      *
-     * This is a static convenience method that creates a Repl instance and
+     * This is a static convenience method that creates a REPL instance and
      * calls its run_repl() method.
      *
      * @param in The input stream to read from. Default is std::cin.

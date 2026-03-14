@@ -13,7 +13,7 @@ int main(int argc, char** argv) {
         nico::compile_and_run(argv[1]);
     }
     else {
-        nico::Repl::run();
+        nico::REPL::run();
     }
 
     return 0;

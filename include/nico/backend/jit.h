@@ -24,7 +24,7 @@ namespace nico {
  * JIT compilers may or may not support optimizations; optimizations more ideal
  * for ahead-of-time compilation may not be applicable in a JIT context.
  */
-class IJit {
+class IJIT {
 protected:
     /**
      * @brief Adds a module to the JIT. Ownership of the module and context is
@@ -47,7 +47,7 @@ protected:
     lookup(std::string_view name) = 0;
 
 public:
-    virtual ~IJit() = default;
+    virtual ~IJIT() = default;
 
     /**
      * @brief Adds an IRModuleContext to the JIT. Accepts ownership of both
@@ -64,7 +64,7 @@ public:
         return add_module(std::move(tsm));
     }
 
-        /**
+    /**
      * @brief Runs the main function of the JIT-compiled module.
      *
      * @param argc The number of command-line arguments.
@@ -90,7 +90,7 @@ public:
  * This class provides a basic JIT compiler that can add modules and look up
  * symbols.
  */
-class SimpleJit : public IJit {
+class SimpleJIT : public IJIT {
 protected:
     // LLJIT instance for managing JIT compilation.
     std::unique_ptr<llvm::orc::LLJIT> jit;
@@ -101,9 +101,9 @@ protected:
     lookup(std::string_view name) override;
 
 public:
-    virtual ~SimpleJit() = default;
+    virtual ~SimpleJIT() = default;
 
-    SimpleJit();
+    SimpleJIT();
 
     void reset() override;
 };

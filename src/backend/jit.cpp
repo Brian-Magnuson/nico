@@ -8,7 +8,7 @@
 namespace nico {
 
 llvm::Expected<int>
-IJit::run_main_func(int argc, char** argv, std::string_view main_fn_name) {
+IJIT::run_main_func(int argc, char** argv, std::string_view main_fn_name) {
     auto symbol = lookup(main_fn_name);
     if (!symbol) {
         std::string err_msg =
@@ -49,7 +49,7 @@ IJit::run_main_func(int argc, char** argv, std::string_view main_fn_name) {
     return func(argc, argv);
 }
 
-SimpleJit::SimpleJit() {
+SimpleJIT::SimpleJIT() {
     llvm::InitializeNativeTarget();
     llvm::InitializeNativeTargetAsmParser();
     llvm::InitializeNativeTargetAsmPrinter();
@@ -65,16 +65,16 @@ SimpleJit::SimpleJit() {
     jit = std::move(jit_or_err.get());
 }
 
-llvm::Error SimpleJit::add_module(llvm::orc::ThreadSafeModule tsm) {
+llvm::Error SimpleJIT::add_module(llvm::orc::ThreadSafeModule tsm) {
     return jit->addIRModule(std::move(tsm));
 }
 
 llvm::Expected<llvm::orc::ExecutorAddr>
-SimpleJit::lookup(std::string_view name) {
+SimpleJIT::lookup(std::string_view name) {
     return jit->lookup(name);
 }
 
-void SimpleJit::reset() {
+void SimpleJIT::reset() {
     jit.reset(); // Destroys the current LLJIT instance
     auto jit_or_err = llvm::orc::LLJITBuilder().create();
     if (!jit_or_err) {

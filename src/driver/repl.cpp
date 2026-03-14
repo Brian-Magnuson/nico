@@ -6,7 +6,7 @@
 
 namespace nico {
 
-const std::unordered_map<std::string, Repl::Command> Repl::commands = {
+const std::unordered_map<std::string, REPL::Command> REPL::commands = {
     {":help", Command::Help},
     {":h", Command::Help},
     {":?", Command::Help},
@@ -19,7 +19,7 @@ const std::unordered_map<std::string, Repl::Command> Repl::commands = {
     {":q", Command::Exit}
 };
 
-void Repl::discard(bool with_warning) {
+void REPL::discard(bool with_warning) {
     input.clear();
     continue_mode = false;
     if (with_warning) {
@@ -33,7 +33,7 @@ void Repl::discard(bool with_warning) {
     }
 }
 
-void Repl::reset() {
+void REPL::reset() {
     input.clear();
     frontend.reset();
     jit->reset();
@@ -42,17 +42,17 @@ void Repl::reset() {
     use_caution = false;
 }
 
-void Repl::print_version() {
+void REPL::print_version() {
     *out << project_version() << "\n";
 }
 
-void Repl::print_header() {
+void REPL::print_header() {
     *out << "Nico " << project_version() << "\n";
     *out << "Copyright (c) 2024 Brian Magnuson\n";
     *out << "Use ':help' for help and ':exit' to quit.\n";
 }
 
-void Repl::print_help() {
+void REPL::print_help() {
     *out << R"(Nico REPL Help
 Available commands:
 :help       Show this help message. (Also :h or :?)
@@ -64,7 +64,7 @@ Available commands:
 )";
 }
 
-void Repl::print_license() {
+void REPL::print_license() {
     // Note: This is a temporary solution. Eventually, we should read the
     // LICENSE file from its file.
     *out << R"(MIT License
@@ -90,7 +90,7 @@ SOFTWARE.
 )";
 }
 
-void Repl::print_prompt() {
+void REPL::print_prompt() {
     if (continue_mode) {
         *out << colorize::gray << ".. " << colorize::reset;
     }
@@ -102,12 +102,12 @@ void Repl::print_prompt() {
     }
 }
 
-void Repl::run(std::istream& in, std::ostream& out) {
-    Repl repl(in, out);
+void REPL::run(std::istream& in, std::ostream& out) {
+    REPL repl(in, out);
     repl.run_repl();
 }
 
-void Repl::handle_command(Command cmd) {
+void REPL::handle_command(Command cmd) {
     switch (cmd) {
     case Command::Help:
         print_help();
@@ -128,12 +128,12 @@ void Repl::handle_command(Command cmd) {
         *out << "Exiting REPL..." << std::endl;
         exit(0);
     default:
-        panic("Repl::handle_command: Unknown command");
+        panic("REPL::handle_command: Unknown command");
         break;
     }
 }
 
-void Repl::run_repl() {
+void REPL::run_repl() {
     print_header();
 
     while (true) {

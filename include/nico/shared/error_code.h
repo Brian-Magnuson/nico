@@ -280,7 +280,7 @@ enum class Err {
 
     // Backend error
     BackendError = 7000,
-    // SimpleJit could not create an LLJIT instance.
+    // SimpleJIT could not create an LLJIT instance.
     JitCannotInstantiate,
     // The JIT compiler could not find an entry point for the module to run.
     JitMissingEntryPoint,
