@@ -3,7 +3,9 @@
 #include <llvm/Support/InitLLVM.h>
 #include <llvm/Support/TargetSelect.h>
 
+#include "nico/shared/error_code.h"
 #include "nico/shared/logger.h"
+#include "nico/shared/utils.h"
 
 namespace nico {
 
@@ -22,27 +24,14 @@ IJIT::run_main_func(int argc, char** argv, std::string_view main_fn_name) {
     }
     auto addr = symbol->getValue();
     if (!addr) {
-        Logger::inst().log_error(
-            Err::JITBadMainPointer,
-            "Cannot cast 'main' function address to a "
-            "function pointer because it is null."
-        );
-        return llvm::make_error<llvm::StringError>(
-            "Null function pointer",
-            llvm::inconvertibleErrorCode()
-        );
+        panic("IJIT::run_main_func: 'main' function address is null");
     }
     using FuncPtr = int (*)(int, char**);
     auto func = reinterpret_cast<FuncPtr>(addr);
     if (!func) {
-        Logger::inst().log_error(
-            Err::JITBadMainPointer,
-            "Failed to cast '" + std::string(main_fn_name) +
-                "' function address to a function pointer."
-        );
-        return llvm::make_error<llvm::StringError>(
-            "Failed to cast function pointer",
-            llvm::inconvertibleErrorCode()
+        panic(
+            "IJIT::run_main_func: Failed to cast 'main' function address to a "
+            "function pointer"
         );
     }
 
@@ -56,11 +45,10 @@ SimpleJIT::SimpleJIT() {
 
     auto jit_or_err = llvm::orc::LLJITBuilder().create();
     if (!jit_or_err) {
-        Logger::inst().log_error(
-            Err::JITCannotInstantiate,
-            "Failed to create LLJIT: " + llvm::toString(jit_or_err.takeError())
+        panic(
+            "SimpleJIT::SimpleJIT: Failed to create LLJIT: " +
+            llvm::toString(jit_or_err.takeError())
         );
-        exit(1);
     }
     jit = std::move(jit_or_err.get());
 }
@@ -78,11 +66,10 @@ void SimpleJIT::reset() {
     jit.reset(); // Destroys the current LLJIT instance
     auto jit_or_err = llvm::orc::LLJITBuilder().create();
     if (!jit_or_err) {
-        Logger::inst().log_error(
-            Err::JITCannotInstantiate,
-            "Failed to create LLJIT: " + llvm::toString(jit_or_err.takeError())
+        panic(
+            "SimpleJIT::reset: Failed to create LLJIT: " +
+            llvm::toString(jit_or_err.takeError())
         );
-        exit(1);
     }
     jit = std::move(jit_or_err.get());
 }

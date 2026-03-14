@@ -73,6 +73,10 @@ public:
      * "main".
      * @return An Expected containing the return value of the main function, or
      * an error if the function could not be run.
+     *
+     * @warning The default implementation of this function assumes that the
+     * main function is a function of the form `int main(int argc, char** argv)`
+     * and will panic if this is not the case.
      */
     virtual llvm::Expected<int> run_main_func(
         int argc, char** argv, std::string_view main_fn_name = "main"
