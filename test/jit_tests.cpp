@@ -18,7 +18,6 @@
 #include "nico/shared/status.h"
 #include "nico/shared/token.h"
 
-#include "test_jit.h"
 #include "test_utils.h"
 
 using nico::Err;
@@ -91,7 +90,7 @@ void run_jit_test(
         frontend.compile(file, false);
     REQUIRE(IS_VARIANT(context->status, nico::Status::Ok));
 
-    auto jit = std::make_unique<nico::TestJit>();
+    auto jit = std::make_unique<nico::SimpleJIT>();
 
     auto jit_err = jit->add_module_and_context(std::move(context->mod_ctx));
     REQUIRE(!jit_err);

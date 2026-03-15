@@ -99,7 +99,6 @@ set(MAIN_SRC
 set(TEST_UTILS_SRC
     test/utils/ast_printer.cpp
     test/utils/test_utils.cpp
-    test/utils/test_jit.cpp
 )
 
 # Test files
