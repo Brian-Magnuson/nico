@@ -49,8 +49,8 @@ class MIRValue::Variable : public MIRValue {
 public:
     // A name for the variable.
     std::string name;
-    // The field entry node representing the variable.
-    std::optional<std::shared_ptr<Node::FieldEntry>> field_entry;
+    // The binding entry node representing the variable.
+    std::optional<std::shared_ptr<Node::BindingEntry>> binding_entry;
 
     Variable(std::string_view name, std::shared_ptr<Type> type)
         : MIRValue(std::make_shared<Type::RawTypedPtr>(type, true)),
@@ -58,14 +58,16 @@ public:
               std::string(name) + "#" +
               std::to_string(mir_temp_name_counters[std::string(name)]++)
           ),
-          field_entry(std::nullopt) {}
+          binding_entry(std::nullopt) {}
 
-    Variable(std::shared_ptr<Node::FieldEntry> field_entry)
+    Variable(std::shared_ptr<Node::BindingEntry> binding_entry)
         : MIRValue(
-              std::make_shared<Type::RawTypedPtr>(field_entry->field.type, true)
+              std::make_shared<Type::RawTypedPtr>(
+                  binding_entry->binding.type, true
+              )
           ),
-          name(field_entry->symbol),
-          field_entry(field_entry) {}
+          name(binding_entry->symbol),
+          binding_entry(binding_entry) {}
 
     virtual std::string to_string() const override {
         return "(" + type->to_string() + " " + name + ")";

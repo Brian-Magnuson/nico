@@ -851,7 +851,7 @@ public:
 class Type::Object : public Type {
 public:
     // The fields of the object.
-    Dictionary<std::string, Field> properties;
+    Dictionary<std::string, Binding> properties;
 
     virtual ~Object() = default;
 
@@ -935,14 +935,14 @@ class Type::Function : public Type::ICallable {
 
 public:
     // The parameters of the function.
-    Dictionary<std::string, Field> parameters;
+    Dictionary<std::string, Binding> parameters;
     // The return type of the function.
     const std::shared_ptr<Type> return_type;
 
     virtual ~Function() = default;
 
     Function(
-        Dictionary<std::string, Field> parameters,
+        Dictionary<std::string, Binding> parameters,
         std::shared_ptr<Type> return_type
     )
         : parameters(std::move(parameters)),
@@ -998,10 +998,10 @@ public:
         if (!param_strings.has_value() || !default_param_strings.has_value()) {
             param_strings.emplace();
             default_param_strings.emplace();
-            for (const auto& [name, field] : parameters) {
-                auto param_str = name + ": " + field.type->to_string();
+            for (const auto& [name, binding] : parameters) {
+                auto param_str = name + ": " + binding.type->to_string();
                 param_strings->insert(param_str);
-                if (field.default_expr.has_value()) {
+                if (binding.default_expr.has_value()) {
                     default_param_strings->insert(param_str);
                 }
             }

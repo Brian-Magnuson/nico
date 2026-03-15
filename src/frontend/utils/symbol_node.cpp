@@ -91,7 +91,7 @@ bool Node::ExternBlock::add_child(
     std::shared_ptr<Node::ILocatable> child,
     std::optional<std::string> custom_symbol
 ) {
-    // Extern blocks can only contain field entries that represent functions.
+    // Extern blocks can only contain binding entries that represent functions.
     if (auto extern_child =
             std::dynamic_pointer_cast<Node::ExternBlock>(child)) {
         Logger::inst().log_error(
@@ -229,13 +229,13 @@ bool Node::LocalScope::add_child(
     return Node::IScope::add_child(symbol_tree, child, custom_symbol);
 }
 
-std::shared_ptr<Node::FieldEntry> Node::FieldEntry::create(
-    std::shared_ptr<Node::IScope> parent, const Field& field
+std::shared_ptr<Node::BindingEntry> Node::BindingEntry::create(
+    std::shared_ptr<Node::IScope> parent, const Binding& binding
 ) {
-    auto node = std::make_shared<FieldEntry>(Private(), field);
+    auto node = std::make_shared<BindingEntry>(Private(), binding);
     node->parent = parent;
-    node->short_name = field.name;
-    node->location = field.location;
+    node->short_name = binding.name;
+    node->location = binding.location;
     node->is_global = PTR_INSTANCEOF(parent, Node::IGlobalScope);
 
     return node;
@@ -257,7 +257,7 @@ std::shared_ptr<Node::OverloadGroup> Node::OverloadGroup::create(
     node->is_global = PTR_INSTANCEOF(parent, Node::IGlobalScope);
 
     auto overloaded_fn_type =
-        std::dynamic_pointer_cast<Type::OverloadedFn>(node->field.type);
+        std::dynamic_pointer_cast<Type::OverloadedFn>(node->binding.type);
     overloaded_fn_type->overload_group = node;
 
     return node;

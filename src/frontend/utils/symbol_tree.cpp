@@ -327,29 +327,30 @@ SymbolTree::get_local_scope_of_kind(Expr::Block::Kind kind) const {
     return std::nullopt;
 }
 
-std::optional<std::shared_ptr<Node::FieldEntry>> SymbolTree::add_field_entry(
-    const Field& field, std::optional<std::string> custom_symbol
+std::optional<std::shared_ptr<Node::BindingEntry>>
+SymbolTree::add_binding_entry(
+    const Binding& binding, std::optional<std::string> custom_symbol
 ) {
     // Make sure the name is not reserved.
-    if (auto node = reserved_scope->children.at(field.name)) {
+    if (auto node = reserved_scope->children.at(binding.name)) {
         Logger::inst().log_error(
             Err::NameIsReserved,
-            *field.location,
-            "Name `" + std::string(field.name) +
+            *binding.location,
+            "Name `" + std::string(binding.name) +
                 "` is reserved and cannot be used."
         );
         return std::nullopt;
     }
 
-    if (auto node = current_scope->children.at(field.name)) {
+    if (auto node = current_scope->children.at(binding.name)) {
         Logger::inst().log_error(
             Err::NameAlreadyExists,
-            *field.location,
-            "Name `" + field.name + "` already exists in the current scope."
+            *binding.location,
+            "Name `" + binding.name + "` already exists in the current scope."
         );
         if (PTR_INSTANCEOF(node.value(), Node::OverloadGroup) &&
-            PTR_INSTANCEOF(field.type, Type::Function)) {
-            // The field being declared is a non-overloadable function, but
+            PTR_INSTANCEOF(binding.type, Type::Function)) {
+            // The binding being declared is a non-overloadable function, but
             // there is an overload group with the same name.
             Logger::inst().log_note(
                 "This is a non-overloadable function, which cannot share a "
@@ -366,7 +367,7 @@ std::optional<std::shared_ptr<Node::FieldEntry>> SymbolTree::add_field_entry(
         return std::nullopt;
     }
 
-    auto new_node = Node::FieldEntry::create(current_scope, field);
+    auto new_node = Node::BindingEntry::create(current_scope, binding);
     current_scope->children[new_node->short_name] = new_node;
 
     bool ok = register_symbol(new_node, custom_symbol);
@@ -379,14 +380,14 @@ std::optional<std::shared_ptr<Node::FieldEntry>> SymbolTree::add_field_entry(
     return new_node;
 }
 
-std::optional<std::shared_ptr<Node::FieldEntry>>
-SymbolTree::add_overloadable_func(const Field& field) {
+std::optional<std::shared_ptr<Node::BindingEntry>>
+SymbolTree::add_overloadable_func(const Binding& binding) {
     // Make sure the name is not reserved.
-    if (auto node = reserved_scope->children.at(field.name)) {
+    if (auto node = reserved_scope->children.at(binding.name)) {
         Logger::inst().log_error(
             Err::NameIsReserved,
-            *field.location,
-            "Name `" + field.name + "` is reserved and cannot be used."
+            *binding.location,
+            "Name `" + binding.name + "` is reserved and cannot be used."
         );
         return std::nullopt;
     }
@@ -394,7 +395,7 @@ SymbolTree::add_overloadable_func(const Field& field) {
     // Check if the name already exists.
     std::shared_ptr<Node::OverloadGroup> overload_group;
 
-    if (auto node = current_scope->children.at(field.name)) {
+    if (auto node = current_scope->children.at(binding.name)) {
         if (auto existing_overload_group =
                 std::dynamic_pointer_cast<Node::OverloadGroup>(node.value())) {
             // If existing name is an overload group, add to it.
@@ -404,8 +405,8 @@ SymbolTree::add_overloadable_func(const Field& field) {
             // If existing name is not an overload group...
             Logger::inst().log_error(
                 Err::NameAlreadyExists,
-                *field.location,
-                "Name `" + field.name +
+                *binding.location,
+                "Name `" + binding.name +
                     "` already exists in the current scope and is not an "
                     "overloadable function."
             );
@@ -423,8 +424,8 @@ SymbolTree::add_overloadable_func(const Field& field) {
         // If name does not exist, create a new overload group.
         overload_group = Node::OverloadGroup::create(
             current_scope,
-            field.name,
-            field.location
+            binding.name,
+            binding.location
         );
         current_scope->children[overload_group->short_name] = overload_group;
         modified = true;
@@ -435,16 +436,16 @@ SymbolTree::add_overloadable_func(const Field& field) {
         }
     }
 
-    auto func_type = std::dynamic_pointer_cast<Type::Function>(field.type);
+    auto func_type = std::dynamic_pointer_cast<Type::Function>(binding.type);
     if (!func_type)
-        panic("Field added as overloadable function is not a function.");
+        panic("Binding added as overloadable function is not a function.");
     auto [m_f1, d_f1] = func_type->get_param_sets();
 
     // Check for overload conflicts.
-    std::vector<std::shared_ptr<Node::FieldEntry>> conflicts;
+    std::vector<std::shared_ptr<Node::BindingEntry>> conflicts;
     for (const auto& existing_overload : overload_group->overloads) {
         auto existing_func_type = std::dynamic_pointer_cast<Type::Function>(
-            existing_overload->field.type
+            existing_overload->binding.type
         );
         if (!existing_func_type)
             panic("Existing overload in overload group is not a function.");
@@ -463,8 +464,8 @@ SymbolTree::add_overloadable_func(const Field& field) {
     if (!conflicts.empty()) {
         Logger::inst().log_error(
             Err::FunctionOverloadConflict,
-            *field.location,
-            "Function overload conflict for function `" + field.name + "`."
+            *binding.location,
+            "Function overload conflict for function `" + binding.name + "`."
         );
         for (const auto& conflict : conflicts) {
             if (auto locatable =
@@ -484,7 +485,7 @@ SymbolTree::add_overloadable_func(const Field& field) {
         return std::nullopt;
     }
 
-    auto new_node = Node::FieldEntry::create(current_scope, field);
+    auto new_node = Node::BindingEntry::create(current_scope, binding);
     auto custom_symbol = overload_group->symbol + "$" +
                          std::to_string(overload_group->overloads.size() + 1);
     bool ok = register_symbol(new_node, custom_symbol);

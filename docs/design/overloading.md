@@ -220,7 +220,7 @@ We try to solve these problems by introducing two new nodes:
 - A symbol node called `OverloadGroup`, which represents a collection of function overloads.
 - A type node called `OverloadedFn`, which represents a function type that could refer to multiple overloads.
 
-An `OverloadGroup` is a special kind of field entry in a symbol table. Normally, when we look up a name in a symbol table, we get back a single field entry. If we look up the name of an overloaded function, we get back an `OverloadGroup` entry instead. This entry contains a list of all overloads for that function name.
+An `OverloadGroup` is a special kind of binding entry in a symbol table. Normally, when we look up a name in a symbol table, we get back a single binding entry. If we look up the name of an overloaded function, we get back an `OverloadGroup` entry instead. This entry contains a list of all overloads for that function name.
 
 The type object for an `OverloadGroup` is always an instance of `OverloadedFn`.
 An `OverloadedFn` is a special type that indicates the expression is callable, but does not specify *how* it is callable. It contains a pointer back to the overload group it represents. We call it "dynamic" because the exact function type is resolved later when the expression is called with arguments. This still happens at compile-time.
@@ -251,7 +251,7 @@ Because of this, there are only a few situations where we need to resolve the ex
 
 Let's assume that the only time we need to resolve the exact function type is when the function pointer is called.
 When type checking the call expression, we combine the information from the `OverloadedFn` type and the provided arguments to perform overload resolution, resulting in an exact function type.
-We then reassign function type and field entry of the callee expression, allowing the IR to be generated as normal.
+We then reassign function type and binding entry of the callee expression, allowing the IR to be generated as normal.
 
 Going back to our earlier example:
 ```
@@ -278,7 +278,7 @@ The type checker will follow these steps:
        2. See that the callee has type `OverloadedFn`.
        3. Perform overload resolution using the overload group and the provided arguments (none in this case).
        4. Find a match with the `greet()` overload.
-       5. Assign the field entry of `(nameref greeter)` to be the field entry for `greet()`.
+       5. Assign the binding entry of `(nameref greeter)` to be the binding entry for `greet()`.
        6. Reassign the type of `(nameref greeter)` to be the exact function type `func() -> ()`.
        7. Assign the type of the `(call ...)` node to be `()`, the return type of `greet()`.
        8. Return.
@@ -300,7 +300,7 @@ Thus, we can represent all functions, whether overloaded or not, as overload gro
 
 When looking up a function name in the symbol table, if the function exists, we will always find an overload group.
 The search function will check to see if the overload group contains only one overload.
-If so, it will return the field entry for that single overload.
+If so, it will return the binding entry for that single overload.
 Otherwise, it will return the overload group itself.
 
 When a new overload is defined, we will check if an overload group already exists for that name.
@@ -308,13 +308,13 @@ If so, we will add the new overload to the existing group.
 
 **Approach 2: Do Not Use Overload Groups for Non-Overloaded Functions**
 
-All function definitions, whether part of an overload group or not, will have their own field entry in the symbol table.
+All function definitions, whether part of an overload group or not, will have their own binding entry in the symbol table.
 If a function is not overloaded, then there is no reason to create an overload group for it.
 
-When looking up a function name in the symbol table, if the function exists and is not overloaded, we will find its field entry directly.
+When looking up a function name in the symbol table, if the function exists and is not overloaded, we will find its binding entry directly.
 
 When a new overload is defined, we will check if a function with that name already exists in the symbol table.
-If so, we create a new overload group, add the existing function's field entry to it, and then add the new overload's field entry to it.
+If so, we create a new overload group, add the existing function's binding entry to it, and then add the new overload's binding entry to it.
 
 ---
 
@@ -330,5 +330,5 @@ The benefits of this approach are:
 - Easier future extension, as we can easily add overloads to any function without needing to change its representation in the symbol table.
 
 It is worth noting that this approach can work with possible *non-overloadable* functions in the future. 
-An example of this is closures. These can exist as a single field entry outside of an overload group.
+An example of this is closures. These can exist as a single binding entry outside of an overload group.
 The presence of an overload group may even be used to indicate whether a function is overloadable or not.

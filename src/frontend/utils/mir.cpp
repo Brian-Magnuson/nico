@@ -123,13 +123,13 @@ std::shared_ptr<Type> Function::get_return_type() const {
 std::shared_ptr<Function>
 Function::create(std::shared_ptr<Stmt::Func> func_stmt) {
     auto func = std::make_shared<Function>(Private());
-    auto field_entry = func_stmt->field_entry.lock();
+    auto binding_entry = func_stmt->binding_entry.lock();
 
-    func->name = field_entry->symbol;
-    func->return_type = field_entry->field.type;
+    func->name = binding_entry->symbol;
+    func->return_type = binding_entry->binding.type;
     for (const auto& param : func_stmt->parameters) {
         auto param_var =
-            std::make_shared<MIRValue::Variable>(param.field_entry.lock());
+            std::make_shared<MIRValue::Variable>(param.binding_entry.lock());
         func->parameters.push_back(param_var);
     }
     func->return_value =

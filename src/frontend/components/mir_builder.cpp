@@ -10,10 +10,10 @@ std::any MIRBuilder::visit(Stmt::Expression* stmt) {
 }
 
 std::any MIRBuilder::visit(Stmt::Let* stmt) {
-    auto field_entry = stmt->field_entry.lock();
-    auto mir_var = std::make_shared<MIRValue::Variable>(field_entry);
+    auto binding_entry = stmt->binding_entry.lock();
+    auto mir_var = std::make_shared<MIRValue::Variable>(binding_entry);
     auto alloca_instr =
-        std::make_shared<Instr::Alloca>(mir_var, field_entry->field.type);
+        std::make_shared<Instr::Alloca>(mir_var, binding_entry->binding.type);
     current_block->add_instruction(alloca_instr);
 
     if (stmt->expression.has_value()) {

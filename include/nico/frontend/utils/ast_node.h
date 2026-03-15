@@ -65,8 +65,8 @@ public:
     bool has_var;
     // The type annotation; should be type-checked, even if not nullopt.
     std::optional<std::shared_ptr<Annotation>> annotation;
-    // A weak pointer to the field entry in the symbol table.
-    std::weak_ptr<Node::FieldEntry> field_entry;
+    // A weak pointer to the binding entry in the symbol table.
+    std::weak_ptr<Node::BindingEntry> binding_entry;
 
     Let(std::shared_ptr<Token> start_token,
         std::shared_ptr<Token> identifier,
@@ -99,8 +99,8 @@ public:
     bool has_var;
     // The type annotation; should be type-checked, even if not nullopt.
     std::optional<std::shared_ptr<Annotation>> annotation;
-    // A weak pointer to the field entry in the symbol table.
-    std::weak_ptr<Node::FieldEntry> field_entry;
+    // A weak pointer to the binding entry in the symbol table.
+    std::weak_ptr<Node::BindingEntry> binding_entry;
 
     Static(
         std::shared_ptr<Token> start_token,
@@ -138,8 +138,8 @@ public:
         std::shared_ptr<Annotation> annotation;
         // An optional expression for the default value.
         std::optional<std::shared_ptr<Expr>> expression;
-        // A weak pointer to the parameter's field entry in the symbol table.
-        std::weak_ptr<Node::FieldEntry> field_entry;
+        // A weak pointer to the parameter's binding entry in the symbol table.
+        std::weak_ptr<Node::BindingEntry> binding_entry;
 
         Param(
             bool has_var,
@@ -160,8 +160,8 @@ public:
     std::vector<Param> parameters;
     // The body of the function.
     std::optional<std::shared_ptr<Expr::Block>> body;
-    // A weak pointer to the field entry in the symbol table.
-    std::weak_ptr<Node::FieldEntry> field_entry;
+    // A weak pointer to the binding entry in the symbol table.
+    std::weak_ptr<Node::BindingEntry> binding_entry;
 
     Func(
         std::shared_ptr<Token> start_token,
@@ -898,9 +898,9 @@ class Expr::NameRef : public Expr::IPLValue {
 public:
     // The name being referenced.
     std::shared_ptr<Name> name;
-    // A weak pointer to the field entry in the symbol table. To be filled in by
-    // the type checker.
-    std::weak_ptr<Node::FieldEntry> field_entry;
+    // A weak pointer to the binding entry in the symbol table. To be filled in
+    // by the type checker.
+    std::weak_ptr<Node::BindingEntry> binding_entry;
 
     NameRef(std::shared_ptr<Name> name)
         : name(name) {

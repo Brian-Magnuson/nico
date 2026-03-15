@@ -259,26 +259,26 @@ public:
     get_local_scope_of_kind(Expr::Block::Kind kind) const;
 
     /**
-     * @brief Adds a field entry to the symbol tree in the current scope.
+     * @brief Adds a binding entry to the symbol tree in the current scope.
      *
      * This function is for variables, properties, and non-overloadable
      * functions. For overloadable functions, use add_overloadable_func instead.
      *
-     * If the field name already exists in the current scope, this function does
-     * not add the field and returns nullopt.
+     * If the binding name already exists in the current scope, this function
+     * does not add the binding and returns nullopt.
      *
-     * Because a field entry carries a type object, the field's type must be
+     * Because a binding entry carries a type object, the binding's type must be
      * resolved before being added to the symbol tree.
      *
-     * @param field The field to add.
+     * @param binding The binding to add.
      * @param custom_symbol An optional custom symbol to register for this
-     * field. If not provided, a symbol will be generated based on the field's
-     * position in the tree.
-     * @return std::optional<std::shared_ptr<Node>> The field entry if added
+     * binding. If not provided, a symbol will be generated based on the
+     * binding's position in the tree.
+     * @return std::optional<std::shared_ptr<Node>> The binding entry if added
      * successfully, or nullopt if not.
      */
-    std::optional<std::shared_ptr<Node::FieldEntry>> add_field_entry(
-        const Field& field,
+    std::optional<std::shared_ptr<Node::BindingEntry>> add_binding_entry(
+        const Binding& binding,
         std::optional<std::string> custom_symbol = std::nullopt
     );
 
@@ -286,8 +286,8 @@ public:
      * @brief Adds an overloadable function to the symbol tree in the current
      * scope.
      *
-     * This function is for overloadable functions. For other field entries, use
-     * add_field_entry instead.
+     * This function is for overloadable functions. For other binding entries,
+     * use add_binding_entry instead.
      *
      * If the function name does not exist, a new overload group will be created
      * and the function will be added to it.
@@ -298,12 +298,12 @@ public:
      * If the function overload group is found, but the new function conflicts
      * with an existing function, the function is not added and returns nullopt.
      *
-     * @param field The field to add.
-     * @return std::optional<std::shared_ptr<Node::FieldEntry>> The field entry
-     * if added successfully, or nullopt if not.
+     * @param binding The binding to add.
+     * @return std::optional<std::shared_ptr<Node::BindingEntry>> The binding
+     * entry if added successfully, or nullopt if not.
      */
-    std::optional<std::shared_ptr<Node::FieldEntry>>
-    add_overloadable_func(const Field& field);
+    std::optional<std::shared_ptr<Node::BindingEntry>>
+    add_overloadable_func(const Binding& binding);
 
     /**
      * @brief Checks if the current context is unsafe.

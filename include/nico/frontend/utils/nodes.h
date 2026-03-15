@@ -50,7 +50,7 @@ public:
     class PrimitiveType;
     class StructDef;
     class LocalScope;
-    class FieldEntry;
+    class BindingEntry;
     class OverloadGroup;
 
     // This node's parent scope, if it exists.
@@ -564,35 +564,37 @@ public:
     }
 };
 
-// MARK: Field
+// MARK: Binding
 
 /**
- * @brief A multi-purpose field class.
+ * @brief A multi-purpose binding class.
+ *
+ * Represents a "binding" of a name to a type, value, and mutability specifier.
  *
  * Used to represent properties or shared variables in complex types,
  * properties in objects, and parameters in functions.
+ * It is not meant for namespaces or other groupings (except for overload
+ * groups).
  *
- * Fields use type objects, and thus, must have their types properly resolved
+ * Bindings use type objects, and thus, must have their types properly resolved
  * before constructed.
  */
-class Field {
+class Binding {
 public:
-    // Whether the field is declared with `var` or not.
+    // Whether the binding is declared with `var` or not.
     bool is_var;
-    // The name of the field.
-    // std::shared_ptr<Token> token;
-    // The name of the field.
+    // The name for the binding.
     std::string name;
-    // The location where the field is introduced.
+    // The location where the binding is introduced.
     const Location* location;
-    // The type of the field.
+    // The type of the binding.
     std::shared_ptr<Type> type;
-    // The default expression for the field, if any.
+    // The default expression for the binding, if any.
     std::optional<std::weak_ptr<Expr>> default_expr;
 
-    virtual ~Field() = default;
+    virtual ~Binding() = default;
 
-    Field(
+    Binding(
         bool is_var,
         std::string_view name,
         const Location* location,
@@ -605,30 +607,30 @@ public:
           type(type),
           default_expr(default_expr) {
         if (type == nullptr) {
-            panic("Field::Field: Type cannot be null.");
+            panic("Binding::Binding: Type cannot be null.");
         }
     }
 
     /**
-     * @brief Returns a string representation of the field.
+     * @brief Returns a string representation of the binding.
      *
-     * @return std::string A string representation of the field.
+     * @return std::string A string representation of the binding.
      */
     virtual std::string to_string() const {
         return (is_var ? "var " : "") + name + ": " + type->to_string();
     }
 
     /**
-     * @brief Checks if this field is equivalent to another field.
+     * @brief Checks if this binding is equivalent to another binding.
      *
-     * Fields are considered equivalent if they have the same `is_var` status,
+     * Bindings are considered equivalent if they have the same `is_var` status,
      * the same name, and the same type. The token does not necessarily have to
      * be the same; just the lexeme.
      *
-     * @param other The other field to compare.
-     * @return True if the fields are equivalent, false otherwise.
+     * @param other The other binding to compare.
+     * @return True if the bindings are equivalent, false otherwise.
      */
-    bool operator==(const Field& other) const {
+    bool operator==(const Binding& other) const {
         return is_var == other.is_var && name == other.name &&
                *type == *other.type;
     }

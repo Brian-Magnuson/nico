@@ -27,7 +27,7 @@ class Node::IScope : public virtual Node {
 public:
     // A dictionary of child nodes, indexed by their name parts.
     Dictionary<std::string, std::shared_ptr<Node>> children;
-    // A list of local scopes. Field entries cannot be accessed from outside
+    // A list of local scopes. Binding entries cannot be accessed from outside
     // local scopes, so this is kept separate from children.
     std::vector<std::shared_ptr<Node::LocalScope>> local_scopes;
 
@@ -297,13 +297,13 @@ public:
     // follow different semantic rules than structs, such as memory
     // management.
     bool is_class = false;
-    // A dictionary of properties (fields) in this struct, indexed by their
+    // A dictionary of properties (bindings) in this struct, indexed by their
     // names.
-    Dictionary<std::string, Field> properties;
+    Dictionary<std::string, Binding> properties;
     // A dictionary of methods in this struct, indexed by their names.
-    // Methods are also stored as fields, but are never `var` and always
+    // Methods are also stored as bindings, but are never `var` and always
     // have a type of `Function`.
-    Dictionary<std::string, Field> methods;
+    Dictionary<std::string, Binding> methods;
 
     virtual ~StructDef() = default;
 
@@ -401,57 +401,57 @@ public:
 };
 
 /**
- * @brief A field entry in the symbol tree.
+ * @brief A binding entry in the symbol tree.
  *
- * Field entries are any variable declared with `let`.
+ * Binding entries are any variable declared with `let`.
  *
- * Field objects carry a type object, and must therefore have their types
+ * Binding objects carry a type object, and must therefore have their types
  * resolved before being constructed.
  */
-class Node::FieldEntry : public virtual Node::ILocatable {
+class Node::BindingEntry : public virtual Node::ILocatable {
 public:
-    // Whether this field entry is declared in a global scope or not.
-    // Global field entries are declared using LLVM global variables, while
-    // local field entries are declared using LLVM alloca instructions.
+    // Whether this binding entry is declared in a global scope or not.
+    // Global binding entries are declared using LLVM global variables, while
+    // local binding entries are declared using LLVM alloca instructions.
     bool is_global;
-    // If this field entry has external linkage, this flag indicates whether it
-    // has been initialized or not. This is used to avoid multiple definition
-    // issues when generating LLVM IR for extern fields.
+    // If this binding entry has external linkage, this flag indicates whether
+    // it has been initialized or not. This is used to avoid multiple definition
+    // issues when generating LLVM IR for extern bindings.
     bool extern_initialized = false;
-    // The field object that this entry represents.
-    Field field;
-    // If this field is a local variable, the pointer to the LLVM
+    // The binding object that this entry represents.
+    Binding binding;
+    // If this binding is a local variable, the pointer to the LLVM
     // allocation.
     llvm::AllocaInst* llvm_ptr = nullptr;
 
-    virtual ~FieldEntry() = default;
+    virtual ~BindingEntry() = default;
 
-    FieldEntry(Private, const Field& field)
-        : Node(Private()), Node::ILocatable(Private()), field(field) {}
+    BindingEntry(Private, const Binding& binding)
+        : Node(Private()), Node::ILocatable(Private()), binding(binding) {}
 
     /**
-     * @brief Creates a new field entry node and adds it to the parent scope.
+     * @brief Creates a new binding entry node and adds it to the parent scope.
      *
-     * A field entry node represents a new variable or function in the symbol
+     * A binding entry node represents a new variable or function in the symbol
      * tree.
      *
-     * @param parent The parent scope in which to add the field entry.
-     * @param field The field object that this entry represents.
-     * @return A shared pointer to the newly created field entry node.
+     * @param parent The parent scope in which to add the binding entry.
+     * @param binding The binding object that this entry represents.
+     * @return A shared pointer to the newly created binding entry node.
      */
-    static std::shared_ptr<FieldEntry>
-    create(std::shared_ptr<Node::IScope> parent, const Field& field);
+    static std::shared_ptr<BindingEntry>
+    create(std::shared_ptr<Node::IScope> parent, const Binding& binding);
 
     /**
-     * @brief Gets the LLVM allocation for this field entry.
+     * @brief Gets the LLVM allocation for this binding entry.
      *
-     * If the field is global, this function will attempt to get the global
-     * variable. If the field is local, it will return the LLVM pointer
+     * If the binding is global, this function will attempt to get the global
+     * variable. If the binding is local, it will return the LLVM pointer
      * stored in the node.
      *
-     * If the field is a function type, a special suffix is added to the symbol
-     * name (the symbol is not modified) to differentiate it from the function
-     * with the same name.
+     * If the binding is a function type, a special suffix is added to the
+     * symbol name (the symbol is not modified) to differentiate it from the
+     * function with the same name.
      *
      * @param builder The IRBuilder used to create the allocation if needed.
      * @param extern_linkage Whether to use external linkage for global
@@ -462,14 +462,14 @@ public:
     ) {
         llvm::Value* ptr;
         std::string suffix =
-            PTR_INSTANCEOF(field.type, Type::Function) ? "$var" : "";
+            PTR_INSTANCEOF(binding.type, Type::Function) ? "$var" : "";
 
         if (is_global) {
             auto ir_module = builder->GetInsertBlock()->getModule();
             // Attempt to get the global variable.
             ptr = ir_module->getGlobalVariable(symbol + suffix, true);
             // If it doesn't exist, declare it.
-            auto llvm_type = field.type->get_llvm_type(builder);
+            auto llvm_type = binding.type->get_llvm_type(builder);
             if (ptr == nullptr) {
                 ptr = new llvm::GlobalVariable(
                     *ir_module,
@@ -510,7 +510,7 @@ public:
             ptr = llvm_ptr;
             if (ptr == nullptr) {
                 panic(
-                    "Node::FieldEntry::get_llvm_allocation: Local variable "
+                    "Node::BindingEntry::get_llvm_allocation: Local variable "
                     "has "
                     "no LLVM allocation."
                 );
@@ -520,7 +520,7 @@ public:
     }
 
     virtual std::string to_string() const override {
-        return "ENTRY \"" + symbol + "\" : " + field.type->to_string();
+        return "ENTRY \"" + symbol + "\" : " + binding.type->to_string();
     }
 };
 
@@ -528,17 +528,17 @@ public:
  * @brief An overload group in the symbol tree.
  *
  * Overload groups are used to group related function overloads together
- * under a single name. They are represented as field entries with a type of
+ * under a single name. They are represented as binding entries with a type of
  * `Type::OverloadedFn`.
  *
  *
- * Since they are field entries, they are also locatable nodes.
+ * Since they are binding entries, they are also locatable nodes.
  * The location token should be set to the first overload's token.
  */
-class Node::OverloadGroup : public virtual Node::FieldEntry {
+class Node::OverloadGroup : public virtual Node::BindingEntry {
 public:
     // A list of overloads in this group.
-    std::vector<std::shared_ptr<Node::FieldEntry>> overloads;
+    std::vector<std::shared_ptr<Node::BindingEntry>> overloads;
 
     virtual ~OverloadGroup() = default;
 
@@ -549,9 +549,9 @@ public:
     )
         : Node(Private()),
           Node::ILocatable(Private()),
-          Node::FieldEntry(
+          Node::BindingEntry(
               Private(),
-              Field(
+              Binding(
                   false,
                   overload_name,
                   first_overload_location,
@@ -565,7 +565,7 @@ public:
      * @brief Creates a new overload group and adds it to the parent scope.
      *
      * Additionally, an instance of `Type::OverloadedFn` is created and assigned
-     * to the overload group's field entry.
+     * to the overload group's binding entry.
      *
      * @param parent The parent scope to which the overload group will be
      * added.
@@ -586,13 +586,13 @@ public:
             llvm::PointerType::get(builder->getContext(), 0)
         );
         // When the code generator encounters a name reference, it requires
-        // the LLVM allocation of the field entry. Overload groups do not
+        // the LLVM allocation of the binding entry. Overload groups do not
         // have a meaningful LLVM allocation, but we need to return
         // something.
 
         // This value will never actually be used. This is because when you
         // "use" a name reference to an overload group, the type checker
-        // replaces the field entry with the correct function overload
+        // replaces the binding entry with the correct function overload
         // before code generation.
     }
 

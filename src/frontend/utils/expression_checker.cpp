@@ -204,10 +204,10 @@ ExpressionChecker::try_match_args_to_params(
     std::unordered_set<std::string> assigned_params;
 
     // First, apply default arguments.
-    for (const auto& [param_string, param_field] : func_type->parameters) {
+    for (const auto& [param_string, param_binding] : func_type->parameters) {
         arg_mapping.insert(
             param_string,
-            param_field.default_expr.value_or(std::weak_ptr<Expr>())
+            param_binding.default_expr.value_or(std::weak_ptr<Expr>())
         );
         // We insert an empty pointer if there is no default expression.
         // This ensures the dictionary has an entry for every parameter in the
@@ -220,8 +220,8 @@ ExpressionChecker::try_match_args_to_params(
     }
     for (size_t i = 0; i < pos_args.size(); i++) {
         const auto param_optional = func_type->parameters.get_pair_at(i);
-        const auto [param_name, param_field] = *param_optional;
-        if (!pos_args[i]->type->is_assignable_to(*param_field.type)) {
+        const auto [param_name, param_binding] = *param_optional;
+        if (!pos_args[i]->type->is_assignable_to(*param_binding.type)) {
             // Positional argument type does not match parameter type.
             return std::nullopt;
         }
@@ -958,7 +958,7 @@ std::any ExpressionChecker::visit(Expr::Subscript* expr, bool as_lvalue) {
 
 std::any ExpressionChecker::visit(Expr::Call* expr, bool as_lvalue) {
     std::vector<std::shared_ptr<Type::Function>> candidate_funcs;
-    std::vector<std::shared_ptr<Node::FieldEntry>> overload_field_entries;
+    std::vector<std::shared_ptr<Node::BindingEntry>> overload_binding_entries;
 
     auto callee_type_opt = expr_check(expr->callee, false);
     if (!callee_type_opt.has_value())
@@ -975,10 +975,11 @@ std::any ExpressionChecker::visit(Expr::Call* expr, bool as_lvalue) {
     else if (auto overload_type =
                  std::dynamic_pointer_cast<Type::OverloadedFn>(callee_type)) {
         for (auto overload : overload_type->overload_group.lock()->overloads) {
-            auto func_type =
-                std::dynamic_pointer_cast<Type::Function>(overload->field.type);
+            auto func_type = std::dynamic_pointer_cast<Type::Function>(
+                overload->binding.type
+            );
             candidate_funcs.push_back(func_type);
-            overload_field_entries.push_back(overload);
+            overload_binding_entries.push_back(overload);
         }
     }
     else {
@@ -1025,15 +1026,15 @@ std::any ExpressionChecker::visit(Expr::Call* expr, bool as_lvalue) {
         expr->type = matched_func->return_type;
         expr->actual_args = matched_args.value();
         // If the callee is an overloaded function...
-        if (!overload_field_entries.empty()) {
+        if (!overload_binding_entries.empty()) {
             expr->callee->type = matched_func;
             auto name_ref =
                 std::dynamic_pointer_cast<Expr::NameRef>(expr->callee);
             // Due to the semantics of the overloadedfn type, the callee must be
             // a name reference.
             if (name_ref) {
-                name_ref->field_entry =
-                    overload_field_entries[matched_candidate_indices[0]];
+                name_ref->binding_entry =
+                    overload_binding_entries[matched_candidate_indices[0]];
             }
         }
         return std::any();
@@ -1228,9 +1229,9 @@ std::any ExpressionChecker::visit(Expr::NameRef* expr, bool as_lvalue) {
         return std::any();
     }
     auto resolved_node = expr->name->node.lock();
-    auto field_entry =
-        std::dynamic_pointer_cast<Node::FieldEntry>(resolved_node);
-    if (!field_entry) {
+    auto binding_entry =
+        std::dynamic_pointer_cast<Node::BindingEntry>(resolved_node);
+    if (!binding_entry) {
         Logger::inst().log_error(
             Err::NotAVariable,
             expr->location,
@@ -1240,17 +1241,17 @@ std::any ExpressionChecker::visit(Expr::NameRef* expr, bool as_lvalue) {
         return std::any();
     }
     // Set assignability and possible error location based on whether the
-    // field is mutable.
-    if (field_entry->field.is_var) {
+    // binding is mutable.
+    if (binding_entry->binding.is_var) {
         expr->assignable = true;
     }
     else {
         expr->assignable = false;
-        expr->error_location = field_entry->field.location;
+        expr->error_location = binding_entry->binding.location;
     }
 
-    expr->type = field_entry->field.type;
-    expr->field_entry = field_entry;
+    expr->type = binding_entry->binding.type;
+    expr->binding_entry = binding_entry;
     return std::any();
 }
 

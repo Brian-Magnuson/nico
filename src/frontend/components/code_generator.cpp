@@ -40,19 +40,19 @@ std::any CodeGenerator::visit(Stmt::Expression* stmt) {
 }
 
 std::any CodeGenerator::visit(Stmt::Let* stmt) {
-    auto field_entry = stmt->field_entry.lock();
-    auto llvm_type = field_entry->field.type->get_llvm_type(builder);
-    auto symbol = field_entry->symbol;
+    auto binding_entry = stmt->binding_entry.lock();
+    auto llvm_type = binding_entry->binding.type->get_llvm_type(builder);
+    auto symbol = binding_entry->symbol;
 
     llvm::Value* allocation = nullptr;
 
-    if (field_entry->is_global) {
-        allocation = field_entry->get_llvm_allocation(builder, repl_mode);
+    if (binding_entry->is_global) {
+        allocation = binding_entry->get_llvm_allocation(builder, repl_mode);
     }
     else {
         auto alloca_inst = builder->CreateAlloca(llvm_type, nullptr, symbol);
 
-        stmt->field_entry.lock()->llvm_ptr = alloca_inst;
+        stmt->binding_entry.lock()->llvm_ptr = alloca_inst;
         allocation = alloca_inst;
     }
 
@@ -71,7 +71,7 @@ std::any CodeGenerator::visit(Stmt::Let* stmt) {
 std::any CodeGenerator::visit(Stmt::Static* stmt) {
 
     llvm::GlobalVariable* llvm_global = llvm::cast<llvm::GlobalVariable>(
-        stmt->field_entry.lock()->get_llvm_allocation(builder, true)
+        stmt->binding_entry.lock()->get_llvm_allocation(builder, true)
     );
 
     if (stmt->expression.has_value()) {
@@ -89,16 +89,15 @@ std::any CodeGenerator::visit(Stmt::Static* stmt) {
 std::any CodeGenerator::visit(Stmt::Func* stmt) {
     auto script_block = builder->GetInsertBlock();
 
-    auto field_entry_type = stmt->field_entry.lock()->field.type;
-    auto func_type =
-        std::dynamic_pointer_cast<Type::Function>(field_entry_type);
+    auto binding_type = stmt->binding_entry.lock()->binding.type;
+    auto func_type = std::dynamic_pointer_cast<Type::Function>(binding_type);
 
     llvm::FunctionType* llvm_func_type =
         func_type->get_llvm_function_type(builder);
     llvm::Function* function = llvm::Function::Create(
         llvm_func_type,
         llvm::Function::ExternalLinkage,
-        stmt->field_entry.lock()->symbol,
+        stmt->binding_entry.lock()->symbol,
         mod_ctx.ir_module.get()
     );
 
@@ -119,10 +118,10 @@ std::any CodeGenerator::visit(Stmt::Func* stmt) {
             llvm::AllocaInst* param_alloca = builder->CreateAlloca(
                 llvm_param->getType(),
                 nullptr,
-                param.field_entry.lock()->symbol
+                param.binding_entry.lock()->symbol
             );
             builder->CreateStore(llvm_param, param_alloca);
-            param.field_entry.lock()->llvm_ptr = param_alloca;
+            param.binding_entry.lock()->llvm_ptr = param_alloca;
         }
         // Allocate space for the return value.
         llvm::AllocaInst* return_alloca = builder->CreateAlloca(
@@ -157,7 +156,7 @@ std::any CodeGenerator::visit(Stmt::Func* stmt) {
 
     // Use a global variable to hold the function pointer.
     llvm::GlobalVariable* llvm_global = llvm::cast<llvm::GlobalVariable>(
-        stmt->field_entry.lock()->get_llvm_allocation(builder, true)
+        stmt->binding_entry.lock()->get_llvm_allocation(builder, true)
     );
     // `get_llvm_allocation` will create a global variable if it doesn't already
     // exist. The variable may already exist if it was referenced before the
@@ -867,7 +866,7 @@ std::any CodeGenerator::visit(Expr::Alloc* expr, bool as_lvalue) {
 std::any CodeGenerator::visit(Expr::NameRef* expr, bool as_lvalue) {
     llvm::Value* result = nullptr;
     llvm::Value* ptr =
-        expr->field_entry.lock()->get_llvm_allocation(builder, repl_mode);
+        expr->binding_entry.lock()->get_llvm_allocation(builder, repl_mode);
 
     if (as_lvalue) {
         // We use the pointer to the variable (its alloca inst or global ptr)

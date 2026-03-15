@@ -205,7 +205,7 @@ enum class Err {
     UnsizedRValue,
     // An name was not found in the symbol table.
     NameNotFound,
-    // An name was matched to a non-FieldEntry node where one was expected.
+    // An name was matched to a non-BindingEntry node where one was expected.
     NotAVariable,
     // An attempt was made to call a non-callable type.
     NotACallable,

@@ -71,28 +71,29 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
         return std::any();
     }
 
-    // Create the field entry.
-    Field field(
+    // Create the binding entry.
+    Binding binding(
         stmt->has_var,
         stmt->identifier->lexeme,
         &stmt->identifier->location,
         expr_type
     );
 
-    auto node_opt = symbol_tree->add_field_entry(field);
+    auto node_opt = symbol_tree->add_binding_entry(binding);
     if (!node_opt.has_value()) {
         return std::any();
     }
-    else if (auto field_node = std::dynamic_pointer_cast<Node::FieldEntry>(
+    else if (auto binding_node = std::dynamic_pointer_cast<Node::BindingEntry>(
                  node_opt.value()
              )) {
-        stmt->field_entry = field_node;
+        stmt->binding_entry = binding_node;
         return std::any();
     }
     else {
         panic(
-            "LocalChecker::visit(Stmt::Let*): Symbol tree returned a non-field "
-            "entry for a field entry."
+            "LocalChecker::visit(Stmt::Let*): Symbol tree returned a "
+            "non-binding "
+            "entry for a binding entry."
         );
     }
 
@@ -107,11 +108,11 @@ std::any LocalChecker::visit(Stmt::Static* /*stmt*/) {
 std::any LocalChecker::visit(Stmt::Func* stmt) {
     // Get the function's type
     auto func_type = std::dynamic_pointer_cast<Type::Function>(
-        stmt->field_entry.lock()->field.type
+        stmt->binding_entry.lock()->binding.type
     );
     if (!func_type) {
         panic(
-            "LocalChecker::visit(Stmt::Func*): Field entry does not have a "
+            "LocalChecker::visit(Stmt::Func*): Binding entry does not have a "
             "function type."
         );
     }
@@ -125,20 +126,20 @@ std::any LocalChecker::visit(Stmt::Func* stmt) {
     bool has_error = false;
     // Check the parameters.
     for (auto& param : stmt->parameters) {
-        auto param_field =
+        auto param_binding =
             func_type->parameters.at(std::string(param.identifier->lexeme))
                 .value();
 
         // If the parameter has a default expression, check it.
-        if (param_field.default_expr.has_value()) {
-            auto default_expr_ptr = param_field.default_expr.value().lock();
+        if (param_binding.default_expr.has_value()) {
+            auto default_expr_ptr = param_binding.default_expr.value().lock();
             auto default_expr_type_opt =
                 expression_checker.expr_check(default_expr_ptr, false);
             if (!default_expr_type_opt.has_value()) {
                 has_error = true;
             }
             else if (!default_expr_type_opt.value()->is_assignable_to(
-                         *param_field.type
+                         *param_binding.type
                      )) {
                 Logger::inst().log_error(
                     Err::DefaultArgTypeMismatch,
@@ -146,18 +147,18 @@ std::any LocalChecker::visit(Stmt::Func* stmt) {
                     std::string("Type `") +
                         default_expr_type_opt.value()->to_string() +
                         "` is not compatible with parameter type `" +
-                        param_field.type->to_string() + "`."
+                        param_binding.type->to_string() + "`."
                 );
                 has_error = true;
             }
         }
-        auto node_opt = symbol_tree->add_field_entry(param_field);
+        auto node_opt = symbol_tree->add_binding_entry(param_binding);
         if (!node_opt.has_value()) {
             has_error = true;
         }
         else {
-            param.field_entry =
-                std::dynamic_pointer_cast<Node::FieldEntry>(node_opt.value());
+            param.binding_entry =
+                std::dynamic_pointer_cast<Node::BindingEntry>(node_opt.value());
         }
     }
     // If there was an error in the parameters, avoid checking the body.

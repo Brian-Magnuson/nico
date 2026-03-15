@@ -61,22 +61,22 @@ It is also complex to implement. We will explain why in the next section.
 ## Challenges of Compile-Time Ownership Transfer
 
 At first glance, compile-time ownership transfer seems straightforward:
-- All variables have a corresponding field entry in the symbol tree.
+- All variables have a corresponding binding entry in the symbol tree.
 - The symbol tree can track whether a variable is valid or invalid.
 - When a move occurs, the compiler marks the original owner as invalid in the symbol tree.
 - Any subsequent attempts to use the original owner result in a compile-time error.
 
 ```cpp
-class Node::FieldEntry : public virtual Node::ILocatable {
+class Node::BindingEntry : public virtual Node::ILocatable {
 public:
-    // Whether this field entry is declared in a global scope or not.
+    // Whether this binding entry is declared in a global scope or not.
     const bool is_global;
-    // The field object that this entry represents.
-    Field field;
-    // If this field is a local variable, the pointer to the LLVM
+    // The binding object that this entry represents.
+    Binding binding;
+    // If this binding is a local variable, the pointer to the LLVM
     // allocation.
     llvm::AllocaInst* llvm_ptr = nullptr;
-    // Whether this field entry is currently valid (i.e., owns a value).
+    // Whether this binding entry is currently valid (i.e., owns a value).
     bool is_valid = true;
 
     /* ... */
