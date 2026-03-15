@@ -1,6 +1,9 @@
 #ifndef EXAMPLELIB_LIB_H
 #define EXAMPLELIB_LIB_H
 
+// An example number, 37.
+extern int examplelib_number;
+
 /**
  * @brief Returns the 32-bit integer 42.
  *

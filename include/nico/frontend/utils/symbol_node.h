@@ -411,9 +411,13 @@ public:
 class Node::FieldEntry : public virtual Node::ILocatable {
 public:
     // Whether this field entry is declared in a global scope or not.
+    // Global field entries are declared using LLVM global variables, while
+    // local field entries are declared using LLVM alloca instructions.
     bool is_global;
-
-    bool global_initialized = false;
+    // If this field entry has external linkage, this flag indicates whether it
+    // has been initialized or not. This is used to avoid multiple definition
+    // issues when generating LLVM IR for extern fields.
+    bool extern_initialized = false;
     // The field object that this entry represents.
     Field field;
     // If this field is a local variable, the pointer to the LLVM
@@ -473,7 +477,7 @@ public:
                     false, // isConstant
                     extern_linkage ? llvm::GlobalValue::ExternalLinkage
                                    : llvm::GlobalValue::InternalLinkage,
-                    global_initialized ? nullptr
+                    extern_initialized ? nullptr
                                        : llvm::Constant::getNullValue(
                                              llvm_type
                                          ), // Initializer
@@ -499,7 +503,7 @@ public:
                 possible.
                 */
 
-                global_initialized = true;
+                extern_initialized = true;
             }
         }
         else {

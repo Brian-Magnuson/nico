@@ -18,7 +18,6 @@ std::any GlobalChecker::visit(Stmt::Let*) {
 
 std::any GlobalChecker::visit(Stmt::Static* stmt) {
     std::shared_ptr<Type> expr_type = nullptr;
-    std::optional<std::string> custom_symbol = std::nullopt;
 
     // Visit the initializer (if present).
     if (stmt->expression.has_value()) {
@@ -73,6 +72,9 @@ std::any GlobalChecker::visit(Stmt::Static* stmt) {
         return std::any();
     }
 
+    std::optional<std::string> custom_symbol = std::nullopt;
+    bool is_extern = false;
+
     if (PTR_INSTANCEOF(symbol_tree->current_scope, Node::ExternBlock)) {
         if (stmt->expression.has_value()) {
             Logger::inst().log_error(
@@ -88,6 +90,8 @@ std::any GlobalChecker::visit(Stmt::Static* stmt) {
         custom_symbol = std::string(stmt->identifier->lexeme);
         // Currently, we do not allow users to manually specify a custom symbol,
         // but if we did, it would override this symbol.
+
+        is_extern = true;
     }
 
     // Create the field entry.
@@ -107,13 +111,18 @@ std::any GlobalChecker::visit(Stmt::Static* stmt) {
                  node_opt.value()
              )) {
         stmt->field_entry = field_entry;
-        return std::any();
     }
     else {
         panic(
             "GlobalChecker::visit(Stmt::Static*): Symbol tree returned a "
             "non-field entry for a field entry."
         );
+    }
+
+    if (is_extern) {
+        // Extern statics are initialized elsewhere, so we mark them as
+        // initialized to avoid multiple definition issues.
+        stmt->field_entry.lock()->extern_initialized = true;
     }
 
     return std::any();

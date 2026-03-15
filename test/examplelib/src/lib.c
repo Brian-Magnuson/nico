@@ -2,6 +2,8 @@
 
 #include <stdarg.h>
 
+int examplelib_number = 37;
+
 int examplelib_get_constant() {
     return 42;
 }
