@@ -749,6 +749,9 @@ You can change this behavior by using export declarations (see the following sec
 
 ### Exports
 
+Exports are used to make names available to other files that import the current file.
+This only affects this visibility of names within the same compilation unit. It does not affect linkage.
+
 You can only import names that the file exports. 
 
 By default, files export all names declared within them, except:
@@ -1267,6 +1270,29 @@ External declaration namespaces can be declared in any global scope, including w
 
 Externally-declared variables/functions may be referenced/called in safe contexts without requiring an `unsafe` block.
 It is the user's responsibility to ensure that the external code is safe to use.
+
+### Extern declaration specifier
+
+For any declaration-space variable (static variable) or function, you can prepend the `extern` keyword along with an optional ABI specifier string to give the declaration external linkage.
+This allows you to make the definition available to other compilation units and to link to external code.
+
+This is different from external declaration namespaces, which are used to declare variables and functions that are defined in external code.
+
+Here are some examples of using the `extern` declaration specifier:
+```
+extern func my_function(a: i32) -> i32:
+    statement1
+
+extern "C" func c_function(a: i32) -> i32:
+    statement1
+
+extern static var my_variable: f64 = 3.14
+extern "C" static var c_variable: f64 = 3.14
+```
+
+These declarations follow the same rules as normal static variable and function declarations, with the addition of external linkage.
+- For variables, the variable must either use `var` with a type annotation or have an initializer.
+- For functions, the function must have a body.
 
 ## Expressions
 
