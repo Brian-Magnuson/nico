@@ -582,29 +582,33 @@ public:
 class Binding {
 public:
     // Whether the binding is declared with `var` or not.
-    bool is_var;
+    bool is_declared_var;
     // The name for the binding.
     std::string name;
     // The location where the binding is introduced.
     const Location* location;
     // The type of the binding.
     std::shared_ptr<Type> type;
+    // Whether the binding should have external linkage.
+    bool is_extern;
     // The default expression for the binding, if any.
     std::optional<std::weak_ptr<Expr>> default_expr;
 
     virtual ~Binding() = default;
 
     Binding(
-        bool is_var,
+        bool is_declared_var,
         std::string_view name,
         const Location* location,
         std::shared_ptr<Type> type,
+        bool is_extern,
         std::optional<std::weak_ptr<Expr>> default_expr = std::nullopt
     )
-        : is_var(is_var),
+        : is_declared_var(is_declared_var),
           name(name),
           location(location),
           type(type),
+          is_extern(is_extern),
           default_expr(default_expr) {
         if (type == nullptr) {
             panic("Binding::Binding: Type cannot be null.");
@@ -617,21 +621,22 @@ public:
      * @return std::string A string representation of the binding.
      */
     virtual std::string to_string() const {
-        return (is_var ? "var " : "") + name + ": " + type->to_string();
+        return (is_declared_var ? "var " : "") + name + ": " +
+               type->to_string();
     }
 
     /**
      * @brief Checks if this binding is equivalent to another binding.
      *
-     * Bindings are considered equivalent if they have the same `is_var` status,
-     * the same name, and the same type. The token does not necessarily have to
-     * be the same; just the lexeme.
+     * Bindings are considered equivalent if they have the same
+     * `is_declared_var` status, the same name, and the same type. The token
+     * does not necessarily have to be the same; just the lexeme.
      *
      * @param other The other binding to compare.
      * @return True if the bindings are equivalent, false otherwise.
      */
     bool operator==(const Binding& other) const {
-        return is_var == other.is_var && name == other.name &&
+        return is_declared_var == other.is_declared_var && name == other.name &&
                *type == *other.type;
     }
 };

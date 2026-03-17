@@ -342,6 +342,7 @@ SymbolTree::add_binding_entry(
         return std::nullopt;
     }
 
+    // Make sure the name does not already exist in the current scope.
     if (auto node = current_scope->children.at(binding.name)) {
         Logger::inst().log_error(
             Err::NameAlreadyExists,

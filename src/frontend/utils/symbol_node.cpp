@@ -236,7 +236,11 @@ std::shared_ptr<Node::BindingEntry> Node::BindingEntry::create(
     node->parent = parent;
     node->short_name = binding.name;
     node->location = binding.location;
+    // If declared in a global scope, this should use an LLVM global variable.
     node->is_global = PTR_INSTANCEOF(parent, Node::IGlobalScope);
+    // If declared in an extern block, the binding should have been initialized
+    // elsewhere.
+    node->is_initialized = PTR_INSTANCEOF(parent, Node::ExternBlock);
 
     return node;
 }

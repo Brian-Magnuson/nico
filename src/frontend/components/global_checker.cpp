@@ -100,6 +100,7 @@ std::any GlobalChecker::visit(Stmt::Static* stmt) {
         stmt->identifier->lexeme,
         &stmt->identifier->location,
         expr_type,
+        is_extern || repl_mode,
         stmt->expression
     );
 
@@ -117,12 +118,6 @@ std::any GlobalChecker::visit(Stmt::Static* stmt) {
             "GlobalChecker::visit(Stmt::Static*): Symbol tree returned a "
             "non-binding entry for a binding entry."
         );
-    }
-
-    if (is_extern) {
-        // Extern statics are initialized elsewhere, so we mark them as
-        // initialized to avoid multiple definition issues.
-        stmt->binding_entry.lock()->extern_initialized = true;
     }
 
     return std::any();
@@ -159,6 +154,7 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
             param.identifier->lexeme,
             &param.identifier->location,
             annotation_type_opt.value(),
+            false, /* is_extern */
             param.expression
         );
         param_bindings.insert(param_string, param_binding);
@@ -176,19 +172,9 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
         // If no return annotation is present, the return type is Unit.
         return_type = std::make_shared<Type::Unit>();
     }
-    // Create the function type.
-    auto func_type =
-        std::make_shared<Type::Function>(param_bindings, return_type);
 
-    // Create the binding entry.
-    Binding binding(
-        false,
-        stmt->identifier->lexeme,
-        &stmt->identifier->location,
-        func_type
-    );
-    // Functions are always immutable.
-
+    bool is_extern = false;
+    // Next, check if the function is in an extern block.
     std::optional<std::string> custom_symbol = std::nullopt;
     // If the function is declared in an extern block...
     if (PTR_INSTANCEOF(symbol_tree->current_scope, Node::ExternBlock)) {
@@ -205,6 +191,7 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
         custom_symbol = std::string(stmt->identifier->lexeme);
         // Currently, we do not allow users to manually specify a custom symbol,
         // but if we did, it would override this symbol.
+        is_extern = true;
     }
     // If the function is not declared in an extern block, but doesn't have a
     // body...
@@ -216,6 +203,20 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
         );
         return std::any();
     }
+
+    // Create the function type.
+    auto func_type =
+        std::make_shared<Type::Function>(param_bindings, return_type);
+
+    // Create the binding entry.
+    Binding binding(
+        false,
+        stmt->identifier->lexeme,
+        &stmt->identifier->location,
+        func_type,
+        is_extern || repl_mode
+    );
+    // Functions are always immutable.
 
     // If the function has a custom symbol...
     if (custom_symbol.has_value()) {

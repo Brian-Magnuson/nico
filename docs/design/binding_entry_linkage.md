@@ -253,3 +253,6 @@ There is a trick we can do to achieve this:
 3. If we cannot find the global variable, then we create a new global variable *uninitialized*.
 4. If this is called from the visit function for the declaration, then we can set the initializer of the global variable to the constant value of the initializer expression.
 5. If this is called from the visit function for a name reference, then we can leave the global variable uninitialized, since it should have already been initialized by the declaration.
+
+We can use this trick, even when not in REPL mode and even with internally-linked variables.
+This helps to simplify the implementation.

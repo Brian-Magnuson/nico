@@ -414,10 +414,11 @@ public:
     // Global binding entries are declared using LLVM global variables, while
     // local binding entries are declared using LLVM alloca instructions.
     bool is_global;
-    // If this binding entry has external linkage, this flag indicates whether
-    // it has been initialized or not. This is used to avoid multiple definition
-    // issues when generating LLVM IR for extern bindings.
-    bool extern_initialized = false;
+    // Whether this binding entry is a global variable that has been
+    // initialized. If this is true, the variable should not be initialized
+    // again.
+    bool is_initialized;
+
     // The binding object that this entry represents.
     Binding binding;
     // If this binding is a local variable, the pointer to the LLVM
@@ -454,12 +455,9 @@ public:
      * function with the same name.
      *
      * @param builder The IRBuilder used to create the allocation if needed.
-     * @param extern_linkage Whether to use external linkage for global
-     * variables.
      */
-    virtual llvm::Value* get_llvm_allocation(
-        std::unique_ptr<llvm::IRBuilder<>>& builder, bool extern_linkage = false
-    ) {
+    virtual llvm::Value*
+    get_llvm_allocation(std::unique_ptr<llvm::IRBuilder<>>& builder) {
         llvm::Value* ptr;
         std::string suffix =
             PTR_INSTANCEOF(binding.type, Type::Function) ? "$var" : "";
@@ -475,14 +473,18 @@ public:
                     *ir_module,
                     llvm_type,
                     false, // isConstant
-                    extern_linkage ? llvm::GlobalValue::ExternalLinkage
-                                   : llvm::GlobalValue::InternalLinkage,
-                    extern_initialized ? nullptr
-                                       : llvm::Constant::getNullValue(
-                                             llvm_type
-                                         ), // Initializer
+                    binding.is_extern ? llvm::GlobalValue::ExternalLinkage
+                                      : llvm::GlobalValue::InternalLinkage,
+                    is_initialized ? nullptr
+                                   : llvm::Constant::getNullValue(
+                                         llvm_type
+                                     ), // Initializer
                     symbol + suffix
                 );
+
+                // If the variable was not initialized before, it should be
+                // initialized now.
+                is_initialized = true;
 
                 /*
                 Note: Using `nullptr` is very different from using
@@ -498,12 +500,7 @@ public:
                 errors. The trick is to initialize the variable to zero on the
                 first definition, and then declare it without an initializer on
                 subsequent definitions.
-
-                TODO: Please review this setup and try to make it safer if
-                possible.
                 */
-
-                extern_initialized = true;
             }
         }
         else {
@@ -552,12 +549,13 @@ public:
           Node::BindingEntry(
               Private(),
               Binding(
-                  false,
+                  false, /* is_declared_var */
                   overload_name,
                   first_overload_location,
                   std::dynamic_pointer_cast<Type>(
                       std::make_shared<Type::OverloadedFn>()
-                  )
+                  ),
+                  false /* is_extern */
               )
           ) {}
 
@@ -579,9 +577,8 @@ public:
         const Location* first_overload_location
     );
 
-    virtual llvm::Value* get_llvm_allocation(
-        std::unique_ptr<llvm::IRBuilder<>>& builder, bool /*extern_linkage*/
-    ) override {
+    virtual llvm::Value*
+    get_llvm_allocation(std::unique_ptr<llvm::IRBuilder<>>& builder) override {
         return llvm::UndefValue::get(
             llvm::PointerType::get(builder->getContext(), 0)
         );

@@ -47,7 +47,7 @@ std::any CodeGenerator::visit(Stmt::Let* stmt) {
     llvm::Value* allocation = nullptr;
 
     if (binding_entry->is_global) {
-        allocation = binding_entry->get_llvm_allocation(builder, repl_mode);
+        allocation = binding_entry->get_llvm_allocation(builder);
     }
     else {
         auto alloca_inst = builder->CreateAlloca(llvm_type, nullptr, symbol);
@@ -71,7 +71,7 @@ std::any CodeGenerator::visit(Stmt::Let* stmt) {
 std::any CodeGenerator::visit(Stmt::Static* stmt) {
 
     llvm::GlobalVariable* llvm_global = llvm::cast<llvm::GlobalVariable>(
-        stmt->binding_entry.lock()->get_llvm_allocation(builder, true)
+        stmt->binding_entry.lock()->get_llvm_allocation(builder)
     );
 
     if (stmt->expression.has_value()) {
@@ -156,7 +156,7 @@ std::any CodeGenerator::visit(Stmt::Func* stmt) {
 
     // Use a global variable to hold the function pointer.
     llvm::GlobalVariable* llvm_global = llvm::cast<llvm::GlobalVariable>(
-        stmt->binding_entry.lock()->get_llvm_allocation(builder, true)
+        stmt->binding_entry.lock()->get_llvm_allocation(builder)
     );
     // `get_llvm_allocation` will create a global variable if it doesn't already
     // exist. The variable may already exist if it was referenced before the
@@ -865,8 +865,7 @@ std::any CodeGenerator::visit(Expr::Alloc* expr, bool as_lvalue) {
 
 std::any CodeGenerator::visit(Expr::NameRef* expr, bool as_lvalue) {
     llvm::Value* result = nullptr;
-    llvm::Value* ptr =
-        expr->binding_entry.lock()->get_llvm_allocation(builder, repl_mode);
+    llvm::Value* ptr = expr->binding_entry.lock()->get_llvm_allocation(builder);
 
     if (as_lvalue) {
         // We use the pointer to the variable (its alloca inst or global ptr)

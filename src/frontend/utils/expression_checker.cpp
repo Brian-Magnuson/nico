@@ -1242,7 +1242,7 @@ std::any ExpressionChecker::visit(Expr::NameRef* expr, bool as_lvalue) {
     }
     // Set assignability and possible error location based on whether the
     // binding is mutable.
-    if (binding_entry->binding.is_var) {
+    if (binding_entry->binding.is_declared_var) {
         expr->assignable = true;
     }
     else {

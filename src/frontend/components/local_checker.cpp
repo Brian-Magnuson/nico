@@ -76,7 +76,9 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
         stmt->has_var,
         stmt->identifier->lexeme,
         &stmt->identifier->location,
-        expr_type
+        expr_type,
+        repl_mode // Variables declared in REPL mode have external linkage to
+                  // allow access across cells.
     );
 
     auto node_opt = symbol_tree->add_binding_entry(binding);
