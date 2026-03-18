@@ -130,6 +130,7 @@ class ExpressionChecker : public Expr::Visitor, public Annotation::Visitor {
     std::any visit(Annotation::NameRef* annotation) override;
     std::any visit(Annotation::Pointer* annotation) override;
     std::any visit(Annotation::Nullptr* annotation) override;
+    std::any visit(Annotation::Void* annotation) override;
     std::any visit(Annotation::Reference* annotation) override;
     std::any visit(Annotation::Array* annotation) override;
     std::any visit(Annotation::Object* annotation) override;

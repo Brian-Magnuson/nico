@@ -604,7 +604,7 @@ std::optional<std::shared_ptr<Expr>> Parser::primary() {
     if (tokens::is_number(peek()->tok_type)) {
         return number_literal();
     }
-    if (match({Tok::Bool, Tok::Nullptr, Tok::Str})) {
+    if (match({Tok::Bool, Tok::Str, Tok::Nullptr, Tok::Void})) {
         return std::make_shared<Expr::Literal>(previous());
     }
     if (match({Tok::Identifier})) {
@@ -1627,6 +1627,9 @@ std::optional<std::shared_ptr<Annotation>> Parser::annotation() {
     }
     if (match({Tok::Nullptr})) {
         return std::make_shared<Annotation::Nullptr>(previous());
+    }
+    if (match({Tok::Void})) {
+        return std::make_shared<Annotation::Void>(previous());
     }
     if (match({Tok::LParen})) {
         auto lparen_token = previous();

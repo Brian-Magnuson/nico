@@ -757,22 +757,7 @@ public:
         return false;
     }
 
-    virtual bool is_assignable_to(const Type& other) const override {
-        if (const auto* other_tuple = dynamic_cast<const Tuple*>(&other)) {
-            if (elements.size() != other_tuple->elements.size()) {
-                return false;
-            }
-            for (size_t i = 0; i < elements.size(); ++i) {
-                if (!elements[i]->is_assignable_to(
-                        *(other_tuple->elements[i])
-                    )) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        return false;
-    }
+    virtual bool is_assignable_to(const Type& other) const override;
 
     virtual llvm::Type*
     get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
@@ -812,8 +797,7 @@ public:
  *
  * A unit type is a special tuple type that has no elements and is equivalent to
  * a tuple type with no elements. It is written as `()` and named "unit" because
- * it has only one possible value, which is `()`. It may be used to represent
- * the absence of a type, like `void` in other languages.
+ * it has only one possible value, which is `()`.
  *
  * This class does not override `Type::Tuple::operator==` and, thus, will appear
  * equal to other instances of `Type::Tuple` that have no elements. That is to
@@ -1035,6 +1019,54 @@ public:
 };
 
 // MARK: Special types
+
+/**
+ * @brief A void type.
+ *
+ * The void type is a special type that has exactly one value, which is also
+ * written as `void`. It is used to represent the absence of a value, such as
+ * the return type of a function that does not return anything.
+ *
+ * It behaves similarly to the unit type (empty tuple), except that it
+ * can be used to generate slightly different instructions when dealing with
+ * function returns to better interop with C code.
+ */
+class Type::Void : public Type {
+public:
+    virtual ~Void() = default;
+
+    std::string to_string() const override { return "void"; }
+
+    virtual llvm::Type*
+    get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
+        return llvm::StructType::get(builder->getContext());
+    }
+
+    virtual std::pair<std::string, std::vector<llvm::Value*>> to_print_args(
+        std::unique_ptr<llvm::IRBuilder<>>& builder,
+        llvm::Value* value,
+        bool include_quotes = false
+    ) const override {
+        return {"void", {}};
+    }
+
+    virtual bool operator==(const Type& other) const override {
+        return dynamic_cast<const Void*>(&other) != nullptr;
+    }
+
+    virtual bool is_assignable_to(const Type& other) const override {
+        // Void can be assigned to void...
+        if (dynamic_cast<const Void*>(&other) != nullptr) {
+            return true;
+        }
+        // Or an empty tuple...
+        else if (auto* other_tuple = dynamic_cast<const Tuple*>(&other)) {
+            return other_tuple->elements.empty();
+        }
+
+        return false;
+    }
+};
 
 /**
  * @brief A named type.

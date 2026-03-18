@@ -147,6 +147,7 @@ public:
     class OverloadedFn;
 
     // Special types
+    class Void;
     class Named;
 
     Type() = default;
@@ -478,6 +479,7 @@ public:
 
     class Pointer;
     class Nullptr;
+    class Void;
     class Reference;
 
     class Array;
@@ -496,6 +498,7 @@ public:
         virtual std::any visit(NameRef* annotation) = 0;
         virtual std::any visit(Pointer* annotation) = 0;
         virtual std::any visit(Nullptr* annotation) = 0;
+        virtual std::any visit(Void* annotation) = 0;
         virtual std::any visit(Reference* annotation) = 0;
         virtual std::any visit(Array* annotation) = 0;
         virtual std::any visit(Object* annotation) = 0;

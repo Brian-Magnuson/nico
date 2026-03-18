@@ -1683,46 +1683,46 @@ TEST_CASE("JIT namespaces", "[jit]") {
 }
 
 TEST_CASE("JIT extern block", "[jit]") {
-    // SECTION("Extern block with nonexistent function") {
-    //     run_jit_test(
-    //         R"(
-    //         extern "C" math {
-    //             func nonexistent_function(x: i32) -> i32
-    //         }
-    //         )",
-    //         JitTestOptions{.expected_error_code = Err::JITMissingEntryPoint}
-    //     );
-    // }
+    SECTION("Extern block with nonexistent function") {
+        run_jit_test(
+            R"(
+            extern "C" math {
+                func nonexistent_function(x: i32) -> i32
+            }
+            )",
+            JitTestOptions{.expected_error_code = Err::JITMissingEntryPoint}
+        );
+    }
 
-    // SECTION("Extern block with real function") {
-    //     run_jit_test(
-    //         R"(
-    //         extern "C" math {
-    //             func sqrt(x: f64) -> f64
-    //         }
-    //         printout math::sqrt(16.0)
-    //         )",
-    //         JitTestOptions{
-    //             .expected_output = "4",
-    //             .load_static_libraries = true
-    //         }
-    //     );
-    // }
+    SECTION("Extern block with real function") {
+        run_jit_test(
+            R"(
+            extern "C" math {
+                func sqrt(x: f64) -> f64
+            }
+            printout math::sqrt(16.0)
+            )",
+            JitTestOptions{
+                .expected_output = "4",
+                .load_static_libraries = true
+            }
+        );
+    }
 
-    // SECTION("Extern block with custom example function") {
-    //     run_jit_test(
-    //         R"(
-    //         extern "C" example {
-    //             func examplelib_get_constant() -> i32
-    //         }
-    //         printout example::examplelib_get_constant()
-    //         )",
-    //         JitTestOptions{
-    //             .expected_output = "42",
-    //             .load_static_libraries = true
-    //         }
-    //     );
-    // }
+    SECTION("Extern block with custom example function") {
+        run_jit_test(
+            R"(
+            extern "C" example {
+                func examplelib_get_constant() -> i32
+            }
+            printout example::examplelib_get_constant()
+            )",
+            JitTestOptions{
+                .expected_output = "42",
+                .load_static_libraries = true
+            }
+        );
+    }
 
     SECTION("Extern block with example variable") {
         run_jit_test(

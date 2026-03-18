@@ -1304,6 +1304,9 @@ std::any ExpressionChecker::visit(Expr::Literal* expr, bool as_lvalue) {
     case Tok::Nullptr:
         expr->type = std::make_shared<Type::Nullptr>();
         break;
+    case Tok::Void:
+        expr->type = std::make_shared<Type::Void>();
+        break;
     default:
         panic(
             "ExpressionChecker::visit(Expr::Literal*): Could not handle case "
@@ -1575,6 +1578,11 @@ std::any ExpressionChecker::visit(Annotation::Pointer* annotation) {
 
 std::any ExpressionChecker::visit(Annotation::Nullptr* /*annotation*/) {
     std::shared_ptr<Type> type = std::make_shared<Type::Nullptr>();
+    return type;
+}
+
+std::any ExpressionChecker::visit(Annotation::Void* /*annotation*/) {
+    std::shared_ptr<Type> type = std::make_shared<Type::Void>();
     return type;
 }
 

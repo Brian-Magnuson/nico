@@ -1225,6 +1225,23 @@ public:
 };
 
 /**
+ * @brief An annotation representing a void type.
+ *
+ * This annotation is separate from named annotations because `void` is not an
+ * identifier.
+ */
+class Annotation::Void : public Annotation {
+public:
+    Void(std::shared_ptr<Token> void_token) {
+        location = &void_token->location;
+    }
+
+    std::any accept(Visitor* visitor) override { return visitor->visit(this); }
+
+    std::string to_string() const override { return "void"; }
+};
+
+/**
  * @brief An annotation representing a reference type.
  *
  * This annotation is used to represent reference types, which can be either

@@ -118,6 +118,7 @@ enum class Tok {
     Bool,
     Str,
     Nullptr,
+    Void,
     _LiteralsEnd,
 
     // Keywords

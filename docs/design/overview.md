@@ -212,7 +212,19 @@ A tuple may also have no elements. It is written as an empty pair of parentheses
 ()
 ```
 
-A tuple with no elements is called the unit type. It is used to represent the absence of a value.
+A tuple with no elements is called the unit type.
+
+The unit type is bidirectionally assignment-compatible with the void type `void`, which is a special type that has only one value, `void`. This means that you can assign `()` to `void` and vice versa without requiring an explicit cast.
+```
+let x: () = void
+
+let y: void = ()
+```
+
+It is sometimes used to represent the absence of a value.
+However, in the case of functions that do not return anything, it is preferred to use the `void` type instead due to some subtle differences in the low-level instructions that are generated.
+Refer to the section on the void type for more details.
+
 
 Using `=` to assign one tuple to another will shallow copy the elements of the tuple. For other copy behaviors, the copy must be done manually.
 
@@ -474,6 +486,48 @@ f(3.14)    // calls the f64 overload
 
 The type `overloadedfn` cannot be written as a type annotation; it must be inferred by the compiler.
 Additionally, `overloadedfn` is considered incompatible with all other function pointer types, including other `overloadedfn` types.
+
+## Void type
+
+The void type, `void`, is a special type that has only one value, `void`. It is used to indicate the absence of a value, such as the return type of a function that does not return anything.
+
+```
+func do_something() -> void:
+    printout "Doing something..."
+    return void
+```
+
+The void type is bidirectionally assignment-compatible with the unit type `()`, which is a tuple with no elements. This means that you can assign `void` to `()` and vice versa without requiring an explicit cast.
+```
+let x: void = ()
+
+let y: () = void
+```
+
+This is because, internally, the `void` type is the same as the unit type `()`. 
+This design allows void to behave as a first-class type with a value.
+
+It has a few properties that make it behave differently from the unit type:
+- When a function's return type is `void`, its internal return type is the traditional "C-like" void and not an empty tuple.
+- Return instructions generated from a function with return type `void` will not return anything, rather than returning a value.
+- Calls to a function with return type `void` will still yield a value of `void`, but this value is created from within the caller immediately after the call, making it appear as if the function actually returned something.
+
+```
+func returns_unit() -> ():
+    return ()
+
+func returns_void() -> void:
+    return void
+
+let x = returns_unit()
+let y = returns_void()
+```
+
+In the call expression `returns_unit()`, the return value of the function is used to initialize `x`.
+In the call expression `returns_void()`, the return value of the function is ignored (because it doesn't return anything), and a new `void` value is synthesized to initialize `y`.
+
+These differences are subtle, and users may not notice them in most cases.
+However, these differences are important for interoperability with C code and for working with low-level code in general.
 
 ## Type-of annotation
 
@@ -995,8 +1049,8 @@ func my_function(a: i32, b: i32) -> i32:
 ```
 
 With return types, there are several rules to follow:
-1. Functions that do not specify a return type have an implicit return type of `()`.
-2. Functions that return `()` have an implicit `yield ()`, meaning no additional `yield` or `return` statements are required.
+1. Functions that do not specify a return type have an implicit return type of `void`.
+2. Functions that return `void` have an implicit `yield void`, meaning no additional `yield` or `return` statements are required.
 3. For all functions, the block must yield the expected return type, and all return statements must return the expected type.
 
 ```
@@ -1688,7 +1742,7 @@ Note: Despite structs having a similar syntax, they do not use blocks, and thus,
 
 The braced form is useful when multiple statements need to be kept on a single line.
 
-Blocks yield the value from the last yield statement executed within the block. If no yield statement is executed, the block yields `()`.
+Blocks yield the value from the last yield statement executed within the block. If no yield statement is executed, the block yields `void`.
 ```
 let x = block:
     yield 42
@@ -1802,18 +1856,18 @@ while condition:
 while condition do expression
 ```
 
-Conditional while expressions are only allowed to yield `()`. This is because the while loop may not execute, and thus, cannot guarantee a yield value.
+Conditional while expressions are only allowed to yield `void`. This is because the while loop may not execute, and thus, cannot guarantee a yield value.
 
-A while-loop may yield values other than `()` if and only if the condition is literally `true`. In such cases, the while-loop is treated like a non-conditional loop expression.
+A while-loop may yield values other than `void` if and only if the condition is literally `true`. In such cases, the while-loop is treated like a non-conditional loop expression.
 
 For conditional short-form while expressions, the `do` keyword is required to separate the condition from the statement.
-Additionally, unlike with if-statements, the expression in the conditional short-form while expression will not affect the value yielded by the while loop. The while loop will always yield `()`.
+Additionally, unlike with if-statements, the expression in the conditional short-form while expression will not affect the value yielded by the while loop. The while loop will always yield `void`.
 This allows users to write the following without worrying about the yield value:
 ```
 while condition do x = x + 1
 ```
 
-Although the expression yields the value of `x`, the while loop will continue to yield `()`.
+Although the expression yields the value of `x`, the while loop will continue to yield `void`.
 
 ### Do-while expressions
 
@@ -1831,16 +1885,16 @@ while condition
 do expression while condition
 ```
 
-Like while expressions, conditional do-while expressions are only allowed to yield `()`. This is because the do-while loop may not execute, and thus, cannot guarantee a yield value.
+Like while expressions, conditional do-while expressions are only allowed to yield `void`. This is because the do-while loop may not execute, and thus, cannot guarantee a yield value.
 
-A do-while loop may yield values other than `()` if and only if the condition is literally `true`. In such cases, the do-while loop is treated like a non-conditional loop expression.
+A do-while loop may yield values other than `void` if and only if the condition is literally `true`. In such cases, the do-while loop is treated like a non-conditional loop expression.
 
-The expression in the short-form do-while expression will not affect the value yielded by the do-while loop. The do-while loop will always yield `()`.
+The expression in the short-form do-while expression will not affect the value yielded by the do-while loop. The do-while loop will always yield `void`.
 ```
 do x = x + 1 while condition
 ```
 
-Although the expression yields the value of `x`, the do-while loop will continue to yield `()`.
+Although the expression yields the value of `x`, the do-while loop will continue to yield `void`.
 
 ### Move expressions
 
@@ -1951,11 +2005,11 @@ There are three types of yield statements:
 - `break`: Sets the yield value of the nearest enclosing loop and exits the loop. They can only be used within loops.
 - `return`: Sets the return value of the nearest enclosing function and exits the function. They can only be used within functions.
 
-Yield statements must always provide a value to be yielded, even if the expected type is `()`. This is to prevent ambiguity in case any statements come after the yield statement.
+Yield statements must always provide a value to be yielded, even if the expected type is `void`. This is to prevent ambiguity in case any statements come after the yield statement.
 ```
-yield ()
-break ()
-return ()
+yield void
+break void
+return void
 ```
 
 Regular yield statements only yield values within the block they are contained in. To propagate a value out of a block, use multiple yield statements:
