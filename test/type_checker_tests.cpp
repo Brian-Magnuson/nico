@@ -83,38 +83,6 @@ TEST_CASE("Check variable declarations", "[checker]") {
         run_checker_test("let a = 1 let b: typeof(a) = 2");
     }
 
-    SECTION("Nullptr assignment single pointer") {
-        run_checker_test("let var a: @i32 = nullptr");
-    }
-
-    SECTION("Nullptr assignment double pointer") {
-        run_checker_test("let var a: @@i32 = nullptr");
-    }
-
-    SECTION("Nullptr assignment var pointer") {
-        run_checker_test("let var a: var@i32 = nullptr");
-    }
-
-    SECTION("Nullptr assignment deep pointer") {
-        run_checker_test("let var a: var@var@var@var@var@i32 = nullptr");
-    }
-
-    SECTION("Anyptr assignment with nullptr") {
-        run_checker_test("let var a: anyptr = nullptr");
-    }
-
-    SECTION("Anyptr assignment with raw typed pointer") {
-        run_checker_test("let var a = 1 let p = var@a let q: anyptr = p");
-    }
-
-    SECTION("Anyptr assignment with alloc") {
-        run_checker_test("let q: anyptr = alloc i32");
-    }
-
-    SECTION("Anyptr assignment with anyptr") {
-        run_checker_test("let var a: anyptr = nullptr let b: anyptr = a");
-    }
-
     SECTION("Let type mismatch i32 and bool") {
         run_checker_test("let a: i32 = true", Err::LetTypeMismatch);
     }
@@ -135,8 +103,60 @@ TEST_CASE("Check variable declarations", "[checker]") {
         run_checker_test("let a: [i32; 3] = [1, 2]", Err::LetTypeMismatch);
     }
 
+    SECTION("Undeclared identifier") {
+        run_checker_test("let a = b", Err::NameNotFound);
+    }
+
+    SECTION("Immutable variables") {
+        run_checker_test("let a = 1 let b = 2 a = b", Err::AssignToImmutable);
+    }
+
+    SECTION("Variable name conflict") {
+        run_checker_test("let a = 1 let a = 2", Err::NameAlreadyExists);
+    }
+
+    SECTION("Primitive type name conflict") {
+        run_checker_test("let i32 = 1", Err::NameIsReserved);
+    }
+}
+
+TEST_CASE("Check variable nullptr declarations", "[checker]") {
+    SECTION("Nullptr assignment single pointer") {
+        run_checker_test("let var a: @i32 = nullptr");
+    }
+
+    SECTION("Nullptr assignment double pointer") {
+        run_checker_test("let var a: @@i32 = nullptr");
+    }
+
+    SECTION("Nullptr assignment var pointer") {
+        run_checker_test("let var a: var@i32 = nullptr");
+    }
+
+    SECTION("Nullptr assignment deep pointer") {
+        run_checker_test("let var a: var@var@var@var@var@i32 = nullptr");
+    }
+
     SECTION("Let type mismatch i32 and nullptr") {
         run_checker_test("let a: i32 = nullptr", Err::LetTypeMismatch);
+    }
+}
+
+TEST_CASE("Check variable anyptr declarations", "[checker]") {
+    SECTION("Anyptr assignment with nullptr") {
+        run_checker_test("let var a: anyptr = nullptr");
+    }
+
+    SECTION("Anyptr assignment with raw typed pointer") {
+        run_checker_test("let var a = 1 let p = var@a let q: anyptr = p");
+    }
+
+    SECTION("Anyptr assignment with alloc") {
+        run_checker_test("let q: anyptr = alloc i32");
+    }
+
+    SECTION("Anyptr assignment with anyptr") {
+        run_checker_test("let var a: anyptr = nullptr let b: anyptr = a");
     }
 
     SECTION("Let type mismatch anyptr and i32") {
@@ -156,21 +176,31 @@ TEST_CASE("Check variable declarations", "[checker]") {
             Err::LetTypeMismatch
         );
     }
+}
 
-    SECTION("Undeclared identifier") {
-        run_checker_test("let a = b", Err::NameNotFound);
+TEST_CASE("Check variable void declarations", "[checker]") {
+    SECTION("Void assignment") {
+        run_checker_test("let var a: void = void");
     }
 
-    SECTION("Immutable variables") {
-        run_checker_test("let a = 1 let b = 2 a = b", Err::AssignToImmutable);
+    SECTION("Void compatible with unit") {
+        run_checker_test("let var a: void = ()");
     }
 
-    SECTION("Variable name conflict") {
-        run_checker_test("let a = 1 let a = 2", Err::NameAlreadyExists);
+    SECTION("Unit compatible with void") {
+        run_checker_test("let var a: () = void");
     }
 
-    SECTION("Primitive type name conflict") {
-        run_checker_test("let i32 = 1", Err::NameIsReserved);
+    SECTION("Let type mismatch void and i32") {
+        run_checker_test("let a: void = 1", Err::LetTypeMismatch);
+    }
+
+    SECTION("Let type mismatch void and non-unit tuple") {
+        run_checker_test("let a: void = (1, 2)", Err::LetTypeMismatch);
+    }
+
+    SECTION("Let type mismatch non-unit tuple and void") {
+        run_checker_test("let a: (i32) = void", Err::LetTypeMismatch);
     }
 }
 

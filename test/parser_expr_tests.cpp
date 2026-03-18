@@ -82,6 +82,10 @@ TEST_CASE("Parser basic", "[parser]") {
     SECTION("Nullptr") {
         run_parser_expr_test("nullptr", {"(expr (lit nullptr))", "(stmt:eof)"});
     }
+
+    SECTION("Void") {
+        run_parser_expr_test("void", {"(expr (lit void))", "(stmt:eof)"});
+    }
 }
 
 TEST_CASE("Parser numbers", "[parser]") {
@@ -338,7 +342,8 @@ TEST_CASE("Parser expressions", "[parser]") {
     SECTION("Binary 2") {
         run_parser_expr_test(
             "1 + 2 * 3",
-            {"(expr (binary + (lit i32 1) (binary * (lit i32 2) (lit i32 3))))",
+            {"(expr (binary + (lit i32 1) (binary * (lit i32 2) (lit i32 "
+             "3))))",
              "(stmt:eof)"}
         );
     }
@@ -371,7 +376,8 @@ TEST_CASE("Parser expressions", "[parser]") {
     SECTION("Comparison 2") {
         run_parser_expr_test(
             "1 + 2 >= 3 * 4",
-            {"(expr (binary >= (binary + (lit i32 1) (lit i32 2)) (binary * "
+            {"(expr (binary >= (binary + (lit i32 1) (lit i32 2)) (binary "
+             "* "
              "(lit i32 3) "
              "(lit i32 4))))",
              "(stmt:eof)"}
@@ -397,7 +403,8 @@ TEST_CASE("Parser expressions", "[parser]") {
     SECTION("Equality 3") {
         run_parser_expr_test(
             "a < b == c >= d",
-            {"(expr (binary == (binary < (nameref a) (nameref b)) (binary >= "
+            {"(expr (binary == (binary < (nameref a) (nameref b)) (binary "
+             ">= "
              "(nameref c) (nameref d))))",
              "(stmt:eof)"}
         );
@@ -445,7 +452,8 @@ TEST_CASE("Parser expressions", "[parser]") {
     SECTION("Compound assignment 1") {
         run_parser_expr_test(
             "a += b",
-            {"(expr (assign (nameref a) (binary + (nameref a) (nameref b))))",
+            {"(expr (assign (nameref a) (binary + (nameref a) (nameref "
+             "b))))",
              "(stmt:eof)"}
         );
     }
@@ -501,7 +509,8 @@ TEST_CASE("Parser cast expressions", "[parser]") {
         run_parser_expr_test(
             "(1 + 2) as i16; -(3.14 as f32) as f64",
             {"(expr (cast (binary + (lit i32 1) (lit i32 2)) as i16))",
-             "(expr (cast (unary - (cast (lit f64 3.140000) as f32)) as f64))",
+             "(expr (cast (unary - (cast (lit f64 3.140000) as f32)) as "
+             "f64))",
              "(stmt:eof)"}
         );
     }
@@ -509,7 +518,8 @@ TEST_CASE("Parser cast expressions", "[parser]") {
     SECTION("Cast chain") {
         run_parser_expr_test(
             "123 as i8 as i16 as i32",
-            {"(expr (cast (cast (cast (lit i32 123) as i8) as i16) as i32))",
+            {"(expr (cast (cast (cast (lit i32 123) as i8) as i16) as "
+             "i32))",
              "(stmt:eof)"}
         );
     }
@@ -532,7 +542,8 @@ TEST_CASE("Parser cast expressions", "[parser]") {
     SECTION("Casts with parentheses") {
         run_parser_expr_test(
             "(123 as i8) + (456 as i16)",
-            {"(expr (binary + (cast (lit i32 123) as i8) (cast (lit i32 456) "
+            {"(expr (binary + (cast (lit i32 123) as i8) (cast (lit i32 "
+             "456) "
              "as i16)))",
              "(stmt:eof)"}
         );
@@ -561,7 +572,8 @@ TEST_CASE("Parser groupings and tuples", "[parser]") {
     SECTION("Grouping 3") {
         run_parser_expr_test(
             "(1 + 2) * 3",
-            {"(expr (binary * (binary + (lit i32 1) (lit i32 2)) (lit i32 3)))",
+            {"(expr (binary * (binary + (lit i32 1) (lit i32 2)) (lit i32 "
+             "3)))",
              "(stmt:eof)"}
         );
     }
@@ -614,7 +626,8 @@ TEST_CASE("Parser blocks", "[parser]") {
     SECTION("Braced block 2") {
         run_parser_expr_test(
             "block { let a = 1 printout a }",
-            {"(expr (block (stmt:let a (lit i32 1)) (stmt:print (nameref a))))",
+            {"(expr (block (stmt:let a (lit i32 1)) (stmt:print (nameref "
+             "a))))",
              "(stmt:eof)"}
         );
     }
@@ -638,7 +651,8 @@ TEST_CASE("Parser blocks", "[parser]") {
     SECTION("Indented block 2") {
         run_parser_expr_test(
             "block:\n    let a = 1\n    printout a\n",
-            {"(expr (block (stmt:let a (lit i32 1)) (stmt:print (nameref a))))",
+            {"(expr (block (stmt:let a (lit i32 1)) (stmt:print (nameref "
+             "a))))",
              "(stmt:eof)"}
         );
     }
@@ -694,7 +708,8 @@ TEST_CASE("Parser blocks", "[parser]") {
     SECTION("Nested blocks 2") {
         run_parser_expr_test(
             "block { block { 123 } 456 block { 789 }}",
-            {"(expr (block (expr (block (expr (lit i32 123)))) (expr (lit i32 "
+            {"(expr (block (expr (block (expr (lit i32 123)))) (expr (lit "
+             "i32 "
              "456)) (expr (block (expr (lit i32 789))))))",
              "(stmt:eof)"}
         );
@@ -711,7 +726,8 @@ TEST_CASE("Parser blocks", "[parser]") {
         run_parser_expr_test(
             "block:\n    block:\n        123\n    456\n    block:\n        "
             "789\n",
-            {"(expr (block (expr (block (expr (lit i32 123)))) (expr (lit i32 "
+            {"(expr (block (expr (block (expr (lit i32 123)))) (expr (lit "
+             "i32 "
              "456)) (expr (block (expr (lit i32 789))))))",
              "(stmt:eof)"}
         );
@@ -903,9 +919,11 @@ TEST_CASE("Parser if expressions", "[parser]") {
     SECTION("If else if expression 2") {
         run_parser_expr_test(
             "if true:\n    123\nelse if false:\n    456\nelse:\n    789\n",
-            {"(expr (if (lit true) then (block (expr (lit i32 123))) else (if "
+            {"(expr (if (lit true) then (block (expr (lit i32 123))) else "
+             "(if "
              "(lit "
-             "false) then (block (expr (lit i32 456))) else (block (expr (lit "
+             "false) then (block (expr (lit i32 456))) else (block (expr "
+             "(lit "
              "i32 "
              "789))))))",
              "(stmt:eof)"}
@@ -915,9 +933,11 @@ TEST_CASE("Parser if expressions", "[parser]") {
     SECTION("If else if expression 3") {
         run_parser_expr_test(
             "if true { 123 } else if false { 456 } else { 789 }\n",
-            {"(expr (if (lit true) then (block (expr (lit i32 123))) else (if "
+            {"(expr (if (lit true) then (block (expr (lit i32 123))) else "
+             "(if "
              "(lit "
-             "false) then (block (expr (lit i32 456))) else (block (expr (lit "
+             "false) then (block (expr (lit i32 456))) else (block (expr "
+             "(lit "
              "i32 "
              "789))))))",
              "(stmt:eof)"}
@@ -927,7 +947,8 @@ TEST_CASE("Parser if expressions", "[parser]") {
     SECTION("Weird if expression") {
         run_parser_expr_test(
             "if if true then true else false then 123 else 456\n",
-            {"(expr (if (if (lit true) then (lit true) else (lit false)) then "
+            {"(expr (if (if (lit true) then (lit true) else (lit false)) "
+             "then "
              "(lit i32 123) else (lit i32 456)))",
              "(stmt:eof)"}
         );
@@ -1006,7 +1027,8 @@ TEST_CASE("Parser loop expressions", "[parser]") {
     SECTION("Do-while loop 1") {
         run_parser_expr_test(
             "do 123 while condition\n",
-            {"(expr (loop do while (nameref condition) (block (expr (lit i32 "
+            {"(expr (loop do while (nameref condition) (block (expr (lit "
+             "i32 "
              "123)))))",
              "(stmt:eof)"}
         );
@@ -1015,7 +1037,8 @@ TEST_CASE("Parser loop expressions", "[parser]") {
     SECTION("Do-while loop 2") {
         run_parser_expr_test(
             "do:\n    123\nwhile condition\n",
-            {"(expr (loop do while (nameref condition) (block (expr (lit i32 "
+            {"(expr (loop do while (nameref condition) (block (expr (lit "
+             "i32 "
              "123)))))",
              "(stmt:eof)"}
         );
@@ -1024,7 +1047,8 @@ TEST_CASE("Parser loop expressions", "[parser]") {
     SECTION("Do-while loop 3") {
         run_parser_expr_test(
             "do { 123 } while condition\n",
-            {"(expr (loop do while (nameref condition) (block (expr (lit i32 "
+            {"(expr (loop do while (nameref condition) (block (expr (lit "
+             "i32 "
              "123)))))",
              "(stmt:eof)"}
         );
@@ -1070,7 +1094,8 @@ TEST_CASE("Parser call expressions", "[parser]") {
     SECTION("Call with multiple arguments") {
         run_parser_expr_test(
             "f(1, 2, 3)",
-            {"(expr (call (nameref f) (lit i32 1) (lit i32 2) (lit i32 3)))",
+            {"(expr (call (nameref f) (lit i32 1) (lit i32 2) (lit i32 "
+             "3)))",
              "(stmt:eof)"}
         );
     }
@@ -1148,7 +1173,8 @@ TEST_CASE("Parser subscript expressions", "[parser]") {
     SECTION("Subscript with call") {
         run_parser_expr_test(
             "a[f(i)]",
-            {"(expr (subscript (nameref a) (call (nameref f) (nameref i))))",
+            {"(expr (subscript (nameref a) (call (nameref f) (nameref "
+             "i))))",
              "(stmt:eof)"}
         );
     }
@@ -1165,7 +1191,8 @@ TEST_CASE("Parser subscript expressions", "[parser]") {
     SECTION("Subscript with tuple index") {
         run_parser_expr_test(
             "a[(i, j)]",
-            {"(expr (subscript (nameref a) (tuple (nameref i) (nameref j))))",
+            {"(expr (subscript (nameref a) (tuple (nameref i) (nameref "
+             "j))))",
              "(stmt:eof)"}
         );
     }
@@ -1215,7 +1242,8 @@ TEST_CASE("Parser postfix expressions", "[parser]") {
     SECTION("Postfix 5") {
         run_parser_expr_test(
             "a.b()[c]",
-            {"(expr (subscript (call (access . (nameref a) b)) (nameref c)))",
+            {"(expr (subscript (call (access . (nameref a) b)) (nameref "
+             "c)))",
              "(stmt:eof)"}
         );
     }
@@ -1223,7 +1251,8 @@ TEST_CASE("Parser postfix expressions", "[parser]") {
     SECTION("Postfix 6") {
         run_parser_expr_test(
             "a[b].c()",
-            {"(expr (call (access . (subscript (nameref a) (nameref b)) c)))",
+            {"(expr (call (access . (subscript (nameref a) (nameref b)) "
+             "c)))",
              "(stmt:eof)"}
         );
     }
@@ -1231,7 +1260,8 @@ TEST_CASE("Parser postfix expressions", "[parser]") {
     SECTION("Postfix 7") {
         run_parser_expr_test(
             "a()[b]()[c]",
-            {"(expr (subscript (call (subscript (call (nameref a)) (nameref "
+            {"(expr (subscript (call (subscript (call (nameref a)) "
+             "(nameref "
              "b))) (nameref c)))",
              "(stmt:eof)"}
         );
@@ -1395,7 +1425,8 @@ TEST_CASE("Parser alloc expressions", "[parser]") {
     SECTION("Alloc for 3") {
         run_parser_expr_test(
             "alloc for 10 + m of @i8",
-            {"(expr (alloc for (binary + (lit i32 10) (nameref m)) of @i8))",
+            {"(expr (alloc for (binary + (lit i32 10) (nameref m)) of "
+             "@i8))",
              "(stmt:eof)"}
         );
     }

@@ -213,6 +213,20 @@ TEST_CASE("Parser let stmt type annotations", "[parser]") {
         );
     }
 
+    SECTION("Let statements void 1") {
+        run_parser_stmt_test(
+            "let var v: void",
+            {"(stmt:let var v void)", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Let statements void 2") {
+        run_parser_stmt_test(
+            "let var v: void = void",
+            {"(stmt:let var v void (lit void))", "(stmt:eof)"}
+        );
+    }
+
     SECTION("Let improper type") {
         run_parser_stmt_error_test("let a: 1 = 1", Err::NotAType);
     }
