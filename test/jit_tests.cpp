@@ -27,7 +27,7 @@ using nico::Err;
  * flexible and comprehensive testing of various JIT behaviors, including
  * expected outputs, error codes, panics, and more.
  */
-struct JitTestOptions {
+struct JITTestOptions {
     // The expected output of the JIT, if any. If not provided, the output will
     // not be checked.
     std::optional<std::string_view> expected_output = std::nullopt;
@@ -61,7 +61,7 @@ struct JitTestOptions {
  *
  * Depending on the options provided, this function will check the expected
  * output, error codes, panics, and other behaviors of the JIT.
- * See the JitTestOptions struct for more details on the available options and
+ * See the JITTestOptions struct for more details on the available options and
  * their effects.
  *
  * @param source The source code to compile and run in the JIT.
@@ -69,7 +69,7 @@ struct JitTestOptions {
  * expected error codes, whether to expect a panic, and other settings.
  */
 void run_jit_test(
-    std::string_view source, JitTestOptions options = JitTestOptions()
+    std::string_view source, JITTestOptions options = JITTestOptions()
 ) {
     auto file = nico::make_test_code_file(source);
 
@@ -146,7 +146,7 @@ void run_jit_test(
  * @brief Runs a simple JIT test with the given source code and expected output.
  *
  * This function is only for checking the expected output of the JIT. For all
- * other checks, use the overload that accepts JitTestOptions.
+ * other checks, use the overload that accepts JITTestOptions.
  *
  * @param source The source code to compile and run in the JIT.
  * @param expected_output The expected output of the JIT. If the output does not
@@ -155,7 +155,7 @@ void run_jit_test(
 void run_jit_test(
     std::string_view source, std::optional<std::string_view> expected_output
 ) {
-    JitTestOptions options;
+    JITTestOptions options;
     options.expected_output = expected_output;
     run_jit_test(source, options);
 }
@@ -1479,7 +1479,7 @@ TEST_CASE("JIT arrays", "[jit]") {
             let arr = [1, 2, 3]
             printout arr[3]
             )",
-            JitTestOptions{.expect_panic = true}
+            JITTestOptions{.expect_panic = true}
         );
     }
 
@@ -1489,7 +1489,7 @@ TEST_CASE("JIT arrays", "[jit]") {
             let arr = [1, 2, 3]
             printout arr[-1]
             )",
-            JitTestOptions{.expect_panic = true}
+            JITTestOptions{.expect_panic = true}
         );
     }
 
@@ -1596,7 +1596,7 @@ TEST_CASE("JIT alloc and dealloc", "[jit]") {
             let size = -5
             let p = alloc for size of i32
             )",
-            JitTestOptions{.expect_panic = true}
+            JITTestOptions{.expect_panic = true}
         );
     }
 
@@ -1708,7 +1708,7 @@ TEST_CASE("JIT extern block", "[jit]") {
                 func nonexistent_function(x: i32) -> i32
             }
             )",
-            JitTestOptions{.expected_error_code = Err::JITMissingEntryPoint}
+            JITTestOptions{.expected_error_code = Err::JITMissingEntryPoint}
         );
     }
 
@@ -1720,7 +1720,7 @@ TEST_CASE("JIT extern block", "[jit]") {
             }
             printout math::sqrt(16.0)
             )",
-            JitTestOptions{
+            JITTestOptions{
                 .expected_output = "4",
                 .load_static_libraries = true
             }
@@ -1735,7 +1735,7 @@ TEST_CASE("JIT extern block", "[jit]") {
             }
             printout example::examplelib_get_constant()
             )",
-            JitTestOptions{
+            JITTestOptions{
                 .expected_output = "42",
                 .load_static_libraries = true
             }
@@ -1750,7 +1750,7 @@ TEST_CASE("JIT extern block", "[jit]") {
             }
             example::examplelib_print_greeting()
             )",
-            JitTestOptions{
+            JITTestOptions{
                 .expected_output = "Hello from the example library!\n",
                 .load_static_libraries = true
             }
@@ -1765,7 +1765,7 @@ TEST_CASE("JIT extern block", "[jit]") {
             }
             printout example::examplelib_number
             )",
-            JitTestOptions{
+            JITTestOptions{
                 .expected_output = "37",
                 .load_static_libraries = true
             }
