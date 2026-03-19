@@ -5,6 +5,11 @@
 extern int examplelib_number;
 
 /**
+ * @brief Prints a greeting message to the console.
+ */
+void examplelib_print_greeting();
+
+/**
  * @brief Returns the 32-bit integer 42.
  *
  * @return The 32-bit integer 42, always.
@@ -18,6 +23,7 @@ int examplelib_get_constant();
  * @return The square of the given integer.
  */
 int examplelib_square(int x);
+
 /**
  * @brief Adds two integers and returns the result.
  *

@@ -143,12 +143,19 @@ std::any CodeGenerator::visit(Stmt::Func* stmt) {
         // Jump to the exit block.
         builder->CreateBr(exit_block);
         builder->SetInsertPoint(exit_block);
-        // Load the return value and return it.
-        llvm::Value* return_value = builder->CreateLoad(
-            func_type->return_type->get_llvm_type(builder),
-            return_alloca
-        );
-        builder->CreateRet(return_value);
+
+        if (PTR_INSTANCEOF(func_type->return_type, Type::Void)) {
+            // For void functions, we can just return void.
+            builder->CreateRetVoid();
+        }
+        else {
+            // Load the return value and return it.
+            llvm::Value* return_value = builder->CreateLoad(
+                func_type->return_type->get_llvm_type(builder),
+                return_alloca
+            );
+            builder->CreateRet(return_value);
+        }
 
         // Pop the function block from the control stack.
         control_stack.pop_block();
@@ -787,6 +794,13 @@ std::any CodeGenerator::visit(Expr::Call* expr, bool as_lvalue) {
         callee,
         args
     );
+
+    if (PTR_INSTANCEOF(callee_fn_type->return_type, Type::Void)) {
+        // If the function returns void, we spawn an empty struct.
+        result = llvm::Constant::getNullValue(
+            callee_fn_type->return_type->get_llvm_type(builder)
+        );
+    }
 
     return result;
 }

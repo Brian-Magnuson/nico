@@ -960,7 +960,14 @@ public:
         for (const auto& param : parameters) {
             param_types.push_back(param.second.type->get_llvm_type(builder));
         }
-        llvm::Type* return_llvm_type = return_type->get_llvm_type(builder);
+        llvm::Type* return_llvm_type;
+
+        if (PTR_INSTANCEOF(return_type, Type::Void)) {
+            return_llvm_type = llvm::Type::getVoidTy(builder->getContext());
+        }
+        else {
+            return_llvm_type = return_type->get_llvm_type(builder);
+        }
         return llvm::FunctionType::get(return_llvm_type, param_types, false);
     }
 

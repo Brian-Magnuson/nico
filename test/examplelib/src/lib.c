@@ -1,8 +1,13 @@
 #include "examplelib/lib.h"
 
 #include <stdarg.h>
+#include <stdio.h>
 
 int examplelib_number = 37;
+
+void examplelib_print_greeting() {
+    printf("Hello from the example library!\n");
+}
 
 int examplelib_get_constant() {
     return 42;

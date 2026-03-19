@@ -112,7 +112,12 @@ void run_jit_test(
     REQUIRE(return_code.has_value());
 
     if (options.print_stderr_output) {
-        std::cerr << "JIT stderr output:\n" << err;
+        if (err.empty()) {
+            std::cerr << "JIT had no stderr output to print.\n";
+        }
+        else {
+            std::cerr << "JIT stderr output:\n" << err;
+        }
     }
 
     // Logged errors.
@@ -1409,6 +1414,19 @@ TEST_CASE("JIT functions", "[jit]") {
             "4, 5"
         );
     }
+
+    SECTION("Void function") {
+        run_jit_test(
+            R"(
+        func say_hello() -> void {
+            printout "Hello!"
+        }
+        let x = say_hello()
+        printout x
+        )",
+            "Hello!void"
+        );
+    }
 }
 
 TEST_CASE("JIT arrays", "[jit]") {
@@ -1719,6 +1737,21 @@ TEST_CASE("JIT extern block", "[jit]") {
             )",
             JitTestOptions{
                 .expected_output = "42",
+                .load_static_libraries = true
+            }
+        );
+    }
+
+    SECTION("Extern block with void function") {
+        run_jit_test(
+            R"(
+            extern "C" example {
+                func examplelib_print_greeting() -> void
+            }
+            example::examplelib_print_greeting()
+            )",
+            JitTestOptions{
+                .expected_output = "Hello from the example library!\n",
                 .load_static_libraries = true
             }
         );
