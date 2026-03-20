@@ -246,7 +246,7 @@ enum class Err {
     // boolean type.
     ConditionNotBool,
     // A while loop was found that yields a non-unit type.
-    WhileLoopYieldingNonUnit,
+    WhileLoopYieldingNonVoid,
     // The branches of a conditional expression have mismatched types.
     ConditionalBranchTypeMismatch,
     // A yield statement was found outside of a local scope.

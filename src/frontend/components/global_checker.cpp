@@ -169,8 +169,8 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
         return_type = return_anno_type_opt.value();
     }
     else {
-        // If no return annotation is present, the return type is Unit.
-        return_type = std::make_shared<Type::Unit>();
+        // If no return annotation is present, the return type is Void.
+        return_type = std::make_shared<Type::Void>();
     }
 
     bool is_extern = false;

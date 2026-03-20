@@ -544,6 +544,9 @@ let x: typeof((42,));
 ```
 
 The type-of annotation is an annotation, not an expression. It cannot be used in places where an expression is expected, such as the right side of an assignment or in function arguments.
+```
+printout typeof(x) // Error: typeof(x) is not an expression
+```
 
 Because the type-of annotation requires an expression, it can only be used in places where the expression's type is known. For example, you cannot use `typeof` to refer to the type of a variable that has not yet been declared.
 ```
@@ -638,8 +641,12 @@ It is used for assignment statements, variable initializations, function argumen
 It is assymetric, meaning `a = b` being valid does not imply that `b = a` is also valid.
 To avoid confusion, the "assignment compatibility" of two types should only be described in the context of a specific assignment direction.
 
+If two types are assignment compatible in both directions, we say they are bidirectionally assignment-compatible.
+This does not imply the types are equivalent.
+
 Here are some general rules for assignment compatibility:
 - All types are assignment-compatible with themselves in both directions.
+- A value of type `void` is bidirectionally assignment-compatible with the unit type `()`.
 - A value of type `nullptr` is assignable to any raw pointer type.
 - Any mutable raw pointer type is assignable to `anyptr`.
 - Any mutable raw pointer type is assignable to an immutable raw pointer type if the base types are assignment-compatible.

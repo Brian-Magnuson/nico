@@ -841,6 +841,14 @@ TEST_CASE("Check block expressions", "[checker]") {
         run_checker_test("let var a = 1 a = block { yield 2 yield 3 }");
     }
 
+    SECTION("Block that yields nothing yields void 1") {
+        run_checker_test("let a: void = block { }");
+    }
+
+    SECTION("Block that yields nothing yields void 2") {
+        run_checker_test("let a: () = block { }");
+    }
+
     SECTION("Yield outside local scope") {
         run_checker_test("yield 1", Err::YieldOutsideLocalScope);
     }
@@ -1309,14 +1317,14 @@ TEST_CASE("Check loop expressions", "[checker]") {
     SECTION("While loop yielding non-unit") {
         run_checker_test(
             "let result = while false { yield 1 }",
-            Err::WhileLoopYieldingNonUnit
+            Err::WhileLoopYieldingNonVoid
         );
     }
 
     SECTION("Do-while loop yielding non-unit") {
         run_checker_test(
             "let result = do { yield 1 } while false",
-            Err::WhileLoopYieldingNonUnit
+            Err::WhileLoopYieldingNonVoid
         );
     }
 

@@ -855,7 +855,7 @@ TEST_CASE("Parser if expressions", "[parser]") {
     SECTION("If expression 1") {
         run_parser_expr_test(
             "if true then 123\n",
-            {"(expr (if (lit true) then (lit i32 123) else (tuple)))",
+            {"(expr (if (lit true) then (lit i32 123) else (lit void)))",
              "(stmt:eof)"}
         );
     }
@@ -864,7 +864,7 @@ TEST_CASE("Parser if expressions", "[parser]") {
         run_parser_expr_test(
             "if true:\n    123\n",
             {"(expr (if (lit true) then (block (expr (lit i32 123))) else "
-             "(tuple)))",
+             "(lit void)))",
              "(stmt:eof)"}
         );
     }
@@ -873,7 +873,7 @@ TEST_CASE("Parser if expressions", "[parser]") {
         run_parser_expr_test(
             "if true { 123 }\n",
             {"(expr (if (lit true) then (block (expr (lit i32 123))) else "
-             "(tuple)))",
+             "(lit void)))",
              "(stmt:eof)"}
         );
     }
@@ -890,8 +890,7 @@ TEST_CASE("Parser if expressions", "[parser]") {
         run_parser_expr_test(
             "if true:\n    123\nelse:\n    456\n",
             {"(expr (if (lit true) then (block (expr (lit i32 123))) else "
-             "(block "
-             "(expr (lit i32 456)))))",
+             "(block (expr (lit i32 456)))))",
              "(stmt:eof)"}
         );
     }
@@ -900,8 +899,7 @@ TEST_CASE("Parser if expressions", "[parser]") {
         run_parser_expr_test(
             "if true { 123 } else { 456 }\n",
             {"(expr (if (lit true) then (block (expr (lit i32 123))) else "
-             "(block "
-             "(expr (lit i32 456)))))",
+             "(block (expr (lit i32 456)))))",
              "(stmt:eof)"}
         );
     }
@@ -910,8 +908,7 @@ TEST_CASE("Parser if expressions", "[parser]") {
         run_parser_expr_test(
             "if true then 123 else if false then 456 else 789\n",
             {"(expr (if (lit true) then (lit i32 123) else (if (lit false) "
-             "then "
-             "(lit i32 456) else (lit i32 789))))",
+             "then (lit i32 456) else (lit i32 789))))",
              "(stmt:eof)"}
         );
     }
@@ -919,13 +916,9 @@ TEST_CASE("Parser if expressions", "[parser]") {
     SECTION("If else if expression 2") {
         run_parser_expr_test(
             "if true:\n    123\nelse if false:\n    456\nelse:\n    789\n",
-            {"(expr (if (lit true) then (block (expr (lit i32 123))) else "
-             "(if "
-             "(lit "
-             "false) then (block (expr (lit i32 456))) else (block (expr "
-             "(lit "
-             "i32 "
-             "789))))))",
+            {"(expr (if (lit true) then (block (expr (lit i32 123))) else (if "
+             "(lit false) then (block (expr (lit i32 456))) else (block (expr "
+             "(lit i32 789))))))",
              "(stmt:eof)"}
         );
     }

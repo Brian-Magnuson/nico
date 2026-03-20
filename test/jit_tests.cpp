@@ -869,7 +869,7 @@ TEST_CASE("JIT while loop expressions", "[jit]") {
             let var x = 0
             while true:
                 if true:
-                    break ()
+                    break void
             printout x
             )",
             "0"
@@ -882,7 +882,7 @@ TEST_CASE("JIT while loop expressions", "[jit]") {
             let var x = 0
             while x < 5:
                 if x == 3:
-                    break ()
+                    break void
                 x = x + 1
             printout x
             )",
@@ -1053,10 +1053,10 @@ TEST_CASE("JIT non-conditional loop expressions", "[jit]") {
                 printout 1
                 loop:
                     printout 2
-                    break ()
+                    break void
                     printout 3
                 printout 4
-                break ()
+                break void
                 printout 5
             printout 6
             )",

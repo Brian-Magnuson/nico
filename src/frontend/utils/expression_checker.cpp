@@ -1414,7 +1414,7 @@ std::any ExpressionChecker::visit(Expr::Block* expr, bool as_lvalue) {
         // If the statement has an error, we continue as normal.
     }
     auto yield_type = local_scope_opt.value()->yield_type.value_or(
-        std::make_shared<Type::Unit>()
+        std::make_shared<Type::Void>()
     );
     expr->type = yield_type;
     symbol_tree->exit_scope();
@@ -1469,6 +1469,9 @@ std::any ExpressionChecker::visit(Expr::Conditional* expr, bool as_lvalue) {
     auto else_type = else_type_opt.value();
 
     // If all branches have the same type, use that type.
+    // TODO: This requirement of the branches being type equivalent is too
+    // strict. Consider replacing this with bidirectional assignment
+    // compatibility instead.
     if (*then_type != *else_type) {
         Logger::inst().log_error(
             Err::ConditionalBranchTypeMismatch,
@@ -1481,7 +1484,7 @@ std::any ExpressionChecker::visit(Expr::Conditional* expr, bool as_lvalue) {
         );
         if (expr->implicit_else) {
             Logger::inst().log_note(
-                "Implicit else branch yields a unit value with type `()`."
+                "Implicit else branch yields a void value with type `void`."
             );
         }
         else {
@@ -1531,12 +1534,14 @@ std::any ExpressionChecker::visit(Expr::Loop* expr, bool as_lvalue) {
     if (!body_type_opt.has_value())
         has_error = true;
     if (!has_error && expr->condition.has_value()) {
-        // If the loop has a condition and its body does not yield unit...
-        if (!PTR_INSTANCEOF(body_type_opt.value(), Type::Unit)) {
+        // If the loop has a condition and its body does not yield void or
+        // unit...
+        if (!PTR_INSTANCEOF(body_type_opt.value(), Type::Void) ||
+            !PTR_INSTANCEOF(body_type_opt.value(), Type::Unit)) {
             Logger::inst().log_error(
-                Err::WhileLoopYieldingNonUnit,
+                Err::WhileLoopYieldingNonVoid,
                 expr->body->location,
-                "Body of while loop must yield type `()`, not `" +
+                "Body of while loop must yield type `void`, not `" +
                     body_type_opt.value()->to_string() + "`."
             );
             has_error = true;

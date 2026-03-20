@@ -993,6 +993,10 @@ std::any CodeGenerator::visit(Expr::Literal* expr, bool as_lvalue) {
             std::any_cast<std::string>(expr->token->literal)
         );
         break;
+    case Tok::Void:
+        result =
+            llvm::Constant::getNullValue(expr->type->get_llvm_type(builder));
+        break;
     case Tok::Nullptr:
         result = llvm::ConstantPointerNull::get(
             llvm::PointerType::get(*mod_ctx.llvm_context, 0)

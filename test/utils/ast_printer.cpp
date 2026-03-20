@@ -310,6 +310,9 @@ std::any AstPrinter::visit(Expr::Literal* expr, bool as_lvalue) {
         value = "f64 " +
                 std::to_string(std::any_cast<double>(expr->token->literal));
         break;
+    case Tok::Void:
+        value = "void";
+        break;
     default:
         value = std::string(expr->token->lexeme);
         break;

@@ -216,8 +216,10 @@ std::optional<std::shared_ptr<Expr>> Parser::conditional() {
             return std::nullopt;
     }
     else {
-        // If there is no `else` keyword, we inject a unit value.
-        else_branch = std::make_shared<Expr::Unit>(if_kw);
+        // If there is no `else` keyword, we inject a void value.
+        else_branch = std::make_shared<Expr::Literal>(
+            std::make_shared<Token>(Tok::Void, if_kw->location)
+        );
         implicit_else = true;
     }
 
