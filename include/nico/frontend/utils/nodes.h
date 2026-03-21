@@ -246,6 +246,22 @@ public:
     }
 
     /**
+     * @brief Check if this type is bidirectionally assignment-compatible with
+     * another type.
+     *
+     * Effectively the same as checking if both `a.is_assignable_to(b)` and
+     * `b.is_assignable_to(a)` are true.
+     *
+     * @param other The other type to check bidirectional assignment
+     * compatibility with.
+     * @return True if this type is bidirectionally assignment-compatible with
+     * the other type. False otherwise.
+     */
+    bool is_bidirectionally_assignable_with(const Type& other) const {
+        return is_assignable_to(other) && other.is_assignable_to(*this);
+    }
+
+    /**
      * @brief Check if this type is assignable a binding of the target type.
      *
      * For clarification, for the assignment `a = b`, this checks if the type of

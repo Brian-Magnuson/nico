@@ -1468,15 +1468,13 @@ std::any ExpressionChecker::visit(Expr::Conditional* expr, bool as_lvalue) {
     auto then_type = then_type_opt.value();
     auto else_type = else_type_opt.value();
 
-    // If all branches have the same type, use that type.
-    // TODO: This requirement of the branches being type equivalent is too
-    // strict. Consider replacing this with bidirectional assignment
-    // compatibility instead.
-    if (*then_type != *else_type) {
+    // If-expression branches must yield compatible types
+    if (!then_type->is_bidirectionally_assignable_with(*else_type)) {
         Logger::inst().log_error(
             Err::ConditionalBranchTypeMismatch,
             expr->location,
-            "Yielded expression types of conditional branches do not match."
+            "Yielded expression types of conditional branches are not "
+            "compatible."
         );
         Logger::inst().log_note(
             expr->then_branch->location,
@@ -1496,6 +1494,7 @@ std::any ExpressionChecker::visit(Expr::Conditional* expr, bool as_lvalue) {
         has_error = true;
     }
 
+    // Overall type is based on that of the first branch.
     if (!has_error) {
         expr->type = then_type;
     }
@@ -1536,7 +1535,7 @@ std::any ExpressionChecker::visit(Expr::Loop* expr, bool as_lvalue) {
     if (!has_error && expr->condition.has_value()) {
         // If the loop has a condition and its body does not yield void or
         // unit...
-        if (!PTR_INSTANCEOF(body_type_opt.value(), Type::Void) ||
+        if (!PTR_INSTANCEOF(body_type_opt.value(), Type::Void) &&
             !PTR_INSTANCEOF(body_type_opt.value(), Type::Unit)) {
             Logger::inst().log_error(
                 Err::WhileLoopYieldingNonVoid,

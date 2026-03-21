@@ -1831,7 +1831,8 @@ else:
     yield 0
 ```
 
-All blocks in an if expression must yield the same type.
+All types yielded by the branches of an if-expression must be bidirectionally assignment-compatible with each other.
+The type of the entire if-expression is based on the first branch from the top.
 
 ### Loop expressions
 
