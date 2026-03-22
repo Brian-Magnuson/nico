@@ -788,7 +788,9 @@ void Lexer::scan_token() {
         add_token(match('=') ? Tok::LtEq : Tok::Lt);
         break;
     case '.':
-        add_token(Tok::Dot);
+        add_token(
+            match('.') ? match('.') ? Tok::DotDotDot : Tok::DotDot : Tok::Dot
+        );
         break;
     case '?':
         add_token(Tok::Question);

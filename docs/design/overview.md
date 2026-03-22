@@ -1095,7 +1095,7 @@ func my_function() -> i32:
 
 A function is overloadable if it meets the following criteria:
 - It does not have a custom symbol.
-- It is not declared in an external declaration block.
+- It is not declared in an external declaration namespace.
 
 An overloadable function may be declared in the same scope with the same name as another overloadable function. This is called function overloading.
 Function overloading has rules that must be followed:
@@ -1142,6 +1142,29 @@ my_function(a: 37) // OK - calls first overload
 my_function(c: 42) // Error - no matching overload
 my_function(64)    // Error - multiple matching overloads
 ```
+
+For external declaration namespaces, you may use variadic parameters to link variadic functions in foreign code.
+Variadic parameters are not allowed in normal functions.
+To use variadic parameters, after the last parameter of the function header, add `...`:
+```
+extern "C" my_lib:
+    func my_variadic_function(a: i32, ...) -> i32
+```
+
+Variadic functions may be called with any number of positional arguments, but they must have at least as many arguments as the number of non-variadic parameters.
+```
+my_lib::my_variadic_function(1) // OK
+my_lib::my_variadic_function(1, 2) // OK
+my_lib::my_variadic_function() // Error: not enough arguments
+```
+
+Variadic functions may only be called with positional arguments. Named arguments are not allowed.
+```
+my_lib::my_variadic_function(1, 2, 3) // OK
+my_lib::my_variadic_function(a: 1, 2, 3) // Error: named arguments not allowed for variadic functions
+```
+
+Because variadic functions are only allowed in external declaration namespaces, they are not overloadable.
 
 ### Structs
 

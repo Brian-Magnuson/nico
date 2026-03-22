@@ -134,6 +134,18 @@ TEST_CASE("Lexer short tokens (run_lexer_test)", "[lexer]") {
         );
     }
 
+    SECTION("Dot operators") {
+        run_lexer_test(
+            ". .. ... ....",
+            {Tok::Dot,
+             Tok::DotDot,
+             Tok::DotDotDot,
+             Tok::DotDotDot,
+             Tok::Dot,
+             Tok::Eof}
+        );
+    }
+
     SECTION("Other operators") {
         run_lexer_test(
             ". @ & ^ -> =>",
