@@ -1249,6 +1249,7 @@ std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
         identifier,
         return_type,
         std::move(parameters),
+        false, // is_variadic
         body_expr
     );
 }

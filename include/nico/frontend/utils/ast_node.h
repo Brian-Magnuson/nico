@@ -159,6 +159,9 @@ public:
     // The parameters of the function.
     std::vector<Param> parameters;
     // The body of the function.
+    // Whether the function is variadic (accepts a variable number of
+    // arguments).
+    bool is_variadic;
     std::optional<std::shared_ptr<Expr::Block>> body;
     // A weak pointer to the binding entry in the symbol table.
     std::weak_ptr<Node::BindingEntry> binding_entry;
@@ -168,11 +171,13 @@ public:
         std::shared_ptr<Token> identifier,
         std::optional<std::shared_ptr<Annotation>> annotation,
         std::vector<Param>&& parameters,
+        bool is_variadic,
         std::optional<std::shared_ptr<Expr::Block>> body
     )
         : identifier(identifier),
           annotation(annotation),
           parameters(std::move(parameters)),
+          is_variadic(is_variadic),
           body(body) {
         location = &start_token->location;
     }
