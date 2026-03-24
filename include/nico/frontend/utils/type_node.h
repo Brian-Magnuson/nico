@@ -922,15 +922,20 @@ public:
     Dictionary<std::string, Binding> parameters;
     // The return type of the function.
     const std::shared_ptr<Type> return_type;
+    // Whether the function is variadic (i.e. accepts a variable number of
+    // arguments).
+    bool is_variadic;
 
     virtual ~Function() = default;
 
     Function(
         Dictionary<std::string, Binding> parameters,
-        std::shared_ptr<Type> return_type
+        std::shared_ptr<Type> return_type,
+        bool is_variadic = false
     )
         : parameters(std::move(parameters)),
-          return_type(std::move(return_type)) {}
+          return_type(std::move(return_type)),
+          is_variadic(is_variadic) {}
 
     std::string to_string() const override {
         std::string result = "func(";
@@ -941,6 +946,9 @@ public:
             result.pop_back();
             result.pop_back();
         }
+        if (is_variadic) {
+            result += "...";
+        }
         result += ") -> " + return_type->to_string();
         return result;
     }
@@ -949,7 +957,8 @@ public:
         if (const auto* other_function =
                 dynamic_cast<const Function*>(&other)) {
             return parameters == other_function->parameters &&
-                   *return_type == *other_function->return_type;
+                   *return_type == *other_function->return_type &&
+                   is_variadic == other_function->is_variadic;
         }
         return false;
     }
@@ -968,7 +977,11 @@ public:
         else {
             return_llvm_type = return_type->get_llvm_type(builder);
         }
-        return llvm::FunctionType::get(return_llvm_type, param_types, false);
+        return llvm::FunctionType::get(
+            return_llvm_type,
+            param_types,
+            is_variadic
+        );
     }
 
     /**

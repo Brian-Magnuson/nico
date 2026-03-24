@@ -205,8 +205,11 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
     }
 
     // Create the function type.
-    auto func_type =
-        std::make_shared<Type::Function>(param_bindings, return_type);
+    auto func_type = std::make_shared<Type::Function>(
+        param_bindings,
+        return_type,
+        stmt->is_variadic
+    );
 
     // Create the binding entry.
     Binding binding(
