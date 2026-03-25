@@ -431,6 +431,37 @@ TEST_CASE("Parser function statements", "[parser]") {
         );
     }
 
+    SECTION("Func statement with variadic parameter") {
+        run_parser_stmt_test(
+            "func f(x: i32, ...) => x",
+            {"(stmt:func f (x i32) (...) => (block (stmt:yield => (nameref "
+             "x))))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Func statement with only variadic parameter") {
+        run_parser_stmt_test(
+            "func f(...) => 42",
+            {"(stmt:func f (...) => (block (stmt:yield => (lit i32 42))))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Func statement with variadic parameter and no body") {
+        run_parser_stmt_test(
+            "func f(x: i32, ...)",
+            {"(stmt:func f (x i32) (...) no body)", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Variadic parameter not last") {
+        run_parser_stmt_error_test(
+            "func f(..., x: i32) {}",
+            Err::UnexpectedTokenAfterVariadicParam
+        );
+    }
+
     SECTION("Func missing identifier") {
         run_parser_stmt_error_test("func {}", Err::NotAnIdentifier);
     }

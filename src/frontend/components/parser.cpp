@@ -1134,12 +1134,28 @@ std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
 
     // Parameters
     std::vector<Stmt::Func::Param> parameters;
+    bool is_variadic = false;
     do {
         // Closing parenthesis?
         if (peek()->tok_type == Tok::RParen) {
             // We allow trailing commas.
             break;
         }
+
+        // Variadic parameter?
+        if (match({Tok::DotDotDot})) {
+            if (peek()->tok_type != Tok::RParen) {
+                Logger::inst().log_error(
+                    Err::UnexpectedTokenAfterVariadicParam,
+                    peek()->location,
+                    "Expected closing `)` after variadic parameter."
+                );
+                return std::nullopt;
+            }
+            is_variadic = true;
+            break;
+        }
+
         // Has var?
         bool has_var = match({Tok::KwVar});
         // Parameter name
@@ -1249,7 +1265,7 @@ std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
         identifier,
         return_type,
         std::move(parameters),
-        false, // is_variadic
+        is_variadic,
         body_expr
     );
 }

@@ -71,11 +71,11 @@ std::any AstPrinter::visit(Stmt::Func* stmt) {
                                    param.expression.value()->accept(this, false)
                                );
         }
-        if (stmt->is_variadic) {
-            param_str += " ...";
-        }
         param_str += ") ";
         str += param_str;
+    }
+    if (stmt->is_variadic) {
+        str += "(...) ";
     }
     if (stmt->body.has_value()) {
         str +=

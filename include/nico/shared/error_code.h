@@ -96,6 +96,8 @@ enum class Err {
     TypeofWithoutOpeningParen,
     // A function statement was found without an opening parenthesis.
     FuncWithoutOpeningParen,
+    // A variadic parameter was not followed by a closing parenthesis.
+    UnexpectedTokenAfterVariadicParam,
     // A closing parenthesis was found without a matching opening parenthesis.
     UnexpectedClosingParen,
     // A block keyword was found without a proper opening token.
