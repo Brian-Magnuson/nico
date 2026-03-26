@@ -108,9 +108,10 @@ std::any GlobalChecker::visit(Stmt::Static* stmt) {
     if (!node_opt.has_value()) {
         return std::any();
     }
-    else if (auto binding_entry = std::dynamic_pointer_cast<Node::BindingEntry>(
-                 node_opt.value()
-             )) {
+    else if (
+        auto binding_entry =
+            std::dynamic_pointer_cast<Node::BindingEntry>(node_opt.value())
+    ) {
         stmt->binding_entry = binding_entry;
     }
     else {
@@ -193,15 +194,29 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
         // but if we did, it would override this symbol.
         is_extern = true;
     }
-    // If the function is not declared in an extern block, but doesn't have a
-    // body...
-    else if (!stmt->body.has_value()) {
-        Logger::inst().log_error(
-            Err::NonExternFuncWithoutBody,
-            stmt->identifier->location,
-            "Non-extern function is missing a body."
-        );
-        return std::any();
+    // If the function is not declared in an extern block...
+    else {
+        bool has_error = false;
+        if (!stmt->body.has_value()) {
+            Logger::inst().log_error(
+                Err::NonExternFuncWithoutBody,
+                stmt->identifier->location,
+                "Non-extern function declaration is missing a body."
+            );
+            has_error = true;
+        }
+        if (stmt->is_variadic) {
+            Logger::inst().log_error(
+                Err::NonExternVariadicFunc,
+                stmt->identifier->location,
+                "Non-extern function declaration is not allowed to be variadic."
+            );
+            has_error = true;
+        }
+
+        if (has_error) {
+            return std::any();
+        }
     }
 
     // Create the function type.

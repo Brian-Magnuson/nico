@@ -942,12 +942,12 @@ public:
         for (const auto& param : parameters) {
             result += param.second.to_string() + ", ";
         }
-        if (!parameters.empty()) {
-            result.pop_back();
-            result.pop_back();
-        }
         if (is_variadic) {
             result += "...";
+        }
+        else if (!parameters.empty()) {
+            result.pop_back();
+            result.pop_back();
         }
         result += ") -> " + return_type->to_string();
         return result;

@@ -169,6 +169,8 @@ enum class Err {
     ExternFuncWithBody,
     // A non-extern function was declared without a body.
     NonExternFuncWithoutBody,
+    // A non-extern function has a variadic parameter.
+    NonExternVariadicFunc,
     // A type mismatch was found in a static variable declaration.
     StaticTypeMismatch,
     // A static variable was declared in an extern block with an initializer.

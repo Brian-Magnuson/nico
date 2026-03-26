@@ -1415,6 +1415,17 @@ TEST_CASE("Check function declarations", "[checker]") {
             Err::FunctionReturnTypeMismatch
         );
     }
+
+    SECTION("Extern variadic function") {
+        run_checker_test("extern ex1 { func add(...) -> i32 }");
+    }
+
+    SECTION("Non-extern variadic function") {
+        run_checker_test(
+            "func add(...) -> i32 { return 0 }",
+            Err::NonExternVariadicFunc
+        );
+    }
 }
 
 TEST_CASE("Check function overload declarations", "[checker]") {
@@ -1652,6 +1663,43 @@ TEST_CASE("Check function call", "[checker]") {
         run_checker_test(
             "func add(a: i32, b: i32) -> i32",
             Err::NonExternFuncWithoutBody
+        );
+    }
+
+    SECTION("Calling variadic function") {
+        run_checker_test(
+            R"(
+        extern ex1 {
+            func add(a: i32, ...) -> i32
+        }
+        let result1 = ex1::add(1)
+        let result2 = ex1::add(1, 2)
+        let result3 = ex1::add(1, 2, 3)
+        )"
+        );
+    }
+
+    SECTION("Variadic function call with wrong first argument") {
+        run_checker_test(
+            R"(
+        extern ex1 {
+            func add(a: i32, ...) -> i32
+        }
+        let result = ex1::add(true)
+        )",
+            Err::NoMatchingFunctionOverload
+        );
+    }
+
+    SECTION("Variadic function not enough required arguments") {
+        run_checker_test(
+            R"(
+        extern ex1 {
+            func add(a: i32, b: i32, ...) -> i32
+        }
+        let result = ex1::add(1)
+        )",
+            Err::NoMatchingFunctionOverload
         );
     }
 }
