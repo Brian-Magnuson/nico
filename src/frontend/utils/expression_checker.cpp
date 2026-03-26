@@ -201,7 +201,14 @@ ExpressionChecker::try_match_args_to_params(
     const Dictionary<std::string, std::shared_ptr<Expr>>& named_args
 ) {
     Dictionary<std::string, std::weak_ptr<Expr>> arg_mapping;
+    // Used to check if a parameter is assigned more than once (only possible if
+    // there are named arguments).
     std::unordered_set<std::string> assigned_params;
+
+    // If this function is variadic, we do not allow named arguments.
+    if (func_type->is_variadic && !named_args.empty()) {
+        return std::nullopt;
+    }
 
     // First, apply default arguments.
     for (const auto& [param_string, param_binding] : func_type->parameters) {
@@ -214,12 +221,27 @@ ExpressionChecker::try_match_args_to_params(
         // correct order.
     }
     // Next, apply positional arguments.
-    if (pos_args.size() > func_type->parameters.size()) {
-        // Too many positional arguments.
+    if (pos_args.size() > func_type->parameters.size() &&
+        !func_type->is_variadic) {
+        // Too many positional arguments for non-variadic function.
         return std::nullopt;
     }
     for (size_t i = 0; i < pos_args.size(); i++) {
         const auto param_optional = func_type->parameters.get_pair_at(i);
+        if (!param_optional.has_value()) {
+            // Past the end of the parameter list; this must be a positional
+            // argument for a variadic function.
+            arg_mapping.insert(
+                std::to_string(i), // We use the parameter's position as its
+                                   // "name" in the mapping.
+                pos_args[i]
+            );
+            // The exact name does not matter much to the code generator.
+
+            // No need to add to assigned_params; var args are not required to
+            // be assigned.
+            continue;
+        }
         const auto [param_name, param_binding] = *param_optional;
         if (!pos_args[i]->type->is_assignable_to(*param_binding.type)) {
             // Positional argument type does not match parameter type.
