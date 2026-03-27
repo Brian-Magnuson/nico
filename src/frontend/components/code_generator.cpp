@@ -89,17 +89,25 @@ std::any CodeGenerator::visit(Stmt::Static* stmt) {
 std::any CodeGenerator::visit(Stmt::Func* stmt) {
     auto script_block = builder->GetInsertBlock();
 
-    auto binding_type = stmt->binding_entry.lock()->binding.type;
+    auto binding_entry = stmt->binding_entry.lock();
+    auto binding_type = binding_entry->binding.type;
+    auto is_extern = binding_entry->binding.is_extern;
     auto func_type = std::dynamic_pointer_cast<Type::Function>(binding_type);
 
     llvm::FunctionType* llvm_func_type =
         func_type->get_llvm_function_type(builder);
-    llvm::Function* function = llvm::Function::Create(
-        llvm_func_type,
-        llvm::Function::ExternalLinkage,
-        stmt->binding_entry.lock()->symbol,
-        mod_ctx.ir_module.get()
-    );
+
+    llvm::Function* function =
+        mod_ctx.ir_module->getFunction(binding_entry->symbol);
+    if (function == nullptr) {
+        function = llvm::Function::Create(
+            llvm_func_type,
+            is_extern ? llvm::Function::ExternalLinkage
+                      : llvm::Function::InternalLinkage,
+            binding_entry->symbol,
+            mod_ctx.ir_module.get()
+        );
+    }
 
     if (stmt->body.has_value()) {
         // Create the function's blocks.
@@ -969,8 +977,9 @@ std::any CodeGenerator::visit(Expr::Literal* expr, bool as_lvalue) {
                 llvm::Type::getDoubleTy(*mod_ctx.llvm_context)
             );
         }
-        else if (expr->token->lexeme == "nan" ||
-                 expr->token->lexeme == "nan64") {
+        else if (
+            expr->token->lexeme == "nan" || expr->token->lexeme == "nan64"
+        ) {
             result = llvm::ConstantFP::getNaN(
                 llvm::Type::getDoubleTy(*mod_ctx.llvm_context)
             );
