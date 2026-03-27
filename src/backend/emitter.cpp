@@ -20,6 +20,11 @@ void Emitter::emit(
     const std::unique_ptr<llvm::Module>& ir_module,
     std::string_view target_destination
 ) {
+    // TODO: This code sets the data layout, which is important for generating
+    // correct code. But it is done in the emitter stage, meaning it is only
+    // available in the AOT compiler. Eventually, we may want to move this code
+    // to an earlier stage, so that the data layout is available for
+    // optimization passes and JIT compilation as well.
     auto target_triple = llvm::sys::getDefaultTargetTriple();
     llvm::InitializeNativeTarget();
     llvm::InitializeNativeTargetAsmParser();

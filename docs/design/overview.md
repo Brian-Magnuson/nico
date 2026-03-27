@@ -1336,8 +1336,9 @@ Inside an external declaration namespace, you may only declare the following:
 - Functions using `func` without a body (function headers).
 
 External declaration namespaces allow you to declare variables and functions that are defined in external code, such as C libraries.
-- With variables, the identifier and type should match the external definition.
-- With functions, the identifier, parameter types (but not parameter identifiers), and return type should match the external definition.
+When using the C linker, only the identifier has to match for the external code to be linked.
+
+Dereferencing a variable or calling a function with the incorrect types may result in undefined behavior, so it is the user's responsibility to ensure that the declarations in the extern namespace match the definitions in the external code.
 
 Currently there is no way to specify a different linkage name for an external variable or function. You can, however, create a wrapper function or variable with the desired name.
 
