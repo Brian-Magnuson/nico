@@ -71,6 +71,8 @@ struct JITTestOptions {
 void run_jit_test(
     std::string_view source, JITTestOptions options = JITTestOptions()
 ) {
+    nico::Logger::inst().reset();
+
     auto file = nico::make_test_code_file(source);
 
     // Note: When captured_stdout is used, the error message will appear in the
@@ -139,7 +141,6 @@ void run_jit_test(
 
     frontend.reset();
     jit->reset();
-    nico::Logger::inst().reset();
 }
 
 /**
@@ -1767,6 +1768,38 @@ TEST_CASE("JIT extern block", "[jit]") {
             )",
             JITTestOptions{
                 .expected_output = "37",
+                .load_static_libraries = true
+            }
+        );
+    }
+
+    SECTION("Extern variadic function 1") {
+        run_jit_test(
+            R"(
+            extern "C" example {
+                func examplelib_sum(count: i32, ...) -> i32
+            }
+            printout example::examplelib_sum(4, 1, 2, 3, 4)
+            )",
+            JITTestOptions{
+                .expected_output = "10",
+                .load_static_libraries = true
+            }
+        );
+    }
+
+    SECTION("Extern variadic function 2") {
+        run_jit_test(
+            R"(
+            extern "C" example {
+                func examplelib_sum(count: i32, ...) -> i32
+            }
+            printout example::examplelib_sum(3, 10, 20, 30), " "
+            printout example::examplelib_sum(5, 1, 2, 3, 4, 5), " "
+            printout example::examplelib_sum(0)
+            )",
+            JITTestOptions{
+                .expected_output = "60 15 0",
                 .load_static_libraries = true
             }
         );
