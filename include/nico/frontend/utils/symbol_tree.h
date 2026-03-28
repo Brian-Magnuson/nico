@@ -35,6 +35,9 @@ class SymbolTree {
      */
     void install_primitive_types();
 
+    // TODO: Add feature for installing context-dependent types, such as isize
+    // and usize.
+
     /**
      * @brief Attempts to fully resolve a name starting from a given scope and
      * searching downward.

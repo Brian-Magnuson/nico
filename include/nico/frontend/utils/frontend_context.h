@@ -60,7 +60,7 @@ public:
         mir_module = MIRModule::create();
         stmts_processed = 0;
         symbol_tree = std::make_shared<SymbolTree>();
-        mod_ctx.reset();
+        mod_ctx.initialize();
     }
 
     /**

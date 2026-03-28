@@ -17,6 +17,10 @@ enum class Err {
 
     // Configuration error
     ConfigError = 1000,
+    // The compiler cannot lookup the target for code generation.
+    CannotLookupTarget,
+    // The compiler cannot create a target machine for code generation.
+    CannotCreateTargetMachine,
 
     // Lexer error
     LexerError = 2000,
@@ -288,10 +292,6 @@ enum class Err {
     JITMissingEntryPoint,
     // The JIT compiler could not add a static library to the JIT.
     JITCannotAddStaticLibrary,
-    // The emitter cannot look up a target machine.
-    EmitterCannotLookupTarget,
-    // The emitter cannot create a target machine.
-    EmitterCannotCreateTargetMachine,
     // The emitter cannot open the output file.
     FileIO,
     // The emitter failed to emit the intended file.

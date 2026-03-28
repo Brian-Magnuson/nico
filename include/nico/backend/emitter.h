@@ -6,6 +6,8 @@
 
 #include <llvm/IR/Module.h>
 
+#include "nico/shared/ir_module_context.h"
+
 namespace nico {
 
 /**
@@ -18,12 +20,13 @@ public:
     /**
      * @brief Emit the IR module to an object file.
      *
-     * @param ir_module The IR module containing the IR to emit.
+     * @param mod_ctx The IRModuleContext object containing the LLVM module,
+     * context, and target machine.
      * @param target_destination A string specifying the target destination for
      * the object file. E.g. "./bin/output.o". Paths are relative to CWD.
      */
     void emit(
-        const std::unique_ptr<llvm::Module>& ir_module,
+        const IRModuleContext& mod_ctx,
         std::string_view target_destination = "output.o"
     );
 };

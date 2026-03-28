@@ -18,18 +18,16 @@ namespace nico {
 int CodeGenerator::repl_counter = 0;
 
 CodeGenerator::CodeGenerator(
-    std::string_view module_name,
+    IRModuleContext&& mod_ctx,
     bool ir_printing_enabled,
     bool panic_recoverable,
     bool repl_mode
 )
-    : ir_printing_enabled(ir_printing_enabled),
+    : mod_ctx(std::move(mod_ctx)),
+      ir_printing_enabled(ir_printing_enabled),
       panic_recoverable(panic_recoverable),
-      repl_mode(repl_mode),
-      mod_ctx() {
-
-    mod_ctx.initialize(module_name);
-    builder = std::make_unique<llvm::IRBuilder<>>(*mod_ctx.llvm_context);
+      repl_mode(repl_mode) {
+    builder = std::make_unique<llvm::IRBuilder<>>(*this->mod_ctx.llvm_context);
 }
 
 // MARK: Statements
@@ -1776,7 +1774,6 @@ void CodeGenerator::generate_exe_ir(
     std::unique_ptr<FrontendContext>& context,
     bool ir_printing_enabled,
     bool panic_recoverable,
-    std::string_view module_name,
     bool require_verification
 ) {
     if (IS_VARIANT(context->status, Status::Error)) {
@@ -1784,7 +1781,7 @@ void CodeGenerator::generate_exe_ir(
     }
 
     CodeGenerator codegen(
-        module_name,
+        std::move(context->mod_ctx), // We temporarily take the mod_ctx object
         ir_printing_enabled,
         panic_recoverable,
         false // repl_mode
@@ -1796,7 +1793,9 @@ void CodeGenerator::generate_exe_ir(
         panic("CodeGenerator::generate_exe_ir(): IR verification failed.");
     }
 
-    context->mod_ctx = std::move(codegen.mod_ctx);
+    context->mod_ctx = std::move(
+        codegen.mod_ctx
+    ); // We give back the mod_ctx object with the generated IR.
     context->main_fn_name = "main";
 }
 
@@ -1814,7 +1813,7 @@ void CodeGenerator::generate_repl_ir(
     auto main_fn_name = "main_" + repl_counter_str;
 
     CodeGenerator codegen(
-        main_fn_name,
+        std::move(context->mod_ctx),
         ir_printing_enabled,
         true, // panic_recoverable
         true  // repl_mode

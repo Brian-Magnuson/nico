@@ -7,11 +7,20 @@
 
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
+#include <llvm/MC/TargetRegistry.h>
+#include <llvm/Support/FileSystem.h>
+#include <llvm/Support/TargetSelect.h>
+#include <llvm/Target/TargetMachine.h>
+#include <llvm/Target/TargetOptions.h>
+#include <llvm/TargetParser/Host.h>
+
+#include "nico/shared/error_code.h"
+#include "nico/shared/logger.h"
 
 namespace nico {
 
 /**
- * @brief A safe wrapper around an LLVM context and module.
+ * @brief A safe wrapper around an LLVM context, module, and target machine.
  *
  * This class is move only. It cannot be copied.
  *
@@ -25,6 +34,8 @@ public:
     std::unique_ptr<llvm::LLVMContext> llvm_context;
     // The LLVM Module that will be generated.
     std::unique_ptr<llvm::Module> ir_module;
+    // The target machine for code generation.
+    std::unique_ptr<llvm::TargetMachine> target_machine;
 
     IRModuleContext()
         : llvm_context(nullptr), ir_module(nullptr) {}
@@ -33,6 +44,7 @@ public:
         ir_module = nullptr;
         llvm_context = std::move(other.llvm_context);
         ir_module = std::move(other.ir_module);
+        target_machine = std::move(other.target_machine);
     }
     IRModuleContext(const IRModuleContext&) = delete;
 
@@ -41,14 +53,18 @@ public:
             ir_module = nullptr;
             llvm_context = std::move(other.llvm_context);
             ir_module = std::move(other.ir_module);
+            target_machine = std::move(other.target_machine);
         }
         return *this;
     }
     IRModuleContext& operator=(const IRModuleContext&) = delete;
 
     ~IRModuleContext() {
+        // Note: The order of destruction is important here. The module must be
+        // destroyed before the context.
         ir_module = nullptr;
         llvm_context = nullptr;
+        target_machine = nullptr;
     }
 
     /**
@@ -57,20 +73,52 @@ public:
      * @param module_name The name of the module. Defaults to "main".
      */
     void initialize(std::string_view module_name = "main") {
+        // The module must be destroyed before the context, so we set it to
+        // nullptr first to ensure the correct destruction order in case of an
+        // exception.
         ir_module = nullptr;
         llvm_context = std::make_unique<llvm::LLVMContext>();
         ir_module = std::make_unique<llvm::Module>(
             std::string(module_name),
             *llvm_context
         );
-    }
 
-    /**
-     * @brief Resets the LLVM context and module to their initial states.
-     */
-    void reset() {
-        ir_module = nullptr;
-        llvm_context = nullptr;
+        auto target_triple = llvm::sys::getDefaultTargetTriple();
+        llvm::InitializeNativeTarget();
+        llvm::InitializeNativeTargetAsmParser();
+        llvm::InitializeNativeTargetAsmPrinter();
+
+        std::string error;
+        auto target = llvm::TargetRegistry::lookupTarget(target_triple, error);
+        if (!target) {
+            Logger::inst().log_error(
+                Err::CannotLookupTarget,
+                "Failed to lookup target: " + error
+            );
+            return;
+        }
+
+        auto cpu = "generic";
+        auto features = "";
+        llvm::TargetOptions options;
+        target_machine =
+            std::unique_ptr<llvm::TargetMachine>(target->createTargetMachine(
+                target_triple,
+                cpu,
+                features,
+                options,
+                llvm::Reloc::PIC_
+            ));
+
+        if (!target_machine) {
+            Logger::inst().log_error(
+                Err::CannotCreateTargetMachine,
+                "Failed to create target machine for triple: " + target_triple
+            );
+            return;
+        }
+
+        ir_module->setDataLayout(target_machine->createDataLayout());
     }
 };
 

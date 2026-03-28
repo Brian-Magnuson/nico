@@ -31,6 +31,8 @@ class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
     // A static counter for generating unique names in REPL mode.
     static int repl_counter;
 
+    // The LLVM module and context used for code generation.
+    IRModuleContext mod_ctx;
     // A flag to indicate whether IR should be printed just before verification.
     const bool ir_printing_enabled = false;
     // A flag to indicate whether panic is recoverable.
@@ -39,8 +41,6 @@ class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
     // A flag to indicate whether we are generating code in REPL mode.
     const bool repl_mode = false;
 
-    // The LLVM module and context used for code generation.
-    IRModuleContext mod_ctx;
     // The IR builder used to generate the IR; always set the insertion point
     // before using it.
     std::unique_ptr<llvm::IRBuilder<>> builder;
@@ -50,7 +50,7 @@ class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
     ControlStack control_stack;
 
     CodeGenerator(
-        std::string_view module_name,
+        IRModuleContext&& mod_ctx,
         bool ir_printing_enabled,
         bool panic_recoverable,
         bool repl_mode
@@ -253,7 +253,6 @@ public:
      * verification. Defaults to false.
      * @param panic_recoverable Whether to make panics recoverable using
      * setjmp and longjmp. Defaults to false.
-     * @param module_name The name of the generated module. Defaults to "main".
      * @param require_verification Whether to verify the generated IR.
      * Defaults to true.
      */
@@ -261,7 +260,6 @@ public:
         std::unique_ptr<FrontendContext>& context,
         bool ir_printing_enabled = false,
         bool panic_recoverable = false,
-        std::string_view module_name = "main",
         bool require_verification = true
     );
 
