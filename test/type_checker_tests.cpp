@@ -66,7 +66,7 @@ void run_checker_test(
         CHECK(errors.empty());
     }
 
-    context->reset();
+    context->initialize();
     nico::Logger::inst().reset();
 }
 

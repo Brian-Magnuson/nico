@@ -33,7 +33,7 @@ void run_parser_stmt_test(
     nico::AstPrinter printer;
     CHECK(printer.stmts_to_strings(context->stmts) == expected);
 
-    context->reset();
+    context->initialize();
     nico::Logger::inst().reset();
 }
 
@@ -62,7 +62,7 @@ void run_parser_stmt_error_test(
     REQUIRE(errors.size() >= 1);
     CHECK(errors.at(0) == expected_error);
 
-    context->reset();
+    context->initialize();
     nico::Logger::inst().reset();
 }
 

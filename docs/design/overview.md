@@ -9,7 +9,7 @@ The following is an overview of the Nico programming language design. This docum
 
 ## Primitive types
 
-### Integer types
+### Fixed-width integer types
 
 The integer types are signed and unsigned integers of various sizes. The following integer types are supported:
 - Signed integers: `i8`, `i16`, `i32`, `i64`
@@ -43,7 +43,7 @@ For convenience, the following special suffixes are also supported:
 
 It is recommended to use the full type names for clarity.
 
-If the integer cannot be parsed as the specified type, a lexer error will occur.
+If the integer cannot be parsed as the specified type, a parser error will occur.
 
 Note that the type of an integer will never be inferred from the surrounding context. Only type suffixes are used to determine the type of an integer literal.
 ```
@@ -65,6 +65,24 @@ The only way to write a negative number is to either use a negative sign or cast
 0b1111_1111_u8 as i8 // OK: -1
 0b1111_1111_i8       // Error: 255 cannot be represented as i8
 ```
+
+### Pointer-sized integer types
+
+The pointer-sized integer types are `isized` and `usized`, representing signed and unsigned integers that are the same size as a pointer on the target platform.
+
+These types are mainly used for low-level programming and interoperability with foreign code. They are not intended for general use.
+
+You cannot write an integer literal of these types using a type suffix.
+However, you can write an integer literal of a fixed-width integer type and then cast it to a pointer-sized integer type:
+```
+42i32 as isized
+42u32 as usized
+```
+
+This is due to the fact that an integer literal that fits in a pointer-sized integer type on one platform may not fit on another platform.
+For example, `0xFF_FF_FF_FF_FF` might fit in a 64-bit pointer-sized integer type, but it would not fit in a 32-bit pointer-sized integer type.
+
+Additionally, pointer-sized integer types are not assignment-compatible with fixed-width integer types, even if they have the same width on a particular platform. This is because pointer-sized integer types are not guaranteed to have the same width as any fixed-width integer type across all platforms.
 
 ### Floating-point types
 
@@ -654,9 +672,12 @@ Here are some general rules for assignment compatibility:
 - A pointer to a derived class type is assignable to a pointer to a base class type.
 
 Additionally:
-- If the type conversion would require the data of the value to change, the types are not assignment-compatible.
+- If the type conversion would potentially require the data of the value to change, the types are not assignment-compatible.
 
-Because of this, integer types of different widths are not assignment-compatible, and floating-point types of different widths are not assignment-compatible.
+Because of this: 
+- Integer types of different widths are not assignment-compatible.
+- Floating-point types of different widths are not assignment-compatible.
+- The `isize` and `usize` are not assignment-compatible with any fixed-width integer type, even if they have the same width on a particular platform.
 
 Generally, if a type may be assigned to another type, it is also cast-compatible.
 However, not all cast-compatible types are assignment-compatible.

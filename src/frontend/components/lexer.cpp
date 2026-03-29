@@ -452,11 +452,11 @@ void Lexer::numeric_literal() {
     else if (match('l') || match('L')) {
         token->tok_type = Tok::Int64;
     }
-    else if (match('u') || match('U')) {
-        token->tok_type = Tok::UInt32;
-    }
     else if (match_all("ul") || match_all("UL")) {
         token->tok_type = Tok::UInt64;
+    }
+    else if (match('u') || match('U')) {
+        token->tok_type = Tok::UInt32;
     }
     else if (match('f') || match('F')) {
         token->tok_type = Tok::Float32;

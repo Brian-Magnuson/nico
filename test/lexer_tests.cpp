@@ -28,7 +28,7 @@ void run_lexer_test(
     nico::Lexer::scan(context, file);
     CHECK(extract_token_types(context->scanned_tokens) == expected);
 
-    context->reset();
+    context->initialize();
     nico::Logger::inst().reset();
 }
 
@@ -55,7 +55,7 @@ void run_lexer_error_test(
     REQUIRE(errors.size() >= 1);
     CHECK(errors.at(0) == expected_error);
 
-    context->reset();
+    context->initialize();
     nico::Logger::inst().reset();
 }
 
@@ -481,6 +481,19 @@ TEST_CASE("Lexer numbers (run_lexer_test)", "[lexer]") {
              Tok::UInt8,
              Tok::UInt16,
              Tok::UInt32,
+             Tok::UInt64,
+             Tok::Eof}
+        );
+    }
+
+    SECTION("Integers with special type suffixes") {
+        run_lexer_test(
+            "123l 123L 123u 123U 123ul 123UL",
+            {Tok::Int64,
+             Tok::Int64,
+             Tok::UInt32,
+             Tok::UInt32,
+             Tok::UInt64,
              Tok::UInt64,
              Tok::Eof}
         );

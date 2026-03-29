@@ -1,6 +1,7 @@
 #ifndef NICO_IR_MODULE_CONTEXT_H
 #define NICO_IR_MODULE_CONTEXT_H
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -119,6 +120,25 @@ public:
         }
 
         ir_module->setDataLayout(target_machine->createDataLayout());
+    }
+
+    /**
+     * @brief Get the width of a pointer in bits based on the data layout of the
+     * IR module.
+     *
+     * @return The width of a pointer in bits.
+     *
+     * @warning This method assumes that the IR module has been initialized. If
+     * the IR module is not initialized, this method will panic.
+     */
+    uint8_t get_ptr_width() const {
+        if (ir_module == nullptr) {
+            panic(
+                "IRModuleContext::get_ptr_width: IRModuleContext is not "
+                "initialized."
+            );
+        }
+        return ir_module->getDataLayout().getPointerSizeInBits();
     }
 };
 

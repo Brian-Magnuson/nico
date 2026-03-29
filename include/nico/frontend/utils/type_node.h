@@ -44,20 +44,27 @@ public:
     // The width of the integer in bits. Can be any number, but should be 8, 16,
     // 32, or 64.
     const uint8_t width;
+    // Whether this is a pointer-sized integer type (i.e. `intptr` or
+    // `uintptr`).
+    const bool is_ptr_sized;
 
     virtual ~Int() = default;
 
-    Int(bool is_signed, uint8_t width)
-        : is_signed(is_signed), width(width) {}
+    Int(bool is_signed, uint8_t width, bool is_ptr_sized = false)
+        : is_signed(is_signed), width(width), is_ptr_sized(is_ptr_sized) {}
 
     std::string to_string() const override {
+        if (is_ptr_sized) {
+            return (is_signed ? "intptr" : "uintptr");
+        }
         return (is_signed ? "i" : "u") + std::to_string(width);
     }
 
     bool operator==(const Type& other) const override {
         if (const auto* other_int = dynamic_cast<const Int*>(&other)) {
             return is_signed == other_int->is_signed &&
-                   width == other_int->width;
+                   width == other_int->width &&
+                   is_ptr_sized == other_int->is_ptr_sized;
         }
         return false;
     }

@@ -46,21 +46,22 @@ public:
     // The name of the main function generated in the module.
     std::string main_fn_name;
 
-    FrontendContext() { reset(); }
+    FrontendContext() { initialize(); }
 
     /**
-     * @brief Resets the context to its initial state.
+     * @brief Initialize the front end context with a new LLVM context and
+     * module.
      *
-     * Useful for resetting the front end.
+     * Can also be used to reset the context to its initial state.
      */
-    void reset() {
+    void initialize() {
         status = Status::Ok();
         scanned_tokens.clear();
         stmts.clear();
         mir_module = MIRModule::create();
         stmts_processed = 0;
-        symbol_tree = std::make_shared<SymbolTree>();
         mod_ctx.initialize();
+        symbol_tree = std::make_shared<SymbolTree>(mod_ctx);
     }
 
     /**

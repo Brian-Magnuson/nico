@@ -84,7 +84,7 @@ public:
      * symbols.
      * Useful for REPLs to clear the current state.
      */
-    void reset() { context->reset(); }
+    void reset() { context->initialize(); }
 };
 
 } // namespace nico

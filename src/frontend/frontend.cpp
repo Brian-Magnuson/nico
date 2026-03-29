@@ -6,6 +6,8 @@ namespace nico {
 
 std::unique_ptr<FrontendContext>&
 Frontend::compile(const std::shared_ptr<CodeFile>& file, bool repl_mode) {
+    context->mod_ctx.initialize();
+
     Lexer::scan(context, file, repl_mode);
     if (!IS_VARIANT(context->status, Status::Ok))
         return context;

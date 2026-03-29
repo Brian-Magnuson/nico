@@ -86,6 +86,28 @@ void SymbolTree::install_primitive_types() {
     modified = true;
 }
 
+void SymbolTree::install_context_dependent_types(IRModuleContext& mod_ctx) {
+    modified = true;
+    std::vector<std::shared_ptr<Node::PrimitiveType>> context_dependent_types =
+        {Node::PrimitiveType::create(
+             reserved_scope,
+             "isized",
+             std::make_shared<Type::Int>(true, mod_ctx.get_ptr_width(), true)
+         ),
+         Node::PrimitiveType::create(
+             reserved_scope,
+             "usized",
+             std::make_shared<Type::Int>(false, mod_ctx.get_ptr_width(), true)
+         )};
+    for (auto& ctype : context_dependent_types) {
+        reserved_scope->children[ctype->short_name] = ctype;
+        ctype->symbol = reserved_scope->symbol + "::" + ctype->short_name;
+        reserved_symbols.insert(ctype->symbol);
+    }
+
+    modified = true;
+}
+
 bool SymbolTree::resolve_name_from_scope(
     std::shared_ptr<Name> name, std::shared_ptr<Node::IScope> searching_scope
 ) {
@@ -130,7 +152,7 @@ bool SymbolTree::resolve_name_from_scope(
     }
 }
 
-void SymbolTree::reset() {
+void SymbolTree::initialize(IRModuleContext& mod_ctx) {
     root_scope = Node::RootScope::create();
     root_scope->symbol = "";
     current_scope = root_scope;
@@ -140,6 +162,7 @@ void SymbolTree::reset() {
     modified = false;
 
     install_primitive_types();
+    install_context_dependent_types(mod_ctx);
 }
 
 bool SymbolTree::is_name_reserved(const std::string& name) const {

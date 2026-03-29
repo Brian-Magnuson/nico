@@ -13,6 +13,7 @@
 #include "nico/frontend/utils/type_node.h"
 #include "nico/shared/dictionary.h"
 #include "nico/shared/error_code.h"
+#include "nico/shared/ir_module_context.h"
 
 namespace nico {
 
@@ -34,6 +35,15 @@ class SymbolTree {
      * @brief Installs primitive types into the root scope of the symbol tree.
      */
     void install_primitive_types();
+
+    /**
+     * @brief Installs context-dependent types into the reserved scope of the
+     * symbol tree.
+     *
+     * Context-dependent types are types that depend on the IR module context,
+     * such as pointer-sized integer types (`intptr` and `uintptr`).
+     */
+    void install_context_dependent_types(IRModuleContext& mod_ctx);
 
     // TODO: Add feature for installing context-dependent types, such as isize
     // and usize.
@@ -83,10 +93,11 @@ public:
      * @brief Constructs a symbol tree with a root scope and installs primitive
      * types.
      */
-    SymbolTree() { reset(); }
+    SymbolTree(IRModuleContext& mod_ctx) { initialize(mod_ctx); }
 
     /**
-     * @brief Resets the symbol tree to its initial state.
+     * @brief Initializes the symbol tree. Can also be used to reset the symbol
+     * tree to its initial state.
      *
      * This function will reset the root scope to a new instance of
      * Node::RootScope and set the current scope to the root scope. It also
@@ -94,8 +105,11 @@ public:
      *
      * This function should be called before starting a new type-checking pass
      * or when reinitializing the symbol tree.
+     *
+     * @param mod_ctx The IR module context. Important for initializing the
+     * symbol tree with the correct primitive types.
      */
-    void reset();
+    void initialize(IRModuleContext& mod_ctx);
 
     /**
      * @brief Checks if the symbol tree has been modified since the last
