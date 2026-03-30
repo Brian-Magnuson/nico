@@ -258,6 +258,11 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
     return std::any();
 }
 
+std::any GlobalChecker::visit(Stmt::ExternDecl* stmt) {
+    // TODO: Implement this.
+    return std::any();
+}
+
 std::any GlobalChecker::visit(Stmt::Print*) {
     // Do nothing.
     return std::any();
@@ -301,7 +306,7 @@ std::any GlobalChecker::visit(Stmt::Namespace* stmt) {
     return std::any();
 }
 
-std::any GlobalChecker::visit(Stmt::Extern* stmt) {
+std::any GlobalChecker::visit(Stmt::ExternBlock* stmt) {
     auto node_opt = symbol_tree->add_extern_block(stmt->identifier);
     if (!node_opt.has_value()) {
         return std::any();

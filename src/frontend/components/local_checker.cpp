@@ -85,9 +85,10 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
     if (!node_opt.has_value()) {
         return std::any();
     }
-    else if (auto binding_node = std::dynamic_pointer_cast<Node::BindingEntry>(
-                 node_opt.value()
-             )) {
+    else if (
+        auto binding_node =
+            std::dynamic_pointer_cast<Node::BindingEntry>(node_opt.value())
+    ) {
         stmt->binding_entry = binding_node;
         return std::any();
     }
@@ -192,6 +193,11 @@ std::any LocalChecker::visit(Stmt::Func* stmt) {
     // Exit the parameter local scope.
     symbol_tree->exit_scope();
 
+    return std::any();
+}
+
+std::any LocalChecker::visit(Stmt::ExternDecl* /*stmt*/) {
+    // Do nothing. Extern declarations are handled by the global checker.
     return std::any();
 }
 
@@ -353,7 +359,7 @@ std::any LocalChecker::visit(Stmt::Namespace* stmt) {
     return std::any();
 }
 
-std::any LocalChecker::visit(Stmt::Extern* /*stmt*/) {
+std::any LocalChecker::visit(Stmt::ExternBlock* /*stmt*/) {
     // Extern blocks do not contain execution-space statements.
     return std::any();
 }

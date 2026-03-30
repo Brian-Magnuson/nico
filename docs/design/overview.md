@@ -1201,7 +1201,7 @@ The lack of OOP features makes structs simpler and more lightweight than classes
 They use the following syntax:
 ```
 struct MyStruct: // Indented form
-    let x: i32 = 0
+    static x: i32 = 0
     prop y: i32
     func my_func():
         statement1
@@ -1209,7 +1209,7 @@ struct MyStruct: // Indented form
         statement1
 
 struct MyStruct { // Braced form
-    let x: i32 = 0
+    static x: i32 = 0
     prop y: i32
     func my_func():
         statement1
@@ -1266,12 +1266,12 @@ method my_method(self: MyStruct) // Immutable object
 s.my_method() // OK
 ```
 
-In structs, member variables declared with `let` and member functions declared with `func` are said to be *shared*. This is similar to static members in C++ and Java.
+In structs, member variables declared with `static` and member functions declared with `func` are said to be *shared*. This is similar to static members in C++ and Java.
 Because they don't have access to `self`, they cannot access instance properties or methods.
 Outside the complex type, they are accessed using the struct name:
 ```
 struct MyStruct:
-    let x: i32 = 0
+    static x: i32 = 0
     func my_func():
         statement1
 
@@ -1280,7 +1280,7 @@ func global_func():
     MyStruct.my_func() // Calling shared member
 ```
 
-We reuse the `let` and `func` keywords, because they are stored in a similar manner as other scoped variables and functions.
+We reuse the `static` and `func` keywords, because they are stored in a similar manner as other scoped variables and functions.
 
 Shared variables, like local variables, must always be initialized to some value when declared. If no value is provided, a type annotation is required. The variable will be initialized to the default value for the specified type.
 
@@ -1308,7 +1308,7 @@ Classes are user-defined types that consist of a collection of named properties.
 Classes are similar to named structs. They use the same syntax, except they are declared with the `class` keyword instead of `struct`.
 ```
 class MyStruct: // Indented form
-    let x: i32 = 0
+    static x: i32 = 0
     prop y: i32
     func my_func():
         statement1
@@ -1316,7 +1316,7 @@ class MyStruct: // Indented form
         statement1
 
 class MyStruct { // Braced form
-    let x: i32 = 0
+    static x: i32 = 0
     prop y: i32
     func my_func():
         statement1

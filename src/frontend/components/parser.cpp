@@ -966,13 +966,15 @@ std::optional<std::shared_ptr<Expr>> Parser::assignment() {
             return std::nullopt;
         return std::make_shared<Expr::Assign>(*left, op, *right);
     }
-    else if (match(
-                 {Tok::PlusEq,
-                  Tok::MinusEq,
-                  Tok::StarEq,
-                  Tok::SlashEq,
-                  Tok::PercentEq}
-             )) {
+    else if (
+        match(
+            {Tok::PlusEq,
+             Tok::MinusEq,
+             Tok::StarEq,
+             Tok::SlashEq,
+             Tok::PercentEq}
+        )
+    ) {
         auto op = previous();
         auto right = assignment();
         if (!right)
@@ -1232,8 +1234,9 @@ std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
             false
         );
     }
-    else if (peek()->tok_type == Tok::Indent ||
-             peek()->tok_type == Tok::LBrace) {
+    else if (
+        peek()->tok_type == Tok::Indent || peek()->tok_type == Tok::LBrace
+    ) {
         // Block function
         auto block_expr = block(Expr::Block::Kind::Function);
         if (!block_expr) {
@@ -1373,11 +1376,11 @@ std::optional<std::shared_ptr<Stmt>> Parser::extern_block_statement() {
     bool defer_error = false;
 
     // Optional ABI string
-    auto abi = Stmt::Extern::ABI::C;
+    auto abi = Stmt::ExternBlock::ABI::C;
     if (match({Tok::Str})) {
         auto abi_string = previous()->lexeme;
         if (abi_string == "\"C\"" || abi_string == "\"c\"") {
-            abi = Stmt::Extern::ABI::C;
+            abi = Stmt::ExternBlock::ABI::C;
         }
         else {
             Logger::inst().log_error(
@@ -1476,7 +1479,7 @@ std::optional<std::shared_ptr<Stmt>> Parser::extern_block_statement() {
         return std::nullopt;
     }
 
-    return std::make_shared<Stmt::Extern>(
+    return std::make_shared<Stmt::ExternBlock>(
         start_token,
         identifier,
         std::move(body_stmts),

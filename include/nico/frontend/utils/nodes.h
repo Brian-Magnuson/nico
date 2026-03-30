@@ -336,6 +336,7 @@ public:
     class Let;
     class Static;
     class Func;
+    class ExternDecl;
 
     class Print;
     class Dealloc;
@@ -345,7 +346,7 @@ public:
     class Continue;
 
     class Namespace;
-    class Extern;
+    class ExternBlock;
 
     class Eof;
 
@@ -360,13 +361,14 @@ public:
         virtual std::any visit(Let* stmt) = 0;
         virtual std::any visit(Static* stmt) = 0;
         virtual std::any visit(Func* stmt) = 0;
+        virtual std::any visit(ExternDecl* stmt) = 0;
         virtual std::any visit(Print* stmt) = 0;
         virtual std::any visit(Dealloc* stmt) = 0;
         virtual std::any visit(Pass* stmt) = 0;
         virtual std::any visit(Yield* stmt) = 0;
         virtual std::any visit(Continue* stmt) = 0;
         virtual std::any visit(Namespace* stmt) = 0;
-        virtual std::any visit(Extern* stmt) = 0;
+        virtual std::any visit(ExternBlock* stmt) = 0;
         virtual std::any visit(Eof* stmt) = 0;
     };
 

@@ -39,13 +39,14 @@ class GlobalChecker : public Stmt::Visitor {
     std::any visit(Stmt::Let* stmt) override;
     std::any visit(Stmt::Static* stmt) override;
     std::any visit(Stmt::Func* stmt) override;
+    std::any visit(Stmt::ExternDecl* stmt) override;
     std::any visit(Stmt::Print* stmt) override;
     std::any visit(Stmt::Dealloc* stmt) override;
     std::any visit(Stmt::Pass* stmt) override;
     std::any visit(Stmt::Yield* stmt) override;
     std::any visit(Stmt::Continue* stmt) override;
     std::any visit(Stmt::Namespace* stmt) override;
-    std::any visit(Stmt::Extern* stmt) override;
+    std::any visit(Stmt::ExternBlock* stmt) override;
     std::any visit(Stmt::Eof* stmt) override;
 
     /**

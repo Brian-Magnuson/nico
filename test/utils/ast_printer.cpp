@@ -89,6 +89,21 @@ std::any AstPrinter::visit(Stmt::Func* stmt) {
     return str;
 }
 
+std::any AstPrinter::visit(Stmt::ExternDecl* stmt) {
+    std::string str = "(stmt:externdecl ";
+    switch (stmt->abi) {
+    case Stmt::ExternDecl::ABI::C:
+        str += "\"C\" ";
+        break;
+    default:
+        str += "unknown ";
+        break;
+    }
+    str += std::any_cast<std::string>(stmt->decl->accept(this));
+    str += ")";
+    return str;
+}
+
 std::any AstPrinter::visit(Stmt::Print* stmt) {
     std::string str = "(stmt:print";
     for (const auto& expr : stmt->expressions) {
@@ -137,10 +152,11 @@ std::any AstPrinter::visit(Stmt::Namespace* stmt) {
     return str;
 }
 
-std::any AstPrinter::visit(Stmt::Extern* stmt) {
+std::any AstPrinter::visit(Stmt::ExternBlock* stmt) {
+    // TODO: Consider changing this to externblock to reflect the new name.
     std::string str = "(stmt:extern ";
     switch (stmt->abi) {
-    case Stmt::Extern::ABI::C:
+    case Stmt::ExternBlock::ABI::C:
         str += "\"C\"";
         break;
     default:
