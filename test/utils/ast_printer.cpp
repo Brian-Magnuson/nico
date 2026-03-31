@@ -92,7 +92,7 @@ std::any AstPrinter::visit(Stmt::Func* stmt) {
 std::any AstPrinter::visit(Stmt::ExternDecl* stmt) {
     std::string str = "(stmt:externdecl ";
     switch (stmt->abi) {
-    case Stmt::ExternDecl::ABI::C:
+    case ABI::C:
         str += "\"C\" ";
         break;
     default:
@@ -156,7 +156,7 @@ std::any AstPrinter::visit(Stmt::ExternBlock* stmt) {
     // TODO: Consider changing this to externblock to reflect the new name.
     std::string str = "(stmt:extern ";
     switch (stmt->abi) {
-    case Stmt::ExternBlock::ABI::C:
+    case ABI::C:
         str += "\"C\"";
         break;
     default:

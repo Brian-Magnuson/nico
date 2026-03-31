@@ -130,6 +130,8 @@ enum class Err {
     PosArgumentAfterNamedArgument,
     // An extern block declaration was found with an unrecognized ABI string.
     ExternBlockUnrecognizedABI,
+    // An extern statement contained an unexpected token.
+    UnexpectedTokenAfterExtern,
 
     // Parser warning
     ParserWarning = 3500,

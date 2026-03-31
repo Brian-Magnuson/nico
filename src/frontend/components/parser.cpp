@@ -1371,37 +1371,10 @@ std::optional<std::shared_ptr<Stmt>> Parser::namespace_statement() {
     );
 }
 
-std::optional<std::shared_ptr<Stmt>> Parser::extern_block_statement() {
-    auto start_token = previous();
+std::optional<std::shared_ptr<Stmt>> Parser::extern_block_statement(
+    std::shared_ptr<nico::Token> start_token, ABI abi
+) {
     bool defer_error = false;
-
-    // Optional ABI string
-    auto abi = Stmt::ExternBlock::ABI::C;
-    if (match({Tok::Str})) {
-        auto abi_string = previous()->lexeme;
-        if (abi_string == "\"C\"" || abi_string == "\"c\"") {
-            abi = Stmt::ExternBlock::ABI::C;
-        }
-        else {
-            Logger::inst().log_error(
-                Err::ExternBlockUnrecognizedABI,
-                previous()->location,
-                "Unknown ABI specified in extern block declaration."
-            );
-            Logger::inst().log_note("Supported ABIs are: \"C\".");
-            defer_error = true;
-        }
-    }
-
-    // Identifier
-    if (!match({Tok::Identifier})) {
-        Logger::inst().log_error(
-            Err::NotAnIdentifier,
-            peek()->location,
-            "Expected identifier in extern block declaration."
-        );
-        return std::nullopt;
-    }
     auto identifier = previous();
 
     if (match({Tok::ColonColon})) {
@@ -1487,6 +1460,84 @@ std::optional<std::shared_ptr<Stmt>> Parser::extern_block_statement() {
     );
 }
 
+std::optional<std::shared_ptr<Stmt>> Parser::extern_statement() {
+    auto start_token = previous();
+    bool defer_error = false;
+
+    // Optional ABI string
+    auto abi = ABI::C;
+    if (match({Tok::Str})) {
+        auto abi_string = previous()->lexeme;
+        if (abi_string == "\"C\"" || abi_string == "\"c\"") {
+            abi = ABI::C;
+        }
+        else {
+            Logger::inst().log_error(
+                Err::ExternBlockUnrecognizedABI,
+                previous()->location,
+                "Unknown ABI specified in extern block declaration."
+            );
+            Logger::inst().log_note("Supported ABIs are: \"C\".");
+            defer_error = true;
+        }
+    }
+
+    // If the extern statement is an extern namespace (block)...
+    if (match({Tok::Identifier})) {
+        auto stmt = extern_block_statement(start_token, abi);
+        if (!stmt || defer_error) {
+            // At this point, an error has already been logged.
+            return std::nullopt;
+        }
+        return stmt;
+    }
+    // If the extern statement is a single declaration...
+    else if (match({Tok::KwFunc})) {
+        auto func_stmt_opt = func_statement();
+        if (!func_stmt_opt || defer_error) {
+            // At this point, an error has already been logged.
+            return std::nullopt;
+        }
+        auto decl_allowed_stmt = std::dynamic_pointer_cast<Stmt::IDeclAllowed>(
+            func_stmt_opt.value()
+        );
+        if (!decl_allowed_stmt) {
+            panic(
+                "Parser::extern_statement: function_statement did not return a "
+                "declaration."
+            );
+            return std::nullopt;
+        }
+        return std::make_shared<Stmt::ExternDecl>(decl_allowed_stmt, abi);
+    }
+    else if (match({Tok::KwStatic})) {
+        auto var_stmt_opt = variable_statement();
+        if (!var_stmt_opt || defer_error) {
+            // At this point, an error has already been logged.
+            return std::nullopt;
+        }
+        auto decl_allowed_stmt =
+            std::dynamic_pointer_cast<Stmt::IDeclAllowed>(var_stmt_opt.value());
+        if (!decl_allowed_stmt) {
+            panic(
+                "Parser::extern_statement: variable_statement did not return a "
+                "declaration."
+            );
+            return std::nullopt;
+        }
+        return std::make_shared<Stmt::ExternDecl>(decl_allowed_stmt, abi);
+    }
+    else {
+        Logger::inst().log_error(
+            Err::UnexpectedTokenAfterExtern,
+            peek()->location,
+            "Expected function declaration, static variable declaration, or "
+            "identifier after `extern`."
+        );
+        return std::nullopt;
+    }
+}
+
 std::optional<std::shared_ptr<Stmt>> Parser::print_statement() {
     auto print_token = previous();
     std::vector<std::shared_ptr<Expr>> expressions;
@@ -1543,7 +1594,7 @@ std::optional<std::shared_ptr<Stmt>> Parser::statement() {
         return namespace_statement();
     }
     else if (match({Tok::KwExtern})) {
-        return extern_block_statement();
+        return extern_statement();
     }
     else if (match({Tok::Eof})) {
         return std::make_shared<Stmt::Eof>(previous());

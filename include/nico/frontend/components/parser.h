@@ -424,10 +424,29 @@ class Parser {
      * scope. Extern blocks are like namespaces, but they are used to declare
      * functions and variables that are defined in external libraries.
      *
+     * @param start_token The token representing the start of the extern block.
+     * Used for error reporting.
+     * @param abi The ABI specified for the extern block.
      * @return A shared pointer to the parsed statement, or nullopt if the
      * statement could not be parsed.
      */
-    std::optional<std::shared_ptr<Stmt>> extern_block_statement();
+    std::optional<std::shared_ptr<Stmt>>
+    extern_block_statement(std::shared_ptr<Token> start_token, ABI abi);
+
+    /**
+     * @brief Parses an extern statement.
+     *
+     * An extern statement is either an extern block statement, which introduces
+     * a namespace to link to external code, or an extern declaration statement,
+     * which makes a declaration available to external code.
+     *
+     * Both consist of the `extern` keyword followed by an optional ABI string
+     * and then either an identifier, `func`, or `static`.
+     *
+     * @return A shared pointer to the parsed statement, or nullopt if the
+     * statement could not be parsed.
+     */
+    std::optional<std::shared_ptr<Stmt>> extern_statement();
 
     /**
      * @brief Parses a print statement.

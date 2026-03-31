@@ -662,6 +662,13 @@ public:
     }
 };
 
+/**
+ * @brief An enum class for an Application Binary Interface (ABI) specifier.
+ */
+enum class ABI {
+    C,
+};
+
 } // namespace nico
 
 #endif // NICO_NODES_H

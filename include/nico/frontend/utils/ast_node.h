@@ -193,11 +193,6 @@ public:
  */
 class Stmt::ExternDecl : public Stmt::IDeclAllowed {
 public:
-    // An ABI enumeration for different calling conventions.
-    enum class ABI {
-        C,
-    };
-
     // The ABI for the extern declaration.
     ABI abi;
     // The declaration, which should be a function declaration or a static
@@ -368,11 +363,6 @@ public:
  */
 class Stmt::ExternBlock : public Stmt::IDeclAllowed {
 public:
-    // An ABI enumeration for different calling conventions.
-    enum class ABI {
-        C,
-    };
-
     // The name of the extern block.
     std::shared_ptr<Token> identifier;
     // The ABI for the extern declaration block.
