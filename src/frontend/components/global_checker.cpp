@@ -93,6 +93,15 @@ std::any GlobalChecker::visit(Stmt::Static* stmt) {
 
         is_extern = true;
     }
+    else if (!stmt->has_var && !stmt->expression.has_value()) {
+        Logger::inst().log_error(
+            Err::ImmutableWithoutInitializer,
+            stmt->identifier->location,
+            "Immutable variable declaration must have an initializer."
+        );
+        // Not the most dangerous error, so we can continue checking the rest of
+        // the statement.
+    }
 
     // Create the binding entry.
     Binding binding(
@@ -181,7 +190,7 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
     if (PTR_INSTANCEOF(symbol_tree->current_scope, Node::ExternBlock)) {
         if (stmt->body.has_value()) {
             Logger::inst().log_error(
-                Err::ExternFuncWithBody,
+                Err::ExternBlockFuncWithBody,
                 stmt->identifier->location,
                 "Function declared in extern block cannot have a body."
             );
@@ -196,14 +205,14 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
     }
     // If the function is not declared in an extern block...
     else {
-        bool has_error = false;
         if (!stmt->body.has_value()) {
             Logger::inst().log_error(
-                Err::NonExternFuncWithoutBody,
+                Err::FuncWithoutBody,
                 stmt->identifier->location,
-                "Non-extern function declaration is missing a body."
+                "Function is missing a body."
             );
-            has_error = true;
+            // Not the most dangerous error, so we can continue checking the
+            // rest of the statement.
         }
         if (stmt->is_variadic) {
             Logger::inst().log_error(
@@ -211,10 +220,6 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
                 stmt->identifier->location,
                 "Non-extern function declaration is not allowed to be variadic."
             );
-            has_error = true;
-        }
-
-        if (has_error) {
             return std::any();
         }
     }
@@ -259,7 +264,24 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
 }
 
 std::any GlobalChecker::visit(Stmt::ExternDecl* stmt) {
-    // TODO: Implement this.
+    // Inner declaration is either a static variable or a function.
+    if (auto func_decl = std::dynamic_pointer_cast<Stmt::Func>(stmt->decl)) {
+        func_decl->accept(this);
+        func_decl->binding_entry.lock()->binding.is_extern = true;
+    }
+    else if (
+        auto static_decl = std::dynamic_pointer_cast<Stmt::Static>(stmt->decl)
+    ) {
+        static_decl->accept(this);
+        static_decl->binding_entry.lock()->binding.is_extern = true;
+    }
+    else {
+        panic(
+            "GlobalChecker::visit(Stmt::ExternDecl*): Extern declaration has "
+            "invalid inner declaration."
+        );
+    }
+
     return std::any();
 }
 

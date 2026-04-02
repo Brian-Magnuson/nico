@@ -118,6 +118,10 @@ TEST_CASE("Check variable declarations", "[checker]") {
     SECTION("Primitive type name conflict") {
         run_checker_test("let i32 = 1", Err::NameIsReserved);
     }
+
+    SECTION("Variable immutable without initializer") {
+        run_checker_test("let a: i32", Err::ImmutableWithoutInitializer);
+    }
 }
 
 TEST_CASE("Check variable nullptr declarations", "[checker]") {
@@ -241,6 +245,10 @@ TEST_CASE("Check static variable declarations", "[checker]") {
 
     SECTION("Static variable with initializer 2") {
         run_checker_test("static a = 42");
+    }
+
+    SECTION("Static variable immutable without initializer") {
+        run_checker_test("static s: i32", Err::ImmutableWithoutInitializer);
     }
 }
 
@@ -1662,7 +1670,7 @@ TEST_CASE("Check function call", "[checker]") {
     SECTION("Non extern function without body") {
         run_checker_test(
             "func add(a: i32, b: i32) -> i32",
-            Err::NonExternFuncWithoutBody
+            Err::FuncWithoutBody
         );
     }
 
@@ -2046,7 +2054,7 @@ TEST_CASE("Check extern block declarations", "[checker]") {
             }
         }
         )",
-            Err::ExternFuncWithBody
+            Err::ExternBlockFuncWithBody
         );
     }
 
@@ -2057,7 +2065,7 @@ TEST_CASE("Check extern block declarations", "[checker]") {
             func add(a: i32, b: i32) -> i32 => a + b
         }
         )",
-            Err::ExternFuncWithBody
+            Err::ExternBlockFuncWithBody
         );
     }
 
@@ -2141,6 +2149,38 @@ TEST_CASE("Check extern block declarations", "[checker]") {
             }
             )",
             Err::NameIsReserved
+        );
+    }
+}
+
+TEST_CASE("Check extern declarations", "[checker]") {
+    SECTION("Valid static variable extern declaration") {
+        run_checker_test(R"(
+            extern "C" static var x: i32 = 42
+        )");
+    }
+
+    SECTION("Extern declaration static variable without initializer") {
+        run_checker_test(
+            R"(
+            extern "C" static y: i32
+        )",
+            Err::ImmutableWithoutInitializer
+        );
+    }
+
+    SECTION("Valid function extern declaration") {
+        run_checker_test(R"(
+            extern "C" func add(a: i32, b: i32) -> i32 => a + b
+        )");
+    }
+
+    SECTION("Extern declaration function without body") {
+        run_checker_test(
+            R"(
+            extern "C" func add(a: i32, b: i32) -> i32
+        )",
+            Err::FuncWithoutBody
         );
     }
 }

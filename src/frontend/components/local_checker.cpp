@@ -71,6 +71,15 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
         return std::any();
     }
 
+    if (!stmt->has_var && !stmt->expression.has_value()) {
+        Logger::inst().log_error(
+            Err::ImmutableWithoutInitializer,
+            stmt->identifier->location,
+            "Immutable variable declaration must have an initializer."
+        );
+        return std::any();
+    }
+
     // Create the binding entry.
     Binding binding(
         stmt->has_var,

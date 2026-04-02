@@ -173,7 +173,7 @@ There are a few potential disadvantages to this syntax:
 
 There are ways to mitigate these disadvantages:
 - Standardize a "default" behavior for declarations, reducing the need for modifiers in simple cases.
-  - For example, struct methods could be `public` by default and class methods could be `private` by default, reducing the need for access modifiers in common cases.
+  - For example, struct members could be `public` by default and class members could be `private` by default, reducing the need for access modifiers in common cases.
 - Provide clear documentation and error messages for modifiers, especially for those that are more advanced or dangerous
 - Encourage the use of modifiers when teaching the language, so that users become familiar with them and understand their purpose and potential risks.
 

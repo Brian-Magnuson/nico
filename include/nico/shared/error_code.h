@@ -140,6 +140,8 @@ enum class Err {
 
     // Global type check error
     GlobalTypeError = 4000,
+    // An immutable variable was declared without an initializer.
+    ImmutableWithoutInitializer,
     // An attempt was made to declare an extern block within another extern
     // block.
     ExternBlockInExternBlock,
@@ -172,9 +174,9 @@ enum class Err {
     // overload.
     FunctionOverloadConflict,
     // A function was declared in an extern block with a body.
-    ExternFuncWithBody,
+    ExternBlockFuncWithBody,
     // A non-extern function was declared without a body.
-    NonExternFuncWithoutBody,
+    FuncWithoutBody,
     // A non-extern function has a variadic parameter.
     NonExternVariadicFunc,
     // A type mismatch was found in a static variable declaration.
@@ -192,8 +194,6 @@ enum class Err {
     YieldTypeMismatch,
     // A type mismatch was found in a let variable declaration.
     LetTypeMismatch,
-    // An immutable variable was declared without an initializer.
-    ImmutableWithoutInitializer,
     // A type mismatch was found in an assignment expression.
     AssignmentTypeMismatch,
     // A type mismatch was found between a function's default argument and its

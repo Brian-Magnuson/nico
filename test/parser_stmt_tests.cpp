@@ -129,13 +129,6 @@ TEST_CASE("Parser let statements", "[parser]") {
             Err::DeclarationIdentWithColonColon
         );
     }
-
-    SECTION("Let immutable without initializer") {
-        run_parser_stmt_error_test(
-            "let a: i32",
-            Err::ImmutableWithoutInitializer
-        );
-    }
 }
 
 TEST_CASE("Parser let stmt type annotations", "[parser]") {
@@ -304,13 +297,6 @@ TEST_CASE("Parser static statements", "[parser]") {
         run_parser_stmt_test(
             "static s = (1, 2)",
             {"(stmt:static s (tuple (lit i32 1) (lit i32 2)))", "(stmt:eof)"}
-        );
-    }
-
-    SECTION("Static immutable without initializer") {
-        run_parser_stmt_error_test(
-            "static s: i32",
-            Err::ImmutableWithoutInitializer
         );
     }
 
