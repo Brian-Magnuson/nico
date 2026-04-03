@@ -225,3 +225,170 @@ Here, we describe some of the modifiers that we may support in Nico, along with 
 - `suppress_warning` - The statement that follows may emit a warning, and the warning shall be suppressed.
 - `deprecated(MESSAGE)` - The declaration that follows is deprecated and should not be used. The type checker will emit a warning whenever the declaration is used.
   - MESSAGE - A string literal that specifies the deprecation message to include in the warning. This can be any string, but it is recommended to include information about why the declaration is deprecated and what should be used instead.
+
+
+# Applying Modifiers
+
+This syntax is meant to make parsing modifiers easier.
+However, the benefits of this syntax are lost if modifiers are too difficult to type check.
+
+Consider this example:
+```
+#[abstract]
+static var my_var: i32 = 0;
+```
+
+The modifier syntax implies that any modifier can be applied to any statement.
+And yet, it is clear that `abstract` cannot be applied to a variable declaration.
+We need to ensure that each statement has a valid set of modifiers that can be applied to it.
+
+We need to consider how modifiers are checked:
+- Is the statement incorrect because it it has an invalid modifier?
+- Or is the modifier incorrect because it is applied to the wrong statement?
+
+This gives us two approaches to type checking modifiers:
+- Statement-centric: Statements are checked for the modifiers they have applied to them.
+- Modifier-centric: Modifiers are checked for the statements they are applied to.
+
+We also need to consider *when* modifiers are checked:
+- During parsing?
+- During a separate modifier checking phase after parsing but before type checking?
+- During type checking?
+- During a separate modifier checking phase after type checking?
+- Or some combination of the above?
+
+While evaluating these approaches, we should consider the general complexity of the implementation.
+Validating modifiers may not be an easy task.
+But if this syntax is to be successful, it should not be any more difficult to validate than an alternative syntax (such as the aforementioned C#-style modifiers).
+
+## Statement-Centric Approaches
+
+In a statement-centric approach, we check statements for the modifiers they have applied to them.
+This approach works well with the current implementation of the compiler since the type checker already performs type checking by visiting statements one-by-one.
+
+Starting in the parser, each statement node will have an additional field for modifiers:
+```cpp
+class Stmt {
+  const Location* location;
+
+  Dictionary<std::string, Modifier> modifiers; // New field for modifiers.
+};
+```
+
+When the parser encounters a modifiers, it temporarily stores the modifiers in a dictionary until it encounters the next statement, at which point it attaches the modifiers to the statement node and clears the temporary storage.
+This way, the modifiers are attached to the statement node in the AST, and can be easily accessed during type checking.
+
+Next, during type checking, when we visit a statement node, we can check the modifiers attached to it and ensure that they are valid for that statement.
+```cpp
+std::any TypeChecker::visit(Stmt::Static* stmt) {
+  // (normal type checking for static variable declaration)
+
+  // Check modifiers.
+  for (const auto& [name, modifier] : stmt->modifiers) {
+    if (name == "public") {
+      // handle public modifier...
+    }
+    else if (name == "private") {
+      // handle private modifier...
+    }
+    else if (name == "abstract") {
+      // handle abstract modifier...
+    }
+    else {
+      Logger::inst().log_error(
+        Err::InvalidModifier,
+        stmt->location,
+        "Invalid modifier '" + name + "' applied to static variable declaration."
+      );
+    }
+}
+```
+
+For modifiers that apply to any statement, like `suppress_warning`, we in the type-checking loop outside of the visit call:
+```cpp
+void TypeChecker::check(std::vector<std::shared_ptr<Stmt>>& statements) {
+  for (const auto& stmt : statements) {
+    // Check modifiers that apply to any statement.
+    if (stmt->modifiers.contains("suppress_warning")) {
+      // handle suppress_warning modifier...
+    }
+
+    // Type check the statement.
+    visit(stmt);
+  }
+}
+```
+
+Benefits of statement-centric approaches:
+- It is easier to implement since it fits well with the existing structure of the compiler.
+- It allows for more context when checking modifiers, as the statement being checked is readily available.
+
+Drawbacks of statement-centric approaches:
+- It can lead to more complex and less modular code, as the logic for checking modifiers is intertwined with the logic for type checking statements.
+- It can be more difficult to extend, as adding new modifiers may require changes to multiple visit methods for different statement types.
+
+## Modifier-Centric Approaches
+
+In a modifier-centric approach, we check modifiers for the statements they are applied to.
+Each modifier will have its own logic for checking its validity and applying its effects.
+This can be achieved through either simple conditional branches, class methods, or even a visitor pattern for modifiers.
+
+At some point, we loop through each statement and check the modifiers applied to it. Then we run the modifier validation logic, providing the statement as context for the modifier to check itself against.
+```cpp
+void TypeChecker::check(std::vector<std::shared_ptr<Stmt>>& statements) {
+  for (const auto& stmt : statements) {
+    // Check modifiers.
+    for (const auto& [name, modifier] : stmt->modifiers) {
+      modifier.check_with(stmt);
+    }
+
+    // Type check the statement.
+    visit(stmt);
+  }
+}
+```
+
+As mentioned, each modifier has its own logic for checking its validity and applying its effects.
+```cpp
+class Mod::Public : public Mod {
+public:
+  void check_with(const std::shared_ptr<Stmt>& stmt) override {
+    // Check if the statement is a valid declaration that can be public.
+    if (!stmt->is_declaration()) {
+      Logger::inst().log_error(
+        Err::InvalidModifier,
+        stmt->location,
+        "The 'public' modifier can only be applied to declarations."
+      );
+    }
+    // Additional checks for specific declaration types can be added here.
+  }
+};
+```
+
+Class-based modifiers are useful if each modifier has a different structure.
+However, modifiers all have the same structure:
+- They all have a name.
+- They all optionally have arguments, which are scanned as un-parsed tokens.
+- They all have a statement to which they are applied.
+
+If we don't want to implement each modifier as a class, we can also try a "lookup table" approach, where we have a mapping of modifier names to their checking logic:
+```cpp
+std::unordered_map<std::string, std::function<void(const std::shared_ptr<Stmt>&, std::vector<std::shared_ptr<Token>>)>> modifier_checkers = {
+  {"public", check_public_modifier},
+  {"private", check_private_modifier},
+  {"abstract", check_abstract_modifier},
+  // ... other modifiers
+};
+```
+
+The key point is that the modifier-centric approach means each modifier has its own logic for checking its validity and applying its effects.
+
+Benefits of modifier-centric approaches:
+- It leads to more modular and maintainable code, as the logic for each modifier is contained within its own function or class.
+- It can be easier to extend, as adding new modifiers may only require adding a new function or class for the modifier, without needing to modify existing visit methods for different statement types.
+
+Drawbacks of modifier-centric approaches:
+- It can be more difficult to implement, as it may require a new setup for handling modifiers, such as a lookup table or a visitor pattern.
+- It may require more context to be passed to the modifier checking logic, as the statement being checked may not be readily available within the modifier's logic, depending on how it is structured.
+
