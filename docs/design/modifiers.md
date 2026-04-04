@@ -139,7 +139,7 @@ class MyClass:
 ```
 
 Obviously, modifiers cannot be apply to just any declaration.
-The type checker will need to enforce that modifiers are only applied to valid declarations, and that the modifiers themselves are valid for the declaration they are applied to.
+Either the type checker or parser will need to enforce that modifiers are only applied to valid declarations, and that the modifiers themselves are valid for the declaration they are applied to.
 
 This syntax has several advantages:
 - It is visually distinct from the rest of the code, making it easy to identify modifiers at a glance.
@@ -205,8 +205,8 @@ Here, we describe some of the modifiers that we may support in Nico, along with 
 ## Object-Oriented Programming Modifiers
 
 - `virtual` - The method that follows is virtual, meaning it can be overridden by derived classes.
-- `override` - The method that follows should override a virtual method in a base class. The type checker will error if there is no virtual method with the same name and signature in a base class.
-- `final` - The method that follows cannot be overridden by derived classes. The type checker will error if a derived class attempts to override a method marked as `final`.
+- `override` - The method that follows should override a virtual method in a base class. The type checker or parser will error if there is no virtual method with the same name and signature in a base class.
+- `final` - The method that follows cannot be overridden by derived classes. The type checker or parser will error if a derived class attempts to override a method marked as `final`.
 - `abstract` - This modifier behaves differently depending on the declaration it is applied to:
   - When applied to a class, it indicates that the class cannot be instantiated and may contain abstract methods.
   - When applied to a method, the enclosing scope must be a class, the class is required to be marked as `abstract`, and the method must not have an implementation. Derived classes are either required to provide an implementation for the method or be marked as `abstract` themselves.
@@ -226,169 +226,197 @@ Here, we describe some of the modifiers that we may support in Nico, along with 
 - `deprecated(MESSAGE)` - The declaration that follows is deprecated and should not be used. The type checker will emit a warning whenever the declaration is used.
   - MESSAGE - A string literal that specifies the deprecation message to include in the warning. This can be any string, but it is recommended to include information about why the declaration is deprecated and what should be used instead.
 
-
 # Applying Modifiers
 
-This syntax is meant to make parsing modifiers easier.
-However, the benefits of this syntax are lost if modifiers are too difficult to type check.
+The main advantage of this syntax is to make parsing modifiers easier.
 
-Consider this example:
-```
-#[abstract]
-static var my_var: i32 = 0;
-```
-
-The modifier syntax implies that any modifier can be applied to any statement.
-And yet, it is clear that `abstract` cannot be applied to a variable declaration.
-We need to ensure that each statement has a valid set of modifiers that can be applied to it.
-
-We need to consider how modifiers are checked:
-- Is the statement incorrect because it it has an invalid modifier?
-- Or is the modifier incorrect because it is applied to the wrong statement?
-
-This gives us two approaches to type checking modifiers:
-- Statement-centric: Statements are checked for the modifiers they have applied to them.
-- Modifier-centric: Modifiers are checked for the statements they are applied to.
-
-We also need to consider *when* modifiers are checked:
-- During parsing?
-- During a separate modifier checking phase after parsing but before type checking?
-- During type checking?
-- During a separate modifier checking phase after type checking?
-- Or some combination of the above?
-
-While evaluating these approaches, we should consider the general complexity of the implementation.
-Validating modifiers may not be an easy task.
-But if this syntax is to be successful, it should not be any more difficult to validate than an alternative syntax (such as the aforementioned C#-style modifiers).
-
-## Statement-Centric Approaches
-
-In a statement-centric approach, we check statements for the modifiers they have applied to them.
-This approach works well with the current implementation of the compiler since the type checker already performs type checking by visiting statements one-by-one.
-
-Starting in the parser, each statement node will have an additional field for modifiers:
+They are parsed before the statement they are applied to.
 ```cpp
-class Stmt {
-  const Location* location;
+std::optional<std::shared_ptr<Stmt>> Parser::statement() {
 
-  Dictionary<std::string, Modifier> modifiers; // New field for modifiers.
+    modifiers();  // Parse modifiers and store them in a temporary list.
+
+    // Consume semicolons to separate statements
+    while (match({Tok::Semicolon}))
+        ;
+
+    if (match({Tok::KwLet, Tok::KwStatic})) {
+        return variable_statement();
+    }
+    else if (match({Tok::KwFunc})) {
+        return func_statement();
+    }
+    else if (match({Tok::KwNamespace})) {
+        return namespace_statement();
+    }
+    //...
+```
+
+We don't need to complicate the type checker by having to check for modifiers in every visit method for every statement type.
+If the parser is capable of applying the modifiers to the statement nodes in the AST, then the type checker does not need to worry about checking them separately.
+
+The parser's job is to produce an AST that accurately represents the source code.
+For the AST to support the application of modifiers, many AST nodes will need new fields for the data associated with modifiers.
+For example, for the `linkage` modifier, `Stmt::Func` and `Stmt::Static` nodes will need a new field for the linkage type specified by the modifier.
+```cpp
+class Stmt::Func : public Stmt {
+  enum class LinkageType { Internal, External } linkage; // New field for linkage type.
+  //...
 };
 ```
 
-When the parser encounters a modifiers, it temporarily stores the modifiers in a dictionary until it encounters the next statement, at which point it attaches the modifiers to the statement node and clears the temporary storage.
-This way, the modifiers are attached to the statement node in the AST, and can be easily accessed during type checking.
+There are two main approaches to applying modifiers in the parser:
+- Statement-centric: The statements check what modifiers can be applied to them and apply them in their parsing functions.
+- Modifier-centric: The modifiers check what statements they can be applied to and apply themselves in a separate function after the statement is parsed.
+- Hybrid: Some modifiers are applied in a statement-centric way, while others are applied in a modifier-centric way.
 
-Next, during type checking, when we visit a statement node, we can check the modifiers attached to it and ensure that they are valid for that statement.
+In the following approaches, we make an important assumption:
+- We do not check for the absense of modifiers.
+
+This assumption implies that all statements have a "default" behavior when no modifiers are applied, and that modifiers only modify the behavior of statements without being required for the statement to be valid.
+
+It is still possible for the absense of a modifier to result in an error.
+For example, a method can only be marked as `override` if the base class method is marked as `virtual`.
+But this check is done in the type checker and is done by examining the metadata of the AST node and not by checking for the absense of the `virtual` modifier.
+
+## Statement-Centric Approach
+
+In a statement-centric approach, the parser applies modifiers directly within the parsing function for the statement to which they are applied.
+For example, when parsing a function declaration, the parser can check for any modifiers that were parsed before the function declaration and apply them to the function node in the AST.
 ```cpp
-std::any TypeChecker::visit(Stmt::Static* stmt) {
-  // (normal type checking for static variable declaration)
+std::shared_ptr<Stmt> Parser::func_statement(std::vector<Modifier>& modifiers) {
+    auto func_node = std::make_shared<Stmt::Func>();
 
-  // Check modifiers.
-  for (const auto& [name, modifier] : stmt->modifiers) {
-    if (name == "public") {
-      // handle public modifier...
+    // (normal parsing for function declaration)
+
+    // Apply modifiers to the function node.
+    for (const auto& modifier : modifiers) {
+        if (modifier.name == "linkage") {
+            func_node->linkage = parse_linkage(modifier.args);
+        }
+        // ... handle other modifiers
     }
-    else if (name == "private") {
-      // handle private modifier...
-    }
-    else if (name == "abstract") {
-      // handle abstract modifier...
-    }
-    else {
-      Logger::inst().log_error(
-        Err::InvalidModifier,
-        stmt->location,
-        "Invalid modifier '" + name + "' applied to static variable declaration."
-      );
-    }
+
+    return func_node;
 }
 ```
 
-For modifiers that apply to any statement, like `suppress_warning`, we in the type-checking loop outside of the visit call:
-```cpp
-void TypeChecker::check(std::vector<std::shared_ptr<Stmt>>& statements) {
-  for (const auto& stmt : statements) {
-    // Check modifiers that apply to any statement.
-    if (stmt->modifiers.contains("suppress_warning")) {
-      // handle suppress_warning modifier...
-    }
+Note that the parsing function signature had to be changed to accept the list of modifiers as an argument, which may require changes to the way the parser is structured.
+We cannot use a global temporary list of modifiers in this approach, as it would not work well with nested statements and would make the parser less modular.
 
-    // Type check the statement.
-    visit(stmt);
-  }
-}
-```
-
-Benefits of statement-centric approaches:
+Advantages of the statement-centric approach:
+- Statements handle their own modifiers; no guessing what kind of statement is being modified.
+- It allows for more context when applying modifiers, as the statement being modified is readily available.
 - It is easier to implement since it fits well with the existing structure of the compiler.
-- It allows for more context when checking modifiers, as the statement being checked is readily available.
 
-Drawbacks of statement-centric approaches:
-- It can lead to more complex and less modular code, as the logic for checking modifiers is intertwined with the logic for type checking statements.
-- It can be more difficult to extend, as adding new modifiers may require changes to multiple visit methods for different statement types.
+Disadvantages of the statement-centric approach:
+- Parsing functions may become more complex, as they need to handle the application of modifiers in addition to their normal parsing logic.
+- It can be more difficult to extend, as adding new modifiers may require changes to multiple parsing functions for different statement types.
+- The parser needs to be updated to pass the list of modifiers to the appropriate parsing functions, which may require significant changes to the parser's structure.
+- It can lead to more complex and less modular code, as the logic for applying modifiers is intertwined with the logic for parsing statements.
 
-## Modifier-Centric Approaches
+## Modifier-Centric Approach
 
-In a modifier-centric approach, we check modifiers for the statements they are applied to.
-Each modifier will have its own logic for checking its validity and applying its effects.
-This can be achieved through either simple conditional branches, class methods, or even a visitor pattern for modifiers.
-
-At some point, we loop through each statement and check the modifiers applied to it. Then we run the modifier validation logic, providing the statement as context for the modifier to check itself against.
+In a modifier-centric approach, the parser applies modifiers in a separate function that is called after the statement is parsed.
+For example, after parsing a function declaration, the parser can call a separate function to apply any modifiers that were parsed before the function declaration to the function node in the AST.
 ```cpp
-void TypeChecker::check(std::vector<std::shared_ptr<Stmt>>& statements) {
-  for (const auto& stmt : statements) {
-    // Check modifiers.
-    for (const auto& [name, modifier] : stmt->modifiers) {
-      modifier.check_with(stmt);
-    }
+std::optional<std::shared_ptr<Stmt>> Parser::statement() {
 
-    // Type check the statement.
-    visit(stmt);
-  }
+    auto parsed_modifiers = modifiers();  // Parse modifiers and store them in a temporary list.
+
+    // Consume semicolons to separate statements
+    while (match({Tok::Semicolon}))
+        ;
+
+    if (match({Tok::KwLet, Tok::KwStatic})) {
+        return variable_statement();
+    }
+    else if (match({Tok::KwFunc})) {
+        return func_statement();
+    }
+    else if (match({Tok::KwNamespace})) {
+        return namespace_statement();
+    }
+    //...
+
+
+    // After parsing the statement, apply any modifiers that were parsed before it.
+    apply_modifiers(parsed_modifiers, stmt);
+
+    return stmt;
 }
 ```
 
-As mentioned, each modifier has its own logic for checking its validity and applying its effects.
+Advantages of the modifier-centric approach:
+- All the logic for applying modifiers is contained within a single function, making it more modular and easier to maintain.
+- It can be easier to extend, as adding new modifiers may only require changes to the modifier application function, without needing to modify existing parsing functions for different statement types.
+- There is no need to pass the list of modifiers to the parsing functions, which can simplify the parser's structure and reduce the amount of changes needed to implement modifiers.
+
+Disadvantages of the modifier-centric approach:
+- Less context is available when applying modifiers, as the statement is boxed as a generic statement node and may require downcasting to determine its specific type.
+
+## Hybrid Approach
+
+In a hybrid approach, most modifiers are applied in a statement-centric way, but a few modifiers that require less context or are more general can be applied in a modifier-centric way.
+For example, the `abstract` modifier can be applied in a statement-centric way since it can only be applied to class and method declarations:
 ```cpp
-class Mod::Public : public Mod {
-public:
-  void check_with(const std::shared_ptr<Stmt>& stmt) override {
-    // Check if the statement is a valid declaration that can be public.
-    if (!stmt->is_declaration()) {
-      Logger::inst().log_error(
-        Err::InvalidModifier,
-        stmt->location,
-        "The 'public' modifier can only be applied to declarations."
-      );
+std::shared_ptr<Stmt> Parser::func_statement(std::vector<Modifier>& modifiers) {
+    auto func_node = std::make_shared<Stmt::Func>();
+
+    // (normal parsing for function declaration)
+
+    // Apply abstract modifier in a statement-centric way.
+    if (modifiers.contains("abstract")) {
+        func_node->is_abstract = true;
+        modifiers.erase("abstract"); // Remove the modifier from the list after applying it.
     }
-    // Additional checks for specific declaration types can be added here.
-  }
-};
+
+    return func_node;
+}
 ```
 
-Class-based modifiers are useful if each modifier has a different structure.
-However, modifiers all have the same structure:
-- They all have a name.
-- They all optionally have arguments, which are scanned as un-parsed tokens.
-- They all have a statement to which they are applied.
-
-If we don't want to implement each modifier as a class, we can also try a "lookup table" approach, where we have a mapping of modifier names to their checking logic:
+And the `suppress_warning` modifier can be applied in a modifier-centric way since it can be applied to any statement:
 ```cpp
-std::unordered_map<std::string, std::function<void(const std::shared_ptr<Stmt>&, std::vector<std::shared_ptr<Token>>)>> modifier_checkers = {
-  {"public", check_public_modifier},
-  {"private", check_private_modifier},
-  {"abstract", check_abstract_modifier},
-  // ... other modifiers
-};
+std::shared_ptr<Stmt> Parser::statement() {
+
+    auto parsed_modifiers = modifiers();  // Parse modifiers and store them in a temporary list.
+
+    // Consume semicolons to separate statements
+    while (match({Tok::Semicolon}))
+        ;
+
+    std::shared_ptr<Stmt> stmt;
+
+    if (match({Tok::KwLet, Tok::KwStatic})) {
+        stmt = variable_statement(parsed_modifiers);
+    }
+    else if (match({Tok::KwFunc})) {
+        stmt = func_statement(parsed_modifiers);
+    }
+    else if (match({Tok::KwNamespace})) {
+        stmt = namespace_statement(parsed_modifiers);
+    }
+    //...
+
+    // Apply suppress_warning modifier in a modifier-centric way.
+    if (parsed_modifiers.contains("suppress_warning")) {
+        stmt->suppress_warning = true;
+        parsed_modifiers.erase("suppress_warning"); // Remove the modifier from the list after applying it.
+    }
+
+    return stmt;
+}
 ```
 
-The key point is that the modifier-centric approach means each modifier has its own logic for checking its validity and applying its effects.
+Note that we now have to erase modifiers from the list after applying them.
+Because modifiers are handled in two different places, we need to somehow convey which modifiers have already been applied and which ones still need to be applied.
+This allows us to catch errors such as applying the same modifier twice or applying an invalid modifier to a statement.
 
-Benefits of modifier-centric approaches:
-- It leads to more modular and maintainable code, as the logic for each modifier is contained within its own function or class.
-- It can be easier to extend, as adding new modifiers may only require adding a new function or class for the modifier, without needing to modify existing visit methods for different statement types.
+Advantages of the hybrid approach:
+- It allows for more context when applying modifiers that require it, while still keeping the logic for more general modifiers separate and modular.
+- It can be easier to extend, as adding new modifiers may only require changes to either the statement-centric parsing functions or the modifier-centric application function, depending on the nature of the modifier, without needing to modify both.
 
-Drawbacks of modifier-centric approaches:
-- It can be more difficult to implement, as it may require a new setup for handling modifiers, such as a lookup table or a visitor pattern.
-- It may require more context to be passed to the modifier checking logic, as the statement being checked may not be readily available within the modifier's logic, depending on how it is structured.
-
+Disadvantages of the hybrid approach:
+- It can be more complex to implement, as it requires handling modifiers in two different places and ensuring that they are applied correctly without conflicts.
+- The parser needs to be updated to pass the list of modifiers to the appropriate parsing functions, which may require significant changes to the parser's structure.
+- It may be less consistent, as some modifiers are applied in a statement-centric way while others are applied in a modifier-centric way, which may be confusing for users and developers.
