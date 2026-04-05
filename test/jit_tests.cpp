@@ -41,15 +41,9 @@ struct JITTestOptions {
     bool expect_panic = false;
     // The panic return code to expect if expect_panic is true. Defaults to 101.
     int panic_return_code = 101;
-    // Whether to load static libraries (e.g. the example library) into the JIT.
-    // Defaults to false.
-    bool load_static_libraries = false;
-    // The static library paths to load into the JIT if load_static_libraries is
-    // true. Default includes the example library, but can be overridden to
-    // include other libraries or exclude the example library.
-    std::vector<std::string> static_library_paths = {
-        "test/examplelib/libexamplelib.a"
-    };
+    // The static library paths to load into the JIT. Defaults to an empty
+    // vector.
+    std::vector<std::string> static_library_paths = {};
     // Whether to print the generated IR before verification. Defaults to false.
     bool print_ir = false;
     // Whether to print the stderr output of the JIT. Defaults to false.
@@ -97,7 +91,7 @@ void run_jit_test(
     auto jit_err = jit->add_module_and_context(std::move(context->mod_ctx));
     REQUIRE(!jit_err);
 
-    if (options.load_static_libraries) {
+    if (!options.static_library_paths.empty()) {
         for (const auto& lib_path : options.static_library_paths) {
             auto err = jit->add_static_library(lib_path);
             REQUIRE(!err);
@@ -1723,7 +1717,7 @@ TEST_CASE("JIT extern block", "[jit]") {
             )",
             JITTestOptions{
                 .expected_output = "4",
-                .load_static_libraries = true
+                .static_library_paths = {"test/lib/example/libexample.a"}
             }
         );
     }
@@ -1738,7 +1732,7 @@ TEST_CASE("JIT extern block", "[jit]") {
             )",
             JITTestOptions{
                 .expected_output = "42",
-                .load_static_libraries = true
+                .static_library_paths = {"test/lib/example/libexample.a"}
             }
         );
     }
@@ -1753,7 +1747,7 @@ TEST_CASE("JIT extern block", "[jit]") {
             )",
             JITTestOptions{
                 .expected_output = "Hello from the example library!\n",
-                .load_static_libraries = true
+                .static_library_paths = {"test/lib/example/libexample.a"}
             }
         );
     }
@@ -1768,7 +1762,7 @@ TEST_CASE("JIT extern block", "[jit]") {
             )",
             JITTestOptions{
                 .expected_output = "37",
-                .load_static_libraries = true
+                .static_library_paths = {"test/lib/example/libexample.a"}
             }
         );
     }
@@ -1783,7 +1777,7 @@ TEST_CASE("JIT extern block", "[jit]") {
             )",
             JITTestOptions{
                 .expected_output = "10",
-                .load_static_libraries = true
+                .static_library_paths = {"test/lib/example/libexample.a"}
             }
         );
     }
@@ -1800,7 +1794,26 @@ TEST_CASE("JIT extern block", "[jit]") {
             )",
             JITTestOptions{
                 .expected_output = "60 15 0",
-                .load_static_libraries = true
+                .static_library_paths = {"test/lib/example/libexample.a"}
+            }
+        );
+    }
+}
+
+TEST_CASE("JIT extern declarations", "[jit]") {
+    SECTION("Extern function declaration") {
+        run_jit_test(
+            R"(
+            extern "C" libinterop {
+                func print_secret_message() -> void
+            }
+            extern "C" func get_secret_number() -> i32 => 37
+
+            libinterop::print_secret_message()
+            )",
+            JITTestOptions{
+                .expected_output = "The secret number is: 37\n",
+                .static_library_paths = {"test/lib/interop/libinterop.a"},
             }
         );
     }

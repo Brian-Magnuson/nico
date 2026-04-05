@@ -112,8 +112,9 @@ set(TEST_SRC
     test/utils_tests.cpp
 )
 
-# Test example library
-add_subdirectory(test/examplelib)
+# Test example libraries
+add_subdirectory(test/lib/example)
+add_subdirectory(test/lib/interop)
 
 # Main executable
 add_executable(nico ${MAIN_SRC} ${CORE_SRC})

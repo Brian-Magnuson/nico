@@ -184,8 +184,6 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
     }
 
     bool is_extern = false;
-    // Next, check if the function is in an extern block.
-    std::optional<std::string> custom_symbol = std::nullopt;
     // If the function is declared in an extern block...
     if (PTR_INSTANCEOF(symbol_tree->current_scope, Node::ExternBlock)) {
         if (stmt->body.has_value()) {
@@ -198,7 +196,9 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
         }
 
         // Extern functions have a custom symbol based on their identifier name.
-        custom_symbol = std::string(stmt->identifier->lexeme);
+        if (!stmt->custom_symbol.has_value()) {
+            stmt->custom_symbol = std::string(stmt->identifier->lexeme);
+        }
         // Currently, we do not allow users to manually specify a custom symbol,
         // but if we did, it would override this symbol.
         is_extern = true;
@@ -242,9 +242,12 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
     // Functions are always immutable.
 
     // If the function has a custom symbol...
-    if (custom_symbol.has_value()) {
+    if (stmt->custom_symbol.has_value()) {
         // It is declared as a binding and is not overloadable.
-        auto node_opt = symbol_tree->add_binding_entry(binding, custom_symbol);
+        auto node_opt = symbol_tree->add_binding_entry(
+            binding,
+            stmt->custom_symbol.value()
+        );
         if (!node_opt.has_value()) {
             return std::any();
         }
@@ -266,6 +269,7 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
 std::any GlobalChecker::visit(Stmt::ExternDecl* stmt) {
     // Inner declaration is either a static variable or a function.
     if (auto func_decl = std::dynamic_pointer_cast<Stmt::Func>(stmt->decl)) {
+        func_decl->custom_symbol = std::string(func_decl->identifier->lexeme);
         func_decl->accept(this);
         func_decl->binding_entry.lock()->binding.is_extern = true;
     }

@@ -1,5 +1,5 @@
-#ifndef EXAMPLELIB_LIB_H
-#define EXAMPLELIB_LIB_H
+#ifndef EXAMPLE_LIB_H
+#define EXAMPLE_LIB_H
 
 // An example number, 37.
 extern int examplelib_number;
@@ -41,4 +41,4 @@ int examplelib_add(int a, int b);
  */
 int examplelib_sum(int count, ...);
 
-#endif // EXAMPLELIB_LIB_H
+#endif // EXAMPLE_LIB_H

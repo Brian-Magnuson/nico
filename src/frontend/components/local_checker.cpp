@@ -205,8 +205,12 @@ std::any LocalChecker::visit(Stmt::Func* stmt) {
     return std::any();
 }
 
-std::any LocalChecker::visit(Stmt::ExternDecl* /*stmt*/) {
-    // Do nothing. Extern declarations are handled by the global checker.
+std::any LocalChecker::visit(Stmt::ExternDecl* stmt) {
+    // Extern declarations may be function declarations.
+    // Functiond declarations may contain execution-space statements.
+    // Therefore, we need to check extern declarations.
+
+    stmt->decl->accept(this);
     return std::any();
 }
 
