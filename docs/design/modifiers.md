@@ -420,3 +420,52 @@ Disadvantages of the hybrid approach:
 - It can be more complex to implement, as it requires handling modifiers in two different places and ensuring that they are applied correctly without conflicts.
 - The parser needs to be updated to pass the list of modifiers to the appropriate parsing functions, which may require significant changes to the parser's structure.
 - It may be less consistent, as some modifiers are applied in a statement-centric way while others are applied in a modifier-centric way, which may be confusing for users and developers.
+
+### General and Special Modification Method
+
+One way to implement the hybrid approach is to add two methods to the Stmt class:
+```cpp
+
+class Stmt {
+  bool apply_general_modifier(const Modifier& modifier) {
+    // Check for general modifiers that can be applied to any statement.
+    if (modifier.name == "suppress_warning") {
+      this->suppress_warning = true;
+      return true; // Return true if the modifier was applied.
+    }
+    // ... handle other general modifiers
+
+    return false; // Return false if the modifier was not applied.
+  }
+
+  virtual bool apply_special_modifier(const Modifier& modifier) {
+    // This method can be overridden by specific statement types to handle special modifiers that require more context.
+    return false; // Return false if the modifier was not applied.
+  }
+
+public:
+
+  bool apply_modifier(const Modifier& modifier) {
+    return apply_special_modifier(modifier) || apply_general_modifier(modifier);
+  }
+};
+```
+
+We can describe the modifiers that apply to any statement as "general modifiers", and the modifiers that require more context and are applied in a statement-centric way as "special modifiers".
+
+All the logic for handling general modifiers is contained within the `apply_general_modifier` method.
+It is not `virtual`; it is the same for all statement types, and it can only apply modifiers that are valid for any statement.
+
+If a statement type has a special modifier that requires more context, it can override the `apply_special_modifier` method to handle that modifier.
+
+Note that a modifier is not strictly "general" or "special"; it is just a matter of how we choose to implement the logic for applying it.
+
+For example, consider a modifier that applies to declarations.
+- You could say the modifier applies to *any declaration*, and implement it as a *general modifier* that is handled in the `apply_general_modifier` method, which checks if the statement is a declaration and applies the modifier if it is.
+- You could say the modifier applies to *only declarations*, and implement it as a *special modifier* that is handled in the parsing functions for declaration statements.
+
+The effect is the same in either case.
+What we decide for the modifier depends on which implementation we think is cleaner and easier to maintain for that specific modifier.
+
+This isn't a drawback of the hybrid approach.
+In fact, it is a strength: we can flexibly choose how to implement the logic for applying each modifier in a way that makes the most sense for that modifier, without being constrained by a single approach for all modifiers.
