@@ -1801,19 +1801,34 @@ TEST_CASE("JIT extern block", "[jit]") {
 }
 
 TEST_CASE("JIT extern declarations", "[jit]") {
-    SECTION("Extern function declaration") {
+    SECTION("Extern function declaration 1") {
         run_jit_test(
             R"(
             extern "C" libinterop {
-                func print_secret_message() -> void
+                func c_operate_two_numbers(a: i32, b: i32) -> i32
             }
-            extern "C" func get_secret_number() -> i32 => 37
-
-            libinterop::print_secret_message()
+            extern "C" func operate_two_numbers(a: i32, b: i32) -> i32 => a + b
+            printout libinterop::c_operate_two_numbers(42, 10)
             )",
             JITTestOptions{
-                .expected_output = "The secret number is: 37\n",
-                .static_library_paths = {"test/lib/interop/libinterop.a"},
+                .expected_output = "52",
+                .static_library_paths = {"test/lib/interop/libinterop.a"}
+            }
+        );
+    }
+
+    SECTION("Extern function declaration 2") {
+        run_jit_test(
+            R"(
+            extern "C" libinterop {
+                func c_operate_two_numbers(a: i32, b: i32) -> i32
+            }
+            extern "C" func operate_two_numbers(a: i32, b: i32) -> i32 => a * b
+            printout libinterop::c_operate_two_numbers(42, 10)
+            )",
+            JITTestOptions{
+                .expected_output = "420",
+                .static_library_paths = {"test/lib/interop/libinterop.a"}
             }
         );
     }
