@@ -795,6 +795,9 @@ void Lexer::scan_token() {
     case '?':
         add_token(Tok::Question);
         break;
+    case '#':
+        add_token(Tok::Hash);
+        break;
     case '"':
         str_literal();
         break;

@@ -91,6 +91,7 @@ enum class Tok {
     TupleIndex,
     ArraySize,
     Question,
+    Hash,
 
     // Literals
 

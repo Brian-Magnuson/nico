@@ -317,6 +317,26 @@ public:
     }
 };
 
+// MARK: Modifier
+
+/**
+ * @brief A modifier for a statement.
+ *
+ * Modifiers are used to set additional properties on statements.
+ */
+class Modifier {
+public:
+    std::shared_ptr<Token> identifier;
+
+    std::vector<std::shared_ptr<Token>> args;
+
+    Modifier(
+        std::shared_ptr<Token> identifier,
+        std::vector<std::shared_ptr<Token>> args = {}
+    )
+        : identifier(std::move(identifier)), args(std::move(args)) {}
+};
+
 // MARK: Stmt
 
 /**
@@ -382,6 +402,18 @@ public:
      * @return The return value from the visitor.
      */
     virtual std::any accept(Visitor* visitor) = 0;
+
+    /**
+     * @brief Attempt to apply a modifier to this statement.
+     *
+     * If the logic for applying the modifier is found, but the modifier is
+     * malformed (e.g. missing arguments, incorrect statement type), an error
+     * may be logged.
+     *
+     * @param modifier The modifier to apply.
+     * @return True if the modifier was successfully applied, false otherwise.
+     */
+    virtual bool apply_modifier(const Modifier& modifier);
 };
 
 // MARK: Expr
