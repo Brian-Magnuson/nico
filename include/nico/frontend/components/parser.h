@@ -196,6 +196,35 @@ class Parser {
      */
     std::optional<std::shared_ptr<Name>> name();
 
+    // MARK: Modifiers
+
+    /**
+     * @brief Parses a single modifier.
+     *
+     * A modifier consists of an identifier, optionally followed by a set of
+     * parentheses containing tokens.
+     *
+     * @return The parsed modifier, or nullopt if a modifier could not be
+     * parsed.
+     */
+    std::optional<Modifier> modifier();
+
+    /**
+     * @brief Parses a list of modifiers.
+     *
+     * A modifier list starts with a `#` token, followed immediately by a set of
+     * brackets containing a comma-separated list of modifiers.
+     *
+     * E.g. `#[mod1, mod2(arg1, arg2), mod3]` is a modifier list with three
+     * modifiers: `mod1`, `mod2(arg1, arg2)`, and `mod3`.
+     *
+     * The `#` token should be consumed before calling this function.
+     *
+     * @return A vector of the modifiers that were successfully parsed,
+     * or nullopt if the whole list could not be parsed.
+     */
+    std::optional<std::vector<Modifier>> modifier_list();
+
     // MARK: Expressions
 
     /**

@@ -91,6 +91,59 @@ Parser::binary_op_from_compound_op(const std::shared_ptr<Token>& compound_op) {
     return std::make_shared<Token>(binary_op_type, binary_op_loc);
 }
 
+// MARK: Modifiers
+
+std::optional<Modifier> Parser::modifier() {
+    if (peek()->tok_type == Tok::Identifier ||
+        tokens::is_keyword(peek()->tok_type)) {
+        auto identifier_tok = advance();
+        std::vector<std::shared_ptr<Token>> args;
+        if (match({Tok::LParen})) {
+            // Modifier arguments are special.
+            // Rather than being a comma separate list of expressions,
+            // they are just a list of tokens that are passed verbatim to the
+            // modifier.
+            while (!match({Tok::RParen})) {
+                if (is_at_end()) {
+                    panic("Parser::modifier: Unterminated modifier arguments.");
+                    return std::nullopt;
+                }
+                args.push_back(advance());
+            }
+        }
+        return Modifier(identifier_tok->lexeme, std::move(args));
+    }
+    else {
+        Logger::inst().log_error(
+            Err::NotAModifier,
+            peek()->location,
+            "Expected an identifier-like token here."
+        );
+        return std::nullopt;
+    }
+}
+
+std::optional<std::vector<Modifier>> Parser::modifier_list() {
+    advance(); // Consume the `[` token.
+    std::vector<Modifier> modifiers;
+    do {
+        auto mod = modifier();
+        if (!mod)
+            return std::nullopt;
+        modifiers.push_back(*mod);
+    } while (match({Tok::Comma}));
+
+    if (!match({Tok::RSquare})) {
+        Logger::inst().log_error(
+            Err::UnexpectedToken,
+            peek()->location,
+            "Expected ']' after modifier list."
+        );
+        return std::nullopt;
+    }
+    return modifiers;
+}
+
 // MARK: Expressions
 
 std::optional<std::shared_ptr<Expr>> Parser::block(Expr::Block::Kind kind) {

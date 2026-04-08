@@ -66,6 +66,8 @@ enum class Err {
     NotAnExpression,
     // A statement was found where an identifier was expected but not found.
     NotAnIdentifier,
+    // An identifier-like tokenwas expected for a modifier, but not found.
+    NotAModifier,
     // A declaration identifier was found with a `::` in it.
     DeclarationIdentWithColonColon,
     // A non-execution-space statement was found in a region that only allows

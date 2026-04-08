@@ -126,6 +126,7 @@ enum class Tok {
 
     // Keywords
 
+    _KeywordsStart,
     KwAnd,
     KwOr,
     KwNot,
@@ -167,7 +168,9 @@ enum class Tok {
     KwAlloc,
     KwDealloc,
 
-    KwPrintout // Temporary print keyword for development.
+    KwPrintout, // Temporary print keyword for development.
+
+    _KeywordsEnd
 };
 
 namespace tokens {
@@ -255,6 +258,21 @@ inline bool is_compound_operator(Tok tok) {
  */
 inline bool is_comparison_operator(Tok tok) {
     return tok > Tok::_ComparisonsStart && tok < Tok::_ComparisonsEnd;
+}
+
+/**
+ * @brief Checks if a token type is a keyword.
+ *
+ * Examples of keyword token types are KwIf, KwElse, KwLet, KwFunc, etc.
+ *
+ * This function tests if the token type is within the range of defined keyword
+ * token types, making it more efficient than testing each type individually.
+ *
+ * @param tok The token type to check.
+ * @return True if the token type is a keyword, false otherwise.
+ */
+inline bool is_keyword(Tok tok) {
+    return tok > Tok::_KeywordsStart && tok < Tok::_KeywordsEnd;
 }
 
 } // namespace tokens

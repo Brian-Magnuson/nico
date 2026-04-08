@@ -326,15 +326,15 @@ public:
  */
 class Modifier {
 public:
-    std::shared_ptr<Token> identifier;
+    std::string identifier;
 
     std::vector<std::shared_ptr<Token>> args;
 
     Modifier(
-        std::shared_ptr<Token> identifier,
-        std::vector<std::shared_ptr<Token>> args = {}
+        std::string_view identifier,
+        std::vector<std::shared_ptr<Token>>&& args = {}
     )
-        : identifier(std::move(identifier)), args(std::move(args)) {}
+        : identifier(std::string(identifier)), args(std::move(args)) {}
 };
 
 // MARK: Stmt
