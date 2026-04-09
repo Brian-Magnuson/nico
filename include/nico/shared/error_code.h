@@ -134,6 +134,8 @@ enum class Err {
     ExternBlockUnrecognizedABI,
     // An extern statement contained an unexpected token.
     UnexpectedTokenAfterExtern,
+    // A `#` token was found followed by an unexpected token.
+    UnexpectedTokenAfterHash,
 
     // Parser warning
     ParserWarning = 3500,

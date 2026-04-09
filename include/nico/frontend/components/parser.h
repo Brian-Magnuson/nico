@@ -489,6 +489,20 @@ class Parser {
     std::optional<std::shared_ptr<Stmt>> print_statement();
 
     /**
+     * @brief Parses a deallocation statement.
+     *
+     * Deallocation statements are used to manually deallocate heap memory that
+     * was allocated with an allocation expression.
+     *
+     * Consists of the `dealloc` keyword followed by an expression representing
+     * the memory to deallocate.
+     *
+     * @return A shared pointer to the parsed statement, or nullopt if the
+     * statement could not be parsed.
+     */
+    std::optional<std::shared_ptr<Stmt>> dealloc_statement();
+
+    /**
      * @brief Parses a yield statement.
      *
      * Yield statements set the value to be yielded by a block expression.

@@ -326,8 +326,9 @@ public:
  */
 class Modifier {
 public:
+    // The string identifier for the modifier.
     std::string identifier;
-
+    // The token arguments for the modifier, if any.
     std::vector<std::shared_ptr<Token>> args;
 
     Modifier(

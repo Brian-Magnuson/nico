@@ -1609,6 +1609,16 @@ std::optional<std::shared_ptr<Stmt>> Parser::print_statement() {
     return std::make_shared<Stmt::Print>(print_token, std::move(expressions));
 }
 
+std::optional<std::shared_ptr<Stmt>> Parser::dealloc_statement() {
+    auto dealloc_token = previous();
+    auto expr = expression();
+    if (!expr) {
+        return std::nullopt;
+    }
+
+    return std::make_shared<Stmt::Dealloc>(dealloc_token, *expr);
+}
+
 std::optional<std::shared_ptr<Stmt>> Parser::yield_statement() {
     auto yield_token = previous();
     auto expr = expression();
@@ -1637,41 +1647,63 @@ std::optional<std::shared_ptr<Stmt>> Parser::statement() {
     while (match({Tok::Semicolon}))
         ;
 
+    std::optional<std::vector<Modifier>> modifiers = std::nullopt;
+    std::optional<std::shared_ptr<Stmt>> stmt = std::nullopt;
+    if (match({Tok::Hash})) {
+        if (peek()->tok_type == Tok::LSquare) {
+            modifiers = modifier_list();
+        }
+        else {
+            Logger::inst().log_error(
+                Err::UnexpectedTokenAfterHash,
+                peek()->location,
+                "Expected directive or modifier list after `#`."
+            );
+        }
+        return std::nullopt;
+    }
+
     if (match({Tok::KwLet, Tok::KwStatic})) {
-        return variable_statement();
+        stmt = variable_statement();
     }
     else if (match({Tok::KwFunc})) {
-        return func_statement();
+        stmt = func_statement();
     }
     else if (match({Tok::KwNamespace})) {
-        return namespace_statement();
+        stmt = namespace_statement();
     }
     else if (match({Tok::KwExtern})) {
-        return extern_statement();
+        stmt = extern_statement();
     }
     else if (match({Tok::Eof})) {
-        return std::make_shared<Stmt::Eof>(previous());
+        stmt = std::make_shared<Stmt::Eof>(previous());
     }
     else if (match({Tok::KwPrintout})) {
-        return print_statement();
+        stmt = print_statement();
     }
     else if (match({Tok::KwPass})) {
-        return std::make_shared<Stmt::Pass>(previous());
+        stmt = std::make_shared<Stmt::Pass>(previous());
     }
     else if (match({Tok::KwYield, Tok::KwBreak, Tok::KwReturn})) {
-        return yield_statement();
+        stmt = yield_statement();
     }
     else if (match({Tok::KwContinue})) {
-        return std::make_shared<Stmt::Continue>(previous());
+        stmt = std::make_shared<Stmt::Continue>(previous());
     }
     else if (match({Tok::KwDealloc})) {
-        auto token = previous();
-        auto expr = expression();
-        if (!expr)
-            return std::nullopt;
-        return std::make_shared<Stmt::Dealloc>(token, *expr);
+        stmt = dealloc_statement();
     }
-    return expression_statement();
+    else {
+        stmt = expression_statement();
+    }
+
+    if (stmt.has_value() && modifiers.has_value()) {
+        for (const auto& modifier : *modifiers) {
+            stmt.value()->apply_modifier(modifier);
+        }
+    }
+
+    return stmt;
 }
 
 // MARK: Annotations
