@@ -111,7 +111,7 @@ std::optional<Modifier> Parser::modifier() {
                 args.push_back(advance());
             }
         }
-        return Modifier(identifier_tok->lexeme, std::move(args));
+        return Modifier(identifier_tok, std::move(args));
     }
     else {
         Logger::inst().log_error(
@@ -1676,6 +1676,13 @@ std::optional<std::shared_ptr<Stmt>> Parser::statement() {
         stmt = extern_statement();
     }
     else if (match({Tok::Eof})) {
+        if (modifiers.has_value()) {
+            Logger::inst().log_error(
+                Err::ModifierWithoutStatement,
+                peek()->location,
+                "Modifiers must be attached to a statement."
+            );
+        }
         stmt = std::make_shared<Stmt::Eof>(previous());
     }
     else if (match({Tok::KwPrintout})) {
@@ -1699,7 +1706,14 @@ std::optional<std::shared_ptr<Stmt>> Parser::statement() {
 
     if (stmt.has_value() && modifiers.has_value()) {
         for (const auto& modifier : *modifiers) {
-            stmt.value()->apply_modifier(modifier);
+            bool result = stmt.value()->apply_modifier(modifier);
+            if (!result) {
+                Logger::inst().log_error(
+                    Err::InvalidModifierForStatement,
+                    modifier.location,
+                    "This modifier cannot be applied to this statement."
+                );
+            }
         }
     }
 

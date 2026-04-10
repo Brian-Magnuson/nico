@@ -330,12 +330,16 @@ public:
     std::string identifier;
     // The token arguments for the modifier, if any.
     std::vector<std::shared_ptr<Token>> args;
+    // The location of the modifier.
+    const Location* location;
 
     Modifier(
-        std::string_view identifier,
+        std::shared_ptr<Token> identifier,
         std::vector<std::shared_ptr<Token>>&& args = {}
     )
-        : identifier(std::string(identifier)), args(std::move(args)) {}
+        : identifier(std::string(identifier->lexeme)), args(std::move(args)) {
+        location = &identifier->location;
+    }
 };
 
 // MARK: Stmt

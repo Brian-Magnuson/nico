@@ -136,6 +136,10 @@ enum class Err {
     UnexpectedTokenAfterExtern,
     // A `#` token was found followed by an unexpected token.
     UnexpectedTokenAfterHash,
+    // A modifier was found without a statement to modify.
+    ModifierWithoutStatement,
+    // A modifier was found that cannot be applied to the following statement.
+    InvalidModifierForStatement,
 
     // Parser warning
     ParserWarning = 3500,
