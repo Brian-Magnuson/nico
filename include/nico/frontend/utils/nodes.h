@@ -354,6 +354,8 @@ public:
 class Stmt : public std::enable_shared_from_this<Stmt> {
 public:
     class IDeclAllowed;
+    class IBindingDecl;
+
     class IExecAllowed;
 
     class Expression;

@@ -24,6 +24,42 @@ namespace nico {
 class Stmt::IDeclAllowed : virtual public Stmt {};
 
 /**
+ * @brief A declaration-space allowed statement that has its own binding entry.
+ *
+ * Includes static variables and function declarations, but not struct
+ * definitions or namespaces.
+ *
+ * Declarations of this category can also have a customized symbol and linkage
+ * type, which are specified using modifiers.
+ */
+class Stmt::IBindingDecl : virtual public Stmt::IDeclAllowed {
+public:
+    /**
+     * @brief Enum for the types of linkage that a declaration can have.
+     *
+     * Currently only two types of linkage are supported: internal and external.
+     */
+    enum class LinkageType {
+        // The declaration is only visible within the current module. This is
+        // the default linkage type for declarations.
+        Internal,
+        // The declaration is visible outside the current module and can be
+        // linked to from other modules. This is the default linkage type for
+        // declarations in extern blocks.
+        External,
+    };
+
+    // A weak pointer to the binding entry in the symbol table.
+    std::weak_ptr<Node::BindingEntry> binding_entry;
+    // The linkage type for the declaration.
+    LinkageType linkage_type = LinkageType::Internal;
+    // A custom symbol for the declaration.
+    std::optional<std::string> custom_symbol;
+
+    virtual bool apply_modifier(const Modifier& modifier) override;
+};
+
+/**
  * @brief A statement in the AST that is allowed in a region that is strictly
  * execution space.
  *
@@ -89,7 +125,7 @@ public:
  * Static statements introduce a declaration-space variable into the current
  * scope.
  */
-class Stmt::Static : public Stmt::IDeclAllowed {
+class Stmt::Static : public Stmt::IBindingDecl {
 public:
     // The identifier token.
     std::shared_ptr<Token> identifier;
@@ -99,8 +135,6 @@ public:
     bool has_var;
     // The type annotation; should be type-checked, even if not nullopt.
     std::optional<std::shared_ptr<Annotation>> annotation;
-    // A weak pointer to the binding entry in the symbol table.
-    std::weak_ptr<Node::BindingEntry> binding_entry;
 
     Static(
         std::shared_ptr<Token> start_token,
@@ -124,7 +158,7 @@ public:
  *
  * Function declarations introduce a new function into the current scope.
  */
-class Stmt::Func : public Stmt::IDeclAllowed {
+class Stmt::Func : public Stmt::IBindingDecl {
 public:
     /**
      * @brief A parameter in a function declaration.
@@ -168,11 +202,6 @@ public:
 
     // TODO: Consider how custom symbols should be stored in the future with the
     // new modifier system.
-
-    // An optional custom symbol for the function, used for extern functions.
-    std::optional<std::string> custom_symbol;
-    // A weak pointer to the binding entry in the symbol table.
-    std::weak_ptr<Node::BindingEntry> binding_entry;
 
     Func(
         std::shared_ptr<Token> start_token,

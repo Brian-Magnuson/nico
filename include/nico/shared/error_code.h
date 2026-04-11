@@ -140,6 +140,10 @@ enum class Err {
     ModifierWithoutStatement,
     // A modifier was found that cannot be applied to the following statement.
     InvalidModifierForStatement,
+    // A modifier was found that requires arguments but was not given any.
+    ModifierExpectedArguments,
+    // A modifier was found with an invalid set of arguments.
+    ModifierInvalidArguments,
 
     // Parser warning
     ParserWarning = 3500,
