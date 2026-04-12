@@ -34,25 +34,10 @@ class Stmt::IDeclAllowed : virtual public Stmt {};
  */
 class Stmt::IBindingDecl : virtual public Stmt::IDeclAllowed {
 public:
-    /**
-     * @brief Enum for the types of linkage that a declaration can have.
-     *
-     * Currently only two types of linkage are supported: internal and external.
-     */
-    enum class LinkageType {
-        // The declaration is only visible within the current module. This is
-        // the default linkage type for declarations.
-        Internal,
-        // The declaration is visible outside the current module and can be
-        // linked to from other modules. This is the default linkage type for
-        // declarations in extern blocks.
-        External,
-    };
-
     // A weak pointer to the binding entry in the symbol table.
     std::weak_ptr<Node::BindingEntry> binding_entry;
     // The linkage type for the declaration.
-    LinkageType linkage_type = LinkageType::Internal;
+    Binding::Linkage linkage_type = Binding::Linkage::Internal;
     // A custom symbol for the declaration.
     std::optional<std::string> custom_symbol;
 

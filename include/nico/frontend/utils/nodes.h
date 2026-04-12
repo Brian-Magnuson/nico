@@ -641,6 +641,13 @@ public:
  */
 class Binding {
 public:
+    enum class Linkage {
+        // The binding is only accessible within the current module.
+        Internal,
+        // The binding is accessible from other modules.
+        External
+    };
+
     // Whether the binding is declared with `var` or not.
     bool is_declared_var;
     // The name for the binding.
@@ -649,8 +656,8 @@ public:
     const Location* location;
     // The type of the binding.
     std::shared_ptr<Type> type;
-    // Whether the binding should have external linkage.
-    bool is_extern;
+    // The linkage for the binding.
+    Linkage linkage;
     // The default expression for the binding, if any.
     std::optional<std::weak_ptr<Expr>> default_expr;
 
@@ -661,14 +668,14 @@ public:
         std::string_view name,
         const Location* location,
         std::shared_ptr<Type> type,
-        bool is_extern,
+        Linkage linkage,
         std::optional<std::weak_ptr<Expr>> default_expr = std::nullopt
     )
         : is_declared_var(is_declared_var),
           name(name),
           location(location),
           type(type),
-          is_extern(is_extern),
+          linkage(linkage),
           default_expr(default_expr) {
         if (type == nullptr) {
             panic("Binding::Binding: Type cannot be null.");

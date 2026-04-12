@@ -73,7 +73,13 @@ std::any GlobalChecker::visit(Stmt::Static* stmt) {
     }
 
     std::optional<std::string> custom_symbol = std::nullopt;
-    bool is_extern = false;
+    Binding::Linkage linkage = Binding::Linkage::Internal;
+
+    if (repl_mode) {
+        // In REPL mode, all bindings have external linkage to allow them to be
+        // accessed across different REPL inputs.
+        linkage = Binding::Linkage::External;
+    }
 
     if (PTR_INSTANCEOF(symbol_tree->current_scope, Node::ExternBlock)) {
         if (stmt->expression.has_value()) {
@@ -91,7 +97,7 @@ std::any GlobalChecker::visit(Stmt::Static* stmt) {
         // Currently, we do not allow users to manually specify a custom symbol,
         // but if we did, it would override this symbol.
 
-        is_extern = true;
+        linkage = Binding::Linkage::External;
     }
     else if (!stmt->has_var && !stmt->expression.has_value()) {
         Logger::inst().log_error(
@@ -109,7 +115,7 @@ std::any GlobalChecker::visit(Stmt::Static* stmt) {
         stmt->identifier->lexeme,
         &stmt->identifier->location,
         expr_type,
-        is_extern || repl_mode,
+        linkage,
         stmt->expression
     );
 
@@ -164,7 +170,7 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
             param.identifier->lexeme,
             &param.identifier->location,
             annotation_type_opt.value(),
-            false, /* is_extern */
+            Binding::Linkage::Internal,
             param.expression
         );
         param_bindings.insert(param_string, param_binding);
@@ -183,7 +189,13 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
         return_type = std::make_shared<Type::Void>();
     }
 
-    bool is_extern = false;
+    Binding::Linkage linkage = Binding::Linkage::Internal;
+    if (repl_mode) {
+        // In REPL mode, all bindings have external linkage to allow them to be
+        // accessed across different REPL inputs.
+        linkage = Binding::Linkage::External;
+    }
+
     // If the function is declared in an extern block...
     if (PTR_INSTANCEOF(symbol_tree->current_scope, Node::ExternBlock)) {
         if (stmt->body.has_value()) {
@@ -201,7 +213,7 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
         }
         // Currently, we do not allow users to manually specify a custom symbol,
         // but if we did, it would override this symbol.
-        is_extern = true;
+        linkage = Binding::Linkage::External;
     }
     // If the function is not declared in an extern block...
     else {
@@ -237,7 +249,7 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
         stmt->identifier->lexeme,
         &stmt->identifier->location,
         func_type,
-        is_extern || repl_mode
+        linkage
     );
     // Functions are always immutable.
 
@@ -271,13 +283,15 @@ std::any GlobalChecker::visit(Stmt::ExternDecl* stmt) {
     if (auto func_decl = std::dynamic_pointer_cast<Stmt::Func>(stmt->decl)) {
         func_decl->custom_symbol = std::string(func_decl->identifier->lexeme);
         func_decl->accept(this);
-        func_decl->binding_entry.lock()->binding.is_extern = true;
+        func_decl->binding_entry.lock()->binding.linkage =
+            Binding::Linkage::External;
     }
     else if (
         auto static_decl = std::dynamic_pointer_cast<Stmt::Static>(stmt->decl)
     ) {
         static_decl->accept(this);
-        static_decl->binding_entry.lock()->binding.is_extern = true;
+        static_decl->binding_entry.lock()->binding.linkage =
+            Binding::Linkage::External;
     }
     else {
         panic(

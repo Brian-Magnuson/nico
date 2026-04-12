@@ -89,7 +89,6 @@ std::any CodeGenerator::visit(Stmt::Func* stmt) {
 
     auto binding_entry = stmt->binding_entry.lock();
     auto binding_type = binding_entry->binding.type;
-    auto is_extern = binding_entry->binding.is_extern;
     auto func_type = std::dynamic_pointer_cast<Type::Function>(binding_type);
 
     llvm::FunctionType* llvm_func_type =
@@ -100,8 +99,7 @@ std::any CodeGenerator::visit(Stmt::Func* stmt) {
     if (function == nullptr) {
         function = llvm::Function::Create(
             llvm_func_type,
-            is_extern ? llvm::Function::ExternalLinkage
-                      : llvm::Function::InternalLinkage,
+            binding_entry->get_llvm_linkage(),
             binding_entry->symbol,
             mod_ctx.ir_module.get()
         );

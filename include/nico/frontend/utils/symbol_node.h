@@ -473,8 +473,7 @@ public:
                     *ir_module,
                     llvm_type,
                     false, // isConstant
-                    binding.is_extern ? llvm::GlobalValue::ExternalLinkage
-                                      : llvm::GlobalValue::InternalLinkage,
+                    get_llvm_linkage(),
                     is_initialized ? nullptr
                                    : llvm::Constant::getNullValue(
                                          llvm_type
@@ -516,6 +515,26 @@ public:
         return ptr;
     }
 
+    /**
+     * @brief Returns the appropriate LLVM linkage type for this binding entry
+     * based on its binding information.
+     *
+     * @return The LLVM linkage type.
+     */
+    llvm::GlobalValue::LinkageTypes get_llvm_linkage() const {
+        switch (binding.linkage) {
+        case Binding::Linkage::Internal:
+            return llvm::GlobalValue::InternalLinkage;
+        case Binding::Linkage::External:
+            return llvm::GlobalValue::ExternalLinkage;
+        default:
+            panic(
+                "Node::BindingEntry::get_llvm_linkage: Unsupported linkage "
+                "type."
+            );
+        }
+    }
+
     virtual std::string to_string() const override {
         return "ENTRY \"" + symbol + "\" : " + binding.type->to_string();
     }
@@ -555,7 +574,7 @@ public:
                   std::dynamic_pointer_cast<Type>(
                       std::make_shared<Type::OverloadedFn>()
                   ),
-                  false /* is_extern */
+                  Binding::Linkage::Internal
               )
           ) {}
 
