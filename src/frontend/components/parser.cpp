@@ -1121,15 +1121,6 @@ std::optional<std::shared_ptr<Stmt>> Parser::variable_statement() {
         );
         return std::nullopt;
     }
-    // // If we don't have `var`, we require an initializer.
-    // if (!has_var && !expr) {
-    //     Logger::inst().log_error(
-    //         Err::ImmutableWithoutInitializer,
-    //         peek()->location,
-    //         "Immutable variable declaration must have an initializer."
-    //     );
-    //     return std::nullopt;
-    // }
 
     if (start_token->tok_type == Tok::KwLet) {
         return std::make_shared<Stmt::Let>(
@@ -1141,13 +1132,20 @@ std::optional<std::shared_ptr<Stmt>> Parser::variable_statement() {
         );
     }
     else if (start_token->tok_type == Tok::KwStatic) {
-        return std::make_shared<Stmt::Static>(
+        auto stmt = std::make_shared<Stmt::Static>(
             start_token,
             identifier,
             expr,
             has_var,
             anno
         );
+        // A statement's initial linkage type is determined by whether we are in
+        // repl mode or not.
+        stmt->linkage_type =
+            repl_mode ? Binding::Linkage::External : Binding::Linkage::Internal;
+        // This won't be the statment's final linkage; modifiers can still
+        // change it.
+        return stmt;
     }
     else {
         panic("Parser::variable_statement: Unexpected starting token.");
@@ -1316,7 +1314,7 @@ std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
     }
 
     // Put it all together
-    return std::make_shared<Stmt::Func>(
+    auto stmt = std::make_shared<Stmt::Func>(
         start_token,
         identifier,
         return_type,
@@ -1324,6 +1322,9 @@ std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
         is_variadic,
         body_expr
     );
+    stmt->linkage_type =
+        repl_mode ? Binding::Linkage::External : Binding::Linkage::Internal;
+    return stmt;
 }
 
 std::optional<std::shared_ptr<Stmt>> Parser::namespace_statement() {
