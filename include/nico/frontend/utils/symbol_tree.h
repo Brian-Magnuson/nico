@@ -45,9 +45,6 @@ class SymbolTree {
      */
     void install_context_dependent_types(IRModuleContext& mod_ctx);
 
-    // TODO: Add feature for installing context-dependent types, such as isize
-    // and usize.
-
     /**
      * @brief Attempts to fully resolve a name starting from a given scope and
      * searching downward.
