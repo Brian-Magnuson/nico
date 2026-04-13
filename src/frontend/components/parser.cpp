@@ -1139,12 +1139,6 @@ std::optional<std::shared_ptr<Stmt>> Parser::variable_statement() {
             has_var,
             anno
         );
-        // A statement's initial linkage type is determined by whether we are in
-        // repl mode or not.
-        stmt->linkage_type =
-            repl_mode ? Binding::Linkage::External : Binding::Linkage::Internal;
-        // This won't be the statment's final linkage; modifiers can still
-        // change it.
         return stmt;
     }
     else {
@@ -1322,8 +1316,6 @@ std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
         is_variadic,
         body_expr
     );
-    stmt->linkage_type =
-        repl_mode ? Binding::Linkage::External : Binding::Linkage::Internal;
     return stmt;
 }
 

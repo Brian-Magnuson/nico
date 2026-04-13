@@ -167,6 +167,9 @@ enum class Err {
     // An attempt was made to declare an extern block within a struct
     // definition.
     ExternBlockInStructDef,
+    // An extern block contained a declaration whose linkage was manually set to
+    // internal.
+    ExternBindingWithInternalLinkage,
     // An attempt was made to declare a namespace in a struct definition.
     NamespaceInStructDef,
     // An attempt was made to introduce a new name in a scope where the same

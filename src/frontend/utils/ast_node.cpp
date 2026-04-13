@@ -26,11 +26,11 @@ bool Stmt::IBindingDecl::apply_modifier(const Modifier& modifier) {
             std::any_cast<std::string>(modifier.args.at(0)->literal);
 
         if (linkage_arg == "internal") {
-            linkage_type = Binding::Linkage::Internal;
+            linkage_opt = Binding::Linkage::Internal;
             return true;
         }
         if (linkage_arg == "external") {
-            linkage_type = Binding::Linkage::External;
+            linkage_opt = Binding::Linkage::External;
             return true;
         }
 
@@ -57,7 +57,7 @@ bool Stmt::IBindingDecl::apply_modifier(const Modifier& modifier) {
             return false;
         }
 
-        custom_symbol =
+        custom_symbol_opt =
             std::any_cast<std::string>(modifier.args.at(0)->literal);
         return true;
     }

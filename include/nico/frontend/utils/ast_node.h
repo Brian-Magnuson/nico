@@ -37,9 +37,9 @@ public:
     // A weak pointer to the binding entry in the symbol table.
     std::weak_ptr<Node::BindingEntry> binding_entry;
     // The linkage type for the declaration.
-    Binding::Linkage linkage_type = Binding::Linkage::Internal;
+    std::optional<Binding::Linkage> linkage_opt;
     // A custom symbol for the declaration.
-    std::optional<std::string> custom_symbol;
+    std::optional<std::string> custom_symbol_opt;
 
     virtual bool apply_modifier(const Modifier& modifier) override;
 };
