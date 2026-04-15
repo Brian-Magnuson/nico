@@ -1652,8 +1652,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::statement() {
                 peek()->location,
                 "Expected directive or modifier list after `#`."
             );
+            return std::nullopt;
         }
-        return std::nullopt;
     }
 
     if (match({Tok::KwLet, Tok::KwStatic})) {

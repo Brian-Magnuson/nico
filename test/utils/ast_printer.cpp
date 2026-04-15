@@ -31,6 +31,22 @@ std::any AstPrinter::visit(Stmt::Let* stmt) {
 
 std::any AstPrinter::visit(Stmt::Static* stmt) {
     std::string str = "(stmt:static ";
+    if (stmt->linkage_opt.has_value()) {
+        switch (stmt->linkage_opt.value()) {
+        case Binding::Linkage::Internal:
+            str += "[linkage:internal] ";
+            break;
+        case Binding::Linkage::External:
+            str += "[linkage:external] ";
+            break;
+        default:
+            str += "[unknown_linkage] ";
+            break;
+        }
+    }
+    if (stmt->custom_symbol_opt.has_value()) {
+        str += "[symbol:\"" + stmt->custom_symbol_opt.value() + "\"] ";
+    }
     if (stmt->has_var) {
         str += "var ";
     }
@@ -52,8 +68,26 @@ std::any AstPrinter::visit(Stmt::Func* stmt) {
     (stmt:func func_name ret_type (var param1 type1 default1) (param2 type2) =>
     body_expr)
     */
-    std::string str =
-        "(stmt:func " + std::string(stmt->identifier->lexeme) + " ";
+    std::string str = "(stmt:func ";
+
+    if (stmt->linkage_opt.has_value()) {
+        switch (stmt->linkage_opt.value()) {
+        case Binding::Linkage::Internal:
+            str += "[linkage:internal] ";
+            break;
+        case Binding::Linkage::External:
+            str += "[linkage:external] ";
+            break;
+        default:
+            str += "[unknown_linkage] ";
+            break;
+        }
+    }
+    if (stmt->custom_symbol_opt.has_value()) {
+        str += "[symbol:\"" + stmt->custom_symbol_opt.value() + "\"] ";
+    }
+
+    str += std::string(stmt->identifier->lexeme) + " ";
     if (stmt->annotation.has_value()) {
         str += stmt->annotation.value()->to_string() + " ";
     }

@@ -912,3 +912,138 @@ TEST_CASE("Parser dealloc statement", "[parser]") {
         );
     }
 }
+
+TEST_CASE("Parser modifiers linkage and symbol", "[parser]") {
+    SECTION("External linkage static variable") {
+        run_parser_stmt_test(
+            R"(
+            #[linkage("external")]
+            static var x: i32 = 5
+            )",
+            {"(stmt:static [linkage:external] var x i32 (lit i32 5))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("External linkage function") {
+        run_parser_stmt_test(
+            R"(
+            #[linkage("external")]
+            func foo() -> i32 => 42
+            )",
+            {"(stmt:func [linkage:external] foo i32 => (block (stmt:yield => "
+             "(lit i32 42))))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Internal linkage static variable") {
+        run_parser_stmt_test(
+            R"(
+            #[linkage("internal")]
+            static var y: f64 = 3.14
+            )",
+            {"(stmt:static [linkage:internal] var y f64 (lit f64 3.140000))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Internal linkage function") {
+        run_parser_stmt_test(
+            R"(
+            #[linkage("internal")]
+            func bar() -> i32 => 7
+            )",
+            {"(stmt:func [linkage:internal] bar i32 => (block (stmt:yield => "
+             "(lit i32 7))))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Invalid linkage value") {
+        run_parser_stmt_error_test(
+            R"(
+            #[linkage("invalid")]
+            static var z: i32 = 0
+            )",
+            Err::ModifierInvalidArguments
+        );
+    }
+
+    SECTION("Linkage modifier on wrong statement type") {
+        run_parser_stmt_error_test(
+            R"(
+            #[linkage("external")]
+            let a = 10
+            )",
+            Err::InvalidModifierForStatement
+        );
+    }
+
+    SECTION("Symbol modifier on static variable") {
+        run_parser_stmt_test(
+            R"(
+            #[symbol("my_symbol")]
+            static var s: i32 = 1
+            )",
+            {"(stmt:static [symbol:\"my_symbol\"] var s i32 (lit i32 1))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Symbol modifier on function") {
+        run_parser_stmt_test(
+            R"(
+            #[symbol("my_func")]
+            func my_func() -> void => void
+            )",
+            {"(stmt:func [symbol:\"my_func\"] my_func void => (block "
+             "(stmt:yield => "
+             "(lit void))))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Symbol modifier with special characters") {
+        run_parser_stmt_test(
+            R"(
+            #[symbol("sym!@#$%^&*(")]
+            static var t: i32 = 0
+            )",
+            {"(stmt:static [symbol:\"sym!@#$%^&*(\"] var t i32 (lit i32 0))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Symbol modifier with non-string argument") {
+        run_parser_stmt_error_test(
+            R"(
+            #[symbol(123)]
+            static var t: i32 = 0
+            )",
+            Err::ModifierInvalidArguments
+        );
+    }
+
+    SECTION("Symbol modifier on wrong statement type") {
+        run_parser_stmt_error_test(
+            R"(
+            #[symbol("not_a_var_or_func")]
+            let x = 10
+            )",
+            Err::InvalidModifierForStatement
+        );
+    }
+
+    SECTION("Combined modifiers") {
+        run_parser_stmt_test(
+            R"(
+            #[linkage("external"), symbol("combined_symbol")]
+            static var u: f64 = 2.718
+            )",
+            {"(stmt:static [linkage:external] [symbol:\"combined_symbol\"] var "
+             "u f64 (lit f64 2.718000))",
+             "(stmt:eof)"}
+        );
+    }
+}

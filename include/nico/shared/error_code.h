@@ -144,6 +144,9 @@ enum class Err {
     ModifierExpectedArguments,
     // A modifier was found with an invalid set of arguments.
     ModifierInvalidArguments,
+    // A modifier was found that affects a property that has already been set by
+    // a previous modifier.
+    ModifierAlreadyApplied,
 
     // Parser warning
     ParserWarning = 3500,
