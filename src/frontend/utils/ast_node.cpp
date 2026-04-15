@@ -8,9 +8,19 @@
 namespace nico {
 
 bool Stmt::IBindingDecl::apply_modifier(const Modifier& modifier) {
+    // TODO: Issue errors when modifiers are applied multiple times to the same
+    // declaration (e.g. multiple `linkage` modifiers).
+
     // Linkage modifier: specifies the linkage type for this declaration
     // (internal or external).
     if (modifier.identifier == "linkage") {
+        if (linkage_opt.has_value()) {
+            Logger::inst().log_error(
+                Err::ModifierAlreadyApplied,
+                *modifier.location,
+                "Linkage modifier has already been set by a previous modifier."
+            );
+        }
         if (modifier.args.size() != 1 ||
             modifier.args.at(0)->tok_type != Tok::Str) {
             Logger::inst().log_error(
@@ -46,6 +56,13 @@ bool Stmt::IBindingDecl::apply_modifier(const Modifier& modifier) {
 
     // Symbol modifier: specifies a custom symbol for this declaration.
     if (modifier.identifier == "symbol") {
+        if (custom_symbol_opt.has_value()) {
+            Logger::inst().log_error(
+                Err::ModifierAlreadyApplied,
+                *modifier.location,
+                "Symbol modifier has already been set by a previous modifier."
+            );
+        }
         if (modifier.args.size() != 1 ||
             modifier.args.at(0)->tok_type != Tok::Str) {
             Logger::inst().log_error(

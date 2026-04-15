@@ -1046,4 +1046,14 @@ TEST_CASE("Parser modifiers linkage and symbol", "[parser]") {
              "(stmt:eof)"}
         );
     }
+
+    SECTION("Modifier already applied") {
+        run_parser_stmt_error_test(
+            R"(
+            #[linkage("external"), linkage("internal")]
+            static var v: i32 = 0
+            )",
+            Err::ModifierAlreadyApplied
+        );
+    }
 }
