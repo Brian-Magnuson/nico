@@ -2184,3 +2184,45 @@ TEST_CASE("Check extern declarations", "[checker]") {
         );
     }
 }
+
+TEST_CASE("Custom symbol declarations", "[checker]") {
+    SECTION("Valid custom symbol declaration") {
+        run_checker_test(R"(
+            #[symbol("custom_symbol")]
+            static var x: i32 = 42
+        )");
+    }
+
+    SECTION("Symbol already exists 1") {
+        run_checker_test(
+            R"(
+            #[symbol("custom_symbol")]
+            static var x: i32 = 42
+            #[symbol("custom_symbol")]
+            static var y: i32 = 43
+        )",
+            Err::SymbolAlreadyExists
+        );
+    }
+
+    SECTION("Symbol already exists 2") {
+        run_checker_test(
+            R"(
+            static var x: i32 = 42
+            #[symbol("::x")]
+            static var y: i32 = 43
+        )",
+            Err::SymbolAlreadyExists
+        );
+    }
+
+    SECTION("Symbol is reserved") {
+        run_checker_test(
+            R"(
+            #[symbol("main")]
+            static var x: i32 = 42
+        )",
+            Err::SymbolIsReserved
+        );
+    }
+}
