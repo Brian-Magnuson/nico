@@ -1800,8 +1800,8 @@ TEST_CASE("JIT extern block", "[jit]") {
     }
 }
 
-TEST_CASE("JIT extern declarations", "[jit]") {
-    SECTION("Extern function declaration 1") {
+TEST_CASE("JIT external linkage declarations", "[jit]") {
+    SECTION("External function declaration 1") {
         run_jit_test(
             R"(
             extern "C" libinterop {
@@ -1820,7 +1820,7 @@ TEST_CASE("JIT extern declarations", "[jit]") {
         );
     }
 
-    SECTION("Extern function declaration 2") {
+    SECTION("External function declaration 2") {
         run_jit_test(
             R"(
             extern "C" libinterop {
@@ -1834,6 +1834,25 @@ TEST_CASE("JIT extern declarations", "[jit]") {
             )",
             JITTestOptions{
                 .expected_output = "420",
+                .static_library_paths = {"test/lib/interop/libinterop.a"}
+            }
+        );
+    }
+
+    SECTION("External function declaration with symbol change") {
+        run_jit_test(
+            R"(
+            extern "C" libinterop {
+                func c_operate_two_numbers(a: i32, b: i32) -> i32
+            }
+
+            #[linkage("external"), symbol("operate_two_numbers")]
+            func operate(a: i32, b: i32) -> i32 => a - b
+
+            printout libinterop::c_operate_two_numbers(42, 10)
+            )",
+            JITTestOptions{
+                .expected_output = "32",
                 .static_library_paths = {"test/lib/interop/libinterop.a"}
             }
         );
