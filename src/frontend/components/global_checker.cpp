@@ -90,11 +90,6 @@ std::any GlobalChecker::visit(Stmt::Static* stmt) {
             );
         }
 
-        // Extern statics have a custom symbol based on their identifier name.
-        if (!stmt->custom_symbol_opt.has_value()) {
-            stmt->custom_symbol_opt = std::string(stmt->identifier->lexeme);
-        }
-
         stmt->linkage_opt = Binding::Linkage::External;
     }
     else if (!stmt->has_var && !stmt->expression.has_value()) {
@@ -105,8 +100,14 @@ std::any GlobalChecker::visit(Stmt::Static* stmt) {
         );
     }
 
+    // If the linkage was set to external, but custom symbol is not set, set the
+    // custom symbol to the variable name.
+    if (stmt->linkage_opt == Binding::Linkage::External &&
+        !stmt->custom_symbol_opt.has_value()) {
+        stmt->custom_symbol_opt = std::string(stmt->identifier->lexeme);
+    }
     // If, at this point, linkage does not have a value...
-    if (!stmt->linkage_opt.has_value()) {
+    else if (!stmt->linkage_opt.has_value()) {
         // Linkage is set based on whether we are in repl mode or not.
         stmt->linkage_opt =
             repl_mode ? Binding::Linkage::External : Binding::Linkage::Internal;
@@ -211,10 +212,6 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
             );
         }
 
-        // Extern functions have a custom symbol based on their identifier name.
-        if (!stmt->custom_symbol_opt.has_value()) {
-            stmt->custom_symbol_opt = std::string(stmt->identifier->lexeme);
-        }
         // Currently, we do not allow users to manually specify a custom symbol,
         // but if we did, it would override this symbol.
         stmt->linkage_opt = Binding::Linkage::External;
@@ -240,8 +237,14 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
         }
     }
 
+    // If the linkage was set to external, but custom symbol is not set, set the
+    // custom symbol to the function name.
+    if (stmt->linkage_opt == Binding::Linkage::External &&
+        !stmt->custom_symbol_opt.has_value()) {
+        stmt->custom_symbol_opt = std::string(stmt->identifier->lexeme);
+    }
     // If, at this point, linkage does not have a value...
-    if (!stmt->linkage_opt.has_value()) {
+    else if (!stmt->linkage_opt.has_value()) {
         // Linkage is set based on whether we are in repl mode or not.
         stmt->linkage_opt =
             repl_mode ? Binding::Linkage::External : Binding::Linkage::Internal;

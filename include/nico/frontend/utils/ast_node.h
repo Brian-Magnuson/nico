@@ -212,6 +212,9 @@ public:
  *
  * These statement wrap an existing static variable or function declaration to
  * allow its linkage type to be set as external.
+ *
+ * @deprecated Use the new modifier system to set the linkage type of static
+ * variables and function declarations.
  */
 class Stmt::ExternDecl : public Stmt::IDeclAllowed {
 public:

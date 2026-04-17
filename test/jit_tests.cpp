@@ -1807,7 +1807,10 @@ TEST_CASE("JIT extern declarations", "[jit]") {
             extern "C" libinterop {
                 func c_operate_two_numbers(a: i32, b: i32) -> i32
             }
-            extern "C" func operate_two_numbers(a: i32, b: i32) -> i32 => a + b
+
+            #[linkage("external")]
+            func operate_two_numbers(a: i32, b: i32) -> i32 => a + b
+
             printout libinterop::c_operate_two_numbers(42, 10)
             )",
             JITTestOptions{
@@ -1823,7 +1826,10 @@ TEST_CASE("JIT extern declarations", "[jit]") {
             extern "C" libinterop {
                 func c_operate_two_numbers(a: i32, b: i32) -> i32
             }
-            extern "C" func operate_two_numbers(a: i32, b: i32) -> i32 => a * b
+
+            #[linkage("external")]
+            func operate_two_numbers(a: i32, b: i32) -> i32 => a * b
+
             printout libinterop::c_operate_two_numbers(42, 10)
             )",
             JITTestOptions{

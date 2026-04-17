@@ -2183,6 +2183,40 @@ TEST_CASE("Check extern declarations", "[checker]") {
             Err::FuncWithoutBody
         );
     }
+
+    SECTION("Valid static variable declaration with linkage modifier") {
+        run_checker_test(R"(
+            #[linkage("external")]
+            static var x: i32 = 42
+        )");
+    }
+
+    SECTION("Linkage modifier static variable without initializer") {
+        run_checker_test(
+            R"(
+            #[linkage("external")]
+            static y: i32
+        )",
+            Err::ImmutableWithoutInitializer
+        );
+    }
+
+    SECTION("Valid function declaration with linkage modifier") {
+        run_checker_test(R"(
+            #[linkage("external")]
+            func add(a: i32, b: i32) -> i32 => a + b
+        )");
+    }
+
+    SECTION("Function declaration with linkage modifier without body") {
+        run_checker_test(
+            R"(
+            #[linkage("external")]
+            func add(a: i32, b: i32) -> i32
+        )",
+            Err::FuncWithoutBody
+        );
+    }
 }
 
 TEST_CASE("Custom symbol declarations", "[checker]") {
