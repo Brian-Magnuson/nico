@@ -1335,9 +1335,11 @@ The drawback is that instances of classes require additional memory overhead due
 
 ### External declaration namespaces
 
-An external declaration namespace, or simply "extern namespace", is a special namespace that is used to contain declarations for external code. This is useful for interfacing with code written in other programming languages or for linking to external libraries.
+An external declaration namespace, or simply "extern namespace", is a special namespace that is used to contain declarations for external code. 
+This is useful for interfacing with code written in other programming languages or for linking to external libraries.
 
-To create an external declaration namespace, use the `extern` keyword followed by an identifier for the namespace name and either a colon or an opening curly brace. The block may be written in indented form or braced form:
+To create an external declaration namespace, use the `extern` keyword followed by an identifier for the namespace name and either a colon or an opening curly brace. 
+The block may be written in indented form or braced form:
 ```
 extern lib_foo:
     func external_function(a: i32) -> i32
@@ -1361,7 +1363,16 @@ When using the C linker, only the identifier has to match for the external code 
 
 Dereferencing a variable or calling a function with the incorrect types may result in undefined behavior, so it is the user's responsibility to ensure that the declarations in the extern namespace match the definitions in the external code.
 
-Currently there is no way to specify a different linkage name for an external variable or function. You can, however, create a wrapper function or variable with the desired name.
+You can use the `symbol` modifier to specify the symbol name of an external declaration if it differs from the identifier used in the code. This is useful for linking to external code that uses different naming conventions or for avoiding name conflicts.
+```
+extern "C" c_funcs:
+    #[symbol("cFunction")]
+    func c_function(a: i32) -> i32
+
+    #[symbol("cVar")]
+    let c_variable: f64 symbol "c_var"
+```
+
 
 You can add a string literal between the `extern` keyword and the namespace name to specify the ABI (application binary interface) of the external code. This is useful for ensuring compatibility with code written in different programming languages or compiled with different compilers.
 ```
@@ -1376,29 +1387,6 @@ External declaration namespaces can be declared in any global scope, including w
 
 Externally-declared variables/functions may be referenced/called in safe contexts without requiring an `unsafe` block.
 It is the user's responsibility to ensure that the external code is safe to use.
-
-### Extern declaration specifier
-
-For any declaration-space variable (static variable) or function, you can prepend the `extern` keyword along with an optional ABI specifier string to give the declaration external linkage.
-This allows you to make the definition available to other compilation units and to link to external code.
-
-This is different from external declaration namespaces, which are used to declare variables and functions that are defined in external code.
-
-Here are some examples of using the `extern` declaration specifier:
-```
-extern func my_function(a: i32) -> i32:
-    statement1
-
-extern "C" func c_function(a: i32) -> i32:
-    statement1
-
-extern static var my_variable: f64 = 3.14
-extern "C" static var c_variable: f64 = 3.14
-```
-
-These declarations follow the same rules as normal static variable and function declarations, with the addition of external linkage.
-- For variables, the variable must either use `var` with a type annotation or have an initializer.
-- For functions, the function must have a body.
 
 ## Expressions
 
@@ -2118,6 +2106,87 @@ let p: @i32 = alloc 42
 unsafe:
     dealloc p
 ```
+
+# Modifiers
+
+Modifiers allow you to modify declarations and statements, altering their behavior or even transforming their syntax.
+
+They are written using the following syntax:
+```
+#[modifier_1, modifier_2, modifier_3(arg1)]
+statement
+```
+
+Modifiers are applied to the statement immediately following them.
+A modifier list must always be followed by a statement.
+If it is followed by a semicolon or end of file, it is considered invalid.
+```
+#[modifier] // Invalid; not followed by a statement
+;
+```
+
+Modifiers start with an "identifier-like" token, which can be an identifier or a keyword.
+The lexeme of the token must match the name of a valid modifier.
+It is not an error for the name to have an existing meaning in the code; modifier lists create a special context that allows any identifier-like token.
+```
+static linkage = 42     // OK; "linkage" is a valid variable name, even though it is also a modifier name.
+
+#[linkage("external")]  // OK; "linkage" is a valid modifier name, even though it is also a variable name.
+static var x: i32
+```
+
+Some modifiers accept arguments, which are written in parentheses after the modifier name.
+Unlike call expression arguments, which are parsed as expressions,
+modifier arguments are parsed as raw tokens.
+This allows modifiers to accept a wide variety of arguments and gives them more control over how the arguments are parsed and used.
+Users should be careful, however, as this also means that modifier arguments may not be evaluated.
+```
+static x = "external"
+
+#[linkage(x)]  // Error: expected a string literal "internal" or "external"
+func foo() {}  // This is an error because x is parsed as a token, not an expression to evaluate.
+```
+
+Modifiers must be applied correctly, using the proper arguments and on the correct kind of statements.
+The parser will issue errors for invalid modifier usage, such as applying a function modifier to a variable declaration or providing invalid arguments to a modifier.
+```
+#[abstract]
+static var x: i32 // Error: modifier cannot be applied to this kind of statement.
+```
+
+Usually, it is not an error to not apply modifiers to a statement.
+Statements are meant to have a deterministic default behavior when no modifiers are applied.
+```
+#[linkage("internal")]  // OK
+static x = 1
+
+#[linkage("external")]  // OK
+static y = 2
+
+static z = 3            // OK; defaults to internal linkage
+```
+
+It is usually an error to apply a modifier that affects a property already set by a previous modifier.
+For example, applying two different visibility modifiers to the same declaration is an error:
+```
+#[public, private]
+func foo() {} // Error: conflicting visibility modifiers
+```
+
+Modifiers are applied left to right.
+In most cases, modifiers will not affect each other, and the order of modifiers will not matter.
+
+## Linker-level modifiers
+
+Linker-level modifiers are modifiers that are used to ensure proper linker behavior for certain declarations.
+
+- `linkage(LINKAGE)` - The static variable or function declaration that follows shall have its linkage set according to the specified linkage type. This is useful for sharing Nico code with other languages.
+  - `LINKAGE` - The linkage type to use. This can be one of the following:
+    - "internal" - The declaration is only visible within the current translation unit. This is the default for static variables and functions.
+    - "external" - The declaration is visible to other translation units. Additionally, if the symbol name is not explicitly set, the declaration will have a symbol name based on its identifier.
+
+- `symbol(SYMBOL)` - The static variable or function declaration that follows shall have its symbol set to the specified symbol. This is useful for sharing code using a different symbol, or linking against code that uses an undesireable naming convention.
+  - `SYMBOL` - A string literal specifying the symbol name to use for the declaration. There are no restrictions on what characters are allowed, but the symbol cannot conflict with any existing symbol in the program.
 
 # Execution
 

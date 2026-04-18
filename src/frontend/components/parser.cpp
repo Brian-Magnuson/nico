@@ -1654,6 +1654,15 @@ std::optional<std::shared_ptr<Stmt>> Parser::statement() {
             );
             return std::nullopt;
         }
+
+        if (match({Tok::Semicolon})) {
+            Logger::inst().log_error(
+                Err::ModifierWithoutStatement,
+                previous()->location,
+                "Modifiers must be attached to a statement."
+            );
+            return std::nullopt;
+        }
     }
 
     if (match({Tok::KwLet, Tok::KwStatic})) {
