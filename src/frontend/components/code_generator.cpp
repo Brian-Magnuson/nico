@@ -842,9 +842,9 @@ std::any CodeGenerator::visit(Expr::Alloc* expr, bool as_lvalue) {
             expr->amount_expr.value()->accept(this, false)
         );
         // amount_value is definitely an integer, but may not be a u64.
-        // Use ZExt to convert it.
+        // Use SExt to convert it.
         if (amount_value->getType()->isIntegerTy(64) == false) {
-            amount_value = builder->CreateZExt(
+            amount_value = builder->CreateSExt(
                 amount_value,
                 llvm::Type::getInt64Ty(*mod_ctx.llvm_context),
                 "alloc_amount_u64"
