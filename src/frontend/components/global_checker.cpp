@@ -292,32 +292,6 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
     return std::any();
 }
 
-std::any GlobalChecker::visit(Stmt::ExternDecl* stmt) {
-    // Inner declaration is either a static variable or a function.
-    if (auto func_decl = std::dynamic_pointer_cast<Stmt::Func>(stmt->decl)) {
-        func_decl->custom_symbol_opt =
-            std::string(func_decl->identifier->lexeme);
-        func_decl->accept(this);
-        func_decl->binding_entry.lock()->binding.linkage =
-            Binding::Linkage::External;
-    }
-    else if (
-        auto static_decl = std::dynamic_pointer_cast<Stmt::Static>(stmt->decl)
-    ) {
-        static_decl->accept(this);
-        static_decl->binding_entry.lock()->binding.linkage =
-            Binding::Linkage::External;
-    }
-    else {
-        panic(
-            "GlobalChecker::visit(Stmt::ExternDecl*): Extern declaration has "
-            "invalid inner declaration."
-        );
-    }
-
-    return std::any();
-}
-
 std::any GlobalChecker::visit(Stmt::Print*) {
     // Do nothing.
     return std::any();

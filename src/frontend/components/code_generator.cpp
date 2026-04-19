@@ -185,12 +185,6 @@ std::any CodeGenerator::visit(Stmt::Func* stmt) {
     return std::any();
 }
 
-std::any CodeGenerator::visit(Stmt::ExternDecl* stmt) {
-    // Type checking should have set the inner declaration's linkage, so we can
-    // just generate code for it as normal.
-    return stmt->decl->accept(this);
-}
-
 std::any CodeGenerator::visit(Stmt::Print* stmt) {
     llvm::Function* printf_fn = mod_ctx.ir_module->getFunction("printf");
 

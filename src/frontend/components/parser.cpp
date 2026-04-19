@@ -1537,48 +1537,11 @@ std::optional<std::shared_ptr<Stmt>> Parser::extern_statement() {
         }
         return stmt;
     }
-    // If the extern statement is a single declaration...
-    else if (match({Tok::KwFunc})) {
-        auto func_stmt_opt = func_statement();
-        if (!func_stmt_opt || defer_error) {
-            // At this point, an error has already been logged.
-            return std::nullopt;
-        }
-        auto decl_allowed_stmt = std::dynamic_pointer_cast<Stmt::IDeclAllowed>(
-            func_stmt_opt.value()
-        );
-        if (!decl_allowed_stmt) {
-            panic(
-                "Parser::extern_statement: function_statement did not return a "
-                "declaration."
-            );
-            return std::nullopt;
-        }
-        return std::make_shared<Stmt::ExternDecl>(decl_allowed_stmt, abi);
-    }
-    else if (match({Tok::KwStatic})) {
-        auto var_stmt_opt = variable_statement();
-        if (!var_stmt_opt || defer_error) {
-            // At this point, an error has already been logged.
-            return std::nullopt;
-        }
-        auto decl_allowed_stmt =
-            std::dynamic_pointer_cast<Stmt::IDeclAllowed>(var_stmt_opt.value());
-        if (!decl_allowed_stmt) {
-            panic(
-                "Parser::extern_statement: variable_statement did not return a "
-                "declaration."
-            );
-            return std::nullopt;
-        }
-        return std::make_shared<Stmt::ExternDecl>(decl_allowed_stmt, abi);
-    }
     else {
         Logger::inst().log_error(
             Err::UnexpectedTokenAfterExtern,
             peek()->location,
-            "Expected function declaration, static variable declaration, or "
-            "identifier after `extern`."
+            "Expected identifier after `extern`."
         );
         return std::nullopt;
     }

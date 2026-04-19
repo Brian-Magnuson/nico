@@ -30,7 +30,6 @@ class MIRBuilder : public Stmt::Visitor, public Expr::Visitor {
     std::any visit(Stmt::Let* stmt) override;
     std::any visit(Stmt::Static* stmt) override;
     std::any visit(Stmt::Func* stmt) override;
-    std::any visit(Stmt::ExternDecl* stmt) override;
     std::any visit(Stmt::Print* stmt) override;
     std::any visit(Stmt::Dealloc* stmt) override;
     std::any visit(Stmt::Pass* stmt) override;

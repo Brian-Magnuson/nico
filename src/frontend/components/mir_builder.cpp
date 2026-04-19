@@ -37,11 +37,6 @@ std::any MIRBuilder::visit(Stmt::Func* stmt) {
     return {};
 }
 
-std::any MIRBuilder::visit(Stmt::ExternDecl* stmt) {
-    // TODO: Implementation for visiting ExternDecl statements goes here.
-    return {};
-}
-
 std::any MIRBuilder::visit(Stmt::Print* stmt) {
     // TODO: Implementation for visiting Print statements goes here.
     return {};

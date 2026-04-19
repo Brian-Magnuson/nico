@@ -363,7 +363,6 @@ public:
     class Let;
     class Static;
     class Func;
-    class ExternDecl;
 
     class Print;
     class Dealloc;
@@ -388,7 +387,6 @@ public:
         virtual std::any visit(Let* stmt) = 0;
         virtual std::any visit(Static* stmt) = 0;
         virtual std::any visit(Func* stmt) = 0;
-        virtual std::any visit(ExternDecl* stmt) = 0;
         virtual std::any visit(Print* stmt) = 0;
         virtual std::any visit(Dealloc* stmt) = 0;
         virtual std::any visit(Pass* stmt) = 0;

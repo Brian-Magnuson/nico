@@ -185,9 +185,6 @@ public:
     // extern block.
     std::optional<std::shared_ptr<Expr::Block>> body;
 
-    // TODO: Consider how custom symbols should be stored in the future with the
-    // new modifier system.
-
     Func(
         std::shared_ptr<Token> start_token,
         std::shared_ptr<Token> identifier,
@@ -202,31 +199,6 @@ public:
           is_variadic(is_variadic),
           body(body) {
         location = &start_token->location;
-    }
-
-    std::any accept(Visitor* visitor) override { return visitor->visit(this); }
-};
-
-/**
- * @brief An external declaration statement.
- *
- * These statement wrap an existing static variable or function declaration to
- * allow its linkage type to be set as external.
- *
- * @deprecated Use the new modifier system to set the linkage type of static
- * variables and function declarations.
- */
-class Stmt::ExternDecl : public Stmt::IDeclAllowed {
-public:
-    // The ABI for the extern declaration.
-    ABI abi;
-    // The declaration, which should be a function declaration or a static
-    // variable declaration.
-    std::shared_ptr<Stmt::IDeclAllowed> decl;
-
-    ExternDecl(std::shared_ptr<Stmt::IDeclAllowed> decl, ABI abi = ABI::C)
-        : abi(abi), decl(decl) {
-        location = decl->location;
     }
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }

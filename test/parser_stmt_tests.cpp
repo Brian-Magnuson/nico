@@ -697,40 +697,6 @@ TEST_CASE("Parser extern block statements", "[parser]") {
     }
 }
 
-TEST_CASE("Parser extern single declarations", "[parser]") {
-    SECTION("Extern static variable") {
-        run_parser_stmt_test(
-            "extern static var x: i32",
-            {"(stmt:externdecl \"C\" (stmt:static var x i32))", "(stmt:eof)"}
-        );
-    }
-
-    SECTION("Extern static variable with ABI") {
-        run_parser_stmt_test(
-            "extern \"C\" static var y: f64",
-            {"(stmt:externdecl \"C\" (stmt:static var y f64))", "(stmt:eof)"}
-        );
-    }
-
-    SECTION("Extern function declaration") {
-        run_parser_stmt_test(
-            "extern func foo(x: i32) -> i32 => x + 1",
-            {"(stmt:externdecl \"C\" (stmt:func foo i32 (x i32) => (block "
-             "(stmt:yield => (binary + (nameref x) (lit i32 1))))))",
-             "(stmt:eof)"}
-        );
-    }
-
-    SECTION("Extern function declaration with ABI") {
-        run_parser_stmt_test(
-            "extern \"C\" func bar() -> i32 => 42",
-            {"(stmt:externdecl \"C\" (stmt:func bar i32 => (block (stmt:yield "
-             "=> (lit i32 42)))))",
-             "(stmt:eof)"}
-        );
-    }
-}
-
 TEST_CASE("Parser tuple annotations", "[parser]") {
     SECTION("Tuple annotation 1") {
         run_parser_stmt_test(

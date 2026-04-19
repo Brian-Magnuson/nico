@@ -204,15 +204,6 @@ std::any LocalChecker::visit(Stmt::Func* stmt) {
     return std::any();
 }
 
-std::any LocalChecker::visit(Stmt::ExternDecl* stmt) {
-    // Extern declarations may be function declarations.
-    // Functiond declarations may contain execution-space statements.
-    // Therefore, we need to check extern declarations.
-
-    stmt->decl->accept(this);
-    return std::any();
-}
-
 std::any LocalChecker::visit(Stmt::Pass* /*stmt*/) {
     // A pass statement does nothing.
     return std::any();
