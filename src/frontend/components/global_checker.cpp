@@ -81,7 +81,7 @@ std::any GlobalChecker::visit(Stmt::Static* stmt) {
                 "initializer."
             );
         }
-        if (stmt->linkage_opt == Binding::Linkage::Internal) {
+        if (stmt->linkage_opt == Linkage::Internal) {
             Logger::inst().log_error(
                 Err::ExternBindingWithInternalLinkage,
                 stmt->identifier->location,
@@ -90,7 +90,7 @@ std::any GlobalChecker::visit(Stmt::Static* stmt) {
             );
         }
 
-        stmt->linkage_opt = Binding::Linkage::External;
+        stmt->linkage_opt = Linkage::External;
     }
     else if (!stmt->has_var && !stmt->expression.has_value()) {
         Logger::inst().log_error(
@@ -102,29 +102,30 @@ std::any GlobalChecker::visit(Stmt::Static* stmt) {
 
     // If the linkage was set to external, but custom symbol is not set, set the
     // custom symbol to the variable name.
-    if (stmt->linkage_opt == Binding::Linkage::External &&
+    if (stmt->linkage_opt == Linkage::External &&
         !stmt->custom_symbol_opt.has_value()) {
         stmt->custom_symbol_opt = std::string(stmt->identifier->lexeme);
     }
     // If, at this point, linkage does not have a value...
     else if (!stmt->linkage_opt.has_value()) {
         // Linkage is set based on whether we are in repl mode or not.
-        stmt->linkage_opt =
-            repl_mode ? Binding::Linkage::External : Binding::Linkage::Internal;
+        stmt->linkage_opt = repl_mode ? Linkage::External : Linkage::Internal;
     }
 
     // Create the binding entry.
     Binding binding(
-        stmt->has_var,
+        stmt->has_var ? Binding::Mutability::Var : Binding::Mutability::None,
         stmt->identifier->lexeme,
         &stmt->identifier->location,
         expr_type,
-        stmt->linkage_opt.value(),
         stmt->expression
     );
 
-    auto node_opt =
-        symbol_tree->add_binding_entry(binding, stmt->custom_symbol_opt);
+    auto node_opt = symbol_tree->add_binding_entry(
+        binding,
+        stmt->linkage_opt.value(),
+        stmt->custom_symbol_opt
+    );
     if (!node_opt.has_value()) {
         return std::any();
     }
@@ -171,11 +172,11 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
             return std::any();
 
         Binding param_binding(
-            param.has_var,
+            param.has_var ? Binding::Mutability::Var
+                          : Binding::Mutability::None,
             param.identifier->lexeme,
             &param.identifier->location,
             annotation_type_opt.value(),
-            Binding::Linkage::Internal,
             param.expression
         );
         param_bindings.insert(param_string, param_binding);
@@ -203,7 +204,7 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
                 "Function declared in extern block cannot have a body."
             );
         }
-        if (stmt->linkage_opt == Binding::Linkage::Internal) {
+        if (stmt->linkage_opt == Linkage::Internal) {
             Logger::inst().log_error(
                 Err::ExternBindingWithInternalLinkage,
                 stmt->identifier->location,
@@ -214,7 +215,7 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
 
         // Currently, we do not allow users to manually specify a custom symbol,
         // but if we did, it would override this symbol.
-        stmt->linkage_opt = Binding::Linkage::External;
+        stmt->linkage_opt = Linkage::External;
     }
     // If the function is not declared in an extern block...
     else {
@@ -239,15 +240,14 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
 
     // If the linkage was set to external, but custom symbol is not set, set the
     // custom symbol to the function name.
-    if (stmt->linkage_opt == Binding::Linkage::External &&
+    if (stmt->linkage_opt == Linkage::External &&
         !stmt->custom_symbol_opt.has_value()) {
         stmt->custom_symbol_opt = std::string(stmt->identifier->lexeme);
     }
     // If, at this point, linkage does not have a value...
     else if (!stmt->linkage_opt.has_value()) {
         // Linkage is set based on whether we are in repl mode or not.
-        stmt->linkage_opt =
-            repl_mode ? Binding::Linkage::External : Binding::Linkage::Internal;
+        stmt->linkage_opt = repl_mode ? Linkage::External : Linkage::Internal;
     }
 
     // Create the function type.
@@ -259,20 +259,21 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
 
     // Create the binding entry.
     Binding binding(
-        false,
+        Binding::Mutability::None, // Functions are always immutable.
         stmt->identifier->lexeme,
         &stmt->identifier->location,
-        func_type,
-        stmt->linkage_opt.value()
+        func_type
     );
     // Functions are always immutable.
 
     // If the function has a custom symbol...
-    if (stmt->custom_symbol_opt.has_value()) {
+    if (stmt->custom_symbol_opt.has_value() ||
+        stmt->linkage_opt == Linkage::External) {
         // It is declared as a binding and is not overloadable.
         auto node_opt = symbol_tree->add_binding_entry(
             binding,
-            stmt->custom_symbol_opt.value()
+            stmt->linkage_opt.value(),
+            stmt->custom_symbol_opt
         );
         if (!node_opt.has_value()) {
             return std::any();

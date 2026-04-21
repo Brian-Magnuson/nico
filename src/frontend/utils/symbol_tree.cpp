@@ -352,7 +352,9 @@ SymbolTree::get_local_scope_of_kind(Expr::Block::Kind kind) const {
 
 std::optional<std::shared_ptr<Node::BindingEntry>>
 SymbolTree::add_binding_entry(
-    const Binding& binding, std::optional<std::string> custom_symbol
+    const Binding& binding,
+    Linkage linkage,
+    std::optional<std::string> custom_symbol
 ) {
     // Make sure the name is not reserved.
     if (auto node = reserved_scope->children.at(binding.name)) {
@@ -391,7 +393,7 @@ SymbolTree::add_binding_entry(
         return std::nullopt;
     }
 
-    auto new_node = Node::BindingEntry::create(current_scope, binding);
+    auto new_node = Node::BindingEntry::create(current_scope, binding, linkage);
     current_scope->children[new_node->short_name] = new_node;
 
     bool ok = register_symbol(new_node, custom_symbol);
@@ -509,7 +511,8 @@ SymbolTree::add_overloadable_func(const Binding& binding) {
         return std::nullopt;
     }
 
-    auto new_node = Node::BindingEntry::create(current_scope, binding);
+    auto new_node =
+        Node::BindingEntry::create(current_scope, binding, Linkage::Internal);
     auto custom_symbol = overload_group->symbol + "$" +
                          std::to_string(overload_group->overloads.size() + 1);
     bool ok = register_symbol(new_node, custom_symbol);

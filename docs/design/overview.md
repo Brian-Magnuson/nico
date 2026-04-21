@@ -1116,7 +1116,7 @@ func my_function() -> i32:
 
 A function is overloadable if it meets the following criteria:
 - It does not have a custom symbol.
-- It is not declared in an external declaration namespace.
+- Its linkage is not external.
 
 An overloadable function may be declared in the same scope with the same name as another overloadable function. This is called function overloading.
 Function overloading has rules that must be followed:

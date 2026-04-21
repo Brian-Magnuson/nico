@@ -82,14 +82,16 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
 
     // Create the binding entry.
     Binding binding(
-        stmt->has_var,
+        stmt->has_var ? Binding::Mutability::Var : Binding::Mutability::None,
         stmt->identifier->lexeme,
         &stmt->identifier->location,
-        expr_type,
-        repl_mode ? Binding::Linkage::External : Binding::Linkage::Internal
+        expr_type
     );
 
-    auto node_opt = symbol_tree->add_binding_entry(binding);
+    auto node_opt = symbol_tree->add_binding_entry(
+        binding,
+        repl_mode ? Linkage::External : Linkage::Internal
+    );
     if (!node_opt.has_value()) {
         return std::any();
     }
@@ -163,7 +165,8 @@ std::any LocalChecker::visit(Stmt::Func* stmt) {
                 has_error = true;
             }
         }
-        auto node_opt = symbol_tree->add_binding_entry(param_binding);
+        auto node_opt =
+            symbol_tree->add_binding_entry(param_binding, Linkage::Internal);
         if (!node_opt.has_value()) {
             has_error = true;
         }

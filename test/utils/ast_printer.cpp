@@ -33,10 +33,10 @@ std::any AstPrinter::visit(Stmt::Static* stmt) {
     std::string str = "(stmt:static ";
     if (stmt->linkage_opt.has_value()) {
         switch (stmt->linkage_opt.value()) {
-        case Binding::Linkage::Internal:
+        case Linkage::Internal:
             str += "[linkage:internal] ";
             break;
-        case Binding::Linkage::External:
+        case Linkage::External:
             str += "[linkage:external] ";
             break;
         default:
@@ -72,10 +72,10 @@ std::any AstPrinter::visit(Stmt::Func* stmt) {
 
     if (stmt->linkage_opt.has_value()) {
         switch (stmt->linkage_opt.value()) {
-        case Binding::Linkage::Internal:
+        case Linkage::Internal:
             str += "[linkage:internal] ";
             break;
-        case Binding::Linkage::External:
+        case Linkage::External:
             str += "[linkage:external] ";
             break;
         default:

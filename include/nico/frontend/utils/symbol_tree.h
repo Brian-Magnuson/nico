@@ -285,6 +285,7 @@ public:
      * resolved before being added to the symbol tree.
      *
      * @param binding The binding to add.
+     * @param linkage The linkage of this binding entry.
      * @param custom_symbol An optional custom symbol to register for this
      * binding. If not provided, a symbol will be generated based on the
      * binding's position in the tree.
@@ -293,6 +294,7 @@ public:
      */
     std::optional<std::shared_ptr<Node::BindingEntry>> add_binding_entry(
         const Binding& binding,
+        Linkage linkage,
         std::optional<std::string> custom_symbol = std::nullopt
     );
 

@@ -500,10 +500,12 @@ std::any ExpressionChecker::visit(Expr::Binary* expr, bool as_lvalue) {
             );
         }
     }
-    else if ((PTR_INSTANCEOF(l_type, Type::Bool) &&
-              PTR_INSTANCEOF(r_type, Type::Bool)) ||
-             (PTR_INSTANCEOF(l_type, Type::IRawPtr) &&
-              PTR_INSTANCEOF(r_type, Type::IRawPtr))) {
+    else if (
+        (PTR_INSTANCEOF(l_type, Type::Bool) &&
+         PTR_INSTANCEOF(r_type, Type::Bool)) ||
+        (PTR_INSTANCEOF(l_type, Type::IRawPtr) &&
+         PTR_INSTANCEOF(r_type, Type::IRawPtr))
+    ) {
         switch (expr->op->tok_type) {
         case Tok::EqEq:
             expr->operation = Expr::Binary::Operation::IntEq;
@@ -739,8 +741,10 @@ std::any ExpressionChecker::visit(Expr::Cast* expr, bool as_lvalue) {
         // We *could* emit a warning here, but we'll just allow it for now.
         expr->operation = Expr::Cast::Operation::NoOp;
     }
-    else if (PTR_INSTANCEOF(expr_type, Type::IPointer) &&
-             PTR_INSTANCEOF(target_type, Type::IPointer)) {
+    else if (
+        PTR_INSTANCEOF(expr_type, Type::IPointer) &&
+        PTR_INSTANCEOF(target_type, Type::IPointer)
+    ) {
         auto expr_ptr_type =
             std::dynamic_pointer_cast<Type::IPointer>(expr_type);
         auto target_ptr_type =
@@ -994,8 +998,10 @@ std::any ExpressionChecker::visit(Expr::Call* expr, bool as_lvalue) {
     }
     // If the callee is an overloaded function, add all overloads to the
     // candidate list.
-    else if (auto overload_type =
-                 std::dynamic_pointer_cast<Type::OverloadedFn>(callee_type)) {
+    else if (
+        auto overload_type =
+            std::dynamic_pointer_cast<Type::OverloadedFn>(callee_type)
+    ) {
         for (auto overload : overload_type->overload_group.lock()->overloads) {
             auto func_type = std::dynamic_pointer_cast<Type::Function>(
                 overload->binding.type
@@ -1264,7 +1270,7 @@ std::any ExpressionChecker::visit(Expr::NameRef* expr, bool as_lvalue) {
     }
     // Set assignability and possible error location based on whether the
     // binding is mutable.
-    if (binding_entry->binding.is_declared_var) {
+    if (binding_entry->binding.mutability != Binding::Mutability::None) {
         expr->assignable = true;
     }
     else {

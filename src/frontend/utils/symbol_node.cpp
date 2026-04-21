@@ -109,8 +109,9 @@ bool Node::ExternBlock::add_child(
         );
         return false;
     }
-    else if (auto struct_def =
-                 std::dynamic_pointer_cast<Node::StructDef>(child)) {
+    else if (
+        auto struct_def = std::dynamic_pointer_cast<Node::StructDef>(child)
+    ) {
         Logger::inst().log_error(
             Err::StructDefInExternBlock,
             child->location,
@@ -173,8 +174,9 @@ bool Node::StructDef::add_child(
         );
         return false;
     }
-    else if (auto struct_def =
-                 std::dynamic_pointer_cast<Node::StructDef>(child)) {
+    else if (
+        auto struct_def = std::dynamic_pointer_cast<Node::StructDef>(child)
+    ) {
         Logger::inst().log_error(
             Err::StructDefInStructDef,
             child->location,
@@ -189,8 +191,9 @@ bool Node::StructDef::add_child(
         );
         return false;
     }
-    else if (auto extern_block =
-                 std::dynamic_pointer_cast<Node::ExternBlock>(child)) {
+    else if (
+        auto extern_block = std::dynamic_pointer_cast<Node::ExternBlock>(child)
+    ) {
         Logger::inst().log_error(
             Err::ExternBlockInStructDef,
             child->location,
@@ -230,9 +233,11 @@ bool Node::LocalScope::add_child(
 }
 
 std::shared_ptr<Node::BindingEntry> Node::BindingEntry::create(
-    std::shared_ptr<Node::IScope> parent, const Binding& binding
+    std::shared_ptr<Node::IScope> parent,
+    const Binding& binding,
+    Linkage linkage
 ) {
-    auto node = std::make_shared<BindingEntry>(Private(), binding);
+    auto node = std::make_shared<BindingEntry>(Private(), binding, linkage);
     node->parent = parent;
     node->short_name = binding.name;
     node->location = binding.location;

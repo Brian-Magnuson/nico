@@ -37,7 +37,7 @@ public:
     // A weak pointer to the binding entry in the symbol table.
     std::weak_ptr<Node::BindingEntry> binding_entry;
     // The linkage type for the declaration.
-    std::optional<Binding::Linkage> linkage_opt;
+    std::optional<Linkage> linkage_opt;
     // A custom symbol for the declaration.
     std::optional<std::string> custom_symbol_opt;
 
@@ -205,6 +205,114 @@ public:
 };
 
 /**
+ * @brief A namespace declaration statement.
+ *
+ * Namespace declarations introduce a new namespace into the current scope
+ * and contain a block of statements that are part of the namespace.
+ */
+class Stmt::Namespace : public Stmt::IDeclAllowed {
+public:
+    // The name of the namespace.
+    std::shared_ptr<Token> identifier;
+    // Whether this namespace is meant to span the entire file (should only
+    // be allowed if the current scope is the root scope).
+    bool is_file_spanning;
+    // The statements in the namespace block.
+    std::vector<std::shared_ptr<Stmt::IDeclAllowed>> stmts;
+    // A weak pointer to the namespace node in the symbol tree.
+    std::weak_ptr<Node::Namespace> namespace_node;
+
+    Namespace(
+        std::shared_ptr<Token> start_token,
+        std::shared_ptr<Token> identifier,
+        bool is_file_spanning,
+        std::vector<std::shared_ptr<Stmt::IDeclAllowed>>&& stmts
+    )
+        : identifier(identifier),
+          is_file_spanning(is_file_spanning),
+          stmts(std::move(stmts)) {
+        location = &start_token->location;
+    }
+
+    std::any accept(Visitor* visitor) override { return visitor->visit(this); }
+};
+
+/**
+ * @brief An extern declaration namespace statement.
+ *
+ * Extern declaration statements introduce a new namespace for external
+ * declarations and contain a block of statements that are part of the
+ * extern namespace.
+ */
+class Stmt::ExternBlock : public Stmt::IDeclAllowed {
+public:
+    // The name of the extern block.
+    std::shared_ptr<Token> identifier;
+    // The ABI for the extern declaration block.
+    ABI abi;
+    // The declarations in the extern block.
+    std::vector<std::shared_ptr<Stmt::IDeclAllowed>> stmts;
+    // A weak pointer to the extern block node in the symbol tree.
+    std::weak_ptr<Node::ExternBlock> extern_block_node;
+
+    ExternBlock(
+        std::shared_ptr<Token> start_token,
+        std::shared_ptr<Token> identifier,
+        std::vector<std::shared_ptr<Stmt::IDeclAllowed>>&& stmts,
+        ABI abi = ABI::C
+    )
+        : identifier(identifier), abi(abi), stmts(std::move(stmts)) {
+        location = &start_token->location;
+    }
+
+    std::any accept(Visitor* visitor) override { return visitor->visit(this); }
+};
+
+/**
+ * @brief A struct definition statement.
+ *
+ * Struct definition statements introduce a new struct type into the current
+ * scope and contain a list of properties that are part of the struct.
+ */
+class Stmt::StructDef : public Stmt::IDeclAllowed {
+public:
+    /**
+     * @brief A property in a struct definition.
+     *
+     * Properties are similar to variables in that they have a name and type
+     * annotation. But unlike variables, they do not have a binding entry. This
+     * is because properties are accessed through the binding entry of the
+     * struct instance in which they are contained.
+     */
+    struct Prop {
+        // The mutability of the property.
+        Binding::Mutability mutability;
+        // The identifier token.
+        std::shared_ptr<Token> identifier;
+        // The type annotation, always required.
+        std::shared_ptr<Annotation> annotation;
+        // An optional expression for the default value.
+        std::optional<std::shared_ptr<Expr>> expression;
+
+        Prop(
+            Binding::Mutability mutability,
+            std::shared_ptr<Token> identifier,
+            std::shared_ptr<Annotation> annotation,
+            std::optional<std::shared_ptr<Expr>> expression
+        )
+            : mutability(mutability),
+              identifier(identifier),
+              annotation(annotation),
+              expression(expression) {}
+    };
+
+    // The name of the struct.
+    std::shared_ptr<Token> identifier;
+    // The properties of the struct.
+    std::vector<Prop> properties;
+};
+
+/**
  * @brief A print statement.
  *
  * Since a proper print function is not yet implemented, this is a temporary
@@ -313,70 +421,6 @@ public:
     Continue(std::shared_ptr<Token> continue_token)
         : continue_token(continue_token) {
         location = &continue_token->location;
-    }
-
-    std::any accept(Visitor* visitor) override { return visitor->visit(this); }
-};
-
-/**
- * @brief A namespace declaration statement.
- *
- * Namespace declarations introduce a new namespace into the current scope
- * and contain a block of statements that are part of the namespace.
- */
-class Stmt::Namespace : public Stmt::IDeclAllowed {
-public:
-    // The name of the namespace.
-    std::shared_ptr<Token> identifier;
-    // Whether this namespace is meant to span the entire file (should only
-    // be allowed if the current scope is the root scope).
-    bool is_file_spanning;
-    // The statements in the namespace block.
-    std::vector<std::shared_ptr<Stmt::IDeclAllowed>> stmts;
-    // A weak pointer to the namespace node in the symbol tree.
-    std::weak_ptr<Node::Namespace> namespace_node;
-
-    Namespace(
-        std::shared_ptr<Token> start_token,
-        std::shared_ptr<Token> identifier,
-        bool is_file_spanning,
-        std::vector<std::shared_ptr<Stmt::IDeclAllowed>>&& stmts
-    )
-        : identifier(identifier),
-          is_file_spanning(is_file_spanning),
-          stmts(std::move(stmts)) {
-        location = &start_token->location;
-    }
-
-    std::any accept(Visitor* visitor) override { return visitor->visit(this); }
-};
-
-/**
- * @brief An extern declaration namespace statement.
- *
- * Extern declaration statements introduce a new namespace for external
- * declarations and contain a block of statements that are part of the
- * extern namespace.
- */
-class Stmt::ExternBlock : public Stmt::IDeclAllowed {
-public:
-    // The name of the extern block.
-    std::shared_ptr<Token> identifier;
-    // The ABI for the extern declaration block.
-    ABI abi;
-    // The declarations in the extern block.
-    std::vector<std::shared_ptr<Stmt::IDeclAllowed>> stmts;
-    // A weak pointer to the extern block node in the symbol tree.
-    std::weak_ptr<Node::ExternBlock> extern_block_node;
-
-    ExternBlock(
-        std::shared_ptr<Token> start_token,
-        std::shared_ptr<Token> identifier,
-        std::vector<std::shared_ptr<Stmt::IDeclAllowed>>&& stmts,
-        ABI abi = ABI::C
-    )
-        : identifier(identifier), abi(abi), stmts(std::move(stmts)) {
-        location = &start_token->location;
     }
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }

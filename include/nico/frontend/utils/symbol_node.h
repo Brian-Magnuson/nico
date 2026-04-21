@@ -421,14 +421,19 @@ public:
 
     // The binding object that this entry represents.
     Binding binding;
+    // The linkage of this binding entry.
+    Linkage linkage;
     // If this binding is a local variable, the pointer to the LLVM
     // allocation.
     llvm::AllocaInst* llvm_ptr = nullptr;
 
     virtual ~BindingEntry() = default;
 
-    BindingEntry(Private, const Binding& binding)
-        : Node(Private()), Node::ILocatable(Private()), binding(binding) {}
+    BindingEntry(Private, const Binding& binding, Linkage linkage)
+        : Node(Private()),
+          Node::ILocatable(Private()),
+          binding(binding),
+          linkage(linkage) {}
 
     /**
      * @brief Creates a new binding entry node and adds it to the parent scope.
@@ -438,10 +443,14 @@ public:
      *
      * @param parent The parent scope in which to add the binding entry.
      * @param binding The binding object that this entry represents.
+     * @param linkage The linkage of this binding entry.
      * @return A shared pointer to the newly created binding entry node.
      */
-    static std::shared_ptr<BindingEntry>
-    create(std::shared_ptr<Node::IScope> parent, const Binding& binding);
+    static std::shared_ptr<BindingEntry> create(
+        std::shared_ptr<Node::IScope> parent,
+        const Binding& binding,
+        Linkage linkage
+    );
 
     /**
      * @brief Gets the LLVM allocation for this binding entry.
@@ -522,10 +531,10 @@ public:
      * @return The LLVM linkage type.
      */
     llvm::GlobalValue::LinkageTypes get_llvm_linkage() const {
-        switch (binding.linkage) {
-        case Binding::Linkage::Internal:
+        switch (linkage) {
+        case Linkage::Internal:
             return llvm::GlobalValue::InternalLinkage;
-        case Binding::Linkage::External:
+        case Linkage::External:
             return llvm::GlobalValue::ExternalLinkage;
         default:
             panic(
@@ -568,14 +577,14 @@ public:
           Node::BindingEntry(
               Private(),
               Binding(
-                  false, /* is_declared_var */
+                  Binding::Mutability::None,
                   overload_name,
                   first_overload_location,
                   std::dynamic_pointer_cast<Type>(
                       std::make_shared<Type::OverloadedFn>()
-                  ),
-                  Binding::Linkage::Internal
-              )
+                  )
+              ),
+              Linkage::Internal
           ) {}
 
     /**

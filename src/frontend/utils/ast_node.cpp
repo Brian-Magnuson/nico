@@ -36,11 +36,11 @@ bool Stmt::IBindingDecl::apply_modifier(const Modifier& modifier) {
             std::any_cast<std::string>(modifier.args.at(0)->literal);
 
         if (linkage_arg == "internal") {
-            linkage_opt = Binding::Linkage::Internal;
+            linkage_opt = Linkage::Internal;
             return true;
         }
         if (linkage_arg == "external") {
-            linkage_opt = Binding::Linkage::External;
+            linkage_opt = Linkage::External;
             return true;
         }
 
