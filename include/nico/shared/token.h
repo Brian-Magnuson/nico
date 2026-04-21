@@ -150,15 +150,16 @@ enum class Tok {
 
     KwLet,
     KwStatic,
+    KwProp,
     KwVar,
     KwConst,
     KwGlobal,
     KwFunc,
+    KwNamespace,
+    KwExtern,
     KwStruct,
     KwClass,
     KwEnum,
-    KwNamespace,
-    KwExtern,
 
     KwAs,
     KwIs,
