@@ -837,12 +837,12 @@ public:
 /**
  * @brief An object type.
  *
- * Used to represent objects with properties.
+ * Used to represent objects with fields.
  */
 class Type::Object : public Type {
 public:
     // The fields of the object.
-    Dictionary<std::string, Binding> properties;
+    Dictionary<std::string, Binding> fields;
 
     virtual ~Object() = default;
 
@@ -850,10 +850,10 @@ public:
 
     std::string to_string() const override {
         std::string result = "{";
-        for (const auto& [key, value] : properties) {
+        for (const auto& [key, value] : fields) {
             result += value.to_string() + ", ";
         }
-        if (properties.size() > 0) {
+        if (fields.size() > 0) {
             result.pop_back();
             result.pop_back();
         }
@@ -863,13 +863,13 @@ public:
 
     bool operator==(const Type& other) const override {
         if (const auto* other_object = dynamic_cast<const Object*>(&other)) {
-            return properties == other_object->properties;
+            return fields == other_object->fields;
         }
         return false;
     }
 
     bool is_sized_type() const override {
-        for (const auto& [key, value] : properties) {
+        for (const auto& [key, value] : fields) {
             if (!value.type->is_sized_type()) {
                 return false;
             }
@@ -880,7 +880,7 @@ public:
     virtual llvm::Type*
     get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
         std::vector<llvm::Type*> field_types;
-        for (const auto& [key, value] : properties) {
+        for (const auto& [key, value] : fields) {
             field_types.push_back(value.type->get_llvm_type(builder));
         }
         return llvm::StructType::get(builder->getContext(), field_types);

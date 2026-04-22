@@ -248,25 +248,29 @@ Using `=` to assign one tuple to another will shallow copy the elements of the t
 
 ### Struct literal type
 
-A struct literal type is a custom data type representing a collection of named properties. They are the literal counterpart to named struct types, which are defined using struct declarations.
+A struct literal type is a custom data type representing a collection of named fields. They are the literal counterpart to named struct types, which are defined using struct declarations.
 
 Struct literal types offer a flexible way to define custom data types without the overhead of defining a full class.
 
-A struct literal type is written as `{ prop1: T1, prop2: T2, ... }`, where `prop1`, `prop2`, etc., are the names of the properties and `T1`, `T2`, etc., are the types of the properties. For example, a struct literal type with two properties, `x` and `y`, would be written as `{ x: i32, y: f64 }`.
+A struct literal type is written as `{ field1: T1, field2: T2, ... }`, where `field1`, `field2`, etc., are the names of the fields and `T1`, `T2`, etc., are the types of the fields. For example, a struct literal type with two fields, `x` and `y`, would be written as `{ x: i32, y: f64 }`.
 
-Only properties are allowed in struct literal types; no shared variables or functions are permitted.
+Only fields are allowed in struct literal types; no shared variables or functions are permitted.
 
-Struct literal type properties are immutable unless explicitly marked as mutable. To declare a mutable property, use the `var` keyword:
+Struct literal type fields are immutable unless explicitly marked as mutable.
+To make a field mutable, add the `var` or `mut` keyword before the field name:
 ```
-{ var x: i32, y: f64 }
+{ var x: i32, mut y: f64 }
 ```
 
-Struct literal type properties may also have default values. This is done by using the `=` operator:
+Fields marked with `var` are mutable as long as the overall struct literal value is also mutable.
+Fields marked with `mut` are mutable regardless of the mutability of the overall struct literal value.
+
+Struct literal type fields may also have default values. This is done by using the `=` operator:
 ```
 { x: i32 = 42, y: f64 = 3.14 }
 ```
 
-Type annotations for each property are still required, even if a default value is provided. The default value must match the type.
+Type annotations for each field are still required, even if a default value is provided. The default value must match the type.
 The default value must also be a reference to a value with a static lifetime.
 
 Struct literal values may be written using curly braces:
@@ -274,13 +278,13 @@ Struct literal values may be written using curly braces:
 { x: 42, y: 3.14 }
 ```
 
-Values are assigned to their corresponding properties. By the end of the object literal, all properties must be assigned a value.
+Values are assigned to their corresponding fields. By the end of the object literal, all fields must be assigned a value.
 
-You cannot add more properties to a struct literal after it is created.
+You cannot add more fields to a struct literal after it is created.
 
 Struct literal values always use braces; there is no indented form, and they are not considered blocks. Blocks always have some keyword signifying the opening of a block, such as `if`, `while`, or `block`.
 
-Using `=` to assign one struct literal value to another will shallow copy the properties of the struct. For other copy behaviors, the copy must be done manually.
+Using `=` to assign one struct literal value to another will shallow copy the fields of the struct. For other copy behaviors, the copy must be done manually.
 
 ## Pointer and reference types
 
@@ -1189,7 +1193,7 @@ Because variadic functions are only allowed in external declaration namespaces, 
 
 ### Structs
 
-Named structs are user-defined types that consist of a collection of named properties.
+Named structs are user-defined types that consist of a collection of named fields.
 
 Structs are similar to classes, but they do not support all object-oriented programming features. Specifically:
 - They may only inherit from interfaces, not other structs or classes.
@@ -1202,7 +1206,7 @@ They use the following syntax:
 ```
 struct MyStruct: // Indented form
     static x: i32 = 0
-    prop y: i32
+    field y: i32
     func my_func():
         statement1
     method my_method(self):
@@ -1210,7 +1214,7 @@ struct MyStruct: // Indented form
 
 struct MyStruct { // Braced form
     static x: i32 = 0
-    prop y: i32
+    field y: i32
     func my_func():
         statement1
     method my_method(self):
@@ -1220,19 +1224,19 @@ struct MyStruct { // Braced form
 
 Despite using a similar syntax to blocks, struct definitions are not considered blocks. They are a separate kind of declaration.
 
-Properties, sometimes called instance member variables, are declared with the `prop` keyword. They are similar to variables, but they are stored for each instance of the struct.
+Fields, sometimes called instance member variables, are declared with the `field` keyword. They are similar to variables, but they are stored for each instance of the struct.
 
-Properties may have default values. This is done by using the `=` operator:
+Fields may have default values. This is done by using the `=` operator:
 ```
 struct MyStruct:
-    prop x: i32 = 0
-    prop y: f64 = 3.14
+    field x: i32 = 0
+    field y: f64 = 3.14
 ```
 
-Methods, sometimes called instance member functions, are declared with the `method` keyword. They are similar to functions, but they are called on an instance of the struct and have access to the instance's properties and other methods through the instance parameter (named `self` in this example).
+Methods, sometimes called instance member functions, are declared with the `method` keyword. They are similar to functions, but they are called on an instance of the struct and have access to the instance's fields and other methods through the instance parameter (named `self` in this example).
 ```
 struct MyStruct:
-    prop x: i32
+    field x: i32
 
     method my_method(self):
         let y = self.x + 1
@@ -1246,7 +1250,7 @@ MyStruct.my_method(s) // Bad; my_method is not a shared function
 s.my_method() // OK
 ```
 
-Because the instance parameter is treated like a parameter inside the function, it follows the same mutability rules as other parameters. If the instance parameter is mutable, the method may modify the instance's properties:
+Because the instance parameter is treated like a parameter inside the function, it follows the same mutability rules as other parameters. If the instance parameter is mutable, the method may modify the instance's fields:
 ```
 method my_method_1(self: &MyStruct) // Immutable reference, immutable object
 method my_method_2(self) // Same as above, but without type annotation
@@ -1267,7 +1271,7 @@ s.my_method() // OK
 ```
 
 In structs, member variables declared with `static` and member functions declared with `func` are said to be *shared*. This is similar to static members in C++ and Java.
-Because they don't have access to `self`, they cannot access instance properties or methods.
+Because they don't have access to `self`, they cannot access instance fields or methods.
 Outside the complex type, they are accessed using the struct name:
 ```
 struct MyStruct:
@@ -1292,8 +1296,8 @@ let s = new MyStruct { x: 0, y: 3.14 }
 There is no special syntax for defining constructors. Instead, use shared functions to create instances of the struct.
 ```
 struct MyStruct:
-    prop x: i32
-    prop y: f64
+    field x: i32
+    field y: f64
 
     func new() -> MyStruct:
         return new MyStruct { x = 0, y = 3.14 }
@@ -1303,13 +1307,13 @@ Structs use copy semantics. If other behavior is desired, use wrapper classes.
 
 ### Classes
 
-Classes are user-defined types that consist of a collection of named properties. 
+Classes are user-defined types that consist of a collection of named fields. 
 
 Classes are similar to named structs. They use the same syntax, except they are declared with the `class` keyword instead of `struct`.
 ```
 class MyStruct: // Indented form
     static x: i32 = 0
-    prop y: i32
+    field y: i32
     func my_func():
         statement1
     method my_method(self):
@@ -1317,7 +1321,7 @@ class MyStruct: // Indented form
 
 class MyStruct { // Braced form
     static x: i32 = 0
-    prop y: i32
+    field y: i32
     func my_func():
         statement1
     method my_method(self):
@@ -1496,7 +1500,7 @@ The bit shift operators use the symbols `<<` and `>>`.
 
 ### Access expressions
 
-Access expressions are used to access object or tuple properties, including functions. These use the dot operator:
+Access expressions are used to access object or tuple members, including functions. These use the dot operator:
 ```
 object.field
 object.method()

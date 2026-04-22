@@ -283,10 +283,6 @@ public:
  * Struct definitions are used to define custom data types with fields and
  * methods. It is a kind of global scope.
  *
- * Unlike namespaces, struct definitions cannot be closed and reopened in
- * another location. They also cannot be nested within a struct of the same
- * name.
- *
  * A struct may not be declared within a local scope.
  */
 class Node::StructDef : public virtual Node::IGlobalScope,
@@ -297,9 +293,9 @@ public:
     // follow different semantic rules than structs, such as memory
     // management.
     bool is_class = false;
-    // A dictionary of properties (bindings) in this struct, indexed by their
+    // A dictionary of fields (bindings) in this struct, indexed by their
     // names.
-    Dictionary<std::string, Binding> properties;
+    Dictionary<std::string, Binding> fields;
     // A dictionary of methods in this struct, indexed by their names.
     // Methods are also stored as bindings, but are never `var` and always
     // have a type of `Function`.

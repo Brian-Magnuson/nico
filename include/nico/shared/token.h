@@ -150,7 +150,7 @@ enum class Tok {
 
     KwLet,
     KwStatic,
-    KwProp,
+    KwField,
     KwVar,
     KwConst,
     KwGlobal,

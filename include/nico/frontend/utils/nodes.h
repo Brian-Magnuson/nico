@@ -450,6 +450,7 @@ public:
     class Tuple;
     class Unit;
     class Array;
+    class Object;
 
     class Block;
     class Conditional;

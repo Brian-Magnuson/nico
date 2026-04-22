@@ -1374,15 +1374,21 @@ public:
  */
 class Annotation::Object : public Annotation {
 public:
-    // A dictionary of properties, where keys are property names and values
-    // are annotations.
-    const Dictionary<std::string, std::shared_ptr<Annotation>> properties;
+    // A dictionary of fields, where keys are field names and values
+    // are pairs containing mutability and annotation information.
+    const Dictionary<
+        std::string,
+        std::pair<Binding::Mutability, std::shared_ptr<Annotation>>>
+        fields;
 
     Object(
         std::shared_ptr<Token> l_brace_token,
-        Dictionary<std::string, std::shared_ptr<Annotation>>&& properties
+        Dictionary<
+            std::string,
+            std::pair<Binding::Mutability, std::shared_ptr<Annotation>>>&&
+            fields
     )
-        : properties(std::move(properties)) {
+        : fields(std::move(fields)) {
         location = &l_brace_token->location;
     }
 
@@ -1390,16 +1396,19 @@ public:
 
     std::string to_string() const override {
         std::string result = "{";
-        for (const auto& [key, value] : properties) {
-            result += key + ": " + value->to_string() + ", ";
-        }
-        if (!properties.empty()) {
-            result.pop_back();
-            result.pop_back();
-        }
-        result += "}";
+        for (const auto& [name, value] : fields) {
+            result += value.first == Binding::Mutability::Mut   ? "mut "
+                      : value.first == Binding::Mutability::Var ? "var "
+                                                                : "";
+            result += name + ": " + value.second->to_string() + ", ";
+            if (!fields.empty()) {
+                result.pop_back();
+                result.pop_back();
+            }
+            result += "}";
 
-        return result;
+            return result;
+        }
     }
 };
 

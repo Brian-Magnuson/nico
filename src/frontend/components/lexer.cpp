@@ -51,7 +51,7 @@ std::unordered_map<std::string_view, Tok> Lexer::keywords = {
 
     {"let", Tok::KwLet},
     {"static", Tok::KwStatic},
-    {"prop", Tok::KwProp},
+    {"field", Tok::KwField},
     {"var", Tok::KwVar},
     {"func", Tok::KwFunc},
     {"namespace", Tok::KwNamespace},
@@ -77,6 +77,7 @@ std::unordered_set<std::string_view> Lexer::reserved_words = {
     "from",
     "async",
     "await",
+    "prop",
     "overloadedfn"
 };
 
