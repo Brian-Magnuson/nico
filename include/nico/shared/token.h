@@ -152,6 +152,7 @@ enum class Tok {
     KwStatic,
     KwField,
     KwVar,
+    KwMut,
     KwConst,
     KwGlobal,
     KwFunc,

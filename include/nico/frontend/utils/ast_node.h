@@ -1374,20 +1374,58 @@ public:
  */
 class Annotation::Object : public Annotation {
 public:
+    /**
+     * @brief A struct containing information about a field in an object
+     * annotation.
+     */
+    struct Field {
+        // The mutability of the field.
+        Binding::Mutability mutability;
+        // The token representing the field identifier.
+        std::shared_ptr<Token> identifier;
+        // The annotation of the field.
+        std::shared_ptr<Annotation> annotation;
+        // An optional default value for the field.
+        std::optional<std::shared_ptr<Expr>> default_expr;
+
+        Field(
+            Binding::Mutability mutability,
+            std::shared_ptr<Token> identifier,
+            std::shared_ptr<Annotation> annotation,
+            std::optional<std::shared_ptr<Expr>> default_expr = std::nullopt
+        )
+            : mutability(mutability),
+              identifier(identifier),
+              annotation(annotation),
+              default_expr(default_expr) {}
+
+        /**
+         * @brief Convert this field to a string for printing.
+         * @return A string representation of the field, including its
+         * mutability, annotation, and default value if it exists.
+         */
+        std::string to_string() const {
+            std::string result =
+                (mutability == Binding::Mutability::Mut   ? "mut "
+                 : mutability == Binding::Mutability::Var ? "var "
+                                                          : "");
+            result += std::string(identifier->lexeme) + ": " +
+                      annotation->to_string();
+            if (default_expr) {
+                auto [_, line, col] =
+                    default_expr.value()->location->to_tuple();
+                result += " = <expr@" + std::to_string(line) + ":" +
+                          std::to_string(col) + ">";
+            }
+            return result;
+        }
+    };
+
     // A dictionary of fields, where keys are field names and values
     // are pairs containing mutability and annotation information.
-    const Dictionary<
-        std::string,
-        std::pair<Binding::Mutability, std::shared_ptr<Annotation>>>
-        fields;
+    const std::vector<Field> fields;
 
-    Object(
-        std::shared_ptr<Token> l_brace_token,
-        Dictionary<
-            std::string,
-            std::pair<Binding::Mutability, std::shared_ptr<Annotation>>>&&
-            fields
-    )
+    Object(std::shared_ptr<Token> l_brace_token, std::vector<Field>&& fields)
         : fields(std::move(fields)) {
         location = &l_brace_token->location;
     }
@@ -1396,19 +1434,17 @@ public:
 
     std::string to_string() const override {
         std::string result = "{";
-        for (const auto& [name, value] : fields) {
-            result += value.first == Binding::Mutability::Mut   ? "mut "
-                      : value.first == Binding::Mutability::Var ? "var "
-                                                                : "";
-            result += name + ": " + value.second->to_string() + ", ";
-            if (!fields.empty()) {
-                result.pop_back();
-                result.pop_back();
-            }
-            result += "}";
-
-            return result;
+        for (const auto& field : fields) {
+            result += field.to_string();
+            result += ", ";
         }
+        if (!fields.empty()) {
+            result.pop_back();
+            result.pop_back();
+        }
+        result += "}";
+
+        return result;
     }
 };
 

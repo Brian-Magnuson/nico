@@ -270,8 +270,14 @@ Struct literal type fields may also have default values. This is done by using t
 { x: i32 = 42, y: f64 = 3.14 }
 ```
 
+Default values in a struct annotation are not directly evaluated. They only provide a "template" for when the actual struct literal value is created.
+This is a valid type:
+```
+{ x: i32 = 1 / 0 }
+```
+
 Type annotations for each field are still required, even if a default value is provided. The default value must match the type.
-The default value must also be a reference to a value with a static lifetime.
+If the default value is a name reference, it must refer to a binding with a static lifetime.
 
 Struct literal values may be written using curly braces:
 ```

@@ -1688,6 +1688,9 @@ std::optional<std::shared_ptr<Stmt>> Parser::statement() {
 // MARK: Annotations
 
 std::optional<std::shared_ptr<Annotation>> Parser::annotation() {
+    // TODO: This function is much too large and needs to be broken up into
+    // smaller pieces.
+
     // First, check for annotations that can have 'var': pointers and
     // references.
     bool has_var = false;
@@ -1769,8 +1772,8 @@ std::optional<std::shared_ptr<Annotation>> Parser::annotation() {
         return std::make_shared<Annotation::Void>(previous());
     }
     if (match({Tok::LParen})) {
-        auto lparen_token = previous();
         // Tuple annotation
+        auto lparen_token = previous();
         std::vector<std::shared_ptr<Annotation>> elements;
         do {
             if (peek()->tok_type == Tok::RParen) {
@@ -1799,6 +1802,7 @@ std::optional<std::shared_ptr<Annotation>> Parser::annotation() {
         );
     }
     if (match({Tok::LSquare})) {
+        // Array annotation
         auto lsquare_token = previous();
         if (match({Tok::RSquare})) {
             return std::make_shared<Annotation::Array>(lsquare_token);
@@ -1835,6 +1839,74 @@ std::optional<std::shared_ptr<Annotation>> Parser::annotation() {
             lsquare_token,
             *element_anno,
             arr_size
+        );
+    }
+    if (match({Tok::LBrace})) {
+        // Object annotation
+        auto lbrace_token = previous();
+        std::vector<Annotation::Object::Field> fields;
+        do {
+            auto mutability = Binding::Mutability::None;
+            if (peek()->tok_type == Tok::RBrace) {
+                // We allow trailing commas.
+                break;
+            }
+            if (match({Tok::KwMut})) {
+                mutability = Binding::Mutability::Mut;
+            }
+            else if (match({Tok::KwVar})) {
+                mutability = Binding::Mutability::Var;
+            }
+
+            if (!match({Tok::Identifier})) {
+                Logger::inst().log_error(
+                    Err::NotAnIdentifier,
+                    peek()->location,
+                    "Expected identifier in object annotation field."
+                );
+                return std::nullopt;
+            }
+            auto field_name_token = previous();
+            if (!match({Tok::Colon})) {
+                Logger::inst().log_error(
+                    Err::UnexpectedToken,
+                    peek()->location,
+                    "Expected `:` after field name in object annotation."
+                );
+                return std::nullopt;
+            }
+            auto field_anno = annotation();
+            if (!field_anno)
+                return std::nullopt;
+            std::optional<std::shared_ptr<Expr>> default_value = std::nullopt;
+            if (match({Tok::Eq})) {
+                default_value = expression();
+                if (!default_value) {
+                    // At this point, an error has already been logged.
+                    return std::nullopt;
+                }
+            }
+            fields.push_back(
+                Annotation::Object::Field(
+                    mutability,
+                    field_name_token,
+                    field_anno.value(),
+                    default_value
+                )
+            );
+        } while (match({Tok::Comma}));
+
+        if (!match({Tok::RBrace})) {
+            Logger::inst().log_error(
+                Err::UnexpectedToken,
+                peek()->location,
+                "Expected `}` after field in object annotation."
+            );
+            return std::nullopt;
+        }
+        return std::make_shared<Annotation::Object>(
+            lbrace_token,
+            std::move(fields)
         );
     }
     Logger::inst()

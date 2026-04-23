@@ -457,7 +457,7 @@ TEST_CASE("Parser function statements", "[parser]") {
     }
 
     SECTION("Func missing annotation after arrow") {
-        run_parser_stmt_error_test("func f() -> {}", Err::NotAType);
+        run_parser_stmt_error_test("func f() ->", Err::NotAType);
     }
 
     SECTION("Func missing parameter type") {
