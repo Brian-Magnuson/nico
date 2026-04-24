@@ -1687,6 +1687,175 @@ std::optional<std::shared_ptr<Stmt>> Parser::statement() {
 
 // MARK: Annotations
 
+std::optional<std::shared_ptr<Annotation>> Parser::type_of_annotation() {
+    auto typeof_token = previous();
+    if (!match({Tok::LParen})) {
+        Logger::inst().log_error(
+            Err::TypeofWithoutOpeningParen,
+            peek()->location,
+            "Expected `(` after `typeof`."
+        );
+        return std::nullopt;
+    }
+    auto expr = expression();
+    if (!match({Tok::RParen})) {
+        Logger::inst().log_error(
+            Err::UnexpectedToken,
+            peek()->location,
+            "Expected `)` after expression in "
+            "typeof annotation."
+        );
+        return std::nullopt;
+    }
+    if (!expr) {
+        // At this point, an error has already been logged.
+        return std::nullopt;
+    }
+
+    return std::make_shared<Annotation::TypeOf>(typeof_token, *expr);
+}
+
+std::optional<std::shared_ptr<Annotation>> Parser::tuple_annotation() {
+    // Tuple annotation
+    auto lparen_token = previous();
+    std::vector<std::shared_ptr<Annotation>> elements;
+    do {
+        if (peek()->tok_type == Tok::RParen) {
+            // We allow trailing commas.
+            break;
+        }
+        auto anno = annotation();
+        if (!anno)
+            return std::nullopt;
+        elements.push_back(*anno);
+    } while (match({Tok::Comma}));
+
+    if (!match({Tok::RParen})) {
+        Logger::inst().log_error(
+            Err::UnexpectedToken,
+            peek()->location,
+            "Expected `)` after expression in "
+            "tuple annotation."
+        );
+        return std::nullopt;
+    }
+
+    return std::make_shared<Annotation::Tuple>(
+        lparen_token,
+        std::move(elements)
+    );
+}
+
+std::optional<std::shared_ptr<Annotation>> Parser::array_annotation() {
+    // Array annotation
+    auto lsquare_token = previous();
+    if (match({Tok::RSquare})) {
+        return std::make_shared<Annotation::Array>(lsquare_token);
+    }
+    auto element_anno = annotation();
+    if (!element_anno)
+        return std::nullopt;
+    if (!match({Tok::Semicolon})) {
+        Logger::inst().log_error(
+            Err::UnexpectedToken,
+            peek()->location,
+            "Expected `;` after element type in array annotation."
+        );
+        return std::nullopt;
+    }
+    std::optional<size_t> arr_size = std::nullopt;
+    if (match({Tok::Question})) {
+        // Unsized array; do nothing.
+    }
+    else {
+        arr_size = array_size();
+        if (!arr_size)
+            return std::nullopt;
+    }
+    if (!match({Tok::RSquare})) {
+        Logger::inst().log_error(
+            Err::UnexpectedToken,
+            peek()->location,
+            "Expected `]` after size in array annotation."
+        );
+        return std::nullopt;
+    }
+    return std::make_shared<Annotation::Array>(
+        lsquare_token,
+        *element_anno,
+        arr_size
+    );
+}
+
+std::optional<std::shared_ptr<Annotation>> Parser::object_annotation() {
+    // Object annotation
+    auto lbrace_token = previous();
+    std::vector<Annotation::Object::Field> fields;
+    do {
+        auto mutability = Binding::Mutability::None;
+        if (peek()->tok_type == Tok::RBrace) {
+            // We allow trailing commas.
+            break;
+        }
+        if (match({Tok::KwMut})) {
+            mutability = Binding::Mutability::Mut;
+        }
+        else if (match({Tok::KwVar})) {
+            mutability = Binding::Mutability::Var;
+        }
+
+        if (!match({Tok::Identifier})) {
+            Logger::inst().log_error(
+                Err::NotAnIdentifier,
+                peek()->location,
+                "Expected identifier in object annotation field."
+            );
+            return std::nullopt;
+        }
+        auto field_name_token = previous();
+        if (!match({Tok::Colon})) {
+            Logger::inst().log_error(
+                Err::UnexpectedToken,
+                peek()->location,
+                "Expected `:` after field name in object annotation."
+            );
+            return std::nullopt;
+        }
+        auto field_anno = annotation();
+        if (!field_anno)
+            return std::nullopt;
+        std::optional<std::shared_ptr<Expr>> default_value = std::nullopt;
+        if (match({Tok::Eq})) {
+            default_value = expression();
+            if (!default_value) {
+                // At this point, an error has already been logged.
+                return std::nullopt;
+            }
+        }
+        fields.push_back(
+            Annotation::Object::Field(
+                mutability,
+                field_name_token,
+                field_anno.value(),
+                default_value
+            )
+        );
+    } while (match({Tok::Comma}));
+
+    if (!match({Tok::RBrace})) {
+        Logger::inst().log_error(
+            Err::UnexpectedToken,
+            peek()->location,
+            "Expected `}` after field in object annotation."
+        );
+        return std::nullopt;
+    }
+    return std::make_shared<Annotation::Object>(
+        lbrace_token,
+        std::move(fields)
+    );
+}
+
 std::optional<std::shared_ptr<Annotation>> Parser::annotation() {
     // TODO: This function is much too large and needs to be broken up into
     // smaller pieces.
@@ -1733,31 +1902,7 @@ std::optional<std::shared_ptr<Annotation>> Parser::annotation() {
     // Now check for other annotation types.
 
     if (match({Tok::KwTypeof})) {
-        auto typeof_token = previous();
-        if (!match({Tok::LParen})) {
-            Logger::inst().log_error(
-                Err::TypeofWithoutOpeningParen,
-                peek()->location,
-                "Expected `(` after `typeof`."
-            );
-            return std::nullopt;
-        }
-        auto expr = expression();
-        if (!match({Tok::RParen})) {
-            Logger::inst().log_error(
-                Err::UnexpectedToken,
-                peek()->location,
-                "Expected `)` after expression in "
-                "typeof annotation."
-            );
-            return std::nullopt;
-        }
-        if (!expr) {
-            // At this point, an error has already been logged.
-            return std::nullopt;
-        }
-
-        return std::make_shared<Annotation::TypeOf>(typeof_token, *expr);
+        return type_of_annotation();
     }
     if (match({Tok::Identifier})) {
         auto token = previous();
@@ -1772,142 +1917,13 @@ std::optional<std::shared_ptr<Annotation>> Parser::annotation() {
         return std::make_shared<Annotation::Void>(previous());
     }
     if (match({Tok::LParen})) {
-        // Tuple annotation
-        auto lparen_token = previous();
-        std::vector<std::shared_ptr<Annotation>> elements;
-        do {
-            if (peek()->tok_type == Tok::RParen) {
-                // We allow trailing commas.
-                break;
-            }
-            auto anno = annotation();
-            if (!anno)
-                return std::nullopt;
-            elements.push_back(*anno);
-        } while (match({Tok::Comma}));
-
-        if (!match({Tok::RParen})) {
-            Logger::inst().log_error(
-                Err::UnexpectedToken,
-                peek()->location,
-                "Expected `)` after expression in "
-                "tuple annotation."
-            );
-            return std::nullopt;
-        }
-
-        return std::make_shared<Annotation::Tuple>(
-            lparen_token,
-            std::move(elements)
-        );
+        return tuple_annotation();
     }
     if (match({Tok::LSquare})) {
-        // Array annotation
-        auto lsquare_token = previous();
-        if (match({Tok::RSquare})) {
-            return std::make_shared<Annotation::Array>(lsquare_token);
-        }
-        auto element_anno = annotation();
-        if (!element_anno)
-            return std::nullopt;
-        if (!match({Tok::Semicolon})) {
-            Logger::inst().log_error(
-                Err::UnexpectedToken,
-                peek()->location,
-                "Expected `;` after element type in array annotation."
-            );
-            return std::nullopt;
-        }
-        std::optional<size_t> arr_size = std::nullopt;
-        if (match({Tok::Question})) {
-            // Unsized array; do nothing.
-        }
-        else {
-            arr_size = array_size();
-            if (!arr_size)
-                return std::nullopt;
-        }
-        if (!match({Tok::RSquare})) {
-            Logger::inst().log_error(
-                Err::UnexpectedToken,
-                peek()->location,
-                "Expected `]` after size in array annotation."
-            );
-            return std::nullopt;
-        }
-        return std::make_shared<Annotation::Array>(
-            lsquare_token,
-            *element_anno,
-            arr_size
-        );
+        return array_annotation();
     }
     if (match({Tok::LBrace})) {
-        // Object annotation
-        auto lbrace_token = previous();
-        std::vector<Annotation::Object::Field> fields;
-        do {
-            auto mutability = Binding::Mutability::None;
-            if (peek()->tok_type == Tok::RBrace) {
-                // We allow trailing commas.
-                break;
-            }
-            if (match({Tok::KwMut})) {
-                mutability = Binding::Mutability::Mut;
-            }
-            else if (match({Tok::KwVar})) {
-                mutability = Binding::Mutability::Var;
-            }
-
-            if (!match({Tok::Identifier})) {
-                Logger::inst().log_error(
-                    Err::NotAnIdentifier,
-                    peek()->location,
-                    "Expected identifier in object annotation field."
-                );
-                return std::nullopt;
-            }
-            auto field_name_token = previous();
-            if (!match({Tok::Colon})) {
-                Logger::inst().log_error(
-                    Err::UnexpectedToken,
-                    peek()->location,
-                    "Expected `:` after field name in object annotation."
-                );
-                return std::nullopt;
-            }
-            auto field_anno = annotation();
-            if (!field_anno)
-                return std::nullopt;
-            std::optional<std::shared_ptr<Expr>> default_value = std::nullopt;
-            if (match({Tok::Eq})) {
-                default_value = expression();
-                if (!default_value) {
-                    // At this point, an error has already been logged.
-                    return std::nullopt;
-                }
-            }
-            fields.push_back(
-                Annotation::Object::Field(
-                    mutability,
-                    field_name_token,
-                    field_anno.value(),
-                    default_value
-                )
-            );
-        } while (match({Tok::Comma}));
-
-        if (!match({Tok::RBrace})) {
-            Logger::inst().log_error(
-                Err::UnexpectedToken,
-                peek()->location,
-                "Expected `}` after field in object annotation."
-            );
-            return std::nullopt;
-        }
-        return std::make_shared<Annotation::Object>(
-            lbrace_token,
-            std::move(fields)
-        );
+        return object_annotation();
     }
     Logger::inst()
         .log_error(Err::NotAType, peek()->location, "Not a valid type.");

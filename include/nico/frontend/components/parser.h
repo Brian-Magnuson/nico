@@ -536,6 +536,51 @@ class Parser {
     // MARK: Annotations
 
     /**
+     * @brief Parses a type-of annotation.
+     *
+     * A type-of annotation consists of the `typeof` keyword followed by an
+     * expression. E.g. `typeof(expr)`
+     *
+     * @return The parsed annotation, or nullopt if the annotation could not be
+     * parsed.
+     */
+    std::optional<std::shared_ptr<Annotation>> type_of_annotation();
+
+    /**
+     * @brief Parses a tuple annotation.
+     *
+     * A tuple annotation consists of a parenthesized, comma-separated list of
+     * annotations. E.g. `(T1, T2, T3)`
+     *
+     * @return The parsed annotation, or nullopt if the annotation could not be
+     * parsed.
+     */
+    std::optional<std::shared_ptr<Annotation>> tuple_annotation();
+
+    /**
+     * @brief Parses an array annotation.
+     *
+     * An array annotation consists of a set of square brackets containing an
+     * annotation for the element type and an array size. E.g. `[T; 3]`
+     *
+     * @return The parsed annotation, or nullopt if the annotation could not be
+     * parsed.
+     */
+    std::optional<std::shared_ptr<Annotation>> array_annotation();
+
+    /**
+     * @brief Parses an object annotation.
+     *
+     * An object annotation consists of a set of curly braces containing a
+     * comma-separated list of field names and their corresponding annotations.
+     * E.g. `{x: T1, y: T2}`
+     *
+     * @return The parsed annotation, or nullopt if the annotation could not be
+     * parsed.
+     */
+    std::optional<std::shared_ptr<Annotation>> object_annotation();
+
+    /**
      * @brief Parses a type annotation.
      *
      * A type annotation is a construct that specifies the type of a variable.

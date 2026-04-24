@@ -44,6 +44,9 @@ struct JITTestOptions {
     // The static library paths to load into the JIT. Defaults to an empty
     // vector.
     std::vector<std::string> static_library_paths = {};
+    // Whether to print the symbol tree before code generation. Defaults to
+    // false.
+    bool print_symbol_tree = false;
     // Whether to print the generated IR before verification. Defaults to false.
     bool print_ir = false;
     // Whether to print the stderr output of the JIT. Defaults to false.
@@ -85,6 +88,11 @@ void run_jit_test(
     std::unique_ptr<nico::FrontendContext>& context =
         frontend.compile(file, false);
     REQUIRE(IS_VARIANT(context->status, nico::Status::Ok));
+
+    if (options.print_symbol_tree) {
+        std::cout << "Symbol tree before code generation:\n"
+                  << context->symbol_tree->to_tree_string() << "\n";
+    }
 
     auto jit = std::make_unique<nico::SimpleJIT>();
 
@@ -1854,6 +1862,29 @@ TEST_CASE("JIT external linkage declarations", "[jit]") {
             JITTestOptions{
                 .expected_output = "32",
                 .static_library_paths = {"test/lib/interop/libinterop.a"}
+            }
+        );
+    }
+}
+
+TEST_CASE("JIT extra tests", "[jit]") {
+    SECTION("Custom test") {
+        run_jit_test(
+            R"(
+            static x = 5
+            func inner(arg: i32 = x) {
+                printout "The value of x is ", arg
+            }
+            func outer() {
+                let x = 10
+                inner()
+            }
+
+            outer()
+            )",
+            JITTestOptions{
+                .expected_output = "The value of x is 5",
+                .print_symbol_tree = true
             }
         );
     }
