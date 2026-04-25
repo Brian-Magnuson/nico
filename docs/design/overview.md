@@ -277,20 +277,50 @@ This is a valid type:
 ```
 
 Type annotations for each field are still required, even if a default value is provided. The default value must match the type.
-If the default value is a name reference, it must refer to a binding with a static lifetime.
 
 Struct literal values may be written using curly braces:
 ```
 { x: 42, y: 3.14 }
 ```
 
-Values are assigned to their corresponding fields. By the end of the object literal, all fields must be assigned a value.
+With default values, you can omit fields when assigning a struct literal value.
+```
+static s: { x: i32 = 42, y: f64 = 3.14 } = { x: 100 }
+printout s.x // Output: 100
+printout s.y // Output: 3.14
+```
+
+By the end of the object literal, all fields must be assigned a value.
+This is enforced by assignment compatibilities rules:
+A struct literal value is assignable to a type if the value all the required fields and no fields not in the type.
+Additionally, the field values must be assignment compatible with their corresponding field types.
+```
+let s: { x: i32, y: f64 } = { x: 42, y: 3.14 }          // OK
+let s: { x: i32, y: f64 } = { x: 42 }                   // Error: missing field y
+let s: { x: i32, y: f64 } = { x: 42, y: 3.14, z: true } // Error: extra field z
+let s: { x: i32, y: f64 } = { x: 42, y: true }          // Error: field y has incompatible type
+```
 
 You cannot add more fields to a struct literal after it is created.
 
 Struct literal values always use braces; there is no indented form, and they are not considered blocks. Blocks always have some keyword signifying the opening of a block, such as `if`, `while`, or `block`.
 
 Using `=` to assign one struct literal value to another will shallow copy the fields of the struct. For other copy behaviors, the copy must be done manually.
+
+
+There is a special case for when a struct literal type contains a default value that is a name reference to a local variable:
+```
+func example():
+    let x = 42
+    let s: { x: i32 = x } = { }
+```
+
+Because `x` is a part of the type of `s`, `s` effectively depends on `x`, which means `s` cannot outlive `x`.
+
+It is actually impossible to create a situation in which a struct literal value outlives a local variable that it depends on.
+- For the value to outlive its dependent local variable, its type would have to exist outside the scope of the local variable.
+- Name references within struct literal types must be resolvable where the type exists, which means the local variable must still be in scope at the point where the struct literal type is appears.
+- This is a contradiction, so the struct literal value cannot outlive the local variable.
 
 ## Pointer and reference types
 
