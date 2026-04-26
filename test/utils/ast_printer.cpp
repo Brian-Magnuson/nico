@@ -172,8 +172,7 @@ std::any AstPrinter::visit(Stmt::Namespace* stmt) {
 }
 
 std::any AstPrinter::visit(Stmt::ExternBlock* stmt) {
-    // TODO: Consider changing this to externblock to reflect the new name.
-    std::string str = "(stmt:extern ";
+    std::string str = "(stmt:externblock ";
     switch (stmt->abi) {
     case ABI::C:
         str += "\"C\"";

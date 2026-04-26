@@ -594,7 +594,8 @@ TEST_CASE("Parser extern block statements", "[parser]") {
             "extern ex1 {\n"
             "    func add(a: i32, b: i32) -> i32\n"
             "}\n",
-            {"(stmt:extern \"C\" ex1 { (stmt:func add i32 (a i32) (b i32) no "
+            {"(stmt:externblock \"C\" ex1 { (stmt:func add i32 (a i32) (b i32) "
+             "no "
              "body) "
              "})",
              "(stmt:eof)"}
@@ -606,7 +607,7 @@ TEST_CASE("Parser extern block statements", "[parser]") {
             "extern ex2 {\n"
             "    static var x: f64\n"
             "}\n",
-            {"(stmt:extern \"C\" ex2 { (stmt:static var x f64) })",
+            {"(stmt:externblock \"C\" ex2 { (stmt:static var x f64) })",
              "(stmt:eof)"}
         );
     }
@@ -616,7 +617,7 @@ TEST_CASE("Parser extern block statements", "[parser]") {
             "extern \"C\" ex3 {\n"
             "    func foo()\n"
             "}\n",
-            {"(stmt:extern \"C\" ex3 { (stmt:func foo no body) })",
+            {"(stmt:externblock \"C\" ex3 { (stmt:func foo no body) })",
              "(stmt:eof)"}
         );
     }
@@ -627,7 +628,7 @@ TEST_CASE("Parser extern block statements", "[parser]") {
             "    func foo()\n"
             "    static var x: i32\n"
             "}\n",
-            {"(stmt:extern \"C\" ex4 { (stmt:func foo no body) "
+            {"(stmt:externblock \"C\" ex4 { (stmt:func foo no body) "
              "(stmt:static var x i32) })",
              "(stmt:eof)"}
         );
@@ -638,7 +639,7 @@ TEST_CASE("Parser extern block statements", "[parser]") {
             "extern ex5:\n"
             "    func foo()\n"
             "    static var x: i32\n",
-            {"(stmt:extern \"C\" ex5 { (stmt:func foo no body) "
+            {"(stmt:externblock \"C\" ex5 { (stmt:func foo no body) "
              "(stmt:static var x i32) })",
              "(stmt:eof)"}
         );
