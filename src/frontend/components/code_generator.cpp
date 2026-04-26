@@ -1098,6 +1098,11 @@ std::any CodeGenerator::visit(Expr::Array* expr, bool as_lvalue) {
     return result;
 }
 
+std::any CodeGenerator::visit(Expr::Object* expr, bool as_lvalue) {
+    // TODO: Implement visit function for object expressions.
+    return std::any();
+}
+
 std::any CodeGenerator::visit(Expr::Block* expr, bool as_lvalue) {
     // Blocks get their own yield allocation.
     llvm::AllocaInst* yield_allocation = builder->CreateAlloca(

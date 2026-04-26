@@ -377,6 +377,26 @@ std::any AstPrinter::visit(Expr::Array* expr, bool as_lvalue) {
     return str;
 }
 
+std::any AstPrinter::visit(Expr::Object* expr, bool as_lvalue) {
+    std::string str = "(object";
+    for (const auto& field : expr->fields) {
+        str += " (";
+        if (field.mutability == Binding::Mutability::Mut) {
+            str += "mut ";
+        }
+        else if (field.mutability == Binding::Mutability::Var) {
+            str += "var ";
+        }
+
+        str +=
+            std::string(field.identifier->lexeme) + ": " +
+            std::any_cast<std::string>(field.expression->accept(this, false)) +
+            ")";
+    }
+    str += ")";
+    return str;
+}
+
 std::any AstPrinter::visit(Expr::Block* expr, bool as_lvalue) {
     std::string str = "(block";
     if (expr->is_unsafe) {

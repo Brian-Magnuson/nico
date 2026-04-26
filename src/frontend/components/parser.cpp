@@ -656,6 +656,8 @@ std::optional<std::shared_ptr<Expr>> Parser::number_literal() {
 }
 
 std::optional<std::shared_ptr<Expr>> Parser::primary() {
+    // TODO: This function is too long. Refactor it into smaller functions for
+    // readability.
     if (tokens::is_number(peek()->tok_type)) {
         return number_literal();
     }
@@ -756,6 +758,60 @@ std::optional<std::shared_ptr<Expr>> Parser::primary() {
         }
 
         return std::make_shared<Expr::Array>(lsquare, std::move(elements));
+    }
+    if (match({Tok::LBrace})) {
+        // Object
+        auto lbrace = previous();
+        std::vector<Expr::Object::Field> fields;
+
+        do {
+            if (peek()->tok_type == Tok::RBrace) {
+                // We allow trailing commas.
+                break;
+            }
+
+            Binding::Mutability mutability = Binding::Mutability::None;
+            if (match({Tok::KwMut})) {
+                mutability = Binding::Mutability::Mut;
+            }
+            else if (match({Tok::KwVar})) {
+                mutability = Binding::Mutability::Var;
+            }
+
+            if (!match({Tok::Identifier})) {
+                Logger::inst().log_error(
+                    Err::UnknownError,
+                    peek()->location,
+                    "Expected an identifier for the field name in object "
+                    "literal."
+                );
+                return std::nullopt;
+            }
+            auto field_token = previous();
+            if (!match({Tok::Colon})) {
+                Logger::inst().log_error(
+                    Err::UnexpectedToken,
+                    peek()->location,
+                    "Expected `:` after field name in object literal."
+                );
+                return std::nullopt;
+            }
+            auto expr = expression();
+            if (!expr)
+                return std::nullopt;
+            fields.emplace_back(mutability, field_token, *expr);
+        } while (match({Tok::Comma}));
+
+        if (!match({Tok::RBrace})) {
+            Logger::inst().log_error(
+                Err::UnexpectedToken,
+                peek()->location,
+                "Expected `}` after object literal."
+            );
+            return std::nullopt;
+        }
+
+        return std::make_shared<Expr::Object>(lbrace, std::move(fields));
     }
 
     if (repl_mode && peek()->tok_type == Tok::Eof) {

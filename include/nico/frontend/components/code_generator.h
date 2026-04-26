@@ -85,6 +85,7 @@ class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
     std::any visit(Expr::Literal* expr, bool as_lvalue) override;
     std::any visit(Expr::Tuple* expr, bool as_lvalue) override;
     std::any visit(Expr::Array* expr, bool as_lvalue) override;
+    std::any visit(Expr::Object* expr, bool as_lvalue) override;
     std::any visit(Expr::Block* expr, bool as_lvalue) override;
     std::any visit(Expr::Conditional* expr, bool as_lvalue) override;
     std::any visit(Expr::Loop* expr, bool as_lvalue) override;

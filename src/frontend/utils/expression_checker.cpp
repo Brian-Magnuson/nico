@@ -1420,6 +1420,11 @@ std::any ExpressionChecker::visit(Expr::Array* expr, bool as_lvalue) {
     return std::any();
 }
 
+std::any ExpressionChecker::visit(Expr::Object* expr, bool as_lvalue) {
+    // TODO: Implement visit function for object expressions.
+    return std::any();
+}
+
 std::any ExpressionChecker::visit(Expr::Block* expr, bool as_lvalue) {
     if (as_lvalue) {
         Logger::inst().log_error(

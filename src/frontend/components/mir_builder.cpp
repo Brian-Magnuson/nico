@@ -173,6 +173,11 @@ std::any MIRBuilder::visit(Expr::Array* expr, bool as_lvalue) {
     return {};
 }
 
+std::any MIRBuilder::visit(Expr::Object* expr, bool as_lvalue) {
+    // TODO: Implementation for visiting Object expressions goes here.
+    return {};
+}
+
 std::any MIRBuilder::visit(Expr::Block* expr, bool as_lvalue) {
     // TODO: Implementation for visiting Block expressions goes here.
     return {};

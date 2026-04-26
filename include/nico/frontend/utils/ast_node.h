@@ -1095,12 +1095,52 @@ public:
 };
 
 /**
+ * @brief An object expression.
+ *
+ * Object expressions are expressions that represent an object with named
+ * fields. They are used to represent struct literals and other similar
+ * constructs.
+ */
+class Expr::Object : public Expr {
+public:
+    /**
+     * @brief A field in an object expression.
+     */
+    struct Field {
+        Binding::Mutability mutability;
+        std::shared_ptr<Token> identifier;
+        std::shared_ptr<Expr> expression;
+
+        Field(
+            Binding::Mutability mutability,
+            std::shared_ptr<Token> identifier,
+            std::shared_ptr<Expr> expression
+        )
+            : mutability(mutability),
+              identifier(identifier),
+              expression(expression) {}
+    };
+
+    // The fields of the object.
+    std::vector<Field> fields;
+
+    Object(std::shared_ptr<Token> lbrace, std::vector<Field>&& fields)
+        : fields(std::move(fields)) {
+        location = &lbrace->location;
+    }
+
+    std::any accept(Visitor* visitor, bool as_lvalue) override {
+        return visitor->visit(this, as_lvalue);
+    }
+};
+
+/**
  * @brief A block expression.
  *
  * Block expressions are used to group statements together.
  * They may or may not yield a value.
- * Block expressions, in addition to being a valid expression on its own,
- * can also be a part of conditional and loop constructs.
+ * Block expressions, in addition to being a valid expression on its
+ * own, can also be a part of conditional and loop constructs.
  */
 class Expr::Block : public Expr {
 public:
@@ -1290,8 +1330,8 @@ public:
 /**
  * @brief An annotation representing a void type.
  *
- * This annotation is separate from named annotations because `void` is not an
- * identifier.
+ * This annotation is separate from named annotations because `void` is not
+ * an identifier.
  */
 class Annotation::Void : public Annotation {
 public:
