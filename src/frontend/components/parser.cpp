@@ -419,6 +419,133 @@ std::optional<std::shared_ptr<Expr>> Parser::loop() {
     return std::make_shared<Expr::Loop>(loop_kw, body, condition, loops_once);
 }
 
+std::optional<std::shared_ptr<Expr>> Parser::grouping_or_tuple() {
+    // Grouping or tuple expression.
+    auto lparen = previous();
+    std::vector<std::shared_ptr<Expr>> elements;
+    if (match({Tok::RParen})) {
+        // Empty tuple
+        return std::make_shared<Expr::Tuple>(lparen, std::move(elements));
+    }
+    bool comma_matched = false;
+    do {
+        if (peek()->tok_type == Tok::RParen) {
+            // We allow trailing commas.
+            break;
+        }
+        auto expr = expression();
+        if (!expr)
+            return std::nullopt;
+        elements.push_back(*expr);
+        comma_matched = match({Tok::Comma});
+    } while (comma_matched);
+
+    if (!match({Tok::RParen})) {
+        Logger::inst().log_error(
+            Err::UnexpectedToken,
+            peek()->location,
+            "Expected `)` after expression grouping."
+        );
+        return std::nullopt;
+    }
+
+    if (elements.size() == 1 && !comma_matched) {
+        // Just a parenthesized expression
+        return elements[0];
+    }
+    else {
+        return std::make_shared<Expr::Tuple>(lparen, std::move(elements));
+    }
+}
+
+std::optional<std::shared_ptr<Expr>> Parser::array() {
+    // Array literal
+    auto lsquare = previous();
+    std::vector<std::shared_ptr<Expr>> elements;
+    if (match({Tok::RSquare})) {
+        // Empty array
+        return std::make_shared<Expr::Array>(lsquare, std::move(elements));
+    }
+    bool comma_matched = false;
+    do {
+        if (peek()->tok_type == Tok::RSquare) {
+            // We allow trailing commas.
+            break;
+        }
+        auto expr = expression();
+        if (!expr)
+            return std::nullopt;
+        elements.push_back(*expr);
+        comma_matched = match({Tok::Comma});
+    } while (comma_matched);
+
+    if (!match({Tok::RSquare})) {
+        Logger::inst().log_error(
+            Err::UnexpectedToken,
+            peek()->location,
+            "Expected `]` after array literal."
+        );
+        return std::nullopt;
+    }
+
+    return std::make_shared<Expr::Array>(lsquare, std::move(elements));
+}
+
+std::optional<std::shared_ptr<Expr>> Parser::object() {
+    // Object
+    auto lbrace = previous();
+    std::vector<Expr::Object::Field> fields;
+
+    do {
+        if (peek()->tok_type == Tok::RBrace) {
+            // We allow trailing commas.
+            break;
+        }
+
+        Binding::Mutability mutability = Binding::Mutability::None;
+        if (match({Tok::KwMut})) {
+            mutability = Binding::Mutability::Mut;
+        }
+        else if (match({Tok::KwVar})) {
+            mutability = Binding::Mutability::Var;
+        }
+
+        if (!match({Tok::Identifier})) {
+            Logger::inst().log_error(
+                Err::UnknownError,
+                peek()->location,
+                "Expected an identifier for the field name in object "
+                "literal."
+            );
+            return std::nullopt;
+        }
+        auto field_token = previous();
+        if (!match({Tok::Colon})) {
+            Logger::inst().log_error(
+                Err::UnexpectedToken,
+                peek()->location,
+                "Expected `:` after field name in object literal."
+            );
+            return std::nullopt;
+        }
+        auto expr = expression();
+        if (!expr)
+            return std::nullopt;
+        fields.emplace_back(mutability, field_token, *expr);
+    } while (match({Tok::Comma}));
+
+    if (!match({Tok::RBrace})) {
+        Logger::inst().log_error(
+            Err::UnexpectedToken,
+            peek()->location,
+            "Expected `}` after object literal."
+        );
+        return std::nullopt;
+    }
+
+    return std::make_shared<Expr::Object>(lbrace, std::move(fields));
+}
+
 std::optional<std::shared_ptr<Expr>> Parser::allocation() {
     auto alloc_kw = previous();
 
@@ -656,8 +783,6 @@ std::optional<std::shared_ptr<Expr>> Parser::number_literal() {
 }
 
 std::optional<std::shared_ptr<Expr>> Parser::primary() {
-    // TODO: This function is too long. Refactor it into smaller functions for
-    // readability.
     if (tokens::is_number(peek()->tok_type)) {
         return number_literal();
     }
@@ -690,128 +815,13 @@ std::optional<std::shared_ptr<Expr>> Parser::primary() {
         return allocation();
     }
     if (match({Tok::LParen})) {
-        // Grouping or tuple expression.
-        auto lparen = previous();
-        std::vector<std::shared_ptr<Expr>> elements;
-        if (match({Tok::RParen})) {
-            // Empty tuple
-            return std::make_shared<Expr::Tuple>(lparen, std::move(elements));
-        }
-        bool comma_matched = false;
-        do {
-            if (peek()->tok_type == Tok::RParen) {
-                // We allow trailing commas.
-                break;
-            }
-            auto expr = expression();
-            if (!expr)
-                return std::nullopt;
-            elements.push_back(*expr);
-            comma_matched = match({Tok::Comma});
-        } while (comma_matched);
-
-        if (!match({Tok::RParen})) {
-            Logger::inst().log_error(
-                Err::UnexpectedToken,
-                peek()->location,
-                "Expected `)` after expression grouping."
-            );
-            return std::nullopt;
-        }
-
-        if (elements.size() == 1 && !comma_matched) {
-            // Just a parenthesized expression
-            return elements[0];
-        }
-        else {
-            return std::make_shared<Expr::Tuple>(lparen, std::move(elements));
-        }
+        return grouping_or_tuple();
     }
     if (match({Tok::LSquare})) {
-        // Array literal
-        auto lsquare = previous();
-        std::vector<std::shared_ptr<Expr>> elements;
-        if (match({Tok::RSquare})) {
-            // Empty array
-            return std::make_shared<Expr::Array>(lsquare, std::move(elements));
-        }
-        bool comma_matched = false;
-        do {
-            if (peek()->tok_type == Tok::RSquare) {
-                // We allow trailing commas.
-                break;
-            }
-            auto expr = expression();
-            if (!expr)
-                return std::nullopt;
-            elements.push_back(*expr);
-            comma_matched = match({Tok::Comma});
-        } while (comma_matched);
-
-        if (!match({Tok::RSquare})) {
-            Logger::inst().log_error(
-                Err::UnexpectedToken,
-                peek()->location,
-                "Expected `]` after array literal."
-            );
-            return std::nullopt;
-        }
-
-        return std::make_shared<Expr::Array>(lsquare, std::move(elements));
+        return array();
     }
     if (match({Tok::LBrace})) {
-        // Object
-        auto lbrace = previous();
-        std::vector<Expr::Object::Field> fields;
-
-        do {
-            if (peek()->tok_type == Tok::RBrace) {
-                // We allow trailing commas.
-                break;
-            }
-
-            Binding::Mutability mutability = Binding::Mutability::None;
-            if (match({Tok::KwMut})) {
-                mutability = Binding::Mutability::Mut;
-            }
-            else if (match({Tok::KwVar})) {
-                mutability = Binding::Mutability::Var;
-            }
-
-            if (!match({Tok::Identifier})) {
-                Logger::inst().log_error(
-                    Err::UnknownError,
-                    peek()->location,
-                    "Expected an identifier for the field name in object "
-                    "literal."
-                );
-                return std::nullopt;
-            }
-            auto field_token = previous();
-            if (!match({Tok::Colon})) {
-                Logger::inst().log_error(
-                    Err::UnexpectedToken,
-                    peek()->location,
-                    "Expected `:` after field name in object literal."
-                );
-                return std::nullopt;
-            }
-            auto expr = expression();
-            if (!expr)
-                return std::nullopt;
-            fields.emplace_back(mutability, field_token, *expr);
-        } while (match({Tok::Comma}));
-
-        if (!match({Tok::RBrace})) {
-            Logger::inst().log_error(
-                Err::UnexpectedToken,
-                peek()->location,
-                "Expected `}` after object literal."
-            );
-            return std::nullopt;
-        }
-
-        return std::make_shared<Expr::Object>(lbrace, std::move(fields));
+        return object();
     }
 
     if (repl_mode && peek()->tok_type == Tok::Eof) {

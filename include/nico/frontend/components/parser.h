@@ -262,6 +262,43 @@ class Parser {
     std::optional<std::shared_ptr<Expr>> loop();
 
     /**
+     * @brief Parses grouping and tuple expressions.
+     *
+     * A grouping expression is an expression enclosed in parentheses, such as
+     * `(a + b)`.
+     *
+     * A tuple expression is a comma-separated list of expressions enclosed in
+     * parentheses, such as `(a, b, c)`. For 1-tuples, the syntax is `(a,)` to
+     * avoid ambiguity with grouping expressions.
+     *
+     * @return A shared pointer to the parsed expression, or nullopt if the
+     * expression could not be parsed.
+     */
+    std::optional<std::shared_ptr<Expr>> grouping_or_tuple();
+
+    /**
+     * @brief Parses an array literal expression.
+     *
+     * An array literal is a list of expressions enclosed in square brackets,
+     * such as `[a, b, c]`.
+     *
+     * @return A shared pointer to the parsed expression, or nullopt if the
+     * expression could not be parsed.
+     */
+    std::optional<std::shared_ptr<Expr>> array();
+
+    /**
+     * @brief Parses an object literal expression.
+     *
+     * An object literal is a list of key-value pairs enclosed in curly braces,
+     * such as `{a: b, c: d}`.
+     *
+     * @return A shared pointer to the parsed expression, or nullopt if the
+     * expression could not be parsed.
+     */
+    std::optional<std::shared_ptr<Expr>> object();
+
+    /**
      * @brief Parses an allocation expression.
      *
      * An allocation expression is used to manually allocate heap memory for
