@@ -8,9 +8,6 @@
 namespace nico {
 
 bool Stmt::IBindingDecl::apply_modifier(const Modifier& modifier) {
-    // TODO: Issue errors when modifiers are applied multiple times to the same
-    // declaration (e.g. multiple `linkage` modifiers).
-
     // Linkage modifier: specifies the linkage type for this declaration
     // (internal or external).
     if (modifier.identifier == "linkage") {

@@ -1913,9 +1913,6 @@ std::optional<std::shared_ptr<Annotation>> Parser::object_annotation() {
 }
 
 std::optional<std::shared_ptr<Annotation>> Parser::annotation() {
-    // TODO: This function is much too large and needs to be broken up into
-    // smaller pieces.
-
     // First, check for annotations that can have 'var': pointers and
     // references.
     bool has_var = false;
