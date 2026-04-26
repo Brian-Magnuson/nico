@@ -1649,7 +1649,50 @@ std::any ExpressionChecker::visit(Annotation::Array* annotation) {
 }
 
 std::any ExpressionChecker::visit(Annotation::Object* annotation) {
-    return std::any();
+    std::shared_ptr<Type> type = nullptr;
+
+    Dictionary<std::string, Binding> fields_dict;
+    bool has_error = false;
+
+    for (const auto& field : annotation->fields) {
+        auto field_name = std::string(field.identifier->lexeme);
+        if (auto existing_binding = fields_dict.at(field_name)) {
+            Logger::inst().log_error(
+                Err::DuplicateObjectAnnotationFieldName,
+                field.identifier->location,
+                "Duplicate field name in object annotation: `" + field_name +
+                    "`."
+            );
+            Logger::inst().log_note(
+                existing_binding->location,
+                "Previous field with the same name declared here."
+            );
+            has_error = true;
+            continue;
+        }
+
+        auto field_type_any = field.annotation->accept(this);
+        if (!field_type_any.has_value())
+            return std::any();
+        auto field_type = std::any_cast<std::shared_ptr<Type>>(field_type_any);
+
+        fields_dict.insert(
+            field_name,
+            Binding(
+                field.mutability,
+                field_name,
+                &field.identifier->location,
+                field_type,
+                field.default_expr
+            )
+        );
+    }
+
+    if (has_error)
+        return std::any();
+
+    type = std::make_shared<Type::Object>(std::move(fields_dict));
+    return type;
 }
 
 std::any ExpressionChecker::visit(Annotation::Tuple* annotation) {

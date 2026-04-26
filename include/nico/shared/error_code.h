@@ -203,6 +203,8 @@ enum class Err {
     ExternStaticWithInitializer,
     // An attempt was made to allocate memory for an unsized type.
     UnsizedTypeAllocation,
+    // An object annotation contained duplicate field names.
+    DuplicateObjectAnnotationFieldName,
 
     // Local type check error
     LocalTypeError = 5000,

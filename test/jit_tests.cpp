@@ -1866,26 +1866,3 @@ TEST_CASE("JIT external linkage declarations", "[jit]") {
         );
     }
 }
-
-TEST_CASE("JIT extra tests", "[jit]") {
-    SECTION("Custom test") {
-        run_jit_test(
-            R"(
-            static x = 5
-            func inner(arg: i32 = x) {
-                printout "The value of x is ", arg
-            }
-            func outer() {
-                let x = 10
-                inner()
-            }
-
-            outer()
-            )",
-            JITTestOptions{
-                .expected_output = "The value of x is 5",
-                .print_symbol_tree = true
-            }
-        );
-    }
-}

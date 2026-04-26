@@ -846,7 +846,8 @@ public:
 
     virtual ~Object() = default;
 
-    Object() = default;
+    Object(Dictionary<std::string, Binding>&& fields)
+        : fields(std::move(fields)) {}
 
     std::string to_string() const override {
         std::string result = "{";
