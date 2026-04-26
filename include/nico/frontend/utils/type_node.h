@@ -55,7 +55,7 @@ public:
 
     std::string to_string() const override {
         if (is_ptr_sized) {
-            return (is_signed ? "intptr" : "uintptr");
+            return (is_signed ? "isized" : "usized");
         }
         return (is_signed ? "i" : "u") + std::to_string(width);
     }
