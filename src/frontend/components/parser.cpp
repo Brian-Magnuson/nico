@@ -512,7 +512,7 @@ std::optional<std::shared_ptr<Expr>> Parser::object() {
 
         if (!match({Tok::Identifier})) {
             Logger::inst().log_error(
-                Err::UnknownError,
+                Err::NotAnIdentifier,
                 peek()->location,
                 "Expected an identifier for the field name in object "
                 "literal."
@@ -522,9 +522,9 @@ std::optional<std::shared_ptr<Expr>> Parser::object() {
         auto field_token = previous();
         if (!match({Tok::Colon})) {
             Logger::inst().log_error(
-                Err::UnexpectedToken,
+                Err::NotAType,
                 peek()->location,
-                "Expected `:` after field name in object literal."
+                "Expected a type annotation after field name in object literal."
             );
             return std::nullopt;
         }

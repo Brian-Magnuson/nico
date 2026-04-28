@@ -1421,7 +1421,37 @@ std::any ExpressionChecker::visit(Expr::Array* expr, bool as_lvalue) {
 }
 
 std::any ExpressionChecker::visit(Expr::Object* expr, bool as_lvalue) {
-    // TODO: Implement visit function for object expressions.
+    if (as_lvalue) {
+        Logger::inst().log_error(
+            Err::NotAPossibleLValue,
+            expr->location,
+            "Object expression cannot be an lvalue."
+        );
+        return std::any();
+    }
+    bool has_error = false;
+    Dictionary<std::string, Binding> fields;
+    for (auto& ast_field : expr->fields) {
+        auto field_type_opt = expr_check(ast_field.expression, false);
+        if (!field_type_opt.has_value()) {
+            has_error = true;
+            continue;
+        }
+        auto field_name = std::string(ast_field.identifier->lexeme);
+        fields.insert(
+            field_name,
+            Binding(
+                ast_field.mutability,
+                field_name,
+                &ast_field.identifier->location,
+                field_type_opt.value()
+            )
+        );
+    }
+    if (has_error)
+        return std::any();
+    expr->type = std::make_shared<Type::Object>(std::move(fields));
+
     return std::any();
 }
 
