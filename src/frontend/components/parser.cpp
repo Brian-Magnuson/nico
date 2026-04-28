@@ -522,9 +522,9 @@ std::optional<std::shared_ptr<Expr>> Parser::object() {
         auto field_token = previous();
         if (!match({Tok::Colon})) {
             Logger::inst().log_error(
-                Err::NotAType,
+                Err::UnexpectedToken,
                 peek()->location,
-                "Expected a type annotation after field name in object literal."
+                "Expected a colon after the field name in object literal."
             );
             return std::nullopt;
         }

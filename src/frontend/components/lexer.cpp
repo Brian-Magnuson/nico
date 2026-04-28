@@ -53,6 +53,7 @@ std::unordered_map<std::string_view, Tok> Lexer::keywords = {
     {"static", Tok::KwStatic},
     {"field", Tok::KwField},
     {"var", Tok::KwVar},
+    {"mut", Tok::KwMut},
     {"func", Tok::KwFunc},
     {"namespace", Tok::KwNamespace},
     {"extern", Tok::KwExtern},

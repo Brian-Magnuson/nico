@@ -1440,3 +1440,55 @@ TEST_CASE("Parser alloc expressions", "[parser]") {
         run_parser_expr_error_test("alloc for 10", Err::AllocForWithoutOf);
     }
 }
+
+TEST_CASE("Parser object expressions", "[parser]") {
+    SECTION("Object literal with no fields") {
+        run_parser_expr_test("{ }", {"(expr (object))", "(stmt:eof)"});
+    }
+
+    SECTION("Object literal with fields") {
+        run_parser_expr_test(
+            "{ x: 1, y: 2 }",
+            {"(expr (object (x: (lit i32 1)) (y: (lit i32 2))))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Object literal with trailing comma") {
+        run_parser_expr_test(
+            "{ x: 1, y: 2, }",
+            {"(expr (object (x: (lit i32 1)) (y: (lit i32 2))))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Object literal with var fields") {
+        run_parser_expr_test(
+            "{ x: 1, var y: 2 }",
+            {"(expr (object (x: (lit i32 1)) (var y: (lit i32 2))))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Object literal with mut fields") {
+        run_parser_expr_test(
+            "{ x: 1, mut y: 2 }",
+            {"(expr (object (x: (lit i32 1)) (mut y: (lit i32 2))))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Object literal not an identifier") {
+        run_parser_expr_error_test("{ 1: 2 }", Err::NotAnIdentifier);
+    }
+
+    SECTION("Object literal with semicolon") {
+        run_parser_expr_error_test("{ x: 1; y: 2 }", Err::UnexpectedToken);
+    }
+
+    SECTION("Object literal with missing colon") {
+        run_parser_expr_error_test("{ x 1 }", Err::UnexpectedToken);
+    }
+
+    SECTION("Object literal with missing value") {
+        run_parser_expr_error_test("{ x: }", Err::NotAnExpression);
+    }
+}
