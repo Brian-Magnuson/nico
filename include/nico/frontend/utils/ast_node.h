@@ -1475,14 +1475,13 @@ public:
     std::string to_string() const override {
         std::string result = "{";
         for (const auto& field : fields) {
-            result += field.to_string();
-            result += ", ";
+            result += " " + field.to_string();
+            result += ",";
         }
         if (!fields.empty()) {
             result.pop_back();
-            result.pop_back();
         }
-        result += "}";
+        result += " }";
 
         return result;
     }

@@ -206,6 +206,58 @@ TEST_CASE("Parser let stmt type annotations", "[parser]") {
         );
     }
 
+    SECTION("Let statements objects 1") {
+        run_parser_stmt_test(
+            "let var point: { x: f64, y: f64 }",
+            {"(stmt:let var point { x: f64, y: f64 })", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Let statements objects 2") {
+        run_parser_stmt_test(
+            "let var config: { host: [u8; 16], port: u16 }",
+            {"(stmt:let var config { host: [u8; 16], port: u16 })",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Let statements objects 3") {
+        run_parser_stmt_test(
+            "let var empty: { }",
+            {"(stmt:let var empty { })", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Let statements objects 4") {
+        run_parser_stmt_test(
+            "let var variable_point: { var x: f64, var y: f64 } ",
+            {"(stmt:let var variable_point { var x: f64, var y: f64 })",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Let statements objects 5") {
+        run_parser_stmt_test(
+            "let adjustable_point: { mut x: f64, mut y: f64 }",
+            {"(stmt:let adjustable_point { mut x: f64, mut y: f64 })",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Let statements objects 6") {
+        run_parser_stmt_test(
+            "let var outer: { inner: { var x: i32 } }",
+            {"(stmt:let var outer { inner: { var x: i32 } })", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Let statements objects 7") {
+        run_parser_stmt_test(
+            "let obj: { x: i32 = y }",
+            {"(stmt:let obj { x: i32 = <expr@1:21> })", "(stmt:eof)"}
+        );
+    }
+
     SECTION("Let statements void 1") {
         run_parser_stmt_test(
             "let var v: void",
