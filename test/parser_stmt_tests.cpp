@@ -129,9 +129,16 @@ TEST_CASE("Parser let statements", "[parser]") {
             Err::DeclarationIdentWithColonColon
         );
     }
+
+    SECTION("Unexpected var in annotation") {
+        run_parser_stmt_error_test(
+            "let a: var i32 = 1",
+            Err::UnexpectedVarInAnnotation
+        );
+    }
 }
 
-TEST_CASE("Parser let stmt type annotations", "[parser]") {
+TEST_CASE("Parser let stmt pointer annotations", "[parser]") {
     SECTION("Let statements pointers 1") {
         run_parser_stmt_test(
             "let var a: @i32 = 10",
@@ -152,7 +159,9 @@ TEST_CASE("Parser let stmt type annotations", "[parser]") {
             {"(stmt:let data nullptr (lit nullptr))", "(stmt:eof)"}
         );
     }
+}
 
+TEST_CASE("Parser let stmt typeof annotations", "[parser]") {
     SECTION("Let statements typeof 1") {
         run_parser_stmt_test(
             "let var x: i32 let var size: typeof(x)",
@@ -171,6 +180,22 @@ TEST_CASE("Parser let stmt type annotations", "[parser]") {
         );
     }
 
+    SECTION("Typeof missing opening parenthesis") {
+        run_parser_stmt_error_test(
+            "let a: typeof x = 1",
+            Err::TypeofWithoutOpeningParen
+        );
+    }
+
+    SECTION("Comma in typeof annotation") {
+        run_parser_stmt_error_test(
+            "let a: typeof(x,) = 1",
+            Err::UnexpectedToken
+        );
+    }
+}
+
+TEST_CASE("Parser let stmt array annotations", "[parser]") {
     SECTION("Let statements arrays 1") {
         run_parser_stmt_test(
             "let var arr: [i32; 10]",
@@ -205,7 +230,9 @@ TEST_CASE("Parser let stmt type annotations", "[parser]") {
             {"(stmt:let var empty [f64; 0])", "(stmt:eof)"}
         );
     }
+}
 
+TEST_CASE("Parser let stmt object annotations", "[parser]") {
     SECTION("Let statements objects 1") {
         run_parser_stmt_test(
             "let var point: { x: f64, y: f64 }",
@@ -278,27 +305,6 @@ TEST_CASE("Parser let stmt type annotations", "[parser]") {
 
     SECTION("Let without ident") {
         run_parser_stmt_error_test("let : i32 = 1", Err::NotAnIdentifier);
-    }
-
-    SECTION("Unexpected var in annotation") {
-        run_parser_stmt_error_test(
-            "let a: var i32 = 1",
-            Err::UnexpectedVarInAnnotation
-        );
-    }
-
-    SECTION("Typeof missing opening parenthesis") {
-        run_parser_stmt_error_test(
-            "let a: typeof x = 1",
-            Err::TypeofWithoutOpeningParen
-        );
-    }
-
-    SECTION("Comma in typeof annotation") {
-        run_parser_stmt_error_test(
-            "let a: typeof(x,) = 1",
-            Err::UnexpectedToken
-        );
     }
 }
 
