@@ -246,81 +246,39 @@ Refer to the section on the void type for more details.
 
 Using `=` to assign one tuple to another will shallow copy the elements of the tuple. For other copy behaviors, the copy must be done manually.
 
-### Struct literal type
+### Object type
 
-A struct literal type is a custom data type representing a collection of named fields. They are the literal counterpart to named struct types, which are defined using struct declarations.
+An object type is a custom data type representing a collection of named fields. They are the literal counterpart to named struct types, which are defined using struct declarations.
 
-Struct literal types offer a flexible way to define custom data types without the overhead of defining a full class.
+Object types offer a flexible way to define custom data types without the overhead of defining a full class.
 
-A struct literal type is written as `{ field1: T1, field2: T2, ... }`, where `field1`, `field2`, etc., are the names of the fields and `T1`, `T2`, etc., are the types of the fields. For example, a struct literal type with two fields, `x` and `y`, would be written as `{ x: i32, y: f64 }`.
+An object type is written as `{ field1: T1, field2: T2, ... }`, where `field1`, `field2`, etc., are the names of the fields and `T1`, `T2`, etc., are the types of the fields. For example, an object type with two fields, `x` and `y`, would be written as `{ x: i32, y: f64 }`.
 
-Only fields are allowed in struct literal types; no shared variables or functions are permitted.
+Only fields are allowed in object types; no shared variables or functions are permitted.
 
-Struct literal type fields are immutable unless explicitly marked as mutable.
+Object type fields are immutable unless explicitly marked as mutable.
 To make a field mutable, add the `var` or `mut` keyword before the field name:
 ```
 { var x: i32, mut y: f64 }
 ```
 
-Fields marked with `var` are mutable as long as the overall struct literal value is also mutable.
-Fields marked with `mut` are mutable regardless of the mutability of the overall struct literal value.
+Fields marked with `var` are mutable as long as the overall object value is also mutable.
+Fields marked with `mut` are mutable regardless of the mutability of the overall object value.
 
-Struct literal type fields may also have default values. This is done by using the `=` operator:
-```
-{ x: i32 = 42, y: f64 = 3.14 }
-```
-
-Default values in a struct annotation are not directly evaluated. They only provide a "template" for when the actual struct literal value is created.
-This is a valid type:
-```
-{ x: i32 = 1 / 0 }
-```
-
-Type annotations for each field are still required, even if a default value is provided. The default value must match the type.
-
-Struct literal values may be written using curly braces:
+Object literal values may be written using curly braces:
 ```
 { x: 42, y: 3.14 }
 ```
 
-With default values, you can omit fields when assigning a struct literal value.
-```
-static s: { x: i32 = 42, y: f64 = 3.14 } = { x: 100 }
-printout s.x // Output: 100
-printout s.y // Output: 3.14
-```
+You cannot add more fields to an object literal after it is created.
 
-By the end of the object literal, all fields must be assigned a value.
-This is enforced by assignment compatibilities rules:
-A struct literal value is assignable to a type if the value all the required fields and no fields not in the type.
-Additionally, the field values must be assignment compatible with their corresponding field types.
-```
-let s: { x: i32, y: f64 } = { x: 42, y: 3.14 }          // OK
-let s: { x: i32, y: f64 } = { x: 42 }                   // Error: missing field y
-let s: { x: i32, y: f64 } = { x: 42, y: 3.14, z: true } // Error: extra field z
-let s: { x: i32, y: f64 } = { x: 42, y: true }          // Error: field y has incompatible type
-```
+Object literal values always use braces; there is no indented form, and they are not considered blocks. Blocks always have some keyword signifying the opening of a block, such as `if`, `while`, or `block`.
 
-You cannot add more fields to a struct literal after it is created.
+Using `=` to assign one object literal value to another will shallow copy the fields of the object. For other copy behaviors, the copy must be done manually.
 
-Struct literal values always use braces; there is no indented form, and they are not considered blocks. Blocks always have some keyword signifying the opening of a block, such as `if`, `while`, or `block`.
+Object types are considered equivalent iff they have the same fields with the same names, types, and mutabilities, in the same order.
 
-Using `=` to assign one struct literal value to another will shallow copy the fields of the struct. For other copy behaviors, the copy must be done manually.
-
-
-There is a special case for when a struct literal type contains a default value that is a name reference to a local variable:
-```
-func example():
-    let x = 42
-    let s: { x: i32 = x } = { }
-```
-
-Because `x` is a part of the type of `s`, `s` effectively depends on `x`, which means `s` cannot outlive `x`.
-
-It is actually impossible to create a situation in which a struct literal value outlives a local variable that it depends on.
-- For the value to outlive its dependent local variable, its type would have to exist outside the scope of the local variable.
-- Name references within struct literal types must be resolvable where the type exists, which means the local variable must still be in scope at the point where the struct literal type is appears.
-- This is a contradiction, so the struct literal value cannot outlive the local variable.
+For assignment compatibility, an object type `A` is assignable to another object type `B` if both types have the same number of fields in the same order, and each field in `A` is assignable to the corresponding field in `B` (mutability is ignored for assignment compatibility).
 
 ## Pointer and reference types
 
@@ -710,6 +668,7 @@ Here are some general rules for assignment compatibility:
 - Any mutable raw pointer type is assignable to an immutable raw pointer type if the base types are assignment-compatible.
 - A pointer to a sized array type (e.g. `@[T; N]`) is assignable to a pointer to an unsized array type (e.g. `@[T; ?]`).
 - A pointer to a derived class type is assignable to a pointer to a base class type.
+- An object type is assignable to another object type if both types have the same number of fields in the same order, and each field in the first type is assignable to the corresponding field in the second type (mutability is ignored for assignment compatibility).
 
 Additionally:
 - If the type conversion would potentially require the data of the value to change, the types are not assignment-compatible.
@@ -718,6 +677,7 @@ Because of this:
 - Integer types of different widths are not assignment-compatible.
 - Floating-point types of different widths are not assignment-compatible.
 - The `isize` and `usize` are not assignment-compatible with any fixed-width integer type, even if they have the same width on a particular platform.
+- Object types with fields in different orders are not assignment-compatible, even if the set of fields is the same.
 
 Generally, if a type may be assigned to another type, it is also cast-compatible.
 However, not all cast-compatible types are assignment-compatible.

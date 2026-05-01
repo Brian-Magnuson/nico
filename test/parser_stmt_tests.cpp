@@ -278,13 +278,6 @@ TEST_CASE("Parser let stmt object annotations", "[parser]") {
         );
     }
 
-    SECTION("Let statements objects 7") {
-        run_parser_stmt_test(
-            "let obj: { x: i32 = y }",
-            {"(stmt:let obj { x: i32 = <expr@1:21> })", "(stmt:eof)"}
-        );
-    }
-
     SECTION("Let statements void 1") {
         run_parser_stmt_test(
             "let var v: void",

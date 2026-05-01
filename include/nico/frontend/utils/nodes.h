@@ -701,19 +701,23 @@ public:
      * @return std::string A string representation of the binding.
      */
     virtual std::string to_string() const {
-        std::string mutability_str;
+        std::string str;
         switch (mutability) {
         case Mutability::None:
-            mutability_str = "";
+            str = "";
             break;
         case Mutability::Var:
-            mutability_str = "var ";
+            str = "var ";
             break;
         case Mutability::Mut:
-            mutability_str = "mut ";
+            str = "mut ";
             break;
         }
-        return mutability_str + name + ": " + type->to_string();
+        str += name + ": " + type->to_string();
+        if (default_expr.has_value()) {
+            str += " = <expr>";
+        }
+        return str;
     }
 
     /**

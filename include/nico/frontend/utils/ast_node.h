@@ -1425,19 +1425,15 @@ public:
         std::shared_ptr<Token> identifier;
         // The annotation of the field.
         std::shared_ptr<Annotation> annotation;
-        // An optional default value for the field.
-        std::optional<std::shared_ptr<Expr>> default_expr;
 
         Field(
             Binding::Mutability mutability,
             std::shared_ptr<Token> identifier,
-            std::shared_ptr<Annotation> annotation,
-            std::optional<std::shared_ptr<Expr>> default_expr = std::nullopt
+            std::shared_ptr<Annotation> annotation
         )
             : mutability(mutability),
               identifier(identifier),
-              annotation(annotation),
-              default_expr(default_expr) {}
+              annotation(annotation) {}
 
         /**
          * @brief Convert this field to a string for printing.
@@ -1451,12 +1447,6 @@ public:
                                                           : "");
             result += std::string(identifier->lexeme) + ": " +
                       annotation->to_string();
-            if (default_expr) {
-                auto [_, line, col] =
-                    default_expr.value()->location->to_tuple();
-                result += " = <expr@" + std::to_string(line) + ":" +
-                          std::to_string(col) + ">";
-            }
             return result;
         }
     };

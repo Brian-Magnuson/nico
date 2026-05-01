@@ -1891,19 +1891,12 @@ std::optional<std::shared_ptr<Annotation>> Parser::object_annotation() {
         if (!field_anno)
             return std::nullopt;
         std::optional<std::shared_ptr<Expr>> default_value = std::nullopt;
-        if (match({Tok::Eq})) {
-            default_value = expression();
-            if (!default_value) {
-                // At this point, an error has already been logged.
-                return std::nullopt;
-            }
-        }
+
         fields.push_back(
             Annotation::Object::Field(
                 mutability,
                 field_name_token,
-                field_anno.value(),
-                default_value
+                field_anno.value()
             )
         );
     } while (match({Tok::Comma}));

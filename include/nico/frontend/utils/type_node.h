@@ -851,8 +851,8 @@ public:
 
     std::string to_string() const override {
         std::string result = "{";
-        for (const auto& [key, value] : fields) {
-            result += value.to_string() + ", ";
+        for (const auto& [_, binding] : fields) {
+            result += binding.to_string() + ", ";
         }
         if (fields.size() > 0) {
             result.pop_back();

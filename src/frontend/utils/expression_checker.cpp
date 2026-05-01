@@ -1717,8 +1717,7 @@ std::any ExpressionChecker::visit(Annotation::Object* annotation) {
                 field.mutability,
                 field_name,
                 &field.identifier->location,
-                field_type,
-                field.default_expr
+                field_type
             )
         );
     }
