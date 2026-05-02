@@ -878,6 +878,29 @@ public:
         return true;
     }
 
+    virtual bool is_assignable_to(const Type& other) const override {
+        if (const auto* other_object = dynamic_cast<const Object*>(&other)) {
+            if (fields.size() != other_object->fields.size()) {
+                return false;
+            }
+            auto this_it = fields.begin();
+            auto other_it = other_object->fields.begin();
+            while (this_it != fields.end()) {
+                // Field names must match and field types must be assignable.
+                if (this_it->first != other_it->first ||
+                    !this_it->second.type->is_assignable_to(
+                        *other_it->second.type
+                    )) {
+                    return false;
+                }
+                ++this_it;
+                ++other_it;
+            }
+            return true;
+        }
+        return false;
+    }
+
     virtual llvm::Type*
     get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
         std::vector<llvm::Type*> field_types;
