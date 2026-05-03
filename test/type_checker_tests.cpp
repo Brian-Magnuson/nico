@@ -1142,6 +1142,37 @@ TEST_CASE("Check subscript expressions", "[checker]") {
     }
 }
 
+TEST_CASE("Check object expressions", "[checker]") {
+    SECTION("Valid object expression 1") {
+        run_checker_test("let a = { x: 1, y: 2.0 }");
+    }
+
+    SECTION("Valid object expression 2") {
+        run_checker_test("let a: { x: i32, y: f64 } = { x: 1, y: 2.0 }");
+    }
+
+    SECTION("Object field type mismatch") {
+        run_checker_test(
+            "let a: { x: i32, y: f64 } = { x: 1, y: true }",
+            Err::LetTypeMismatch
+        );
+    }
+
+    SECTION("Object type mismatch") {
+        run_checker_test(
+            "let a: { x: i32, z: f64 } = { x: 1, y: 2.0 }",
+            Err::LetTypeMismatch
+        );
+    }
+
+    SECTION("Object fields in wrong order") {
+        run_checker_test(
+            "let a: { x: i32, y: f64 } = { y: 2.0, x: 1 }",
+            Err::LetTypeMismatch
+        );
+    }
+}
+
 TEST_CASE("Check conditional expressions", "[checker]") {
     SECTION("Valid conditional expression 1") {
         run_checker_test("if true { 1 } else { false }");
