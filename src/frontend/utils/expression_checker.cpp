@@ -917,6 +917,43 @@ std::any ExpressionChecker::visit(Expr::Access* expr, bool as_lvalue) {
             return std::any();
         }
     }
+    else if (
+        auto object_l_type = std::dynamic_pointer_cast<Type::Object>(l_type)
+    ) {
+        auto member_name = std::string(expr->right_token->lexeme);
+        auto matched_field_opt = object_l_type->fields.at(member_name);
+        if (!matched_field_opt.has_value()) {
+            Logger::inst().log_error(
+                Err::UnknownError,
+                expr->right_token->location,
+                "Type `" + l_type->to_string() + "` has no member named `" +
+                    member_name + "`."
+            );
+            return std::any();
+        }
+        expr->type = matched_field_opt.value().type;
+
+        // For object member access, the assignability depends on the field's
+        // mutability.
+        switch (matched_field_opt.value().mutability) {
+        case Binding::Mutability::None:
+            // Field is not assignable.
+            expr->assignable = false;
+            expr->error_location = &expr->right_token->location;
+            break;
+        case Binding::Mutability::Var:
+            // Field's assignability is the same as the object's assignability.
+            expr->assignable = l_lvalue->assignable;
+            expr->error_location = l_lvalue->error_location;
+            break;
+        case Binding::Mutability::Mut:
+            // Field is assignable, regardless of the object's assignability.
+            expr->assignable = true;
+            break;
+        }
+
+        return std::any();
+    }
     else {
         Logger::inst().log_error(
             Err::OperatorNotValidForExpr,
