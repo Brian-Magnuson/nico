@@ -1171,6 +1171,36 @@ TEST_CASE("Check object expressions", "[checker]") {
             Err::LetTypeMismatch
         );
     }
+
+    SECTION("Object access valid") {
+        run_checker_test(
+            "let a = { x: 1, y: 2.0 } let b: i32 = a.x let c: f64 = a.y"
+        );
+    }
+
+    SECTION("Object field assignable") {
+        run_checker_test(
+            "let var a = { var x: 1, var y: 2.0 } a.x = 10 a.y = 3.5"
+        );
+    }
+
+    SECTION("Object field not assignable") {
+        run_checker_test(
+            "let a = { x: 1, y: 2.0 } a.x = 10",
+            Err::AssignToImmutable
+        );
+    }
+
+    SECTION("Object immutable with var field") {
+        run_checker_test(
+            "let a = { var x: 1, y: 2.0 } a.x = 10",
+            Err::AssignToImmutable
+        );
+    }
+
+    SECTION("Object immutable with mut field") {
+        run_checker_test("let a = { mut x: 1, y: 2.0 } a.x = 10");
+    }
 }
 
 TEST_CASE("Check conditional expressions", "[checker]") {
