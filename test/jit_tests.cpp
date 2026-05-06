@@ -1725,7 +1725,7 @@ TEST_CASE("JIT extern block", "[jit]") {
             )",
             JITTestOptions{
                 .expected_output = "4",
-                .static_library_paths = {"test/lib/example/libexample.a"}
+                .static_library_paths = {"build/test/lib/example/libexample.a"}
             }
         );
     }
@@ -1740,7 +1740,7 @@ TEST_CASE("JIT extern block", "[jit]") {
             )",
             JITTestOptions{
                 .expected_output = "42",
-                .static_library_paths = {"test/lib/example/libexample.a"}
+                .static_library_paths = {"build/test/lib/example/libexample.a"}
             }
         );
     }
@@ -1755,7 +1755,7 @@ TEST_CASE("JIT extern block", "[jit]") {
             )",
             JITTestOptions{
                 .expected_output = "Hello from the example library!\n",
-                .static_library_paths = {"test/lib/example/libexample.a"}
+                .static_library_paths = {"build/test/lib/example/libexample.a"}
             }
         );
     }
@@ -1770,7 +1770,7 @@ TEST_CASE("JIT extern block", "[jit]") {
             )",
             JITTestOptions{
                 .expected_output = "37",
-                .static_library_paths = {"test/lib/example/libexample.a"}
+                .static_library_paths = {"build/test/lib/example/libexample.a"}
             }
         );
     }
@@ -1785,7 +1785,7 @@ TEST_CASE("JIT extern block", "[jit]") {
             )",
             JITTestOptions{
                 .expected_output = "10",
-                .static_library_paths = {"test/lib/example/libexample.a"}
+                .static_library_paths = {"build/test/lib/example/libexample.a"}
             }
         );
     }
@@ -1802,7 +1802,7 @@ TEST_CASE("JIT extern block", "[jit]") {
             )",
             JITTestOptions{
                 .expected_output = "60 15 0",
-                .static_library_paths = {"test/lib/example/libexample.a"}
+                .static_library_paths = {"build/test/lib/example/libexample.a"}
             }
         );
     }
@@ -1823,7 +1823,7 @@ TEST_CASE("JIT external linkage declarations", "[jit]") {
             )",
             JITTestOptions{
                 .expected_output = "52",
-                .static_library_paths = {"test/lib/interop/libinterop.a"}
+                .static_library_paths = {"build/test/lib/interop/libinterop.a"}
             }
         );
     }
@@ -1842,7 +1842,7 @@ TEST_CASE("JIT external linkage declarations", "[jit]") {
             )",
             JITTestOptions{
                 .expected_output = "420",
-                .static_library_paths = {"test/lib/interop/libinterop.a"}
+                .static_library_paths = {"build/test/lib/interop/libinterop.a"}
             }
         );
     }
@@ -1861,7 +1861,7 @@ TEST_CASE("JIT external linkage declarations", "[jit]") {
             )",
             JITTestOptions{
                 .expected_output = "32",
-                .static_library_paths = {"test/lib/interop/libinterop.a"}
+                .static_library_paths = {"build/test/lib/interop/libinterop.a"}
             }
         );
     }

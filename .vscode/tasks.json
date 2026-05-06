@@ -1,0 +1,52 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build all",
+            "type": "shell",
+            "command": "cmake --build build",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "detail": "Build the project using CMake."
+        },
+        {
+            "label": "Build nico",
+            "type": "shell",
+            "command": "cmake --build build --target nico",
+            "group": "build",
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "detail": "Build only the nico target."
+        },
+        {
+            "label": "Build tests",
+            "type": "shell",
+            "command": "cmake --build build --target tests",
+            "group": "build",
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "detail": "Build the tests target along with example libraries."
+        },
+        {
+            "label": "Run nico",
+            "type": "shell",
+            "command": "${workspaceFolder}/build/nico",
+            "group": "test",
+            "detail": "Run the main executable (nico)."
+        },
+        {
+            "label": "Run tests",
+            "type": "shell",
+            "command": "${workspaceFolder}/build/tests",
+            "group": "test",
+            "detail": "Run the test executable."
+        }
+    ]
+}

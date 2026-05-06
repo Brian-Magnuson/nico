@@ -72,5 +72,8 @@
         "stop_token": "cpp",
         "thread": "cpp",
         "*.def": "cpp"
+    },
+    "cmake.debugConfig": {
+        "cwd": "${workspaceFolder}"
     }
 }

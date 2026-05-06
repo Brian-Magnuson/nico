@@ -5,11 +5,19 @@
             "name": "Launch tests",
             "type": "cppdbg",
             "request": "launch",
-            "cwd": "${cmake.testWorkingDirectory}",
+            "cwd": "${workspaceFolder}",
+            "program": "${workspaceFolder}/build/tests",
+            "preLaunchTask": "Build tests"
+        },
+        {
+            "name": "Launch tests (CMake Tools)",
+            "type": "cppdbg",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
             "program": "${cmake.testProgram}",
             "args": [
                 "${cmake.testArgs}"
             ],
-        }
+        },
     ]
 }
