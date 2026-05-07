@@ -1099,8 +1099,42 @@ std::any CodeGenerator::visit(Expr::Array* expr, bool as_lvalue) {
 }
 
 std::any CodeGenerator::visit(Expr::Object* expr, bool as_lvalue) {
-    // TODO: Implement visit function for object expressions.
-    return std::any();
+    llvm::Value* result = nullptr;
+    llvm::StructType* struct_type =
+        llvm::cast<llvm::StructType>(expr->type->get_llvm_type(builder));
+
+    if (expr->is_constant()) {
+        std::vector<llvm::Constant*> field_constants;
+        for (auto& field : expr->fields) {
+            auto value = std::any_cast<llvm::Value*>(
+                field.expression->accept(this, false)
+            );
+            field_constants.push_back(llvm::cast<llvm::Constant>(value));
+        }
+        result = llvm::ConstantStruct::get(struct_type, field_constants);
+    }
+    else {
+        std::vector<llvm::Value*> field_values;
+        for (auto& field : expr->fields) {
+            field_values.push_back(
+                std::any_cast<llvm::Value*>(
+                    field.expression->accept(this, false)
+                )
+            );
+        }
+        llvm::Value* struct_alloc =
+            builder->CreateAlloca(struct_type, nullptr, "struct");
+
+        for (size_t i = 0; i < field_values.size(); ++i) {
+            llvm::Value* field_ptr =
+                builder->CreateStructGEP(struct_type, struct_alloc, i, "field");
+            builder->CreateStore(field_values[i], field_ptr);
+        }
+
+        result = builder->CreateLoad(struct_type, struct_alloc);
+    }
+
+    return result;
 }
 
 std::any CodeGenerator::visit(Expr::Block* expr, bool as_lvalue) {

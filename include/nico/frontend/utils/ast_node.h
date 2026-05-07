@@ -1132,6 +1132,16 @@ public:
     std::any accept(Visitor* visitor, bool as_lvalue) override {
         return visitor->visit(this, as_lvalue);
     }
+
+    bool is_constant() const override {
+        // An object is constant if all of its fields are constant.
+        for (const auto& field : fields) {
+            if (!field.expression->is_constant()) {
+                return false;
+            }
+        }
+        return true;
+    }
 };
 
 /**
