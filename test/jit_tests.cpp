@@ -1540,6 +1540,62 @@ TEST_CASE("JIT arrays", "[jit]") {
     }
 }
 
+TEST_CASE("JIT objects", "[jit]") {
+    SECTION("Object creation and field access") {
+        run_jit_test(
+            R"(
+            let obj = { name: "Alice", age: 30 }
+            printout obj.name, ",", obj.age
+            )",
+            "Alice,30"
+        );
+    }
+
+    SECTION("Object field assignment") {
+        run_jit_test(
+            R"(
+            let var obj = { var name: "Bob", var age: 25 }
+            obj.name = "Charlie"
+            obj.age = 35
+            printout obj.name, ",", obj.age
+            )",
+            "Charlie,35"
+        );
+    }
+
+    SECTION("Nested objects") {
+        run_jit_test(
+            R"(
+            let obj = { person: { name: "Dave", age: 40 }, city: "New York" }
+            printout obj.person.name, ",", obj.person.age, ",", obj.city
+            )",
+            "Dave,40,New York"
+        );
+    }
+
+    SECTION("Object with array field") {
+        run_jit_test(
+            R"(
+            let obj = { name: "Eve", scores: [90, 85, 92] }
+            printout obj.name, ",", obj.scores[0], ",", obj.scores[1], ",",
+            obj.scores[2]
+            )",
+            "Eve,90,85,92"
+        );
+    }
+
+    // TODO: Add support for printing objects and uncomment this test
+    // SECTION("Object printing") {
+    //     run_jit_test(
+    //         R"(
+    //         let obj = { name: "Frank", age: 28 }
+    //         printout obj
+    //         )",
+    //         "{name: \"Frank\", age: 28}"
+    //     );
+    // }
+}
+
 TEST_CASE("JIT alloc and dealloc", "[jit]") {
     SECTION("Alloc and dealloc integer") {
         run_jit_test(
