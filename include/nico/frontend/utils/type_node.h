@@ -909,6 +909,32 @@ public:
         }
         return llvm::StructType::get(builder->getContext(), field_types);
     }
+
+    virtual std::pair<std::string, std::vector<llvm::Value*>> to_print_args(
+        std::unique_ptr<llvm::IRBuilder<>>& builder,
+        llvm::Value* value,
+        bool include_quotes = false
+    ) const override {
+        std::string format_str = "{";
+        std::vector<llvm::Value*> args;
+        unsigned index = 0;
+        for (const auto& [field_name, binding] : fields) {
+            auto [fmt, vals] = binding.type->to_print_args(
+                builder,
+                builder->CreateExtractValue(value, {index}),
+                true
+            );
+            format_str += field_name + ": " + fmt + ", ";
+            args.insert(args.end(), vals.begin(), vals.end());
+            ++index;
+        }
+        if (!fields.empty()) {
+            format_str.pop_back();
+            format_str.pop_back();
+        }
+        format_str += "}";
+        return {format_str, args};
+    }
 };
 
 // MARK: Callable types

@@ -1585,15 +1585,15 @@ TEST_CASE("JIT objects", "[jit]") {
     }
 
     // TODO: Add support for printing objects and uncomment this test
-    // SECTION("Object printing") {
-    //     run_jit_test(
-    //         R"(
-    //         let obj = { name: "Frank", age: 28 }
-    //         printout obj
-    //         )",
-    //         "{name: \"Frank\", age: 28}"
-    //     );
-    // }
+    SECTION("Object printing") {
+        run_jit_test(
+            R"(
+            let obj = { name: "Frank", age: 28 }
+            printout obj
+            )",
+            "{name: \"Frank\", age: 28}"
+        );
+    }
 }
 
 TEST_CASE("JIT alloc and dealloc", "[jit]") {
