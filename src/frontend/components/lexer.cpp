@@ -1,6 +1,6 @@
 #include "nico/frontend/components/lexer.h"
 
-#include <stdexcept>
+#include <charconv>
 #include <string>
 
 #include "nico/shared/error_code.h"
@@ -318,10 +318,14 @@ void Lexer::tuple_index() {
         numeric_string += advance();
     }
     size_t num = 0;
-    try {
-        num = std::stoul(numeric_string);
-    }
-    catch (const std::out_of_range&) {
+
+    auto result = std::from_chars(
+        numeric_string.data(),
+        numeric_string.data() + numeric_string.size(),
+        num
+    );
+
+    if (result.ec == std::errc::result_out_of_range) {
         Logger::inst().log_error(
             Err::TupleIndexOutOfRange,
             make_token(Tok::Unknown)->location,
@@ -329,12 +333,13 @@ void Lexer::tuple_index() {
         );
         return;
     }
-    catch (...) {
+    else if (result.ec != std::errc()) {
         panic(
-            "Lexer::tuple_index: Invalid argument when parsing "
-            "tuple index."
+            "Lexer::tuple_index: Failed to parse \"" + numeric_string +
+            "\" as a size_t: " + std::make_error_code(result.ec).message()
         );
     }
+
     add_token(Tok::TupleIndex, num);
 }
 
