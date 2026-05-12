@@ -201,7 +201,98 @@ typedef EpicInt: CoolInt
 
 Given the above code, is `EpicInt` directly compatible with `i32`?
 
+The answer should be yes because `EpicInt` should behave in the same way as `CoolInt`, which behaves in the same way as `i32`.
+
+This introduces the idea that direct compatibility should be transitive.
+If `A` is directly compatible with `B`, and `B` is directly compatible with `C`, then `A` should be directly compatible with `C`.
+
+We can draw out this relationship like so:
+```
+EpicInt -> CoolInt -> i32
+
+Named   -> Named   -> Int
+```
+
+We can create longer and longer chains of type aliases as long as they eventually resolve to a non-named type.
+```
+Named1 -> Named2 -> Named3 -> ... -> Int
+```
+
+There is always a non-named type at the end of the chain, and it is essential that these named types all resolve to the same non-named type for direct compatibility to hold.
+
+These examples reveal an important aspect of these chains: we only want the non-named type at the end of the chain.
+If this is the case, then why bother preserving `Named1 -> Named2` or `Named2 -> Named3`?
+
+It would be more efficient to preserve only the relationship between named types and non-named types:
+```
+Named1 -> Int
+Named2 -> Int
+Named3 -> Int
+...
+```
+
+By keeping only these relationships, we avoid having to navigate through long chains of named types to determine direct compatibility with a non-named type.
+
+This does not mean that we *must* use this techique; only that we *can* use this technique to optimize our type checker, and it would behave the same as if we preserved the full chain of named types.
+This fact is possibly important for cases such as pointers to named types, which may not need to be fully resolved.
+
 ### Self-Referential Problem
+
+Question: Can a named type be defined in terms of itself?
+
+There are a few ways to do this, and, as we'll see, only some of them are valid.
+
+Let's start with this first case:
+```
+typedef Foo: Foo
+```
+This is obviously invalid, though not for the reason that it is circular.
+
+When the type checker first tries to resolve `Foo`, it will see that it is defined in terms of `Foo`, which has not been fully resolved yet.
+The next step would be to wait until `Foo` is fully resolved, but this will never happen because `Foo` cannot be resolved until `Foo` is resolved.
+
+Let's observe the next case, 
+```
+typedef Foo: (Foo)
+```
+
+This is also invalid for similar reasons as the first case.
+The type checker must first resolve `(Foo)`, which requires resolving `Foo`, which is not yet resolved.
+
+Notice how we have to resolve the right side first.
+We have to first make sure the type on the right side is fully resolved before we can establish the binding between `Foo` and the right side.
+If the right side is not fully resolved, then we cannot establish the binding, and we cannot resolve `Foo`.
+
+Let's observe the next case:
+```
+typedef Foo: (i32, Foo)
+```
+
+This case seems very similar to the previous case, and it is indeed invalid.
+
+But there's a good reason we want to look at this case: consider the size of `Foo` if it were valid.
+```
+sizeof(Foo) == sizeof(i32) + sizeof(Foo)
+```
+
+It is a recursive definition of `Foo` that leads to an infinite size, which is not valid.
+This reveals an important aspect of valid named types: they must have a finite size.
+A lack of a finite size is perhaps the biggest indicator of an invalid named type.
+
+Let us examine one more case:
+```
+typedef Foo: (@Foo)
+```
+
+Although this may seem invalid, let us consider the size of `Foo`.
+`Foo` is a tuple containing a pointer to `Foo`.
+The size of a pointer is always finite.
+Therefore the size of the tuple is finite.
+Therefore, the size of `Foo` is finite, and there is no infinite recursion in the definition of `Foo`.
+
+Indeed, this is a valid named type.
+The presense of the pointer breaks the infinite recursion and allows `Foo` to have a finite size.
+
 
 ### Infinite Pointer Problem
 
@@ -215,8 +306,36 @@ Then we see no reason to disallow this:
 typedef Foo: @Foo
 ```
 
+Indeed, we would consider this a valid named type as well.
+The size of `Foo` is the size of a pointer, which is finite.
+
+But thinking about it more deeply, this type is quite strange.
+The type is a pointer to itself, which is a pointer to itself, which is a pointer to itself, and so on.
+Without named types, we literally cannot write a type like this; it would be infinitely long: `...@@@@@@@@type`.
+
+This type also seemingly has no practical use.
+
+It would not be hard for the user to create values of this type:
+```
+typedef Foo: @Foo
+let var p: Foo
+p = @p
+```
+
+We don't even need a transmute cast to make this possible.
+We create `p`, which is a pointer, and we assign `p` its own address.
+
+Explicit casts would also work as normal. When we dereference `p`, we would get a real address, which we can dereference again, giving us the same address, and so on.
+```
+^p -> 0x123abc
+^^p -> 0x123abc
+^^^p -> 0x123abc
+```
+
+The real issue arises when we *implicitly* dereference `p`.
+
 ...
 
 ### Circular Reference Problem
 
-
+### Multiple Definitions Problem
