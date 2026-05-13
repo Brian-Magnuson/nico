@@ -333,9 +333,89 @@ Explicit casts would also work as normal. When we dereference `p`, we would get 
 ```
 
 The real issue arises when we *implicitly* dereference `p`.
+We do implicit dereferencing when using dot access or subscript access on a pointer type.
+```
+let x = [0, 1, 2]
+let xp = @x
+let xpp = @xp
+printout x[0], xp[0], xpp[0]
+```
+When we use a dot operator or subscript operator on a pointer type, we implicitly dereference the pointer *completely* to access the underlying value.
 
-...
+But we cannot do this with pointers that contain their own address as this would cause an infinite loop of dereferencing.
+```
+printout p[0]  // Too many implicit dereferences
+```
+
+It doesn't matter that `p` is not even an array or a struct; as long as it is a pointer, we have to dereference it until we can confirm that it is or is not an array or struct.
+
+This is a very unique and bizarre error that can only occur with named types: "too many implicit dereferences" or "too much indirection".
+
+Luckily, this is a very easy error to detect and report.
+When we try to implicitly dereference a pointer type, we can keep track of how many times we have dereferenced it.
+If we dereference a pointer type more than a certain threshold (e.g., 256), we can report an error about too much indirection and stop the program from entering an infinite loop of dereferencing.
+
+This doesn't stop the user from creating these pointers nor dereferencing them explicitly.
+In any case where implicit dereferencing would occur, the user is still free to use explicit dereferencing to access the underlying value, which would work as normal and would not cause an infinite loop.
 
 ### Circular Reference Problem
+
+The circular reference problem is a generalization of the self-referential problem.
+In the self-referential problem, we have a single named type that references itself.
+In the circular reference problem, we have multiple named types that reference each other in a circular manner.
+For example:
+```
+typedef Foo: Bar
+typedef Bar: Foo
+```
+
+As we've seen in the self-referential problem, this is invalid because neither `Foo` nor `Bar` have a finite size.
+
+A more valid example is this:
+```
+typedef Foo: (@Bar)
+typedef Bar: (@Foo)
+```
+
+This is valid because both `Foo` and `Bar` have a finite size due to the presence of the pointer types.
+
+In C++, you can create classes that reference each other in a circular manner.
+When doing this, you need to use forward declarations to guarantee that the compiler knows about the existence of the other class before it is fully defined.
+```cpp
+class Bar;  // Forward declaration of Bar
+
+class Foo {
+    Bar* bar;  // Pointer to Bar
+};
+
+class Bar {
+    Foo* foo;  // Pointer to Foo
+};
+```
+
+Technically, we could write a forward declaration of `Foo` as well, even if it is not necessary in this case:
+```cpp
+class Foo;  // Forward declaration of Foo
+class Bar;  // Forward declaration of Bar
+
+class Foo {
+    Bar* bar;  // Pointer to Bar
+};
+class Bar {
+    Foo* foo;  // Pointer to Foo
+};
+```
+
+We can use a similar idea in our algorithm for type name resolution.
+When can first "collect" all named type declarations, then begin resolving their definitions.
+
+Another approach is to create a list of unresolved types, then, when all type declarations have been processed, we can iterate through the list of unresolved types and try to resolve them.
+- If we can resolve a type, we remove it from the list.
+- If we cannot resolve a type, we keep it in the list and try again in the next iteration.
+- If we go through an entire iteration without resolving any types, then we have a circular reference and we can report an error.
+
+This algorithm is similar to the topological sorting algorithm used in graph theory. 
+This idea will be further discussed in our solutions section.
+
 
 ### Multiple Definitions Problem
