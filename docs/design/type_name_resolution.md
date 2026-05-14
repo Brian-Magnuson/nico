@@ -419,3 +419,69 @@ This idea will be further discussed in our solutions section.
 
 
 ### Multiple Definitions Problem
+
+This problem describes a case that our solution must be able to handle.
+
+Consider the following code:
+```
+typedef Foo: Bar
+typedef Foo: i32
+typedef Bar: bool
+```
+
+This code should be invalid because `Foo` is defined multiple times with different definitions.
+But we want to make sure that our type name resolution algorithm can detect this and report an error.
+
+When the type checker encounters the first declaration of `Foo`, it will not be able to fully resolve it because `Bar` has not been declared yet.
+But we have to make sure `Foo` doesn't get declared anywhere else, even while it is still unresolved.
+When the type checker encounters the second declaration of `Foo`, it should check if `Foo` has already been declared, and if it has, it should report an error about multiple definitions of `Foo`.
+
+In other words, unresolved does not mean undeclared.
+Our solution has to assume that the declaration is valid until it is proven otherwise, and it has to keep track of all declarations, even the unresolved ones, to ensure that there are no multiple definitions.
+
+
+### Use Before Declaration Problem
+
+What happens our declaration-space type checker needs to resolve a named type that has not been fully resolved yet?
+
+For example, consider this code:
+```
+static x: (i32, Foo) = (42, (1, 2))
+```
+
+The expression on the right is a `(i32, (i32, i32))` tuple, but we cannot determine yet if this is directly compatible with `(i32, Foo)` because we have not yet resolved `Foo`.
+
+This is tricky because we cannot just wait until `Foo` is resolved to check the validity of this declaration.
+
+What if, instead, we avoid checking the expression at this time?
+```
+static x: (i32, Foo)
+```
+
+This is okay because we can create the named type `Foo` without fully resolving it.
+Once `Foo` gets resolved, a different stage of the compiler can visit this declaration and see the fully resolved `Foo` type.
+
+We do not need to track that `(i32, Foo)` is unresolved. Only that `Foo` is unresolved.
+Once `Foo` is resolved, the tuple is guaranteed to be resolved as well.
+
+Though for a better user experience, we may want to at least track the location of `(i32, Foo)`.
+In the event that `Foo` cannot be resolved, we want to report an error at the location of the tuple type, not just at the location of `Foo` (if it even exists).
+
+## What Is A Resolved Type?
+
+Now that we've discussed various problems that can arise with named types, we can start creating a definition for what it means for a type to be resolved.
+
+Let's start by gathering what we know:
+- A type cannot be fully resolved until all of its "dependent types" are resolved and the size can be determined.
+- Basic types (e.g., `i32`, `f64`, `bool`) are considered resolved by default.
+- Pointer types (e.g., `@i32`, `var@i32`) are considered resolved if their underlying type is resolved.
+- Aggregate types (e.g., `[i32, 4]`, `{ x: i32, y: f64 }`) are considered resolved if all of their member types are resolved and its size can be determined.
+- A named type is considered resolved if its definition is fully resolved, meaning that all of the types it depends on are resolved.
+- Once a type is resolved, it cannot become unresolved again.
+- All types must be resolved by the end of declaration space, and all types are assumed to be resolved by the beginning of execution space.
+
+This should be a sign that the `Type` class should have an `is_resolved()` function that checks if a type is resolved based on the above criteria.
+But how often do we need to call this function?
+
+A type may be resolved immediately after it is created. And if it is resolved, we don't need to worry about it anymore.
+But if it is not resolved, we need to keep track of it and check if it becomes resolved after we process more declarations.
