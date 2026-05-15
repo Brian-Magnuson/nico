@@ -485,3 +485,50 @@ But how often do we need to call this function?
 
 A type may be resolved immediately after it is created. And if it is resolved, we don't need to worry about it anymore.
 But if it is not resolved, we need to keep track of it and check if it becomes resolved after we process more declarations.
+
+As an optimization, once a type is resolved, we can set a flag in the type to indicate that it is resolved, so that we don't have to check the resolution criteria again for that type.
+
+## Topological Sorting Algorithm
+
+In this section, we describe topological sort, an algorithm that can be used to solve multiple problems in type name resolution, including circular references.
+
+A **topological sort** is a linear ordering of the vertices of a directed graph such that for every directed edge `uv` from vertex `u` to vertex `v`, `u` comes before `v` in the ordering.
+
+Topological sort is useful in our situation since dependency relationships can be represented as a directed graph, where vertices represent different types and edges represent dependencies between types.
+
+The algorithm fairly straightforward:
+1. Let `L` be an empty list that will contain the sorted elements.
+2. Let `S` be a set of all vertices with no incoming edges (i.e., vertices that do not depend on any other vertices).
+3. While `S` is not empty:
+   a. Remove a vertex `n` from `S`.
+   b. Add `n` to the end of `L`.
+   c. For each vertex `m` with an edge `e` from `n` to `m`:
+      i. Remove edge `e` from the graph.
+      ii. If `m` has no other incoming edges, add `m` to `S`.
+4. If the graph has edges, then there is a cycle in the graph, and the algorithm cannot produce a valid topological sort. Otherwise, `L` contains a valid topological sort of the vertices.
+
+We will tweak this algorithm to fit our specific use case of type name resolution, but the general idea remains the same: we will iterate continually through the list of unresolved types until we can no longer resolve any types. If there are still unresolved types at this point, then we have a circular reference and we can report an error. Otherwise, all types have been resolved successfully.
+
+We also won't track the topological ordering.
+Although this is a sorting algorith, we are not actually interested in the order of the types; we just want to be able to resolve them all.
+
+### Type Name Resolution: Topological Sort
+
+Here is our algorithm:
+1. Create an empty set `unresolved_types` to keep track of all unresolved types.
+2. For each named type declaration:
+   1. Attempt to resolve the type immediately.
+   2. If the type cannot be resolved, add it to the `unresolved_types` set.
+3. Continue until all named type declarations have been visited.
+4. While `unresolved_types` is not empty:
+   1. Create a variable `resolved_any` and set it to `false`.
+   2. For each type `T` in `unresolved_types`:
+      1. Attempt to resolve `T`.
+      2. If `T` is resolved successfully:
+         1. Remove `T` from `unresolved_types`.
+         2. Set `resolved_any` to `true`.
+   3. If `resolved_any` is `false`, then there is a circular reference among the types in `unresolved_types`, and we can report an error about circular references and exit the algorithm.
+5. If we exit the loop successfully, then all types have been resolved.
+
+The key idea here is that we keep trying to resolve the unresolved types until we can no longer resolve any of them.
+If we iterate through the unresolved types and cannot resolve any of them, it means that there is a circular reference among those types, and we can report an error.
