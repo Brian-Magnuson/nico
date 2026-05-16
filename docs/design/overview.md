@@ -589,6 +589,44 @@ let x: typeof(block {
 
 This code will compile without warnings, but it can be potentially confusing.
 
+## Type aliases
+
+A type alias binds a name to a type. 
+It is written as `typedef Name = Type`, where `Name` is the name of the type alias and `Type` is the type being aliased.
+```
+typedef MyInt = i32
+```
+
+Although this syntax uses the equals (`=`) sign, it is not an assignment expression.
+It is a declaration that introduces a new name for a type.
+
+Type aliases are declaration-space statements, and, thus, can be written in any order, even referencing types that have not yet been declared.
+```
+typedef MyInt = Integer
+typedef Integer = i32
+```
+
+Type aliases can be used to create more descriptive names for existing types, to simplify complex type annotations, and to create recursive types.
+```
+typedef ListNode = @{ value: i32, next: ListNode }
+```
+
+Circular references are allowed as long as the type has a finite size.
+This can usually be achieved by introducing a level of indirection, such as a pointer or reference.
+
+When a name is bound to a type, the name can be used as a type annotation anywhere a type is expected.
+```
+let x: MyInt = 42
+```
+
+The type is considered a "named type" and is directly compatible with the type to which it is bound.
+For example, `MyInt` is directly compatible with `i32`, and can thus be used in operations like addition, which normally only work on basic integer types.
+```
+let x: MyInt = 42
+let y: i32 = 10
+printout x + y  // OK: MyInt is directly compatible with i32
+```
+
 ## Unsized data types
 
 Data types may be sized or unsized. Sized data types have a known size at compile time, while unsized data types do not.
@@ -1526,6 +1564,17 @@ unsafe:
     let y = p.field    // Automatic dereference
 ```
 
+With type aliases, it is possible for pointer types to form a cycle.
+The simplest case of this is a type alias that is bound to a pointer to itself.
+In such cases, implicit dereferencing is not allowed as it would lead to infinite recursion.
+```
+typedef Foo = @Foo
+let var p: Foo
+p = @p
+unsafe:
+    printout p.field  // Error: Too many implicit dereferences
+```
+
 ### Subscript expressions
 
 Subscript expressions are used to access elements of arrays. These use square brackets:
@@ -1546,6 +1595,17 @@ let var p: @[i32; 3] = @my_array
 unsafe:
     let x = (^p)[0] // Explicit dereference
     let y = p[0]    // Automatic dereference
+```
+
+With type aliases, it is possible for pointer types to form a cycle.
+The simplest case of this is a type alias that is bound to a pointer to itself.
+In such cases, implicit dereferencing is not allowed as it would lead to infinite recursion.
+```
+typedef Foo = @Foo
+let var p: Foo
+p = @p
+unsafe:
+    printout p[0] // Error: Too many implicit dereferences
 ```
 
 ### Size-of expression
