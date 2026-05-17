@@ -161,6 +161,7 @@ enum class Tok {
     KwStruct,
     KwClass,
     KwEnum,
+    KwTypedef,
 
     KwAs,
     KwIs,
