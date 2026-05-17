@@ -471,22 +471,46 @@ In the event that `Foo` cannot be resolved, we want to report an error at the lo
 
 Now that we've discussed various problems that can arise with named types, we can start creating a definition for what it means for a type to be resolved.
 
-Let's start by gathering what we know:
-- A type cannot be fully resolved until all of its "dependent types" are resolved and the size can be determined.
-- Basic types (e.g., `i32`, `f64`, `bool`) are considered resolved by default.
-- Pointer types (e.g., `@i32`, `var@i32`) are considered resolved if their underlying type is resolved.
-- Aggregate types (e.g., `[i32, 4]`, `{ x: i32, y: f64 }`) are considered resolved if all of their member types are resolved and its size can be determined.
-- A named type is considered resolved if its definition is fully resolved, meaning that all of the types it depends on are resolved.
-- Once a type is resolved, it cannot become unresolved again.
-- All types must be resolved by the end of declaration space, and all types are assumed to be resolved by the beginning of execution space.
+First, consider this type:
+```
+typedef Bar = @Foo
+```
 
-This should be a sign that the `Type` class should have an `is_resolved()` function that checks if a type is resolved based on the above criteria.
-But how often do we need to call this function?
+Question: is `@Foo` considered resolved, even if we haven't resolved `Foo` yet?
 
-A type may be resolved immediately after it is created. And if it is resolved, we don't need to worry about it anymore.
-But if it is not resolved, we need to keep track of it and check if it becomes resolved after we process more declarations.
+To make this easy to understand, let's imagine a middle ground between "definitely resolved" and "not resolved": "partially resolved".
+This middle ground is useful to think about when working through these problems, but we'll see that, in practice, we don't need to explicitly track this middle ground in our implementation.
 
-As an optimization, once a type is resolved, we can set a flag in the type to indicate that it is resolved, so that we don't have to check the resolution criteria again for that type.
+- `@Foo` has a finite size, but we haven't fully resolved `Foo` yet, so we can consider `@Foo` to be partially resolved.
+- We can establish a named type `Foo` and assume that it will be resolved eventually. 
+- When `Foo` is eventually resolved, `@Foo` will automatically become fully resolved as well.
+
+Now at this point, one of three things can happen:
+1. `Foo` is eventually resolved.
+2. `Foo` is never declared.
+3. `Foo` is declared, but it can never be resolved due to circular references.
+
+If case 2 or 3 is true, then `@Foo` can never be fully resolved and is invalid.
+If case 2 and 3 are false, then `Foo` must resolve at some point, and `@Foo` will become fully resolved.
+
+In other words, `@Foo` being valid is logically equivalent to cases 2 and 3 being false.
+So we just need to check for cases 2 and 3.
+
+- Case 2 is easy enough to check for: we can keep track of all named types that we encounter. If we encounter a type that is not resolved yet, we'll save it in a list and check that it gets resolved later.
+- Case 3 is a bit more tricky, but we can use a similar approach of tracking unresolved types. We explain the algorithm for this in more detail in the next section.
+
+As we can see, once we know that `@Foo` has a finite size, we only need to check for cases 2 and 3.
+There's no need to "upgrade" `@Foo` from being partially resolved to being fully resolved.
+We just consider `@Foo` resolved.
+
+This brings us to the definition of a resolved type.
+A resolved type is one of the following:
+- A basic type (e.g., `i32`, `f64`, `bool`).
+- A type with a determinable size where we assume that all of its dependent types are resolved (e.g., `@Foo`).
+
+This definition seems weird, being recursive and carrying an assumption about the resolution of other types.
+However, it is useful to us because of how our compiler works:
+If we erroneously classify a type as resolved, we will eventually find out when we try to resolve its dependent types.
 
 ## Topological Sorting Algorithm
 
