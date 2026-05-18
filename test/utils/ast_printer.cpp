@@ -189,6 +189,13 @@ std::any AstPrinter::visit(Stmt::ExternBlock* stmt) {
     return str;
 }
 
+std::any AstPrinter::visit(Stmt::TypeDef* stmt) {
+    std::string str = "(stmt:typedef " + std::string(stmt->identifier->lexeme);
+    str += " " + stmt->annotation->to_string();
+    str += ")";
+    return str;
+}
+
 std::any AstPrinter::visit(Stmt::Eof* /*stmt*/) {
     return std::string("(stmt:eof)");
 }

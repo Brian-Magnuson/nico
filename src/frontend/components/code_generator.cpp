@@ -312,6 +312,13 @@ std::any CodeGenerator::visit(Stmt::ExternBlock* stmt) {
     return std::any();
 }
 
+std::any CodeGenerator::visit(Stmt::TypeDef* /*stmt*/) {
+    // TODO: Implement this method.
+    // Although, all the logic for typedef statements are handled in the type
+    // checker, so it's possible this method will be empty.
+    return std::any();
+}
+
 std::any CodeGenerator::visit(Stmt::Eof* stmt) {
     // Generate code for the end-of-file (EOF) statement
     return std::any();

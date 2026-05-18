@@ -370,6 +370,11 @@ std::any LocalChecker::visit(Stmt::ExternBlock* /*stmt*/) {
     return std::any();
 }
 
+std::any LocalChecker::visit(Stmt::TypeDef* /*stmt*/) {
+    // Type definitions do not contain execution-space statements.
+    return std::any();
+}
+
 std::any LocalChecker::visit(Stmt::Eof* stmt) {
     return std::any();
 }

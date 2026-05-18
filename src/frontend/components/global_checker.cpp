@@ -354,6 +354,11 @@ std::any GlobalChecker::visit(Stmt::ExternBlock* stmt) {
     return std::any();
 }
 
+std::any GlobalChecker::visit(Stmt::TypeDef* stmt) {
+    // TODO: Implement this method.
+    return std::any();
+}
+
 std::any GlobalChecker::visit(Stmt::Eof*) {
     // Do nothing.
     return std::any();

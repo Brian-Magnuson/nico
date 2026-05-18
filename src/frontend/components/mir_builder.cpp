@@ -57,6 +57,11 @@ std::any MIRBuilder::visit(Stmt::Yield* stmt) {
     return {};
 }
 
+std::any MIRBuilder::visit(Stmt::Continue* stmt) {
+    // TODO: Implementation for visiting Continue statements goes here.
+    return {};
+}
+
 std::any MIRBuilder::visit(Stmt::Namespace* stmt) {
     // TODO: Implementation for visiting Namespace statements goes here.
     return {};
@@ -67,8 +72,8 @@ std::any MIRBuilder::visit(Stmt::ExternBlock* stmt) {
     return {};
 }
 
-std::any MIRBuilder::visit(Stmt::Continue* stmt) {
-    // TODO: Implementation for visiting Continue statements goes here.
+std::any MIRBuilder::visit(Stmt::TypeDef* stmt) {
+    // TODO: Implementation for visiting TypeDef statements goes here.
     return {};
 }
 

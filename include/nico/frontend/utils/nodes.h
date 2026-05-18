@@ -366,6 +366,7 @@ public:
     class Namespace;
     class ExternBlock;
     class StructDef;
+    class TypeDef;
 
     class Print;
     class Dealloc;
@@ -394,6 +395,7 @@ public:
         virtual std::any visit(Continue* stmt) = 0;
         virtual std::any visit(Namespace* stmt) = 0;
         virtual std::any visit(ExternBlock* stmt) = 0;
+        virtual std::any visit(TypeDef* stmt) = 0;
         virtual std::any visit(Eof* stmt) = 0;
     };
 

@@ -313,6 +313,32 @@ public:
 };
 
 /**
+ * @brief A type definition statement.
+ *
+ * Type definition statements are a kind of declaration statement used to bind a
+ * name to a type, creating a new named type. They are analogous to type aliases
+ * in other languages.
+ */
+class Stmt::TypeDef : public Stmt::IDeclAllowed {
+public:
+    // The name of the type being defined.
+    std::shared_ptr<Token> identifier;
+    // The annotation for the type being defined.
+    std::shared_ptr<Annotation> annotation;
+
+    TypeDef(
+        std::shared_ptr<Token> start_token,
+        std::shared_ptr<Token> identifier,
+        std::shared_ptr<Annotation> annotation
+    )
+        : identifier(identifier), annotation(annotation) {
+        location = &start_token->location;
+    }
+
+    std::any accept(Visitor* visitor) override { return visitor->visit(this); }
+};
+
+/**
  * @brief A print statement.
  *
  * Since a proper print function is not yet implemented, this is a temporary
