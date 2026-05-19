@@ -1,6 +1,5 @@
 #include "nico/frontend/utils/mir.h"
 
-#include <any>
 #include <memory>
 #include <queue>
 #include <string>
@@ -79,8 +78,9 @@ std::vector<std::shared_ptr<BasicBlock>> BasicBlock::get_successors() const {
                 successors.push_back(bb);
             }
         }
-        else if (auto branch =
-                     std::dynamic_pointer_cast<Instr::Branch>(terminator)) {
+        else if (
+            auto branch = std::dynamic_pointer_cast<Instr::Branch>(terminator)
+        ) {
             // Branch has two successors
             if (auto bb = branch->main_target.lock()) {
                 successors.push_back(bb);

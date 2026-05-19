@@ -2,17 +2,10 @@
 #define NICO_FRONTEND_H
 
 #include <memory>
-#include <utility>
-#include <vector>
 
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 
-#include "nico/frontend/components/code_generator.h"
-#include "nico/frontend/components/global_checker.h"
-#include "nico/frontend/components/lexer.h"
-#include "nico/frontend/components/local_checker.h"
-#include "nico/frontend/components/parser.h"
 #include "nico/frontend/utils/frontend_context.h"
 #include "nico/shared/code_file.h"
 

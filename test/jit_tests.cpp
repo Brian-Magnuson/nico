@@ -12,11 +12,9 @@
 #include "nico/backend/jit.h"
 #include "nico/frontend/frontend.h"
 #include "nico/frontend/utils/frontend_context.h"
-#include "nico/shared/code_file.h"
 #include "nico/shared/error_code.h"
 #include "nico/shared/logger.h"
 #include "nico/shared/status.h"
-#include "nico/shared/token.h"
 
 #include "test_utils.h"
 

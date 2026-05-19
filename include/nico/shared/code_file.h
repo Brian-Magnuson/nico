@@ -1,8 +1,6 @@
 #ifndef NICO_CODE_FILE_H
 #define NICO_CODE_FILE_H
 
-#include <filesystem>
-#include <optional>
 #include <string>
 
 namespace nico {

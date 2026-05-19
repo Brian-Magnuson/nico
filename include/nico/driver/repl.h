@@ -8,7 +8,6 @@
 
 #include "nico/backend/jit.h"
 #include "nico/frontend/frontend.h"
-#include "nico/shared/utils.h"
 
 namespace nico {
 

@@ -7,15 +7,12 @@
 #include <memory>
 #include <optional>
 #include <system_error>
-#include <type_traits>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
 #include "nico/frontend/utils/ast_node.h"
 #include "nico/frontend/utils/frontend_context.h"
 #include "nico/frontend/utils/nodes.h"
-#include "nico/shared/status.h"
 #include "nico/shared/token.h"
 
 namespace nico {

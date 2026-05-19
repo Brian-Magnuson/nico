@@ -1,7 +1,6 @@
 #ifndef NICO_EMITTER_H
 #define NICO_EMITTER_H
 
-#include <memory>
 #include <string_view>
 
 #include <llvm/IR/Module.h>

@@ -6,7 +6,6 @@
 
 #include "nico/frontend/utils/ast_node.h"
 #include "nico/frontend/utils/frontend_context.h"
-#include "nico/shared/ir_module_context.h"
 
 namespace nico {
 

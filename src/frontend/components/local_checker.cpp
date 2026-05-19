@@ -1,7 +1,5 @@
 #include "nico/frontend/components/local_checker.h"
 
-#include <unordered_set>
-
 #include "nico/shared/error_code.h"
 #include "nico/shared/logger.h"
 #include "nico/shared/status.h"

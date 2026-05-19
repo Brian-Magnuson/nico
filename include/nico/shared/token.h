@@ -2,9 +2,9 @@
 #define NICO_TOKEN_H
 
 #include <any>
+#include <memory>
 #include <string>
 #include <string_view>
-#include <utility>
 
 #include "nico/shared/code_file.h"
 

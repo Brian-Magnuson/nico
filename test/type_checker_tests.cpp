@@ -1,7 +1,6 @@
 #include <iostream>
 #include <memory>
 #include <optional>
-#include <utility>
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
@@ -10,10 +9,7 @@
 #include "nico/frontend/components/lexer.h"
 #include "nico/frontend/components/local_checker.h"
 #include "nico/frontend/components/parser.h"
-#include "nico/frontend/utils/ast_node.h"
-#include "nico/shared/code_file.h"
 #include "nico/shared/logger.h"
-#include "nico/shared/token.h"
 
 #include "test_utils.h"
 

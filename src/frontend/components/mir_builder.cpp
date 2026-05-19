@@ -1,5 +1,7 @@
 #include "nico/frontend/components/mir_builder.h"
 
+#include <memory>
+
 #include "nico/frontend/utils/mir_instructions.h"
 
 namespace nico {
@@ -121,7 +123,7 @@ std::any MIRBuilder::visit(Expr::Deref* expr, bool as_lvalue) {
     }
     else {
         // Otherwise, we need to load the value from the pointer.
-        auto load_instr = std::make_shared<Instr::Load>(mir_ptr);
+        auto load_instr = std::make_shared<Instr::Load>(mir_ptr, expr->type);
         current_block->add_instruction(load_instr);
 
         return load_instr->destination;

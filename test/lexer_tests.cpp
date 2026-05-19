@@ -5,7 +5,6 @@
 
 #include "nico/frontend/components/lexer.h"
 #include "nico/frontend/utils/frontend_context.h"
-#include "nico/shared/code_file.h"
 #include "nico/shared/logger.h"
 #include "nico/shared/token.h"
 

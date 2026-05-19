@@ -1,5 +1,10 @@
 #include "nico/frontend/frontend.h"
 
+#include "nico/frontend/components/code_generator.h"
+#include "nico/frontend/components/global_checker.h"
+#include "nico/frontend/components/lexer.h"
+#include "nico/frontend/components/local_checker.h"
+#include "nico/frontend/components/parser.h"
 #include "nico/shared/status.h"
 
 namespace nico {

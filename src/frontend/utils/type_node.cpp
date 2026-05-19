@@ -1,5 +1,7 @@
 #include "nico/frontend/utils/type_node.h"
 
+#include <vector>
+
 namespace nico {
 
 bool Type::Tuple::is_assignable_to(const Type& other) const {

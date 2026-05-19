@@ -7,7 +7,6 @@
 #include <memory>
 #include <string>
 #include <utility>
-#include <variant>
 
 #include "nico/backend/jit.h"
 #include "nico/frontend/frontend.h"

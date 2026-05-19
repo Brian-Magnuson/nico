@@ -1,16 +1,10 @@
 #ifndef NICO_UTILS_H
 #define NICO_UTILS_H
 
-#include <any>
-#include <charconv>
-#include <concepts>
 #include <cstdlib>
 #include <iostream>
-#include <memory>
 #include <string>
 #include <string_view>
-#include <system_error>
-#include <utility>
 #include <vector>
 
 #if defined(_WIN32) || defined(_WIN64)

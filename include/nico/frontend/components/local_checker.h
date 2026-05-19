@@ -3,13 +3,11 @@
 
 #include <any>
 #include <memory>
-#include <vector>
 
 #include "nico/frontend/utils/ast_node.h"
 #include "nico/frontend/utils/expression_checker.h"
 #include "nico/frontend/utils/frontend_context.h"
 #include "nico/frontend/utils/symbol_tree.h"
-#include "nico/frontend/utils/type_node.h"
 
 namespace nico {
 

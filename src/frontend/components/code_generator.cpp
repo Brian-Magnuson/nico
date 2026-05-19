@@ -1,15 +1,12 @@
 #include "nico/frontend/components/code_generator.h"
 
-#include <iostream>
 #include <string_view>
 
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/Verifier.h>
 
-#include "nico/frontend/utils/symbol_node.h"
 #include "nico/frontend/utils/type_node.h"
-#include "nico/shared/logger.h"
 #include "nico/shared/status.h"
 #include "nico/shared/utils.h"
 

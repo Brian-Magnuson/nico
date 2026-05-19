@@ -1,6 +1,7 @@
 #include "nico/shared/logger.h"
 
 #include <cctype>
+#include <iomanip>
 
 #include "nico/shared/utils.h"
 

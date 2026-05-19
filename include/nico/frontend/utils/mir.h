@@ -2,7 +2,6 @@
 #define NICO_MIR_H
 
 #include <any>
-#include <array>
 #include <memory>
 #include <optional>
 #include <string>
@@ -12,8 +11,7 @@
 #include <vector>
 
 #include "nico/frontend/utils/ast_node.h"
-#include "nico/frontend/utils/symbol_node.h"
-#include "nico/frontend/utils/type_node.h"
+#include "nico/frontend/utils/nodes.h"
 
 namespace nico {
 

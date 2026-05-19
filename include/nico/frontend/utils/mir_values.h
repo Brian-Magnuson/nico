@@ -12,6 +12,7 @@
 
 #include "nico/frontend/utils/ast_node.h"
 #include "nico/frontend/utils/symbol_node.h"
+#include "nico/frontend/utils/type_node.h"
 
 namespace nico {
 

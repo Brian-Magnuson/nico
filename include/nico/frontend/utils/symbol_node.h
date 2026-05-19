@@ -5,17 +5,16 @@
 #include <optional>
 #include <string>
 #include <string_view>
-#include <utility>
 #include <vector>
 
 #include "nico/frontend/utils/ast_node.h"
 #include "nico/frontend/utils/nodes.h"
-#include "nico/frontend/utils/symbol_tree.h"
 #include "nico/shared/dictionary.h"
-#include "nico/shared/error_code.h"
 #include "nico/shared/utils.h"
 
 namespace nico {
+
+class SymbolTree;
 
 /**
  * @brief A scope interface for nodes in the symbol tree.
@@ -567,21 +566,7 @@ public:
         Private,
         std::string_view overload_name,
         const Location* first_overload_location
-    )
-        : Node(Private()),
-          Node::ILocatable(Private()),
-          Node::BindingEntry(
-              Private(),
-              Binding(
-                  Binding::Mutability::None,
-                  overload_name,
-                  first_overload_location,
-                  std::dynamic_pointer_cast<Type>(
-                      std::make_shared<Type::OverloadedFn>()
-                  )
-              ),
-              Linkage::Internal
-          ) {}
+    );
 
     /**
      * @brief Creates a new overload group and adds it to the parent scope.

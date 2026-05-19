@@ -1,8 +1,8 @@
 #include "nico/frontend/utils/symbol_node.h"
 
+#include "nico/frontend/utils/symbol_tree.h"
 #include "nico/frontend/utils/type_node.h"
 #include "nico/shared/logger.h"
-#include "nico/shared/sets.h"
 
 namespace nico {
 
@@ -249,6 +249,26 @@ std::shared_ptr<Node::BindingEntry> Node::BindingEntry::create(
 
     return node;
 }
+
+Node::OverloadGroup::OverloadGroup(
+    Private,
+    std::string_view overload_name,
+    const Location* first_overload_location
+)
+    : Node(Private()),
+      Node::ILocatable(Private()),
+      Node::BindingEntry(
+          Private(),
+          Binding(
+              Binding::Mutability::None,
+              overload_name,
+              first_overload_location,
+              std::dynamic_pointer_cast<Type>(
+                  std::make_shared<Type::OverloadedFn>()
+              )
+          ),
+          Linkage::Internal
+      ) {}
 
 std::shared_ptr<Node::OverloadGroup> Node::OverloadGroup::create(
     std::shared_ptr<Node::IScope> parent,

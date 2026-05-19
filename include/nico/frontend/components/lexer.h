@@ -2,7 +2,6 @@
 #define NICO_LEXER_H
 
 #include <any>
-#include <cstdint>
 #include <memory>
 #include <string_view>
 #include <unordered_map>

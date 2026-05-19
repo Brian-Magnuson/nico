@@ -3,14 +3,13 @@
 
 #include <memory>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 
-#include "nico/frontend/utils/ast_node.h"
 #include "nico/frontend/utils/mir.h"
+#include "nico/frontend/utils/nodes.h"
 #include "nico/frontend/utils/symbol_tree.h"
 #include "nico/shared/ir_module_context.h"
 #include "nico/shared/status.h"

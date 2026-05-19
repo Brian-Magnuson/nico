@@ -204,6 +204,8 @@ Include what you use in a file.
 - Avoid relying on transitive includes.
   - An exception to this is with header-source file pairs; if an include is in the header file, it does not need to be re-included in the implementation file.
 
+Consider using clangd extensions for your IDE to get warnings about missing includes.
+
 ### Namespaces
 
 For names in the `std` namespace, `llvm` namespace, or other external namespaces:
