@@ -1573,6 +1573,9 @@ std::optional<std::shared_ptr<Stmt>> Parser::extern_block_statement(
 }
 
 std::optional<std::shared_ptr<Stmt>> Parser::extern_statement() {
+    // TODO: Merge this function with extern_block_statement now that we
+    // no longer support any other forms of extern statements.
+
     auto start_token = previous();
     bool defer_error = false;
 
@@ -1611,6 +1614,36 @@ std::optional<std::shared_ptr<Stmt>> Parser::extern_statement() {
         );
         return std::nullopt;
     }
+}
+
+std::optional<std::shared_ptr<Stmt>> Parser::typedef_statement() {
+    auto typedef_token = previous();
+    if (!match({Tok::Identifier})) {
+        Logger::inst().log_error(
+            Err::NotAnIdentifier,
+            peek()->location,
+            "Expected identifier after `typedef`."
+        );
+        return std::nullopt;
+    }
+    auto identifier = previous();
+    if (!match({Tok::Eq})) {
+        Logger::inst().log_error(
+            Err::UnexpectedToken,
+            peek()->location,
+            "Expected `=` after typedef identifier."
+        );
+        return std::nullopt;
+    }
+    auto type_annotation = annotation();
+    if (!type_annotation) {
+        return std::nullopt;
+    }
+    return std::make_shared<Stmt::TypeDef>(
+        typedef_token,
+        identifier,
+        *type_annotation
+    );
 }
 
 std::optional<std::shared_ptr<Stmt>> Parser::print_statement() {
@@ -1705,6 +1738,9 @@ std::optional<std::shared_ptr<Stmt>> Parser::statement() {
     }
     else if (match({Tok::KwExtern})) {
         stmt = extern_statement();
+    }
+    else if (match({Tok::KwTypedef})) {
+        stmt = typedef_statement();
     }
     else if (match({Tok::Eof})) {
         if (modifiers.has_value()) {

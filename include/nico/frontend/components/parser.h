@@ -512,6 +512,16 @@ class Parser {
     std::optional<std::shared_ptr<Stmt>> extern_statement();
 
     /**
+     * @brief Parses a typedef statement.
+     *
+     * A typedef statement defines a new type alias.
+     *
+     * @return A shared pointer to the parsed statement, or nullopt if the
+     * statement could not be parsed.
+     */
+    std::optional<std::shared_ptr<Stmt>> typedef_statement();
+
+    /**
      * @brief Parses a print statement.
      *
      * Print statements print a series of expressions to the console.
