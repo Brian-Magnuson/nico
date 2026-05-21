@@ -745,6 +745,44 @@ TEST_CASE("Parser extern block statements", "[parser]") {
     }
 }
 
+TEST_CASE("Parser typedef statements", "[parser]") {
+    SECTION("Valid typedef") {
+        run_parser_stmt_test(
+            "typedef MyInt = i32",
+            {"(stmt:typedef MyInt i32)", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Typedef with complex type") {
+        run_parser_stmt_test(
+            "typedef MyTuple = (i32, f64)",
+            {"(stmt:typedef MyTuple (i32, f64))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Typedef with nested tuple") {
+        run_parser_stmt_test(
+            "typedef MyNestedTuple = (i32, (f64, String))",
+            {"(stmt:typedef MyNestedTuple (i32, (f64, String)))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Typedef with another named type") {
+        run_parser_stmt_test(
+            "typedef MyInt = MyOtherInt",
+            {"(stmt:typedef MyInt MyOtherInt)", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Typedef missing identifier") {
+        run_parser_stmt_error_test("typedef", Err::NotAnIdentifier);
+    }
+
+    SECTION("Typedef missing equals") {
+        run_parser_stmt_error_test("typedef MyInt i32", Err::UnexpectedToken);
+    }
+}
+
 TEST_CASE("Parser tuple annotations", "[parser]") {
     SECTION("Tuple annotation 1") {
         run_parser_stmt_test(

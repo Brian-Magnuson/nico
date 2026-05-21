@@ -1582,7 +1582,6 @@ TEST_CASE("JIT objects", "[jit]") {
         );
     }
 
-    // TODO: Add support for printing objects and uncomment this test
     SECTION("Object printing") {
         run_jit_test(
             R"(
