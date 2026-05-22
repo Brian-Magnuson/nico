@@ -1997,10 +1997,10 @@ std::optional<std::shared_ptr<Annotation>> Parser::annotation() {
         return type_of_annotation();
     }
     if (match({Tok::Identifier})) {
-        auto token = previous();
-        return std::make_shared<Annotation::NameRef>(
-            std::make_shared<Name>(token)
-        );
+        auto name_opt = name();
+        if (!name_opt)
+            return std::nullopt;
+        return std::make_shared<Annotation::NameRef>(name_opt.value());
     }
     if (match({Tok::Nullptr})) {
         return std::make_shared<Annotation::Nullptr>(previous());
