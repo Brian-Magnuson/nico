@@ -50,6 +50,154 @@ However, they also introduce challenges in type name resolution, including self-
 We require a robust type name resolution mechanism to handle these challenges and ensure that named types are correctly resolved to their definitions.
 
 
+## How Names Work
+
+First, we need to understand that a named type has a *name*.
+In the Nico programming language, a *name* is not merely an identifier.
+
+A **name** is a string consisting of one or more parts separated by `::` and used to refer to a node in the symbol tree.
+
+When we *declare* a named type, we use an **identifier**, which is a single-part string to introduce the binding.
+But when we *reference* a named type elsewhere, we use its *name* to look it up in the symbol tree.
+
+Since named types use names, they must also be scoped.
+So if you declare a named type in a particular scope, you can only reference it from within that scope or from scopes that can see it (e.g., through namespace qualification).
+```
+namespace ns:
+    typedef MyType: i32
+
+let x: ns::MyType = 42
+```
+
+Additionally, since named types use names, they must have a node in the symbol tree that represents them.
+A type annotation may use different names depending on the surrounding scope, but the name resolution system ensures that these names resolve to the same node in the symbol tree.
+
+We actually already do this with our primitive types.
+
+There is no type annotation subclass for `i32`.
+When the user writes `i32` for a type annotation, they are actually writing a named type annotation that references the primitive type node `i32` in the symbol tree.
+So, in a sense, `i32` is a named type.
+
+We can draw our relationships like this:
+```
+i32 => Node::PrimitiveType(i32) -> Type::Int
+MyType => Node::TypeDef(MyType) -> Type::Int
+```
+
+On the left, we have the type annotations that the user writes in their code.
+The double arrows show how the annotation checker (part of the expression checker) resolves these type annotations to actual type objects.
+
+
+## Chaining Named Types
+
+Named types can reference other named types, creating chains of type dependencies.
+For example, if we have:
+```
+typedef Point: { x: i32, y: i32 }
+typedef Rectangle: { top_left: Point, bottom_right: Point }
+```
+
+Here, `Rectangle` is a named type that references the named type `Point`.
+When the type checker resolves `Rectangle`, it will follow the chain to resolve `Point` as well.
+
+Let's look at a simpler example to illustrate the concept:
+```
+typedef A: i32
+typedef B: A
+```
+
+We draw the relationships like this:
+```
+A => Node::TypeDef(A) -> Type::Int
+B => Node::TypeDef(B) -> Type::Named(A) -> Node::TypeDef(A) -> Type::Int
+```
+
+Notice this alternating pattern of Node and Type objects in the chain: each named type references a Node in the symbol tree, which resolves to a Type, and this Type may in turn reference another Node, creating a chain of Node -> Type -> Node -> Type transitions.
+
+
+## When A Name Is Not Yet Known
+
+In some cases, a name may not yet be known when the type checker encounters it. 
+
+Because type name definitions are processed in declaration space, the type name resolution system must account for the possibility that a name may not yet be available when it is first referenced.
+
+Let's consider a simple example to illustrate this:
+```
+typedef A: B
+typedef B: i32
+typedef C: A
+```
+
+In this example, when the type checker encounters the definition of `A`, it tries to resolve `B` immediately. However, at that point, `B` has not yet been defined, so the resolution fails. 
+The type name resolution system must be able to handle this situation by deferring the resolution of `A` until `B` is available, allowing the type checker to complete its processing once all necessary types have been defined.
+
+One approach to handling this is to pretend like we never visited the first statement, storing it in a special list
+to revisit later once the missing name becomes available.
+At first, this may seem like a good idea since these statements are so simple.
+However, it won't work for circular references, where each type in the cycle depends on the other, creating an infinite loop of deferrals.
+
+We *cannot* create a temporary node to represent an unresolved type.
+This is because nodes have to be placed in some scope.
+And we cannot tell from a name reference alone what scope a node is supposed to be in.
+
+We *can*, however, create a "temporary type" that represents an unresolved type in the type system. This temporary type would act as a placeholder until the actual type can be resolved, at which point it would be replaced with the correct type.
+It would have to store the following information:
+- The type annotation that was attempted to be resolved
+- The scope in which the resolution was attempted
+
+Additionally, we would need to track every place where a temporary type is used so that, when the actual type is resolved, all references to the temporary type can be updated to point to the correct type.
+
+We can try drawing the relationships with the above example using temporary types:
+```
+A => Node::TypeDef(A) -> Type::Unresolved(B, scope)
+B => Node::TypeDef(B) -> Type::Int
+C => Node::TypeDef(C) -> Type::Named(A) -> Node::TypeDef(A) -> Type::Unresolved(B, scope)
+```
+
+Notice how we can use `Type::Named(A)` even though the actual type for `A` has not yet been resolved.
+The temporary unresolved type allows us to create the node for A in the symbol tree even before the actual type for A is known, ensuring that the type system can continue to function while waiting for the missing type to be defined.
+
+Next, let's consider this case:
+```
+typedef D: (A)
+```
+
+In this example, the type `A` is hidden behind a tuple type.
+Let's examine how the type name resolution would work in this case:
+```
+D => Type::Tuple((A)) -> Type::Named(A) -> Node::TypeDef(A) -> Type::Unresolved(B, scope)
+```
+
+Here, we see how we can still use `Type::Named(A)` even though the actual type for `A` has not yet been resolved. The temporary unresolved type allows the type checker to continue processing the tuple type `D` without being blocked by the unresolved reference to `A`.
+
+
+Now, there is another case to consider:
+```
+typedef E: (F)
+```
+
+In this example, not only is the type `F` unknown, but it is also hidden behind a tuple type, making the resolution even more complex.
+Let's try diagramming the resolution process for this case:
+```
+E => Type::Tuple((F)) -> Type::Unresolved(F, scope)
+```
+
+In the previous examples, the unresolved type was preceeded by a `Node` object.
+But this time, it is a `Type` object storing the unresolved type directly.
+This means that we cannot simply use `Node` objects to track our unresolved types.
+
+We could probably use double indirection, something like a `std::shared_ptr<Type>*` to represent the unresolved type in a way that allows it to be updated when the actual type becomes available.
+
+Another option would be to make the whole tuple unresolved until the type `F` can be resolved, at which point the entire tuple would be replaced with the correct type:
+```
+E => Type::UnresolvedTuple((F), scope)
+```
+
+This could work as well.
+We get to use the `Type::Named(E)` while we wait for the unresolved type to be resolved.
+
+
+
 ## Challenges in Type Name Resolution
 
 Here, we will discuss some of the challenges that arise from creating a type name resolution mechanism for the Nico programming language.
