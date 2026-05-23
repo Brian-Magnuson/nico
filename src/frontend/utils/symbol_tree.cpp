@@ -2,6 +2,7 @@
 
 #include <vector>
 
+#include "nico/frontend/utils/type_node.h"
 #include "nico/shared/logger.h"
 #include "nico/shared/sets.h"
 #include "nico/shared/utils.h"
@@ -108,12 +109,15 @@ void SymbolTree::install_context_dependent_types(IRModuleContext& mod_ctx) {
     modified = true;
 }
 
-bool SymbolTree::resolve_name_from_scope(
+bool SymbolTree::resolve_name_downward_from_scope(
     std::shared_ptr<Name> name, std::shared_ptr<Node::IScope> searching_scope
 ) {
     // If the NameRef has a base...
     if (name->base.has_value()) {
-        if (!resolve_name_from_scope(name->base.value(), searching_scope)) {
+        if (!resolve_name_downward_from_scope(
+                name->base.value(),
+                searching_scope
+            )) {
             // If we could not resolve the base, return false.
             return false;
         }
@@ -287,29 +291,25 @@ std::optional<std::shared_ptr<Node::IScope>> SymbolTree::exit_scope() {
     return current_scope;
 }
 
-bool SymbolTree::resolve_name(std::shared_ptr<Name> name) {
+bool SymbolTree::try_resolve_name_from_scope(
+    std::shared_ptr<Name> name, std::shared_ptr<Node::IScope> searching_scope
+) {
     bool found = false;
 
     // First, search the reserved scope.
-    if (resolve_name_from_scope(name, reserved_scope)) {
+    if (resolve_name_downward_from_scope(name, reserved_scope)) {
         found = true;
     }
 
-    // If not found, search from the current scope upward.
-    auto searching_scope = current_scope;
+    // If not found, search from the searching scope upward.
     while (!found && searching_scope) {
-        if (resolve_name_from_scope(name, searching_scope)) {
+        if (resolve_name_downward_from_scope(name, searching_scope)) {
             found = true;
         }
         searching_scope = searching_scope->parent.lock();
     }
 
     if (!found) {
-        Logger::inst().log_error(
-            Err::NameNotFound,
-            name->identifier->location,
-            "Could not resolve name `" + name->to_string() + "`."
-        );
         return false;
     }
 
@@ -328,6 +328,10 @@ bool SymbolTree::resolve_name(std::shared_ptr<Name> name) {
     // group later.
 
     return true;
+}
+
+bool SymbolTree::try_resolve_name(std::shared_ptr<Name> name) {
+    return try_resolve_name_from_scope(name, current_scope);
 }
 
 std::optional<std::shared_ptr<Node::LocalScope>>

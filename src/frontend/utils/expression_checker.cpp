@@ -1270,9 +1270,12 @@ std::any ExpressionChecker::visit(Expr::Alloc* expr, bool as_lvalue) {
 }
 
 std::any ExpressionChecker::visit(Expr::NameRef* expr, bool as_lvalue) {
-    if (!symbol_tree->resolve_name(expr->name)) {
-
-        // No need to log an error here; resolve_name already does that.
+    if (!symbol_tree->try_resolve_name(expr->name)) {
+        Logger::inst().log_error(
+            Err::NameNotFound,
+            expr->name->identifier->location,
+            "Could not resolve name `" + expr->name->to_string() + "`."
+        );
 
         if (repl_mode) {
             static std::unordered_set<std::string> possible_commands = {
@@ -1656,7 +1659,7 @@ std::any ExpressionChecker::visit(Expr::Loop* expr, bool as_lvalue) {
 
 std::any ExpressionChecker::visit(Annotation::NameRef* annotation) {
     std::shared_ptr<Type> type = nullptr;
-    if (symbol_tree->resolve_name(annotation->name)) {
+    if (symbol_tree->try_resolve_name(annotation->name)) {
         auto node = annotation->name->node.lock();
         if (auto type_node = std::dynamic_pointer_cast<Node::ITypeNode>(node)) {
             type = type_node->type;
@@ -1664,8 +1667,11 @@ std::any ExpressionChecker::visit(Annotation::NameRef* annotation) {
         }
     }
 
-    // No need to log an error; the resolve name function already does that.
-
+    Logger::inst().log_error(
+        Err::NameNotFound,
+        annotation->name->identifier->location,
+        "Could not resolve name `" + annotation->name->to_string() + "`."
+    );
     return std::any();
 }
 

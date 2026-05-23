@@ -6,13 +6,9 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
-#include <utility>
 
 #include "nico/frontend/utils/ast_node.h"
 #include "nico/frontend/utils/symbol_node.h"
-#include "nico/frontend/utils/type_node.h"
-#include "nico/shared/dictionary.h"
-#include "nico/shared/error_code.h"
 #include "nico/shared/ir_module_context.h"
 
 namespace nico {
@@ -63,7 +59,7 @@ class SymbolTree {
      * @param searching_scope The scope to start searching from.
      * @return True if the name was fully resolved, false otherwise.
      */
-    bool resolve_name_from_scope(
+    bool resolve_name_downward_from_scope(
         std::shared_ptr<Name> name,
         std::shared_ptr<Node::IScope> searching_scope
     );
@@ -240,6 +236,32 @@ public:
     std::optional<std::shared_ptr<Node::IScope>> exit_scope();
 
     /**
+     * @brief Attempts to resolve a name from a specific scope.
+     *
+     * When a name is resolved, its node fields are set to the corresponding
+     * nodes in the symbol tree. The name is considered fully resolved iff all
+     * parts of the name are resolved to nodes.
+     *
+     * Search starts at the specified scope and searches downward. If the name
+     * cannot be resolved, the search is reattempted from the parent scope. This
+     * process continues until the name is resolved or there are no more parent
+     * scopes to search.
+     *
+     * If the name cannot be resolved, this function will return false, but will
+     * not log an error.
+     * If the caller requires the name to be resolved, then the caller is
+     * responsible for logging an error if this function returns false.
+     *
+     * @param name The name to resolve.
+     * @param searching_scope The scope to search within.
+     * @return True if the name was fully resolved, false otherwise.
+     */
+    bool try_resolve_name_from_scope(
+        std::shared_ptr<Name> name,
+        std::shared_ptr<Node::IScope> searching_scope
+    );
+
+    /**
      * @brief Attempts to fully resolve a name starting from the current scope.
      *
      * When a name is resolved, its node fields are set to the corresponding
@@ -251,12 +273,15 @@ public:
      * process continues until the name is resolved or there are no more parent
      * scopes to search.
      *
-     * If the name cannot be resolved, this function will log an error.
+     * If the name cannot be resolved, this function will return false, but will
+     * not log an error.
+     * If the caller requires the name to be resolved, then the caller is
+     * responsible for logging an error if this function returns false.
      *
      * @param name The name to resolve.
      * @return True if the name was fully resolved, false otherwise.
      */
-    bool resolve_name(std::shared_ptr<Name> name);
+    bool try_resolve_name(std::shared_ptr<Name> name);
 
     /**
      * @brief Retrieves the nearest local scope of the specified kind, starting

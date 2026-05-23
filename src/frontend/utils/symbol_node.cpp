@@ -250,6 +250,65 @@ std::shared_ptr<Node::BindingEntry> Node::BindingEntry::create(
     return node;
 }
 
+llvm::Value* Node::BindingEntry::get_llvm_allocation(
+    std::unique_ptr<llvm::IRBuilder<>>& builder
+) {
+    llvm::Value* ptr;
+    std::string suffix =
+        PTR_INSTANCEOF(binding.type, Type::Function) ? "$var" : "";
+
+    if (is_global) {
+        auto ir_module = builder->GetInsertBlock()->getModule();
+        // Attempt to get the global variable.
+        ptr = ir_module->getGlobalVariable(symbol + suffix, true);
+        // If it doesn't exist, declare it.
+        auto llvm_type = binding.type->get_llvm_type(builder);
+        if (ptr == nullptr) {
+            ptr = new llvm::GlobalVariable(
+                *ir_module,
+                llvm_type,
+                false, // isConstant
+                get_llvm_linkage(),
+                is_initialized
+                    ? nullptr
+                    : llvm::Constant::getNullValue(llvm_type), // Initializer
+                symbol + suffix
+            );
+
+            // If the variable was not initialized before, it should be
+            // initialized now.
+            is_initialized = true;
+
+            /*
+            Note: Using `nullptr` is very different from using
+            `getNullValue`. `nullptr` means that the global variable is
+            declared but not defined. `getNullValue` means that the global
+            variable is defined and initialized to zero.
+
+            This is important, because global variables with external
+            linkage should be defined first, and then only declared in other
+            modules. If we define a variable multiple times, we may get
+            unusual errors involving missing symbols. If we declare a
+            variable multiple times, but never define it, we will also get
+            errors. The trick is to initialize the variable to zero on the
+            first definition, and then declare it without an initializer on
+            subsequent definitions.
+            */
+        }
+    }
+    else {
+        ptr = llvm_ptr;
+        if (ptr == nullptr) {
+            panic(
+                "Node::BindingEntry::get_llvm_allocation: Local variable "
+                "has "
+                "no LLVM allocation."
+            );
+        }
+    }
+    return ptr;
+}
+
 Node::OverloadGroup::OverloadGroup(
     Private,
     std::string_view overload_name,
