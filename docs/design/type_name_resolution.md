@@ -50,6 +50,65 @@ However, they also introduce challenges in type name resolution, including self-
 We require a robust type name resolution mechanism to handle these challenges and ensure that named types are correctly resolved to their definitions.
 
 
+## Why Type Name Resolution Is Challenging
+
+The main challenges of type name resolution stem from a particular feature of our language: declaration space.
+
+The Nico programming language describes two kinds of spaces: **declaration space** and **execution space**.
+Declaration and execution space affect the order in which statements are processed.
+Whether something is in declaration space or execution space is determined by the type of statement and its scope, not by its position in the source code.
+
+**Declaration space** is where declarations are processed.
+This includes static variables, function headers, structs, classes, namespaces, external declaration namespaces, and exports.
+
+**Execution space** is where statements are executed in the order they are written.
+Statements that are not in declaration space are in execution space.
+This includes but is not limited to assignments, let variable declarations, function calls, loops, conditionals, block expressions, print statements, and heap allocations.
+
+```
+                       // Execution space
+
+namespace ns:          // Declaration space
+    func foo() {       // Declaration space
+        statement1     // Execution space
+    }      
+    static var x: i32  // Declaration space
+
+statement1             // Execution space
+
+func bar():            // Declaration space
+    statement2         // Execution space
+```
+
+Declaration space has an important property: the order of declarations does not matter as long as all dependencies are satisfied by the end of the declaration space.
+A prime example of this is when we have two functions that call each other:
+```
+func foo():
+    bar()
+
+func bar():
+    foo()
+```
+
+In this example, both `foo` and `bar` are in declaration space. 
+The function `foo` is allowed to call `bar` even though `bar` is declared after `foo`.
+This is easy to validate because function calls are execution space only, meaning they are always checked after all declarations are processed.
+In this example, by the time the call expression `bar()` is checked, `bar` has already been declared, so the call is valid.
+This is a simple example of how declaration space allows for more flexible ordering of declarations, which can lead to more readable and maintainable code.
+
+However, the situation is different with named types.
+Consider the following example:
+```
+typedef Bar = Foo
+typedef Foo = i32
+```
+
+This case is different from the function example above because both declarations are in declaration space, and there is no execution space to process after the declarations.
+Because type checkers must always visit statements one by one, a declaration-space type checker must examine the first declaration and try to resolve `Bar` before it has been declared.
+
+We'll explore how to solve this problem in later sections.
+
+
 ## How Names Work
 
 First, we need to understand that a named type has a *name*.
@@ -195,79 +254,12 @@ E => Type::UnresolvedTuple((F), scope)
 
 This could work as well.
 We get to use the `Type::Named(E)` while we wait for the unresolved type to be resolved.
+It also works well with our current type annotation system, which returns an empty `std::any()` when it fails to fully resolve a type annotation.
 
 
+## Type Resolution Problems
 
-## Challenges in Type Name Resolution
-
-Here, we will discuss some of the challenges that arise from creating a type name resolution mechanism for the Nico programming language.
-Many of these challenges stem from an important feature of the Nico programming language:
-declaration space.
-
-The Nico programming language describes two kinds of spaces: **declaration space** and **execution space**.
-Declaration and execution space affect the order in which statements are processed.
-Whether something is in declaration space or execution space is determined by the type of statement and its scope, not by its position in the source code.
-
-**Declaration space** is where declarations are processed.
-This includes static variables, function headers, structs, classes, namespaces, external declaration namespaces, and exports.
-
-**Execution space** is where statements are executed in the order they are written.
-Statements that are not in declaration space are in execution space.
-This includes but is not limited to assignments, let variable declarations, function calls, loops, conditionals, block expressions, print statements, and heap allocations.
-
-```
-                       // Execution space
-
-namespace ns:          // Declaration space
-    func foo() {       // Declaration space
-        statement1     // Execution space
-    }      
-    static var x: i32  // Declaration space
-
-statement1             // Execution space
-
-func bar():            // Declaration space
-    statement2         // Execution space
-```
-
-Declaration space has an important property: the order of declarations does not matter as long as all dependencies are satisfied by the end of the declaration space.
-A prime example of this is when we have two functions that call each other:
-```
-func foo():
-    bar()
-
-func bar():
-    foo()
-```
-
-In this example, both `foo` and `bar` are in declaration space. 
-The function `foo` is allowed to call `bar` even though `bar` is declared after `foo`.
-This is easy to validate because function calls are execution space only, meaning they are always checked after all declarations are processed.
-In this example, by the time the call expression `bar()` is checked, `bar` has already been declared, so the call is valid.
-This is a simple example of how declaration space allows for more flexible ordering of declarations, which can lead to more readable and maintainable code.
-
-However, the situation is different with named types.
-Consider the following example:
-```
-typedef Foo: (@Bar)
-typedef Bar: (@Foo)
-```
-
-This code is valid despite the circular reference between `Foo` and `Bar` due to the use of pointer types, which ensure that the types are not infinitely large.
-
-This case is different from the function example above because both declarations are in declaration space, and there is no execution space to process after the declarations.
-Because type checkers must always visit statements one by one, a declaration-space type checker must examine the first declaration and try to resolve `Bar` before it has been declared.
-
-In addition to ensuring the above code is valid, we also must watch out for invalid cases such as these:
-```
-typedef Foo: Foo
-
-typedef Bar: Baz
-typedef Baz: Bar
-```
-
-It may be possible to solve our problems by introducing an additional type-checker that runs before the declaration-space type checker.
-However, if we unpack the problems further, we can potentially design an algorithm that can be integrated into the declaration-space type checker itself, which would be more efficient and easier to maintain.
+Here we discuss some of the problems that arise with type name resolution, and how to approach them.
 
 ### Type Equivalence Problem
 
@@ -328,15 +320,15 @@ What we want is not to check for type equivalence, but direct compatibility.
 We must define a new function that checks for direct compatibility between two types, and use it in our type checker instead of checking for type equivalence.
 It may look something like this:
 ```cpp
-expr->type->is<Type::Tuple>();
-auto tuple_type = expr->type->as<Type::Tuple>();
-expr->type->is_directly_compatible_with(tuple_type);
+types::instance_of<Type::Tuple>(expr->type);
+auto tuple_type = types::as<Type::Tuple>(expr->type);
+types::are_directly_compatible(expr->type, other->type);
 ```
 
 These functions will take the place of `std::dynamic_pointer_cast` and `Type::operator==` and will check for direct compatibility instead of type equivalence.
+The reason we use global functions is because C++ makes it difficult to use template member functions with inheritance.
+And we need the Type subclasses fully defined to properly implement these functions, so we cannot define them as member functions of the Type base class.
 
-For most types, the behavior of these functions will be like calling `std::dynamic_pointer_cast`.
-But when named types get involved, we can take additional steps to check for direct compatibility.
 
 ### Transitive Type Compatibility Problem
 
@@ -615,11 +607,16 @@ Once `Foo` is resolved, the tuple is guaranteed to be resolved as well.
 Though for a better user experience, we may want to at least track the location of `(i32, Foo)`.
 In the event that `Foo` cannot be resolved, we want to report an error at the location of the tuple type, not just at the location of `Foo` (if it even exists).
 
-## What Is A Resolved Type?
 
-Now that we've discussed various problems that can arise with named types, we can start creating a definition for what it means for a type to be resolved.
+## Using Types Before They Are Fully Resolved
 
-First, consider this type:
+This concept was discussed earlier in our discussion of using types when names are not yet known.
+However, we'd like to expand on this concept further.
+
+Our type resolution system will rely on a key assumption:
+When we encounter a type that has not yet been resolved, we assume that it is valid and will eventually be resolved.
+
+First, let's consider the following code:
 ```
 typedef Bar = @Foo
 ```
@@ -660,6 +657,45 @@ This definition seems weird, being recursive and carrying an assumption about th
 However, it is useful to us because of how our compiler works:
 If we erroneously classify a type as resolved, we will eventually find out when we try to resolve its dependent types.
 
+
+## The Unresolved Type
+
+We've mentioned that our solution will involve creating a special "unresolved type" to represent types that have not yet been resolved.
+Here, we will discuss this unresolved type in more detail.
+
+First, this unresolved type is a special subclass of `Type` that represents a type that has not yet been resolved.
+```cpp
+class Type::Unresolved : public Type {
+};
+```
+
+Unresolved types should only exist temporarily during declaration-space type checking, and they should never be exposed to the user or to later stages of the compiler.
+This is convenient since any attempt to use an unresolved type would be an error.
+It does not need to be comparable to other types (we can have it panic if we attempt to compare it to another type), and it does not need to have any of the usual properties of a normal type (e.g., size, alignment, etc.).
+It just needs to be a marker that indicates that a type is unresolved, and it needs to store the necessary information to allow us to resolve it later.
+
+That necessary information includes:
+- The type annotation that was attempted to be resolved when we created this unresolved type.
+- The scope in which the resolution was attempted.
+
+```cpp
+class Type::Unresolved : public Type {
+public:
+    std::shared_ptr<Annotation> annotation;
+    std::weak_ptr<Node::Scope> scope;
+};
+```
+
+To be able to resolve this type later, we need to keep track of all places where this unresolved type is used.
+This means using a double indirection approach:
+```cpp
+std::vector<std::shared_ptr<Type::Unresolved>*> unresolved_types;
+```
+
+We also need our symbol tree to be capable of resolving a name from any scope, not just the current scope.
+This is because we may encounter an unresolved type in one scope, but the actual type may be declared in a different scope.
+
+
 ## Topological Sorting Algorithm
 
 In this section, we describe topological sort, an algorithm that can be used to solve multiple problems in type name resolution, including circular references.
@@ -687,10 +723,10 @@ Although this is a sorting algorith, we are not actually interested in the order
 ### Type Name Resolution: Topological Sort
 
 Here is our algorithm:
-1. Create an empty set `unresolved_types` to keep track of all unresolved types.
+1. Create an empty list `unresolved_types` to keep track of all unresolved types.
 2. For each named type declaration:
    1. Attempt to resolve the type immediately.
-   2. If the type cannot be resolved, add it to the `unresolved_types` set.
+   2. If the type cannot be resolved, add it to the `unresolved_types` list.
 3. Continue until all named type declarations have been visited.
 4. While `unresolved_types` is not empty:
    1. Create a variable `resolved_any` and set it to `false`.
@@ -704,3 +740,23 @@ Here is our algorithm:
 
 The key idea here is that we keep trying to resolve the unresolved types until we can no longer resolve any of them.
 If we iterate through the unresolved types and cannot resolve any of them, it means that there is a circular reference among those types, and we can report an error.
+
+Note that this algorithm involves modifying a list as we iterate through it.
+This is somewhat inefficient if we keep removing elements from the middle of the list.
+
+One idea to optimize this is to use a linked list instead of a vector for `unresolved_types`, which allows for efficient removal of elements from the middle of the list.
+However, linked lists are generally less cache-friendly than vectors and involve extra memory overhead for storing pointers, so this may not be the best choice.
+
+A better approach is to use two vectors like this:
+
+1. Create an empty vector `pending_resolution` to keep track of all unresolved types.
+2. While `pending_resolution` is not empty:
+   1. For each named type declaration:
+      1. Create a second vector `next_pending` to keep track of types that cannot be resolved in the current iteration.
+      2. Attempt to resolve the type immediately.
+      3. If the type cannot be resolved, add it to the `next_pending` vector.
+   2. If `next_pending` and `pending_resolution` are the same size, then no types were resolved in this iteration, which means there is a circular reference among the types in `pending_resolution`.
+   3. Otherwise, we swap `next_pending` and `pending_resolution`.
+3. If we exit the loop successfully, then all types have been resolved.
+
+Vector swapping in C++ is a constant time operation, so this approach allows us to avoid the inefficiency of removing elements from the middle of a vector while still maintaining good cache performance and low memory overhead.
