@@ -249,7 +249,7 @@ We could probably use double indirection, something like a `std::shared_ptr<Type
 
 Another option would be to make the whole tuple unresolved until the type `F` can be resolved, at which point the entire tuple would be replaced with the correct type:
 ```
-E => Type::UnresolvedTuple((F), scope)
+E => Type::Unresolved((F), scope)
 ```
 
 This could work as well.

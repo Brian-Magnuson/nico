@@ -83,13 +83,10 @@ protected:
 
 /**
  * @brief An interface for nodes that represent types in the symbol tree.
- *
- * Note: the node is not ready to use until `initialize_node()` is called.
- * This is because the type needs to be constructed from a weak pointer to this
- * node, which cannot be safely created in the constructor.
  */
 class Node::ITypeNode : public virtual Node {
 public:
+    // The type object that this node represents.
     std::shared_ptr<Type> type;
 
     virtual ~ITypeNode() = default;
@@ -100,7 +97,7 @@ protected:
 };
 
 /**
- * @brief An interfaces for nodes that reference a location in the source code.
+ * @brief An interface for nodes that reference a location in the source code.
  *
  * Locatable nodes are useful for error logging, allowing one to report where
  * a symbol was first declared.
@@ -273,6 +270,33 @@ public:
 
     virtual std::string to_string() const override {
         return "PTYPE \"" + symbol + "\" : " + type->to_string();
+    }
+};
+
+/**
+ * @brief A type definition node in the symbol tree.
+ *
+ * A type definition binds a name to a type, allowing the type to be referred
+ * to by name. It is similar to type aliases in other languages.
+ */
+class Node::TypeDef : public virtual Node::ITypeNode,
+                      public virtual Node::ILocatable {
+public:
+    virtual ~TypeDef() = default;
+
+    TypeDef(Private, const Location* location)
+        : Node(Private()),
+          Node::ITypeNode(Private()),
+          Node::ILocatable(Private(), location) {}
+
+    static std::shared_ptr<TypeDef> create(
+        std::shared_ptr<Node::IScope> parent,
+        std::shared_ptr<Token> token,
+        std::shared_ptr<Type> type
+    );
+
+    virtual std::string to_string() const override {
+        return "TYPEDEF \"" + symbol + "\" : " + type->to_string();
     }
 };
 

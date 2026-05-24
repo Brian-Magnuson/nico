@@ -32,10 +32,6 @@ class SymbolTree;
  * All nodes in the symbol tree have a unique symbol to identify them.
  * Most subclasses of Node inherit from Node::IScope, meaning they have other
  * nodes as children.
- *
- * Nodes may require additional initialization after construction to ensure
- * parent references are set up correctly. Please use `initialize_node()`
- * immediately after constructing nodes.
  */
 class Node : public std::enable_shared_from_this<Node> {
 public:
@@ -48,6 +44,7 @@ public:
     class Namespace;
     class ExternBlock;
     class PrimitiveType;
+    class TypeDef;
     class StructDef;
     class LocalScope;
     class BindingEntry;

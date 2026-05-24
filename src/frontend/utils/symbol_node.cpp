@@ -146,6 +146,22 @@ std::shared_ptr<Node::PrimitiveType> Node::PrimitiveType::create(
     return node;
 }
 
+std::shared_ptr<Node::TypeDef> Node::TypeDef::create(
+    std::shared_ptr<Node::IScope> parent,
+    std::shared_ptr<Token> token,
+    std::shared_ptr<Type> type
+) {
+    auto node = std::make_shared<TypeDef>(Private(), &token->location);
+    node->parent = parent;
+    node->short_name = std::string(token->lexeme);
+
+    if (type == nullptr) {
+        panic("Node::TypeDef: Type cannot be null.");
+    }
+    node->type = type;
+    return node;
+}
+
 std::shared_ptr<Node::StructDef> Node::StructDef::create(
     std::shared_ptr<Node::IScope> parent,
     std::shared_ptr<Token> token,
