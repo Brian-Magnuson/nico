@@ -149,6 +149,7 @@ public:
     // Special types
     class Void;
     class Named;
+    class Unresolved;
 
     Type() = default;
     virtual ~Type() = default;

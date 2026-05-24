@@ -692,8 +692,13 @@ This means using a double indirection approach:
 std::vector<std::shared_ptr<Type::Unresolved>*> unresolved_types;
 ```
 
-We also need our symbol tree to be capable of resolving a name from any scope, not just the current scope.
-This is because we may encounter an unresolved type in one scope, but the actual type may be declared in a different scope.
+We also need to make changes to the following parts of the compiler:
+- The symbol tree
+  - We need to be able to resolve names from any scope, not just the current scope, since we may encounter an unresolved type in one scope but the actual type may be declared in a different scope.
+- The type annotation checker (in the expression checker)
+  - When the type annotation checker encounters a type annotation that it cannot fully resolve, it should create an `Unresolved` type and add it to the `unresolved_types` list.
+  - It should avoid reporting errors about unresolved types at this stage, since we are assuming that they will eventually be resolved.
+  - Once declaration-space type checking is complete, the annotation checker can switch to a different mode where it reports errors about any unresolved types.
 
 
 ## Topological Sorting Algorithm
