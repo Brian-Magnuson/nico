@@ -144,7 +144,7 @@ MyType => Node::TypeDef(MyType) -> Type::Int
 ```
 
 On the left, we have the type annotations that the user writes in their code.
-The double arrows show how the annotation checker (part of the expression checker) resolves these type annotations to actual type objects.
+The double arrows show how the annotation checker resolves these type annotations to actual type objects.
 
 
 ## Chaining Named Types

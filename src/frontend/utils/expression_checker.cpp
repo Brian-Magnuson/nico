@@ -1,5 +1,6 @@
 #include "nico/frontend/utils/expression_checker.h"
 
+#include "nico/frontend/utils/annotation_checker.h"
 #include "nico/shared/error_code.h"
 #include "nico/shared/logger.h"
 
@@ -729,7 +730,7 @@ std::any ExpressionChecker::visit(Expr::Cast* expr, bool as_lvalue) {
         return std::any();
     auto expr_type = expr_type_opt.value();
 
-    auto anno_any = expr->annotation->accept(this);
+    auto anno_any = expr->annotation->accept(annotation_checker.get());
     if (!anno_any.has_value())
         return std::any();
     auto target_type = std::any_cast<std::shared_ptr<Type>>(anno_any);
@@ -1146,7 +1147,7 @@ std::any ExpressionChecker::visit(Expr::SizeOf* expr, bool as_lvalue) {
         return std::any();
     }
 
-    auto type_any = expr->annotation->accept(this);
+    auto type_any = expr->annotation->accept(annotation_checker.get());
     if (!type_any.has_value())
         return std::any();
     auto type = std::any_cast<std::shared_ptr<Type>>(type_any);
@@ -1193,7 +1194,8 @@ std::any ExpressionChecker::visit(Expr::Alloc* expr, bool as_lvalue) {
             );
             return std::any();
         }
-        auto anno_any = expr->type_annotation.value()->accept(this);
+        auto anno_any =
+            expr->type_annotation.value()->accept(annotation_checker.get());
         if (!anno_any.has_value())
             return std::any();
         auto alloc_inner_type = std::any_cast<std::shared_ptr<Type>>(anno_any);
@@ -1222,7 +1224,8 @@ std::any ExpressionChecker::visit(Expr::Alloc* expr, bool as_lvalue) {
     }
     else {
         // `alloc <type_annotation> [with <init_expr>]`
-        auto anno_any = expr->type_annotation.value()->accept(this);
+        auto anno_any =
+            expr->type_annotation.value()->accept(annotation_checker.get());
         if (!anno_any.has_value())
             return std::any();
         auto alloc_inner_type = std::any_cast<std::shared_ptr<Type>>(anno_any);
@@ -1657,157 +1660,21 @@ std::any ExpressionChecker::visit(Expr::Loop* expr, bool as_lvalue) {
     return std::any();
 }
 
-std::any ExpressionChecker::visit(Annotation::NameRef* annotation) {
-    std::shared_ptr<Type> type = nullptr;
-    if (symbol_tree->try_resolve_name(annotation->name)) {
-        auto node = annotation->name->node.lock();
-        if (auto type_node = std::dynamic_pointer_cast<Node::ITypeNode>(node)) {
-            type = type_node->type;
-            return type;
-        }
-    }
+std::
+    pair<std::shared_ptr<ExpressionChecker>, std::shared_ptr<AnnotationChecker>>
+    ExpressionChecker::create(
+        std::shared_ptr<SymbolTree> symbol_tree,
+        Stmt::Visitor* stmt_visitor,
+        bool repl_mode
+    ) {
+    auto checker = std::make_shared<ExpressionChecker>(Private());
+    checker->symbol_tree = symbol_tree;
+    checker->stmt_visitor = stmt_visitor;
+    checker->annotation_checker =
+        AnnotationChecker::create(symbol_tree, checker->shared_from_this());
+    checker->repl_mode = repl_mode;
 
-    Logger::inst().log_error(
-        Err::NameNotFound,
-        annotation->name->identifier->location,
-        "Could not resolve name `" + annotation->name->to_string() + "`."
-    );
-    return std::any();
-}
-
-std::any ExpressionChecker::visit(Annotation::Pointer* annotation) {
-    std::shared_ptr<Type> type = nullptr;
-    auto base_any = annotation->base->accept(this);
-    if (!base_any.has_value())
-        return std::any();
-    auto base_type = std::any_cast<std::shared_ptr<Type>>(base_any);
-    type =
-        std::make_shared<Type::RawTypedPtr>(base_type, annotation->is_mutable);
-    return type;
-}
-
-std::any ExpressionChecker::visit(Annotation::Nullptr* /*annotation*/) {
-    std::shared_ptr<Type> type = std::make_shared<Type::Nullptr>();
-    return type;
-}
-
-std::any ExpressionChecker::visit(Annotation::Void* /*annotation*/) {
-    std::shared_ptr<Type> type = std::make_shared<Type::Void>();
-    return type;
-}
-
-std::any ExpressionChecker::visit(Annotation::Reference* annotation) {
-    std::shared_ptr<Type> type = nullptr;
-    auto base_any = annotation->base->accept(this);
-    if (!base_any.has_value())
-        return std::any();
-    auto base_type = std::any_cast<std::shared_ptr<Type>>(base_any);
-    type = std::make_shared<Type::Reference>(base_type, annotation->is_mutable);
-    return type;
-}
-
-std::any ExpressionChecker::visit(Annotation::Array* annotation) {
-    std::shared_ptr<Type> type = nullptr;
-    if (!annotation->base.has_value()) {
-        type = std::make_shared<Type::EmptyArray>();
-        return type;
-    }
-    auto base_any = annotation->base.value()->accept(this);
-    if (!base_any.has_value())
-        return std::any();
-    auto base_type = std::any_cast<std::shared_ptr<Type>>(base_any);
-    if (annotation->size.has_value()) {
-        type =
-            std::make_shared<Type::Array>(base_type, annotation->size.value());
-    }
-    else {
-        type = std::make_shared<Type::Array>(base_type);
-    }
-    return type;
-}
-
-std::any ExpressionChecker::visit(Annotation::Object* annotation) {
-    std::shared_ptr<Type> type = nullptr;
-
-    Dictionary<std::string, Binding> fields_dict;
-    bool has_error = false;
-
-    for (const auto& field : annotation->fields) {
-        auto field_name = std::string(field.identifier->lexeme);
-        if (auto existing_binding = fields_dict.at(field_name)) {
-            Logger::inst().log_error(
-                Err::DuplicateObjectAnnotationFieldName,
-                field.identifier->location,
-                "Duplicate field name in object annotation: `" + field_name +
-                    "`."
-            );
-            Logger::inst().log_note(
-                existing_binding->location,
-                "Previous field with the same name declared here."
-            );
-            has_error = true;
-            continue;
-        }
-
-        auto field_type_any = field.annotation->accept(this);
-        if (!field_type_any.has_value())
-            return std::any();
-        auto field_type = std::any_cast<std::shared_ptr<Type>>(field_type_any);
-
-        fields_dict.insert(
-            field_name,
-            Binding(
-                field.mutability,
-                field_name,
-                &field.identifier->location,
-                field_type
-            )
-        );
-    }
-
-    if (has_error)
-        return std::any();
-
-    type = std::make_shared<Type::Object>(std::move(fields_dict));
-    return type;
-}
-
-std::any ExpressionChecker::visit(Annotation::Tuple* annotation) {
-    std::shared_ptr<Type> type = nullptr;
-    std::vector<std::shared_ptr<Type>> element_types;
-    for (const auto& element : annotation->elements) {
-        auto elem_any = element->accept(this);
-        if (!elem_any.has_value())
-            return std::any();
-        element_types.push_back(std::any_cast<std::shared_ptr<Type>>(elem_any));
-    }
-    if (element_types.empty()) {
-        type = std::make_shared<Type::Unit>();
-    }
-    else {
-        type = std::make_shared<Type::Tuple>(element_types);
-    }
-
-    return type;
-}
-
-std::any ExpressionChecker::visit(Annotation::TypeOf* annotation) {
-    if (in_declaration_space) {
-        Logger::inst().log_error(
-            Err::UncheckableTypeofAnnotation,
-            annotation->location,
-            "Cannot use `typeof` annotation in declaration space."
-        );
-        return std::any();
-    }
-    annotation->expression->accept(this, false);
-    if (!annotation->expression->type) {
-        panic(
-            "Annotation::TypeOf::visit: expression has no type after checking."
-        );
-        return std::any();
-    }
-    return annotation->expression->type;
+    return std::make_pair(checker, checker->annotation_checker);
 }
 
 std::optional<std::shared_ptr<Type>> ExpressionChecker::expr_check(
@@ -1826,14 +1693,6 @@ std::optional<std::shared_ptr<Type>> ExpressionChecker::expr_check(
         return std::nullopt;
     }
     return expr->type;
-}
-
-std::optional<std::shared_ptr<Type>>
-ExpressionChecker::annotation_check(std::shared_ptr<Annotation> annotation) {
-    auto annotation_any = annotation->accept(this);
-    if (!annotation_any.has_value())
-        return std::nullopt;
-    return std::any_cast<std::shared_ptr<Type>>(annotation_any);
 }
 
 } // namespace nico

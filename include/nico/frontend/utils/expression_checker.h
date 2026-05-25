@@ -14,6 +14,8 @@
 
 namespace nico {
 
+class AnnotationChecker;
+
 /**
  * @brief A visitor for checking expressions in the AST.
  *
@@ -22,17 +24,25 @@ namespace nico {
  *
  * Visit functions in this class return shared pointers to type nodes.
  */
-class ExpressionChecker : public Expr::Visitor, public Annotation::Visitor {
+class ExpressionChecker
+    : public Expr::Visitor,
+      public std::enable_shared_from_this<ExpressionChecker> {
     // The symbol tree used for type checking.
-    const std::shared_ptr<SymbolTree> symbol_tree;
+    std::shared_ptr<SymbolTree> symbol_tree;
+    // The annotation checker used for checking annotations within expressions.
+    std::shared_ptr<AnnotationChecker> annotation_checker;
     // The visitor for checking statements. This is used for checking
     // expressions that contain statements, such as blocks and loops.
     Stmt::Visitor* stmt_visitor;
-    // Whether or not the checker is currently in declaration space.
-    // Expression checking is not allowed in declaration space.
-    bool in_declaration_space;
     // Whether or not the expression checker is currently in REPL mode.
     bool repl_mode;
+
+    /**
+     * @brief A private struct used to restrict access to constructors.
+     */
+    struct Private {
+        explicit Private() = default;
+    };
 
     /**
      * @brief Checks if the given expression is a pointer and fully dereferences
@@ -131,27 +141,33 @@ class ExpressionChecker : public Expr::Visitor, public Annotation::Visitor {
     std::any visit(Expr::Conditional* expr, bool as_lvalue) override;
     std::any visit(Expr::Loop* expr, bool as_lvalue) override;
 
-    std::any visit(Annotation::NameRef* annotation) override;
-    std::any visit(Annotation::Pointer* annotation) override;
-    std::any visit(Annotation::Nullptr* annotation) override;
-    std::any visit(Annotation::Void* annotation) override;
-    std::any visit(Annotation::Reference* annotation) override;
-    std::any visit(Annotation::Array* annotation) override;
-    std::any visit(Annotation::Object* annotation) override;
-    std::any visit(Annotation::Tuple* annotation) override;
-    std::any visit(Annotation::TypeOf* annotation) override;
-
 public:
-    ExpressionChecker(
+    virtual ~ExpressionChecker() = default;
+
+    ExpressionChecker(Private) {}
+
+    /**
+     * @brief Constructs a new expression checker.
+     *
+     * Expression checkers come with a built-in annotation checker, which is
+     * used for checking annotations within expressions.
+     *
+     * @param symbol_tree The symbol tree to use for type checking.
+     * @param stmt_visitor The visitor to use for checking statements within
+     * expressions.
+     * @param repl_mode Whether or not the expression checker is being used in
+     * REPL mode.
+     * @return A pair containing the new expression checker and its built-in
+     * annotation checker.
+     */
+    static std::pair<
+        std::shared_ptr<ExpressionChecker>,
+        std::shared_ptr<AnnotationChecker>>
+    create(
         std::shared_ptr<SymbolTree> symbol_tree,
         Stmt::Visitor* stmt_visitor,
-        bool in_declaration_space,
         bool repl_mode = false
-    )
-        : symbol_tree(symbol_tree),
-          stmt_visitor(stmt_visitor),
-          in_declaration_space(in_declaration_space),
-          repl_mode(repl_mode) {}
+    );
 
     /**
      * @brief Checks the given expression and returns its type if it is valid.
@@ -176,16 +192,6 @@ public:
         bool as_lvalue,
         bool allow_unsized_rvalue = false
     );
-
-    /**
-     * @brief Checks the given annotation and returns its type if it is valid.
-     *
-     * @param annotation The annotation to check.
-     * @return The type of the annotation if it is valid, or nullopt if it is
-     * not valid.
-     */
-    std::optional<std::shared_ptr<Type>>
-    annotation_check(std::shared_ptr<Annotation> annotation);
 };
 
 } // namespace nico

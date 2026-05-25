@@ -11,7 +11,7 @@ namespace nico {
 
 std::any LocalChecker::visit(Stmt::Expression* stmt) {
     // Visit the expression.
-    expression_checker.expr_check(stmt->expression, false, true);
+    expression_checker->expr_check(stmt->expression, false, true);
     return std::any();
 }
 
@@ -21,7 +21,7 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
     // Visit the initializer (if present).
     if (stmt->expression.has_value()) {
         auto expr_type_opt =
-            expression_checker.expr_check(stmt->expression.value(), false);
+            expression_checker->expr_check(stmt->expression.value(), false);
         if (!expr_type_opt.has_value())
             return std::any();
         expr_type = expr_type_opt.value();
@@ -33,7 +33,7 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
     // Check the type annotation.
     if (stmt->annotation.has_value()) {
         auto anno_type_opt =
-            expression_checker.annotation_check(stmt->annotation.value());
+            annotation_checker->annotation_check(stmt->annotation.value());
         if (!anno_type_opt.has_value())
             return std::any();
         auto anno_type = anno_type_opt.value();
@@ -121,7 +121,7 @@ std::any LocalChecker::visit(Stmt::Static* stmt) {
     }
 
     auto expr_type_opt =
-        expression_checker.expr_check(stmt->expression.value(), false);
+        expression_checker->expr_check(stmt->expression.value(), false);
     if (!expr_type_opt.has_value())
         return std::any();
     auto expr_type = expr_type_opt.value();
@@ -189,7 +189,7 @@ std::any LocalChecker::visit(Stmt::Func* stmt) {
         if (param_binding.default_expr.has_value()) {
             auto default_expr_ptr = param_binding.default_expr.value().lock();
             auto default_expr_type_opt =
-                expression_checker.expr_check(default_expr_ptr, false);
+                expression_checker->expr_check(default_expr_ptr, false);
             if (!default_expr_type_opt.has_value()) {
                 has_error = true;
             }
@@ -225,7 +225,7 @@ std::any LocalChecker::visit(Stmt::Func* stmt) {
 
     // Check the body.
     auto body_type_opt =
-        expression_checker.expr_check(stmt->body.value(), false);
+        expression_checker->expr_check(stmt->body.value(), false);
     if (!body_type_opt.has_value()) {
         // Ignore error, already reported.
     }
@@ -304,7 +304,8 @@ std::any LocalChecker::visit(Stmt::Yield* stmt) {
     stmt->target_block = local_scope->block;
 
     // Visit the expression in the yield statement.
-    auto expr_type_opt = expression_checker.expr_check(stmt->expression, false);
+    auto expr_type_opt =
+        expression_checker->expr_check(stmt->expression, false);
     if (!expr_type_opt.has_value())
         return std::any();
     auto expr_type = expr_type_opt.value();
@@ -346,13 +347,14 @@ std::any LocalChecker::visit(Stmt::Print* stmt) {
     // Visit each expression in the print statement.
     for (auto& expr : stmt->expressions) {
         // expr->accept(this, false);
-        expression_checker.expr_check(expr, false);
+        expression_checker->expr_check(expr, false);
     }
     return std::any();
 }
 
 std::any LocalChecker::visit(Stmt::Dealloc* stmt) {
-    auto expr_type_opt = expression_checker.expr_check(stmt->expression, false);
+    auto expr_type_opt =
+        expression_checker->expr_check(stmt->expression, false);
     if (!expr_type_opt.has_value())
         return std::any();
     auto expr_type = expr_type_opt.value();

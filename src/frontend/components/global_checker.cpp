@@ -23,7 +23,7 @@ std::any GlobalChecker::visit(Stmt::Static* stmt) {
     // variables.
     if (stmt->annotation.has_value()) {
         auto anno_type_opt =
-            expression_checker.annotation_check(stmt->annotation.value());
+            annotation_checker->annotation_check(stmt->annotation.value());
         if (!anno_type_opt.has_value())
             return std::any();
         expr_type = anno_type_opt.value();
@@ -131,7 +131,7 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
         }
         // Get the type from the annotation (which is always present).
         auto annotation_type_opt =
-            expression_checker.annotation_check(param.annotation);
+            annotation_checker->annotation_check(param.annotation);
         if (!annotation_type_opt.has_value())
             return std::any();
 
@@ -149,7 +149,7 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
     std::shared_ptr<Type> return_type = nullptr;
     if (stmt->annotation.has_value()) {
         auto return_anno_type_opt =
-            expression_checker.annotation_check(stmt->annotation.value());
+            annotation_checker->annotation_check(stmt->annotation.value());
         if (!return_anno_type_opt.has_value())
             return std::any();
         return_type = return_anno_type_opt.value();

@@ -4,6 +4,7 @@
 #include <any>
 #include <memory>
 
+#include "nico/frontend/utils/annotation_checker.h"
 #include "nico/frontend/utils/ast_node.h"
 #include "nico/frontend/utils/expression_checker.h"
 #include "nico/frontend/utils/frontend_context.h"
@@ -23,14 +24,20 @@ class LocalChecker : public Stmt::Visitor {
     // Whether or not the checker is running in REPL mode.
     const bool repl_mode = false;
     // The expression checker used for checking expressions.
-    ExpressionChecker expression_checker;
+    std::shared_ptr<ExpressionChecker> expression_checker;
+
+    std::shared_ptr<AnnotationChecker> annotation_checker;
 
     LocalChecker(
         std::shared_ptr<SymbolTree> symbol_tree, bool repl_mode = false
     )
-        : symbol_tree(symbol_tree),
-          repl_mode(repl_mode),
-          expression_checker(symbol_tree, this, false, repl_mode) {};
+        : symbol_tree(symbol_tree), repl_mode(repl_mode) {
+
+        auto [expr_checker, anno_checker] =
+            ExpressionChecker::create(symbol_tree, this, repl_mode);
+        expression_checker = expr_checker;
+        annotation_checker = anno_checker;
+    };
 
     std::any visit(Stmt::Expression* stmt) override;
     std::any visit(Stmt::Let* stmt) override;
