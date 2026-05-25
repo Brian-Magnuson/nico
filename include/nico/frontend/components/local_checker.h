@@ -30,7 +30,7 @@ class LocalChecker : public Stmt::Visitor {
     )
         : symbol_tree(symbol_tree),
           repl_mode(repl_mode),
-          expression_checker(symbol_tree, this, repl_mode) {};
+          expression_checker(symbol_tree, this, false, repl_mode) {};
 
     std::any visit(Stmt::Expression* stmt) override;
     std::any visit(Stmt::Let* stmt) override;

@@ -197,12 +197,10 @@ enum class Err {
     FuncWithoutBody,
     // A non-extern function has a variadic parameter.
     NonExternVariadicFunc,
-    // A type mismatch was found in a static variable declaration.
-    StaticTypeMismatch,
+    // A static variable declaration is missing a type annotation.
+    StaticMissingTypeAnnotation,
     // A static variable was declared in an extern block with an initializer.
     ExternStaticWithInitializer,
-    // An attempt was made to allocate memory for an unsized type.
-    UnsizedTypeAllocation,
     // An object annotation contained duplicate field names.
     DuplicateObjectAnnotationFieldName,
 
@@ -214,6 +212,8 @@ enum class Err {
     YieldTypeMismatch,
     // A type mismatch was found in a let variable declaration.
     LetTypeMismatch,
+    // A type mismatch was found in a static variable declaration.
+    StaticTypeMismatch,
     // A type mismatch was found in an assignment expression.
     AssignmentTypeMismatch,
     // A type mismatch was found between a function's default argument and its
@@ -224,6 +224,8 @@ enum class Err {
     FunctionReturnTypeMismatch,
     // An array literal element had a type inconsistent with previous elements.
     ArrayElementTypeMismatch,
+    // An attempt was made to allocate memory for an unsized type.
+    UnsizedTypeAllocation,
     // A sizeof expression was found with an unsized type.
     SizeOfUnsizedType,
     // An alloc amount expression was not of an integer type.

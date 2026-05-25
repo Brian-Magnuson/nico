@@ -1224,7 +1224,7 @@ TEST_CASE("JIT static vars", "[jit]") {
     SECTION("Static variable with array initializer") {
         run_jit_test(
             R"(
-            static var arr = [1, 2, 3]
+            static var arr: [i32; 3] = [1, 2, 3]
             printout arr
             )",
             "[1, 2, 3]"

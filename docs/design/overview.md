@@ -570,6 +570,11 @@ let y: typeof(x) = 64 // Error: x is not declared yet
 let x = 42
 ```
 
+Additionally, you cannot use `typeof` in declaration space because expressions cannot be checked in declaration space.
+```
+static x: typeof(42) = 42 // Error: cannot use typeof in declaration space
+```
+
 Note that, although `typeof` requires an expression, the expression is NOT evaluated. It is only used to determine the type.
 ```
 let x: typeof(my_function()) = 37 // OK; my_function is not called

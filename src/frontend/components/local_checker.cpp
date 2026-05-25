@@ -111,8 +111,52 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
     return std::any();
 }
 
-std::any LocalChecker::visit(Stmt::Static* /*stmt*/) {
-    // Do nothing. Static variables are handled by the global checker.
+std::any LocalChecker::visit(Stmt::Static* stmt) {
+    // Binding has already been created.
+    // We only need to check if the initializer expression.
+
+    if (!stmt->expression.has_value()) {
+        // No initializer; do nothing.
+        return std::any();
+    }
+
+    auto expr_type_opt =
+        expression_checker.expr_check(stmt->expression.value(), false);
+    if (!expr_type_opt.has_value())
+        return std::any();
+    auto expr_type = expr_type_opt.value();
+    auto binding_type = stmt->binding_entry.lock()->binding.type;
+
+    // If the type of the initializer expression is not assignable to the type
+    // of the binding...
+    if (!expr_type->is_assignable_to(*binding_type)) {
+        Logger::inst().log_error(
+            Err::StaticTypeMismatch,
+            stmt->expression.value()->location,
+            std::string("Type of initializer expression `") +
+                expr_type->to_string() +
+                "` is not assignable to type in annotation `" +
+                binding_type->to_string() + "`."
+        );
+    }
+    // If the type of the initializer expression is not sized...
+    else if (!expr_type->is_sized_type()) {
+        Logger::inst().log_error(
+            Err::UnsizedTypeAllocation,
+            stmt->identifier->location,
+            "Cannot allocate variable `" +
+                std::string(stmt->identifier->lexeme) + "` of unsized type `" +
+                expr_type->to_string() + "`."
+        );
+    }
+    // Otherwise, the initializer expression is valid.
+    else {
+        // Update the binding's default expression to the initializer
+        // expression.
+        stmt->binding_entry.lock()->binding.default_expr =
+            stmt->expression.value();
+    }
+
     return std::any();
 }
 

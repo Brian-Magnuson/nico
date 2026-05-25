@@ -1792,6 +1792,14 @@ std::any ExpressionChecker::visit(Annotation::Tuple* annotation) {
 }
 
 std::any ExpressionChecker::visit(Annotation::TypeOf* annotation) {
+    if (in_declaration_space) {
+        Logger::inst().log_error(
+            Err::UncheckableTypeofAnnotation,
+            annotation->location,
+            "Cannot use `typeof` annotation in declaration space."
+        );
+        return std::any();
+    }
     annotation->expression->accept(this, false);
     if (!annotation->expression->type) {
         panic(

@@ -28,6 +28,9 @@ class ExpressionChecker : public Expr::Visitor, public Annotation::Visitor {
     // The visitor for checking statements. This is used for checking
     // expressions that contain statements, such as blocks and loops.
     Stmt::Visitor* stmt_visitor;
+    // Whether or not the checker is currently in declaration space.
+    // Expression checking is not allowed in declaration space.
+    bool in_declaration_space;
     // Whether or not the expression checker is currently in REPL mode.
     bool repl_mode;
 
@@ -142,10 +145,12 @@ public:
     ExpressionChecker(
         std::shared_ptr<SymbolTree> symbol_tree,
         Stmt::Visitor* stmt_visitor,
+        bool in_declaration_space,
         bool repl_mode = false
     )
         : symbol_tree(symbol_tree),
           stmt_visitor(stmt_visitor),
+          in_declaration_space(in_declaration_space),
           repl_mode(repl_mode) {}
 
     /**

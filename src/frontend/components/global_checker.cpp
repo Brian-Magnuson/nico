@@ -19,55 +19,20 @@ std::any GlobalChecker::visit(Stmt::Let*) {
 std::any GlobalChecker::visit(Stmt::Static* stmt) {
     std::shared_ptr<Type> expr_type = nullptr;
 
-    // Visit the initializer (if present).
-    if (stmt->expression.has_value()) {
-        auto expr_type_opt =
-            expression_checker.expr_check(stmt->expression.value(), false);
-        if (!expr_type_opt.has_value())
-            return std::any();
-        expr_type = expr_type_opt.value();
-    }
-
-    // If the initializer is not present, the annotation will be (this is
-    // checked in the parser).
-
-    // Check the type annotation.
+    // Check the type annotation. Type annotation is required for static
+    // variables.
     if (stmt->annotation.has_value()) {
         auto anno_type_opt =
             expression_checker.annotation_check(stmt->annotation.value());
         if (!anno_type_opt.has_value())
             return std::any();
-        auto anno_type = anno_type_opt.value();
-
-        // If an initializer is present, check that the annotation type and
-        // initializer type are compatible.
-        if (stmt->expression.has_value() &&
-            !expr_type->is_assignable_to(*anno_type)) {
-            Logger::inst().log_error(
-                Err::StaticTypeMismatch,
-                stmt->expression.value()->location,
-                "Type of initializer expression `" + expr_type->to_string() +
-                    "` is not assignable to type in annotation `" +
-                    anno_type->to_string() + "`."
-            );
-            return std::any();
-        }
-
-        // On occassion, two different types are compatible with each other.
-        // E.g., the annotation is @i32, but the expression is nullptr.
-        // In such cases, the annotated type takes precedence.
-        expr_type = anno_type;
+        expr_type = anno_type_opt.value();
     }
-
-    // At this point, expr_type is not null.
-
-    if (!expr_type->is_sized_type()) {
+    else {
         Logger::inst().log_error(
-            Err::UnsizedTypeAllocation,
+            Err::StaticMissingTypeAnnotation,
             stmt->identifier->location,
-            "Cannot allocate variable `" +
-                std::string(stmt->identifier->lexeme) + "` of unsized type `" +
-                expr_type->to_string() + "`."
+            "Static variable declaration must have a type annotation."
         );
         return std::any();
     }
@@ -117,8 +82,7 @@ std::any GlobalChecker::visit(Stmt::Static* stmt) {
         stmt->has_var ? Binding::Mutability::Var : Binding::Mutability::None,
         stmt->identifier->lexeme,
         &stmt->identifier->location,
-        expr_type,
-        stmt->expression
+        expr_type
     );
 
     auto node_opt = symbol_tree->add_binding_entry(
