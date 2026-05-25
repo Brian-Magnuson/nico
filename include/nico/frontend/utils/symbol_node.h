@@ -584,6 +584,48 @@ public:
     }
 };
 
+/**
+ * @brief A special node representing an unresolved type.
+ *
+ * Unresolved type nodes are used as placeholders for named types that have not
+ * been fully resolved yet. They contain back pointers to the type objects that
+ * reference them, allowing the type checkers to replace the node once the type
+ * can be resolved.
+ *
+ * Unresolved type nodes are not added to the symbol tree.
+ * They can be constructed freely without a parent.
+ *
+ * These nodes should be used as placeholders only. They do not have a name,
+ * symbol, parent scope, or any other information that a normal node would have.
+ * They are not `ITypeNode` nodes because they do not represent types; their
+ * type pointer is a back pointer to the type object that references them.
+ *
+ */
+class Node::UnresolvedType : public virtual Node {
+public:
+    // The annotation associated with this unresolved type.
+    std::weak_ptr<Annotation> annotation;
+    // The scope where the annotation was found.
+    std::weak_ptr<Node::IScope> scope;
+    // The type object that references this unresolved type. This is used for
+    // back-patching once the type can be resolved.
+    std::shared_ptr<Type> referencing_type_object;
+
+    virtual ~UnresolvedType() = default;
+
+    UnresolvedType(
+        std::weak_ptr<Annotation> annotation,
+        std::weak_ptr<Node::IScope> scope,
+        std::shared_ptr<Type> referencing_type_object
+    )
+        : Node(Private()),
+          annotation(annotation),
+          scope(scope),
+          referencing_type_object(referencing_type_object) {}
+
+    virtual std::string to_string() const override { return "UNRESOLVED_TYPE"; }
+};
+
 } // namespace nico
 
 #endif // NICO_SYMBOL_NODE_H

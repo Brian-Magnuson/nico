@@ -1184,33 +1184,6 @@ public:
     get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override;
 };
 
-/**
- * @brief An unresolved type.
- *
- * Used to represent types that have not yet been resolved during type checking.
- */
-class Type::Unresolved : public Type {
-public:
-    virtual ~Unresolved() = default;
-
-    std::string to_string() const override { return "[unresolved]"; }
-
-    bool operator==(const Type& other) const override {
-        return dynamic_cast<const Unresolved*>(&other) != nullptr;
-    }
-
-    virtual llvm::Type*
-    get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
-        panic(
-            "Type::Unresolved::get_llvm_type: Cannot get LLVM type of an "
-            "unresolved type."
-        );
-        return nullptr;
-    }
-
-    bool is_sized_type() const override { return false; }
-};
-
 } // namespace nico
 
 #endif // NICO_TYPE_NODE_H

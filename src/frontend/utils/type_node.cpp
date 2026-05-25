@@ -34,17 +34,7 @@ std::string Type::Named::to_string() const {
 llvm::Type*
 Type::Named::get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const {
     if (auto node_ptr = node.lock()) {
-        llvm::StructType* struct_ty = llvm::StructType::getTypeByName(
-            builder->getContext(),
-            node_ptr->symbol
-        );
-        if (!struct_ty) {
-            struct_ty = llvm::StructType::create(
-                builder->getContext(),
-                node_ptr->symbol
-            );
-        }
-        return struct_ty;
+        return node_ptr->type->get_llvm_type(builder);
     }
     panic("Type::Named: Node is expired; LLVM type cannot be generated.");
 }

@@ -195,11 +195,10 @@ to revisit later once the missing name becomes available.
 At first, this may seem like a good idea since these statements are so simple.
 However, it won't work for circular references, where each type in the cycle depends on the other, creating an infinite loop of deferrals.
 
-We *cannot* create a temporary node to represent an unresolved type.
-This is because nodes have to be placed in some scope.
-And we cannot tell from a name reference alone what scope a node is supposed to be in.
+### Placeholder Type Approach
 
-We *can*, however, create a "temporary type" that represents an unresolved type in the type system. This temporary type would act as a placeholder until the actual type can be resolved, at which point it would be replaced with the correct type.
+In this approach, we create a "temporary type" that represents an unresolved type in the type system. 
+This temporary type would act as a placeholder until the actual type can be resolved, at which point it would be replaced with the correct type.
 It would have to store the following information:
 - The type annotation that was attempted to be resolved
 - The scope in which the resolution was attempted
@@ -245,8 +244,6 @@ In the previous examples, the unresolved type was preceeded by a `Node` object.
 But this time, it is a `Type` object storing the unresolved type directly.
 This means that we cannot simply use `Node` objects to track our unresolved types.
 
-We could probably use double indirection, something like a `std::shared_ptr<Type>*` to represent the unresolved type in a way that allows it to be updated when the actual type becomes available.
-
 Another option would be to make the whole tuple unresolved until the type `F` can be resolved, at which point the entire tuple would be replaced with the correct type:
 ```
 E => Type::Unresolved((F), scope)
@@ -254,8 +251,51 @@ E => Type::Unresolved((F), scope)
 
 This could work as well.
 We get to use the `Type::Named(E)` while we wait for the unresolved type to be resolved.
-It also works well with our current type annotation system, which returns an empty `std::any()` when it fails to fully resolve a type annotation.
+It also works well with our current type annotation system, which returns an empty `std::any()` when it
 
+This approach has a severe drawback:
+Type objects are stored by all kinds of constructs in our compiler, including expressions, statements, bindings, nodes, etc.
+And to make tracking of unresolved types possible, we would need to handle every case where a type object is stored and check if it is an unresolved type, which would be a huge amount of work and would make our code very messy and error-prone.
+
+But we do have another approach that may work.
+
+
+### Placeholder Node Approach
+
+It may seem as though creating a placeholder node would be impossible since nodes require a place in the symbol tree, meaning they must have a scope.
+And we cannot tell from a name alone what scope the node would belong to.
+
+But this isn't a problem as long as we don't *use* the node as a real node.
+
+It would have no name, no symbol, no parent, and no children.
+Attempting to call any of the node's normal functions would result in an error.
+
+Much like our placeholder type approach, we would be tracking:
+- The type annotation that was attempted to be resolved
+- The scope in which the resolution was attempted
+
+And we would track one more item:
+- A back pointer to the type object that references this node, so that, when the node is resolved, we can update the type object to point to the correct node.
+
+```
+A => Node::Unresolved(A, scope)
+```
+
+To enable this solution, we need to avoid accessing the node field until the end of declaration space.
+In face, we should avoid any case where we attempt to access a type's properties.
+
+This means:
+- No checking the size of types
+- No checking the compatibility of types
+- No checking the fields of types
+
+These checks can be deferred until the next stage of the compiler, which runs after declaration space has been processed.
+
+This also means we cannot check *expressions* in declaration space since expression checking involves checking the types of expressions, which may involve checking the properties of types.
+But declaration space is not meant for expression checking anyway, so this is not a problem.
+
+This approach is more effective than the placeholder type approach since it wouldn't require double indirection of types to track unresolved types.
+We only need to track unresolved nodes, which can be used to update the types that reference them.
 
 ## Type Resolution Problems
 
@@ -656,49 +696,6 @@ A resolved type is one of the following:
 This definition seems weird, being recursive and carrying an assumption about the resolution of other types.
 However, it is useful to us because of how our compiler works:
 If we erroneously classify a type as resolved, we will eventually find out when we try to resolve its dependent types.
-
-
-## The Unresolved Type
-
-We've mentioned that our solution will involve creating a special "unresolved type" to represent types that have not yet been resolved.
-Here, we will discuss this unresolved type in more detail.
-
-First, this unresolved type is a special subclass of `Type` that represents a type that has not yet been resolved.
-```cpp
-class Type::Unresolved : public Type {
-};
-```
-
-Unresolved types should only exist temporarily during declaration-space type checking, and they should never be exposed to the user or to later stages of the compiler.
-This is convenient since any attempt to use an unresolved type would be an error.
-It does not need to be comparable to other types (we can have it panic if we attempt to compare it to another type), and it does not need to have any of the usual properties of a normal type (e.g., size, alignment, etc.).
-It just needs to be a marker that indicates that a type is unresolved, and it needs to store the necessary information to allow us to resolve it later.
-
-That necessary information includes:
-- The type annotation that was attempted to be resolved when we created this unresolved type.
-- The scope in which the resolution was attempted.
-
-```cpp
-class Type::Unresolved : public Type {
-public:
-    std::shared_ptr<Annotation> annotation;
-    std::weak_ptr<Node::Scope> scope;
-};
-```
-
-To be able to resolve this type later, we need to keep track of all places where this unresolved type is used.
-This means using a double indirection approach:
-```cpp
-std::vector<std::shared_ptr<Type::Unresolved>*> unresolved_types;
-```
-
-We also need to make changes to the following parts of the compiler:
-- The symbol tree
-  - We need to be able to resolve names from any scope, not just the current scope, since we may encounter an unresolved type in one scope but the actual type may be declared in a different scope.
-- The type annotation checker (in the expression checker)
-  - When the type annotation checker encounters a type annotation that it cannot fully resolve, it should create an `Unresolved` type and add it to the `unresolved_types` list.
-  - It should avoid reporting errors about unresolved types at this stage, since we are assuming that they will eventually be resolved.
-  - Once declaration-space type checking is complete, the annotation checker can switch to a different mode where it reports errors about any unresolved types.
 
 
 ## Topological Sorting Algorithm

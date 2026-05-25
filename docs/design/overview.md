@@ -1016,7 +1016,10 @@ static var x: i32
 ```
 This variable will be initialized to the default value for its type at the start of the program (before any execution-space code is executed).
 
-Static variables may be initialized with a constant expression only:
+Static variables have two important rules:
+1. They must always have an explicit type annotation. This is because their type information is needed before any expression can be checked.
+2. Their initializer must be a constant expression.
+
 ```
 static var x: i32 = 42
 ```

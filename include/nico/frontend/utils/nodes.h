@@ -50,6 +50,8 @@ public:
     class BindingEntry;
     class OverloadGroup;
 
+    class UnresolvedType;
+
     // This node's parent scope, if it exists.
     std::weak_ptr<Node::IScope> parent;
     // A short name for this node, used for adding this node to the parent
@@ -146,7 +148,6 @@ public:
     // Special types
     class Void;
     class Named;
-    class Unresolved;
 
     Type() = default;
     virtual ~Type() = default;
