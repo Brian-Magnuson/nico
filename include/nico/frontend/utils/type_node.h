@@ -630,8 +630,15 @@ public:
         return false;
     }
 
-    virtual bool is_sized_type() const override {
-        return size.has_value() && base->is_sized_type();
+    virtual std::optional<bool>
+    is_sized_type(size_t recursion_level = 0) const override {
+        if (recursion_level > MAX_RECURSION_DEPTH) {
+            return false;
+        }
+        if (!size.has_value()) {
+            return false;
+        }
+        return base->is_sized_type(recursion_level + 1);
     }
 
     virtual llvm::Type*
@@ -741,10 +748,15 @@ public:
         return result;
     }
 
-    bool is_sized_type() const override {
+    std::optional<bool>
+    is_sized_type(size_t recursion_level = 0) const override {
+        if (recursion_level > MAX_RECURSION_DEPTH) {
+            return false;
+        }
         for (const auto& element : elements) {
-            if (!element->is_sized_type()) {
-                return false;
+            auto result = element->is_sized_type(recursion_level + 1);
+            if (!result.has_value() || !result.value()) {
+                return result;
             }
         }
         return true;
@@ -870,10 +882,15 @@ public:
         return false;
     }
 
-    bool is_sized_type() const override {
+    std::optional<bool>
+    is_sized_type(size_t recursion_level = 0) const override {
+        if (recursion_level > MAX_RECURSION_DEPTH) {
+            return false;
+        }
         for (const auto& [key, value] : fields) {
-            if (!value.type->is_sized_type()) {
-                return false;
+            auto result = value.type->is_sized_type(recursion_level + 1);
+            if (!result.has_value() || !result.value()) {
+                return result;
             }
         }
         return true;
@@ -1178,6 +1195,22 @@ public:
             return node.lock() == other_named->node.lock();
         }
         return false;
+    }
+
+    std::optional<bool>
+    is_sized_type(size_t recursion_level = 0) const override {
+        if (recursion_level > MAX_RECURSION_DEPTH) {
+            return false;
+        }
+        auto node_ptr = node.lock();
+        if (!node_ptr) {
+            panic("Type::Named: Node has expired.");
+        }
+        if (PTR_INSTANCEOF(node_ptr, Node::UnresolvedType)) {
+            // Size is indeterminate until the type is resolved.
+            return std::nullopt;
+        }
+        return node_ptr->type->is_sized_type(recursion_level + 1);
     }
 
     virtual llvm::Type*

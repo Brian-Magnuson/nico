@@ -33,6 +33,11 @@ std::string Type::Named::to_string() const {
 
 llvm::Type*
 Type::Named::get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const {
+    if (!is_sized_type().value_or(false)) {
+        panic(
+            "Type::Named::get_llvm_type: Cannot get LLVM type of unsized type."
+        );
+    }
     if (auto node_ptr = node.lock()) {
         return node_ptr->type->get_llvm_type(builder);
     }

@@ -597,11 +597,9 @@ public:
  *
  * These nodes should be used as placeholders only. They do not have a name,
  * symbol, parent scope, or any other information that a normal node would have.
- * They are not `ITypeNode` nodes because they do not represent types; their
- * type pointer is a back pointer to the type object that references them.
  *
  */
-class Node::UnresolvedType : public virtual Node {
+class Node::UnresolvedType : public virtual Node::ITypeNode {
 public:
     // The annotation associated with this unresolved type.
     std::weak_ptr<Annotation> annotation;
@@ -619,6 +617,7 @@ public:
         std::shared_ptr<Type> referencing_type_object
     )
         : Node(Private()),
+          Node::ITypeNode(Private()),
           annotation(annotation),
           scope(scope),
           referencing_type_object(referencing_type_object) {}

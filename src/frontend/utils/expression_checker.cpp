@@ -870,7 +870,7 @@ std::any ExpressionChecker::visit(Expr::Access* expr, bool as_lvalue) {
     if (!l_type || !l_lvalue)
         return std::any();
 
-    if (!l_type->is_sized_type()) {
+    if (!l_type->is_sized_type().value_or(false)) {
         Logger::inst().log_error(
             Err::UnsizedTypeMemberAccess,
             expr->left->location,
@@ -980,7 +980,7 @@ std::any ExpressionChecker::visit(Expr::Subscript* expr, bool as_lvalue) {
 
     if (auto array_l_type = std::dynamic_pointer_cast<Type::Array>(l_type)) {
         // Array element type must be a sized type.
-        if (!array_l_type->base->is_sized_type()) {
+        if (!array_l_type->base->is_sized_type().value_or(false)) {
             Logger::inst().log_error(
                 Err::UnsizedTypeArrayAccess,
                 expr->left->location,
@@ -1151,7 +1151,7 @@ std::any ExpressionChecker::visit(Expr::SizeOf* expr, bool as_lvalue) {
     if (!type_any.has_value())
         return std::any();
     auto type = std::any_cast<std::shared_ptr<Type>>(type_any);
-    if (!type->is_sized_type()) {
+    if (!type->is_sized_type().value_or(false)) {
         Logger::inst().log_error(
             Err::SizeOfUnsizedType,
             expr->location,
@@ -1200,7 +1200,7 @@ std::any ExpressionChecker::visit(Expr::Alloc* expr, bool as_lvalue) {
             return std::any();
         auto alloc_inner_type = std::any_cast<std::shared_ptr<Type>>(anno_any);
         // alloc inner type must be sized.
-        if (!alloc_inner_type->is_sized_type()) {
+        if (!alloc_inner_type->is_sized_type().value_or(false)) {
             Logger::inst().log_error(
                 Err::UnsizedTypeAllocation,
                 expr->type_annotation.value()->location,
@@ -1230,7 +1230,7 @@ std::any ExpressionChecker::visit(Expr::Alloc* expr, bool as_lvalue) {
             return std::any();
         auto alloc_inner_type = std::any_cast<std::shared_ptr<Type>>(anno_any);
         // alloc inner type must be sized.
-        if (!alloc_inner_type->is_sized_type()) {
+        if (!alloc_inner_type->is_sized_type().value_or(false)) {
             Logger::inst().log_error(
                 Err::UnsizedTypeAllocation,
                 expr->type_annotation.value()->location,
@@ -1683,7 +1683,8 @@ std::optional<std::shared_ptr<Type>> ExpressionChecker::expr_check(
     expr->accept(this, as_lvalue);
     if (!expr->type)
         return std::nullopt;
-    if (!expr->type->is_sized_type() && !as_lvalue && !allow_unsized_rvalue) {
+    if (!expr->type->is_sized_type().value_or(false) && !as_lvalue &&
+        !allow_unsized_rvalue) {
         Logger::inst().log_error(
             Err::UnsizedRValue,
             expr->location,

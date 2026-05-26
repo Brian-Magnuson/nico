@@ -58,7 +58,7 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
 
     // At this point, expr_type is not null.
 
-    if (!expr_type->is_sized_type()) {
+    if (!expr_type->is_sized_type().value_or(false)) {
         Logger::inst().log_error(
             Err::UnsizedTypeAllocation,
             stmt->identifier->location,
@@ -140,7 +140,7 @@ std::any LocalChecker::visit(Stmt::Static* stmt) {
         );
     }
     // If the type of the initializer expression is not sized...
-    else if (!expr_type->is_sized_type()) {
+    else if (!expr_type->is_sized_type().value_or(false)) {
         Logger::inst().log_error(
             Err::UnsizedTypeAllocation,
             stmt->identifier->location,

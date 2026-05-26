@@ -152,6 +152,7 @@ public:
     Type() = default;
     virtual ~Type() = default;
 
+public:
     /**
      * @brief Converts this type to a string.
      *
@@ -286,13 +287,20 @@ public:
      * @brief Check if this type is sized, i.e., has a known size at compile
      * time.
      *
-     * Sized types are required for memory allocation.
+     * Note: A type may be considered unsized if it is excessively deep, even if
+     * it is actually finite in depth.
      *
-     * Most types are sized. An example of an unsized type is `[T; ?]`.
-     *
-     * @return True if the type is sized. False otherwise.
+     * @param recursion_level The current recursion level for checking sized
+     * types. Used to prevent infinite recursion when checking recursive types.
+     * Default is 0. External callers should ignore this parameter.
+     * @return std::optional<bool> True if the type is sized, false if it is
+     * unsized, or std::nullopt if indeterminate (e.g. due to unresolved named
+     * types).
      */
-    virtual bool is_sized_type() const { return true; }
+    virtual std::optional<bool>
+    is_sized_type(size_t recursion_level = 0) const {
+        return true;
+    }
 
     /**
      * @brief Get the size of the LLVM type in bytes corresponding to this type.

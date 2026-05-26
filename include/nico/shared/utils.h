@@ -23,6 +23,9 @@ namespace nico {
 #define PTR_INSTANCEOF(ptr, type)                                              \
     (std::dynamic_pointer_cast<type>(ptr) != nullptr)
 
+// The maximum recursion depth for functions that possibly recurse infinitely.
+inline constexpr size_t MAX_RECURSION_DEPTH = 255;
+
 /**
  * @brief Prints out a message to stderr, then aborts the program.
  *

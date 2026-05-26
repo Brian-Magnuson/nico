@@ -203,6 +203,9 @@ enum class Err {
     ExternStaticWithInitializer,
     // An object annotation contained duplicate field names.
     DuplicateObjectAnnotationFieldName,
+    // A type was found to be excessively deep during type checking, likely due
+    // to infinite recursion in type definitions.
+    TypeExcessivelyDeep,
 
     // Local type check error
     LocalTypeError = 5000,
