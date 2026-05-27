@@ -539,7 +539,7 @@ public:
  * Type annotations are not designed to be compared with each other; comparing
  * types should only be done after resolution.
  */
-class Annotation {
+class Annotation : public std::enable_shared_from_this<Annotation> {
 public:
     class NameRef;
 

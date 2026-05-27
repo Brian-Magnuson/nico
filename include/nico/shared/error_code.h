@@ -180,6 +180,8 @@ enum class Err {
     NameAlreadyExists,
     // An attempt was made to shadow a reserved name.
     NameIsReserved,
+    // A name was expected to refer to a type but did not.
+    NameNotAType,
     // An attempt was made to introduce a symbol that is already in use.
     SymbolAlreadyExists,
     // An attempt was made to use a symbol that is reserved.

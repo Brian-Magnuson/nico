@@ -30,7 +30,7 @@ class GlobalChecker : public Stmt::Visitor {
         std::shared_ptr<SymbolTree> symbol_tree, bool repl_mode = false
     )
         : symbol_tree(symbol_tree), repl_mode(repl_mode) {
-        annotation_checker = AnnotationChecker::create(symbol_tree);
+        annotation_checker = AnnotationChecker::create(symbol_tree, true);
     };
 
     std::any visit(Stmt::Expression* stmt) override;

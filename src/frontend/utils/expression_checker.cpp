@@ -1670,8 +1670,11 @@ std::
     auto checker = std::make_shared<ExpressionChecker>(Private());
     checker->symbol_tree = symbol_tree;
     checker->stmt_visitor = stmt_visitor;
-    checker->annotation_checker =
-        AnnotationChecker::create(symbol_tree, checker->shared_from_this());
+    checker->annotation_checker = AnnotationChecker::create(
+        symbol_tree,
+        false,
+        checker->shared_from_this()
+    );
     checker->repl_mode = repl_mode;
 
     return std::make_pair(checker, checker->annotation_checker);

@@ -611,16 +611,23 @@ public:
 
     virtual ~UnresolvedType() = default;
 
-    UnresolvedType(
+    UnresolvedType(Private)
+        : Node(Private()), Node::ITypeNode(Private()) {}
+
+    /**
+     * @brief Creates a new unresolved type node and adds it to the symbol
+     * tree's list of unresolved types.
+     *
+     * @param annotation The annotation associated with this unresolved type.
+     * @param symbol_tree The symbol tree to which the unresolved type will be
+     * added.
+     * @return std::shared_ptr<UnresolvedType> A shared pointer to the newly
+     * created unresolved type node.
+     */
+    static std::shared_ptr<UnresolvedType> create(
         std::weak_ptr<Annotation> annotation,
-        std::weak_ptr<Node::IScope> scope,
-        std::shared_ptr<Type> referencing_type_object
-    )
-        : Node(Private()),
-          Node::ITypeNode(Private()),
-          annotation(annotation),
-          scope(scope),
-          referencing_type_object(referencing_type_object) {}
+        std::shared_ptr<SymbolTree> symbol_tree
+    );
 
     virtual std::string to_string() const override { return "UNRESOLVED_TYPE"; }
 };

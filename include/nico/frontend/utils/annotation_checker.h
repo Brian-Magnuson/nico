@@ -6,6 +6,7 @@
 
 #include "nico/frontend/utils/ast_node.h"
 #include "nico/frontend/utils/expression_checker.h"
+#include "nico/frontend/utils/symbol_tree.h"
 
 namespace nico {
 
@@ -25,6 +26,8 @@ class AnnotationChecker : public Annotation::Visitor {
     // A weak pointer to the expression checker, used for checking
     // sub-expressions in annotations.
     std::weak_ptr<ExpressionChecker> expr_checker;
+    // Whether to allow unresolved named types.
+    bool allow_unresolved_named_types;
 
     /**
      * @brief A private struct used to restrict access to constructors.
@@ -63,6 +66,7 @@ public:
      */
     static std::shared_ptr<AnnotationChecker> create(
         std::shared_ptr<SymbolTree> symbol_tree,
+        bool allow_unresolved_named_types,
         std::weak_ptr<ExpressionChecker> expr_checker =
             std::weak_ptr<ExpressionChecker>()
     );

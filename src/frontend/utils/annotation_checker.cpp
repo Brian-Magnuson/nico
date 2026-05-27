@@ -1,5 +1,7 @@
 #include "nico/frontend/utils/annotation_checker.h"
 
+#include "nico/frontend/utils/symbol_node.h"
+
 namespace nico {
 
 std::any AnnotationChecker::visit(Annotation::NameRef* annotation) {
@@ -10,8 +12,24 @@ std::any AnnotationChecker::visit(Annotation::NameRef* annotation) {
             type = type_node->type;
             return type;
         }
+        Logger::inst().log_error(
+            Err::NameNotAType,
+            annotation->name->identifier->location,
+            "Name reference `" + annotation->name->to_string() +
+                "` does not "
+                "refer to a type."
+        );
+        return std::any();
     }
-
+    else if (allow_unresolved_named_types) {
+        // TODO: Consider if this function call actually belongs in SymbolTree
+        auto node = Node::UnresolvedType::create(
+            annotation->shared_from_this(),
+            symbol_tree
+        );
+        type = node->referencing_type_object;
+        return type;
+    }
     Logger::inst().log_error(
         Err::NameNotFound,
         annotation->name->identifier->location,
@@ -157,10 +175,12 @@ std::any AnnotationChecker::visit(Annotation::TypeOf* annotation) {
 
 std::shared_ptr<AnnotationChecker> AnnotationChecker::create(
     std::shared_ptr<SymbolTree> symbol_tree,
+    bool allow_unresolved_named_types,
     std::weak_ptr<ExpressionChecker> expr_checker
 ) {
     auto checker = std::make_shared<AnnotationChecker>(Private());
     checker->symbol_tree = symbol_tree;
+    checker->allow_unresolved_named_types = allow_unresolved_named_types;
     checker->expr_checker = expr_checker;
     return checker;
 }

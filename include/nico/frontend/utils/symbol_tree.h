@@ -6,6 +6,7 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 #include "nico/frontend/utils/ast_node.h"
 #include "nico/frontend/utils/symbol_node.h"
@@ -81,6 +82,9 @@ public:
     // The current scope in the symbol tree, which is the scope that is
     // currently being modified or accessed.
     std::shared_ptr<Node::IScope> current_scope;
+    // A list of unresolved types that have been encountered during type
+    // checking.
+    std::vector<std::shared_ptr<Node::UnresolvedType>> unresolved_types;
 
     /**
      * @brief Constructs a symbol tree with a root scope and installs primitive

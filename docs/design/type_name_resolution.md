@@ -278,8 +278,25 @@ And we would track one more item:
 - A back pointer to the type object that references this node, so that, when the node is resolved, we can update the type object to point to the correct node.
 
 ```
-A => Node::Unresolved(A, scope)
+A => Node::TypeDef(A) -> Type::Named(B) -> Node::Unresolved(B, scope)
 ```
+
+Keep in mind that, two bindings having the same type does not necessarily mean the type pointers point to the same type object instance in memory.
+Creating a `Type::Int(32)` in two different places may result in two different type objects, but we consider them to be the same type since they have the same properties.
+The same can be held for named types: We can create two `Type::Named(B)` objects in two different places.
+In order to make sure that they can be compared for equality, we just need to make sure that they both point to the same symbol node.
+
+```
+G => Node::TypeDef(G) -> Type::Named(B) -> Node::Unresolved(B, scope)
+```
+In the above example, we create a second `Type::Named(B)`.
+This type object instance will be different from the one we create in `A`, but that's okay.
+Both will point to their own `Node::Unresolved(B, scope)` until we reach B's declaration.
+Then, if these two `Type::Named(B)` instances are indeed the same, then their unresolved nodes will be corrected to point to the same resolved node.
+
+Also, if you think about it, it could be that two `Type::Named(B)` instances are not the same.
+This can happen if `B` is declared in two non-overlapping scopes.
+Our system tracks both `Node::Unresolved(B, scope1)` and `Node::Unresolved(B, scope2)`, and it will resolve them to different nodes if they are different.
 
 To enable this solution, we need to avoid accessing the node field until the end of declaration space.
 In face, we should avoid any case where we attempt to access a type's properties.

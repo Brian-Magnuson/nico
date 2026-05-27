@@ -367,4 +367,17 @@ std::shared_ptr<Node::OverloadGroup> Node::OverloadGroup::create(
     return node;
 }
 
+std::shared_ptr<Node::UnresolvedType> Node::UnresolvedType::create(
+    std::weak_ptr<Annotation> annotation,
+    std::shared_ptr<SymbolTree> symbol_tree
+) {
+    auto unresolved_type = std::make_shared<UnresolvedType>(Private());
+    unresolved_type->annotation = annotation;
+    unresolved_type->scope = symbol_tree->current_scope;
+    symbol_tree->unresolved_types.push_back(unresolved_type);
+    unresolved_type->referencing_type_object =
+        std::make_shared<Type::Named>(unresolved_type);
+    return unresolved_type;
+}
+
 } // namespace nico
