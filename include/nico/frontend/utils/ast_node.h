@@ -1308,7 +1308,7 @@ public:
 
     NameRef(std::shared_ptr<Name> name)
         : name(name) {
-        location = &name->identifier->location;
+        location = &name->get_location();
     }
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }

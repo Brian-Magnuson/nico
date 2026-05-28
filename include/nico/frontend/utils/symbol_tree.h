@@ -351,6 +351,18 @@ public:
     add_overloadable_func(const Binding& binding);
 
     /**
+     * @brief Adds an unresolved type to the symbol tree based on a name
+     * reference annotation.
+     *
+     * @param name The name associated with this unresolved type.
+     * @return std::shared_ptr<Node::UnresolvedType> A node representing the
+     * unresolved type, which can be resolved later when more information is
+     * available.
+     */
+    std::shared_ptr<Node::UnresolvedType>
+    add_unresolved_type(std::shared_ptr<Name> name);
+
+    /**
      * @brief Checks if the current context is unsafe.
      *
      * An unsafe context is a context in which unsafe language features are

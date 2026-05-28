@@ -22,11 +22,7 @@ std::any AnnotationChecker::visit(Annotation::NameRef* annotation) {
         return std::any();
     }
     else if (allow_unresolved_named_types) {
-        // TODO: Consider if this function call actually belongs in SymbolTree
-        auto node = Node::UnresolvedType::create(
-            annotation->shared_from_this(),
-            symbol_tree
-        );
+        auto node = symbol_tree->add_unresolved_type(annotation->name);
         type = node->referencing_type_object;
         return type;
     }

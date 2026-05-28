@@ -529,6 +529,15 @@ SymbolTree::add_overloadable_func(const Binding& binding) {
     return new_node;
 }
 
+std::shared_ptr<Node::UnresolvedType>
+SymbolTree::add_unresolved_type(std::shared_ptr<Name> name) {
+    auto new_node = Node::UnresolvedType::create(name, current_scope);
+    unresolved_types.push_back(new_node);
+
+    modified = true;
+    return new_node;
+}
+
 bool SymbolTree::is_context_unsafe() const {
     auto local_scope =
         std::dynamic_pointer_cast<Node::LocalScope>(current_scope);

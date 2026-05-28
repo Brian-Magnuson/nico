@@ -631,6 +631,8 @@ public:
             return std::string(identifier->lexeme);
         }
     }
+
+    const Location& get_location() const { return identifier->location; }
 };
 
 /**

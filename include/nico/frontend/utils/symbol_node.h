@@ -601,9 +601,9 @@ public:
  */
 class Node::UnresolvedType : public virtual Node::ITypeNode {
 public:
-    // The annotation associated with this unresolved type.
-    std::weak_ptr<Annotation> annotation;
-    // The scope where the annotation was found.
+    // The name associated with this unresolved type.
+    std::weak_ptr<Name> name;
+    // The scope where the name was found.
     std::weak_ptr<Node::IScope> scope;
     // The type object that references this unresolved type. This is used for
     // back-patching once the type can be resolved.
@@ -615,19 +615,16 @@ public:
         : Node(Private()), Node::ITypeNode(Private()) {}
 
     /**
-     * @brief Creates a new unresolved type node and adds it to the symbol
-     * tree's list of unresolved types.
+     * @brief Creates a new unresolved type node from a name reference
+     * annotation and the scope where the annotation was found.
      *
-     * @param annotation The annotation associated with this unresolved type.
-     * @param symbol_tree The symbol tree to which the unresolved type will be
-     * added.
+     * @param name The name associated with this unresolved type.
+     * @param scope The scope where the name was found.
      * @return std::shared_ptr<UnresolvedType> A shared pointer to the newly
      * created unresolved type node.
      */
-    static std::shared_ptr<UnresolvedType> create(
-        std::weak_ptr<Annotation> annotation,
-        std::shared_ptr<SymbolTree> symbol_tree
-    );
+    static std::shared_ptr<UnresolvedType>
+    create(std::shared_ptr<Name> name, std::weak_ptr<Node::IScope> scope);
 
     virtual std::string to_string() const override { return "UNRESOLVED_TYPE"; }
 };
