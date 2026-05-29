@@ -36,12 +36,13 @@ std::any AnnotationChecker::visit(Annotation::NameRef* annotation) {
 
 std::any AnnotationChecker::visit(Annotation::Pointer* annotation) {
     std::shared_ptr<Type> type = nullptr;
-    auto base_any = annotation->base->accept(this);
-    if (!base_any.has_value())
+    auto base_opt = annotation_check(annotation->base);
+    if (!base_opt.has_value())
         return std::any();
-    auto base_type = std::any_cast<std::shared_ptr<Type>>(base_any);
-    type =
-        std::make_shared<Type::RawTypedPtr>(base_type, annotation->is_mutable);
+    type = std::make_shared<Type::RawTypedPtr>(
+        base_opt.value(),
+        annotation->is_mutable
+    );
     return type;
 }
 
@@ -57,11 +58,13 @@ std::any AnnotationChecker::visit(Annotation::Void* /*annotation*/) {
 
 std::any AnnotationChecker::visit(Annotation::Reference* annotation) {
     std::shared_ptr<Type> type = nullptr;
-    auto base_any = annotation->base->accept(this);
-    if (!base_any.has_value())
+    auto base_opt = annotation_check(annotation->base);
+    if (!base_opt.has_value())
         return std::any();
-    auto base_type = std::any_cast<std::shared_ptr<Type>>(base_any);
-    type = std::make_shared<Type::Reference>(base_type, annotation->is_mutable);
+    type = std::make_shared<Type::Reference>(
+        base_opt.value(),
+        annotation->is_mutable
+    );
     return type;
 }
 
@@ -71,16 +74,17 @@ std::any AnnotationChecker::visit(Annotation::Array* annotation) {
         type = std::make_shared<Type::EmptyArray>();
         return type;
     }
-    auto base_any = annotation->base.value()->accept(this);
-    if (!base_any.has_value())
+    auto base_opt = annotation_check(annotation->base.value());
+    if (!base_opt.has_value())
         return std::any();
-    auto base_type = std::any_cast<std::shared_ptr<Type>>(base_any);
     if (annotation->size.has_value()) {
-        type =
-            std::make_shared<Type::Array>(base_type, annotation->size.value());
+        type = std::make_shared<Type::Array>(
+            base_opt.value(),
+            annotation->size.value()
+        );
     }
     else {
-        type = std::make_shared<Type::Array>(base_type);
+        type = std::make_shared<Type::Array>(base_opt.value());
     }
     return type;
 }
@@ -108,10 +112,9 @@ std::any AnnotationChecker::visit(Annotation::Object* annotation) {
             continue;
         }
 
-        auto field_type_any = field.annotation->accept(this);
-        if (!field_type_any.has_value())
+        auto field_type_opt = annotation_check(field.annotation);
+        if (!field_type_opt.has_value())
             return std::any();
-        auto field_type = std::any_cast<std::shared_ptr<Type>>(field_type_any);
 
         fields_dict.insert(
             field_name,
@@ -119,7 +122,7 @@ std::any AnnotationChecker::visit(Annotation::Object* annotation) {
                 field.mutability,
                 field_name,
                 &field.identifier->location,
-                field_type
+                field_type_opt.value()
             )
         );
     }
@@ -135,10 +138,10 @@ std::any AnnotationChecker::visit(Annotation::Tuple* annotation) {
     std::shared_ptr<Type> type = nullptr;
     std::vector<std::shared_ptr<Type>> element_types;
     for (const auto& element : annotation->elements) {
-        auto elem_any = element->accept(this);
-        if (!elem_any.has_value())
+        auto elem_opt = annotation_check(element);
+        if (!elem_opt.has_value())
             return std::any();
-        element_types.push_back(std::any_cast<std::shared_ptr<Type>>(elem_any));
+        element_types.push_back(elem_opt.value());
     }
     if (element_types.empty()) {
         type = std::make_shared<Type::Unit>();
@@ -186,8 +189,7 @@ AnnotationChecker::annotation_check(std::shared_ptr<Annotation> annotation) {
     auto type_any = annotation->accept(this);
     if (!type_any.has_value())
         return std::nullopt;
-    auto type = std::any_cast<std::shared_ptr<Type>>(type_any);
-    return type;
+    return std::any_cast<std::shared_ptr<Type>>(type_any);
 }
 
 } // namespace nico
