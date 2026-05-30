@@ -17,6 +17,7 @@ ExpressionChecker::implicit_full_dereference(std::shared_ptr<Expr>& expr) {
 
     auto initial_type = expr->type;
 
+    int i = 0;
     while (auto i_pointer_type =
                std::dynamic_pointer_cast<Type::IPointer>(expr->type)) {
         if (!PTR_INSTANCEOF(i_pointer_type, Type::ITypedPtr)) {
@@ -44,6 +45,18 @@ ExpressionChecker::implicit_full_dereference(std::shared_ptr<Expr>& expr) {
             std::make_shared<Token>(Tok::Star, *expr->location),
             expr
         );
+        i++;
+        if (i > MAX_ALLOWED_IMPLICIT_DEREFERENCES) {
+            Logger::inst().log_error(
+                Err::TooManyImplicitDereferences,
+                expr->location,
+                "Pointer type `" + initial_type->to_string() +
+                    "` has too many levels of indirection (more than " +
+                    std::to_string(MAX_ALLOWED_IMPLICIT_DEREFERENCES) +
+                    ") for implicit dereference."
+            );
+            return nullptr;
+        }
         auto i_ptr_base_type =
             std::dynamic_pointer_cast<Type::ITypedPtr>(i_pointer_type)->base;
         expr->type = i_ptr_base_type;

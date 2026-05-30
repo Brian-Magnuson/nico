@@ -84,7 +84,7 @@ public:
     std::shared_ptr<Node::IScope> current_scope;
     // A list of unresolved types that have been encountered during type
     // checking.
-    std::vector<std::shared_ptr<Node::UnresolvedType>> unresolved_types;
+    std::vector<std::shared_ptr<Node::UnresolvedType>> unresolved_type_nodes;
 
     /**
      * @brief Constructs a symbol tree with a root scope and installs primitive
@@ -361,6 +361,21 @@ public:
      */
     std::shared_ptr<Node::UnresolvedType>
     add_unresolved_type(std::shared_ptr<Name> name);
+
+    /**
+     * @brief Attempts to resolve all unresolved types in the symbol tree.
+     *
+     * This function should be called at the end of declaration space, after all
+     * types have been declared.
+     *
+     * Resolved types are checked to make sure they have a finite size.
+     * If a type cannot be resolved, or if a resolved type does not have a
+     * finite size, this function will log an error and return false.
+     *
+     * @return True if all unresolved types were resolved successfully, false
+     * otherwise.
+     */
+    bool resolve_unresolved_types();
 
     /**
      * @brief Checks if the current context is unsafe.

@@ -44,6 +44,8 @@ class ExpressionChecker
         explicit Private() = default;
     };
 
+    // TODO: We should never use nullptr to indicate the absense of a value.
+    // Change this function to use std::optional instead.
     /**
      * @brief Checks if the given expression is a pointer and fully dereferences
      * it if it is.

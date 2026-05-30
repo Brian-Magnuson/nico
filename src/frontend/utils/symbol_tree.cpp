@@ -532,7 +532,7 @@ SymbolTree::add_overloadable_func(const Binding& binding) {
 std::shared_ptr<Node::UnresolvedType>
 SymbolTree::add_unresolved_type(std::shared_ptr<Name> name) {
     auto new_node = Node::UnresolvedType::create(name, current_scope);
-    unresolved_types.push_back(new_node);
+    unresolved_type_nodes.push_back(new_node);
 
     modified = true;
     return new_node;
@@ -542,6 +542,64 @@ bool SymbolTree::is_context_unsafe() const {
     auto local_scope =
         std::dynamic_pointer_cast<Node::LocalScope>(current_scope);
     return local_scope && local_scope->block->is_unsafe;
+}
+
+bool SymbolTree::resolve_unresolved_types() {
+    bool has_error = false;
+
+    std::vector<std::shared_ptr<Type::Named>> pending_validity_check;
+
+    // First, attempt to resolve all unresolved types.
+    for (const auto& node : unresolved_type_nodes) {
+        auto name = node->name.lock();
+        auto name_found = try_resolve_name_from_scope(name, node->scope.lock());
+        if (!name_found) {
+            Logger::inst().log_error(
+                Err::TypeNameNotFound,
+                name->identifier->location,
+                "Could not resolve type name `" +
+                    std::string(name->identifier->lexeme) + "`."
+            );
+            has_error = true;
+            continue;
+        }
+        auto type_node =
+            std::dynamic_pointer_cast<Node::ITypeNode>(name->node.lock());
+        // Confirm that the resolved name is indeed a type.
+        if (!type_node) {
+            Logger::inst().log_error(
+                Err::NameNotAType,
+                name->identifier->location,
+                "Name reference `" + std::string(name->identifier->lexeme) +
+                    "` does not refer to a type."
+            );
+            has_error = true;
+            continue;
+        }
+        node->referencing_type_object->node = type_node;
+        pending_validity_check.push_back(node->referencing_type_object);
+    }
+    // Next, check for any unsized named types, which are not allowed.
+    for (const auto& type : pending_validity_check) {
+        if (!type->is_sized_type()) {
+            auto node = type->node.lock();
+            // Node should always be locatable; only primitive types are not
+            // locatable, and they are always be resolved.
+            auto locatable = std::dynamic_pointer_cast<Node::ILocatable>(node);
+            Logger::inst().log_error(
+                Err::UnsizedNamedType,
+                locatable ? locatable->location : nullptr,
+                "Unsized named type `" + type->to_string() + "` is not allowed."
+            );
+            Logger::inst().log_note(
+                "A named type may be unsized if it is excessively deep due to "
+                "possible infinite recursion or if it contains another unsized "
+                "type."
+            );
+            has_error = true;
+        }
+    }
+    return !has_error;
 }
 
 std::string SymbolTree::to_tree_string() const {

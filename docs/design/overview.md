@@ -1572,9 +1572,8 @@ unsafe:
     let y = p.field    // Automatic dereference
 ```
 
-With type aliases, it is possible for pointer types to form a cycle.
-The simplest case of this is a type alias that is bound to a pointer to itself.
-In such cases, implicit dereferencing is not allowed as it would lead to infinite recursion.
+A pointer may not be implicitly dereferenced more than 16 times.
+This is to prevent cases of unusually deep pointer types or possible pointer cycles created using named types.
 ```
 typedef Foo = @Foo
 let var p: Foo
@@ -1582,6 +1581,8 @@ p = @p
 unsafe:
     printout p.field  // Error: Too many implicit dereferences
 ```
+
+Remember that in all contexts where implicit dereferencing occurs, explicit dereferencing is still allowed.
 
 ### Subscript expressions
 
@@ -1605,16 +1606,17 @@ unsafe:
     let y = p[0]    // Automatic dereference
 ```
 
-With type aliases, it is possible for pointer types to form a cycle.
-The simplest case of this is a type alias that is bound to a pointer to itself.
-In such cases, implicit dereferencing is not allowed as it would lead to infinite recursion.
+A pointer may not be implicitly dereferenced more than 16 times.
+This is to prevent cases of unusually deep pointer types or possible pointer cycles created using named types.
 ```
 typedef Foo = @Foo
 let var p: Foo
 p = @p
 unsafe:
-    printout p[0] // Error: Too many implicit dereferences
+    printout p.field  // Error: Too many implicit dereferences
 ```
+
+Remember that in all contexts where implicit dereferencing occurs, explicit dereferencing is still allowed.
 
 ### Size-of expression
 

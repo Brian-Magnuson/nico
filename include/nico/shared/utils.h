@@ -25,13 +25,16 @@ namespace nico {
 
 // The maximum recursion depth for functions that possibly recurse infinitely.
 inline constexpr size_t MAX_RECURSION_DEPTH = 255;
+// The maximum number of implicit dereferences that we allow to be performed on
+// an expression.
+inline constexpr size_t MAX_ALLOWED_IMPLICIT_DEREFERENCES = 16;
 
 /**
  * @brief Prints out a message to stderr, then aborts the program.
  *
- * We try to avoid using exceptions in this project, so we instead use explicit
- * values for recoverable errors and functions like this for unrecoverable
- * errors.
+ * We try to avoid using exceptions in this project, so we instead use
+ * explicit values for recoverable errors and functions like this for
+ * unrecoverable errors.
  *
  * @param message The message to print out before aborting.
  * @return This function never returns; it calls std::abort().

@@ -1177,7 +1177,7 @@ class Type::Named : public Type {
 public:
     // The node associated with this named type; uses a weak pointer to avoid
     // circular references.
-    const std::weak_ptr<Node::ITypeNode> node;
+    std::weak_ptr<Node::ITypeNode> node;
 
     virtual ~Named() = default;
 

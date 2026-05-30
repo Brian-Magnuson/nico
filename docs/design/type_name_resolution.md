@@ -6,6 +6,9 @@ Type name resolution refers to the process of resolving named types to their act
 > [!WARNING]
 > This document is a work in progress and is subject to change.
 
+> [!CAUTION]
+> This document has multiple inconsistencies with the current implementation of the compiler and should be updated.
+
 ## Introduction
 
 The Nico programming language supports various types in its type system.

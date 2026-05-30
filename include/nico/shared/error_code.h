@@ -205,9 +205,10 @@ enum class Err {
     ExternStaticWithInitializer,
     // An object annotation contained duplicate field names.
     DuplicateObjectAnnotationFieldName,
-    // A type was found to be excessively deep during type checking, likely due
-    // to infinite recursion in type definitions.
-    TypeExcessivelyDeep,
+    // A named type annotation could not be resolved.
+    TypeNameNotFound,
+    // A named type was found to be unsized.
+    UnsizedNamedType,
 
     // Local type check error
     LocalTypeError = 5000,
@@ -262,6 +263,9 @@ enum class Err {
     // An attempt was made to dereference a non-typed pointer (e.g., nullptr or
     // anyptr).
     DereferenceNonTypedPointer,
+    // An attempt was made to implicitly dereference an expression too many
+    // times.
+    TooManyImplicitDereferences,
     // An attempt was made to deallocate a pointer outside of an unsafe context.
     DeallocOutsideUnsafeBlock,
     // An attempt was made to deallocate a non-raw-pointer type.

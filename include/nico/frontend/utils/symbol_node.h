@@ -607,7 +607,7 @@ public:
     std::weak_ptr<Node::IScope> scope;
     // The type object that references this unresolved type. This is used for
     // back-patching once the type can be resolved.
-    std::shared_ptr<Type> referencing_type_object;
+    std::shared_ptr<Type::Named> referencing_type_object;
 
     virtual ~UnresolvedType() = default;
 
