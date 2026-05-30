@@ -109,12 +109,12 @@ void SymbolTree::install_context_dependent_types(IRModuleContext& mod_ctx) {
     modified = true;
 }
 
-bool SymbolTree::resolve_name_downward_from_scope(
+bool SymbolTree::try_resolve_name_downward_from_scope(
     std::shared_ptr<Name> name, std::shared_ptr<Node::IScope> searching_scope
 ) {
     // If the NameRef has a base...
     if (name->base.has_value()) {
-        if (!resolve_name_downward_from_scope(
+        if (!try_resolve_name_downward_from_scope(
                 name->base.value(),
                 searching_scope
             )) {
@@ -297,13 +297,13 @@ bool SymbolTree::try_resolve_name_from_scope(
     bool found = false;
 
     // First, search the reserved scope.
-    if (resolve_name_downward_from_scope(name, reserved_scope)) {
+    if (try_resolve_name_downward_from_scope(name, reserved_scope)) {
         found = true;
     }
 
     // If not found, search from the searching scope upward.
     while (!found && searching_scope) {
-        if (resolve_name_downward_from_scope(name, searching_scope)) {
+        if (try_resolve_name_downward_from_scope(name, searching_scope)) {
             found = true;
         }
         searching_scope = searching_scope->parent.lock();

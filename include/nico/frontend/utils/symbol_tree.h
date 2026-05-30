@@ -60,7 +60,7 @@ class SymbolTree {
      * @param searching_scope The scope to start searching from.
      * @return True if the name was fully resolved, false otherwise.
      */
-    bool resolve_name_downward_from_scope(
+    bool try_resolve_name_downward_from_scope(
         std::shared_ptr<Name> name,
         std::shared_ptr<Node::IScope> searching_scope
     );
