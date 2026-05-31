@@ -44,8 +44,6 @@ class ExpressionChecker
         explicit Private() = default;
     };
 
-    // TODO: We should never use nullptr to indicate the absense of a value.
-    // Change this function to use std::optional instead.
     /**
      * @brief Checks if the given expression is a pointer and fully dereferences
      * it if it is.
@@ -56,17 +54,17 @@ class ExpressionChecker
      * contexts, such with postfix operators.
      *
      * If the expression is a raw pointer and is not within an unsafe context,
-     * an error will be logged and nullptr will be returned.
+     * an error will be logged and nullopt will be returned.
      *
      * If the expression is not a pointer, its type will be returned as-is.
      *
      * @param expr The expression to check and potentially dereference. Should
      * already be type-checked.
      * @return The fully dereferenced type if the expression is a pointer, or
-     * the original type if it is not a pointer. Returns nullptr if the
+     * the original type if it is not a pointer. Returns nullopt if the
      * expression is a raw pointer in a safe context.
      */
-    std::shared_ptr<Type>
+    std::optional<std::shared_ptr<Type>>
     implicit_full_dereference(std::shared_ptr<Expr>& expr);
 
     /**

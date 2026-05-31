@@ -6,7 +6,7 @@
 
 namespace nico {
 
-std::shared_ptr<Type>
+std::optional<std::shared_ptr<Type>>
 ExpressionChecker::implicit_full_dereference(std::shared_ptr<Expr>& expr) {
     if (!expr->type)
         panic(
@@ -27,7 +27,7 @@ ExpressionChecker::implicit_full_dereference(std::shared_ptr<Expr>& expr) {
                 "Cannot implicitly dereference non-typed pointer `" +
                     expr->type->to_string() + "`."
             );
-            return nullptr;
+            return std::nullopt;
         }
         if (PTR_INSTANCEOF(i_pointer_type, Type::RawTypedPtr)) {
             if (!symbol_tree->is_context_unsafe()) {
@@ -38,7 +38,7 @@ ExpressionChecker::implicit_full_dereference(std::shared_ptr<Expr>& expr) {
                         initial_type->to_string() +
                         "` outside of unsafe context."
                 );
-                return nullptr;
+                return std::nullopt;
             }
         }
         expr = std::make_shared<Expr::Deref>(
@@ -55,7 +55,7 @@ ExpressionChecker::implicit_full_dereference(std::shared_ptr<Expr>& expr) {
                     std::to_string(MAX_ALLOWED_IMPLICIT_DEREFERENCES) +
                     ") for implicit dereference."
             );
-            return nullptr;
+            return std::nullopt;
         }
         auto i_ptr_base_type =
             std::dynamic_pointer_cast<Type::ITypedPtr>(i_pointer_type)->base;
@@ -878,10 +878,11 @@ std::any ExpressionChecker::visit(Expr::Cast* expr, bool as_lvalue) {
 std::any ExpressionChecker::visit(Expr::Access* expr, bool as_lvalue) {
     if (!expr_check(expr->left, true))
         return std::any();
-    auto l_type = implicit_full_dereference(expr->left);
+    auto l_type_opt = implicit_full_dereference(expr->left);
     auto l_lvalue = std::dynamic_pointer_cast<Expr::IPLValue>(expr->left);
-    if (!l_type || !l_lvalue)
+    if (!l_type_opt.has_value() || !l_lvalue)
         return std::any();
+    auto l_type = l_type_opt.value();
 
     if (!l_type->is_sized_type().value_or(false)) {
         Logger::inst().log_error(
@@ -981,10 +982,11 @@ std::any ExpressionChecker::visit(Expr::Access* expr, bool as_lvalue) {
 std::any ExpressionChecker::visit(Expr::Subscript* expr, bool as_lvalue) {
     if (!expr_check(expr->left, true))
         return std::any();
-    auto l_type = implicit_full_dereference(expr->left);
+    auto l_type_opt = implicit_full_dereference(expr->left);
     auto l_lvalue = std::dynamic_pointer_cast<Expr::IPLValue>(expr->left);
-    if (!l_type || !l_lvalue)
+    if (!l_type_opt.has_value() || !l_lvalue)
         return std::any();
+    auto l_type = l_type_opt.value();
 
     auto index_type_opt = expr_check(expr->index, false);
     if (!index_type_opt.has_value())
