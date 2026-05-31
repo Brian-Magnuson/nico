@@ -162,15 +162,15 @@ std::any LocalChecker::visit(Stmt::Static* stmt) {
 
 std::any LocalChecker::visit(Stmt::Func* stmt) {
     // Get the function's type
-    auto func_type = std::dynamic_pointer_cast<Type::Function>(
-        stmt->binding_entry.lock()->binding.type
-    );
-    if (!func_type) {
+    auto func_type_opt =
+        types::as_a<Type::Function>(stmt->binding_entry.lock()->binding.type);
+    if (!func_type_opt) {
         panic(
             "LocalChecker::visit(Stmt::Func*): Binding entry does not have a "
             "function type."
         );
     }
+    auto func_type = func_type_opt.value();
 
     // The body is always present here.
     // The body is only absent in extern blocks, which are not checked by this
@@ -359,7 +359,7 @@ std::any LocalChecker::visit(Stmt::Dealloc* stmt) {
         return std::any();
     auto expr_type = expr_type_opt.value();
 
-    if (PTR_INSTANCEOF(expr_type, Type::Nullptr)) {
+    if (types::is_a<Type::Nullptr>(expr_type)) {
         Logger::inst().log_error(
             Err::DeallocNullptr,
             stmt->expression->location,
@@ -367,7 +367,7 @@ std::any LocalChecker::visit(Stmt::Dealloc* stmt) {
         );
         return std::any();
     }
-    else if (!PTR_INSTANCEOF(expr_type, Type::IRawPtr)) {
+    else if (!types::is_a<Type::IRawPtr>(expr_type)) {
         Logger::inst().log_error(
             Err::DeallocNonRawPointer,
             stmt->expression->location,

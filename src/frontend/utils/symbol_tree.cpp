@@ -391,7 +391,7 @@ SymbolTree::add_binding_entry(
             "Name `" + binding.name + "` already exists in the current scope."
         );
         if (PTR_INSTANCEOF(node.value(), Node::OverloadGroup) &&
-            PTR_INSTANCEOF(binding.type, Type::Function)) {
+            types::is_a<Type::Function>(binding.type)) {
             // The binding being declared is a non-overloadable function, but
             // there is an overload group with the same name.
             Logger::inst().log_note(

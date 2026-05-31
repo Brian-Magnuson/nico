@@ -1039,25 +1039,7 @@ public:
     }
 
     llvm::FunctionType*
-    get_llvm_function_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const {
-        std::vector<llvm::Type*> param_types;
-        for (const auto& param : parameters) {
-            param_types.push_back(param.second.type->get_llvm_type(builder));
-        }
-        llvm::Type* return_llvm_type;
-
-        if (PTR_INSTANCEOF(return_type, Type::Void)) {
-            return_llvm_type = llvm::Type::getVoidTy(builder->getContext());
-        }
-        else {
-            return_llvm_type = return_type->get_llvm_type(builder);
-        }
-        return llvm::FunctionType::get(
-            return_llvm_type,
-            param_types,
-            is_variadic
-        );
-    }
+    get_llvm_function_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const;
 
     /**
      * @brief Get the sets of parameter strings for this function.
@@ -1188,6 +1170,54 @@ public:
         }
     }
 
+private:
+    // Cache for the inner type of this named type; lazily initialized.
+    mutable std::optional<std::shared_ptr<Type>> cached_inner_type;
+
+    /**
+     * @brief Retrieves the inner type of this named type.
+     *
+     * Should only be called if the named type is resolved and confirmed to not
+     * be infinitely recursive.
+     * In case of deeply nested named types, this function caches the result for
+     * future use.
+     *
+     * @param recursion_level The current recursion level. Should be ignored by
+     * external callers.
+     * @return std::shared_ptr<Type> The inner type of this named type.
+     * @warning This function will panic if the named type is not resolved, if
+     * the node has expired, or if the maximum recursion depth is exceeded (to
+     * prevent infinite recursion in the case of infinitely recursive types).
+     */
+    std::shared_ptr<Type> get_inner_type(size_t recursion_level = 0) const {
+        if (cached_inner_type.has_value()) {
+            return cached_inner_type.value();
+        }
+        if (recursion_level > MAX_RECURSION_DEPTH) {
+            panic(
+                "Type::Named: Maximum recursion depth exceeded while "
+                "resolving inner type."
+            );
+        }
+        auto node_ptr = node.lock();
+        if (!node_ptr) {
+            panic("Type::Named: Node has expired.");
+        }
+        if (PTR_INSTANCEOF(node_ptr, Node::UnresolvedType)) {
+            panic(
+                "Type::Named: Cannot access inner type of unresolved named "
+                "type."
+            );
+        }
+        if (auto inner_named =
+                std::dynamic_pointer_cast<Type::Named>(node_ptr->type)) {
+            return inner_named->get_inner_type(recursion_level + 1);
+        }
+        cached_inner_type = node_ptr->type;
+        return cached_inner_type.value();
+    }
+
+public:
     std::string to_string() const override;
 
     bool operator==(const Type& other) const override {
@@ -1215,6 +1245,10 @@ public:
 
     virtual llvm::Type*
     get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override;
+
+    virtual std::shared_ptr<Type> get_underlying_type() override {
+        return get_inner_type();
+    }
 };
 
 } // namespace nico

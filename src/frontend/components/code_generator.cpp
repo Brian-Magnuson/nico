@@ -145,7 +145,7 @@ std::any CodeGenerator::visit(Stmt::Func* stmt) {
         builder->CreateBr(exit_block);
         builder->SetInsertPoint(exit_block);
 
-        if (PTR_INSTANCEOF(func_type->return_type, Type::Void)) {
+        if (types::is_a<Type::Void>(func_type->return_type)) {
             // For void functions, we can just return void.
             builder->CreateRetVoid();
         }
@@ -501,7 +501,7 @@ std::any CodeGenerator::visit(Expr::Binary* expr, bool as_lvalue) {
 std::any CodeGenerator::visit(Expr::Unary* expr, bool as_lvalue) {
     llvm::Value* result = nullptr;
     auto right = std::any_cast<llvm::Value*>(expr->right->accept(this, false));
-    if (PTR_INSTANCEOF(expr->right->type, Type::Float)) {
+    if (types::is_a<Type::Float>(expr->right->type)) {
         switch (expr->op->tok_type) {
         case Tok::Negative:
             result = builder->CreateFNeg(right);
@@ -513,7 +513,7 @@ std::any CodeGenerator::visit(Expr::Unary* expr, bool as_lvalue) {
             );
         }
     }
-    else if (PTR_INSTANCEOF(expr->right->type, Type::Int)) {
+    else if (types::is_a<Type::Int>(expr->right->type)) {
         switch (expr->op->tok_type) {
         case Tok::Negative:
             result = builder->CreateNeg(right);
@@ -525,7 +525,7 @@ std::any CodeGenerator::visit(Expr::Unary* expr, bool as_lvalue) {
             );
         }
     }
-    else if (PTR_INSTANCEOF(expr->right->type, Type::Bool)) {
+    else if (types::is_a<Type::Bool>(expr->right->type)) {
         switch (expr->op->tok_type) {
         case Tok::KwNot:
         case Tok::Bang:
@@ -699,7 +699,7 @@ std::any CodeGenerator::visit(Expr::Access* expr, bool as_lvalue) {
     auto struct_type =
         llvm::cast<llvm::StructType>(expr->left->type->get_llvm_type(builder));
 
-    if (PTR_INSTANCEOF(expr->left->type, Type::Tuple)) {
+    if (types::is_a<Type::Tuple>(expr->left->type)) {
         llvm::Value* element_ptr = builder->CreateStructGEP(
             struct_type,
             left,
@@ -717,7 +717,7 @@ std::any CodeGenerator::visit(Expr::Access* expr, bool as_lvalue) {
             );
         }
     }
-    else if (PTR_INSTANCEOF(expr->left->type, Type::Object)) {
+    else if (types::is_a<Type::Object>(expr->left->type)) {
         auto obj_type =
             std::dynamic_pointer_cast<Type::Object>(expr->left->type);
         auto field_index =
@@ -833,7 +833,7 @@ std::any CodeGenerator::visit(Expr::Call* expr, bool as_lvalue) {
         args
     );
 
-    if (PTR_INSTANCEOF(callee_fn_type->return_type, Type::Void)) {
+    if (types::is_a<Type::Void>(callee_fn_type->return_type)) {
         // If the function returns void, we spawn an empty struct.
         result = llvm::Constant::getNullValue(
             callee_fn_type->return_type->get_llvm_type(builder)

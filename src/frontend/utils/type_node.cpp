@@ -24,6 +24,24 @@ bool Type::Tuple::is_assignable_to(const Type& other) const {
     return false;
 }
 
+llvm::FunctionType* Type::Function::get_llvm_function_type(
+    std::unique_ptr<llvm::IRBuilder<>>& builder
+) const {
+    std::vector<llvm::Type*> param_types;
+    for (const auto& param : parameters) {
+        param_types.push_back(param.second.type->get_llvm_type(builder));
+    }
+    llvm::Type* return_llvm_type;
+
+    if (types::is_a<Type::Void>(return_type)) {
+        return_llvm_type = llvm::Type::getVoidTy(builder->getContext());
+    }
+    else {
+        return_llvm_type = return_type->get_llvm_type(builder);
+    }
+    return llvm::FunctionType::get(return_llvm_type, param_types, is_variadic);
+}
+
 std::string Type::Named::to_string() const {
     if (auto node_ptr = node.lock()) {
         return node_ptr->symbol;

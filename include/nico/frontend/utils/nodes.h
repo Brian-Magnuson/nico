@@ -113,7 +113,7 @@ public:
  * which it was generated. Thus, care should be taken when converting between
  * the two.
  */
-class Type {
+class Type : public std::enable_shared_from_this<Type> {
 public:
     // Numeric types
     class INumeric;
@@ -225,6 +225,41 @@ public:
     }
 
     /**
+     * @brief Get the underlying type object for this type.
+     *
+     * In most cases, the same type object will be returned.
+     * However, for named types, the underlying type object will be returned.
+     * For example, if this type is a named type that refers to an integer type,
+     * the underlying type will be the integer type.
+     *
+     * @return std::shared_ptr<Type> The underlying type object for this type.
+     * @warning If this is a named type that is not resolved or is infinitely
+     * recursive, this function will panic to prevent infinite recursion.
+     */
+    virtual std::shared_ptr<Type> get_underlying_type() {
+        return shared_from_this();
+    }
+
+    /**
+     * @brief Check if this type is directly compatible with another type.
+     *
+     * Two types are directly compatible if they are the same type or if their
+     * underlying types are the same type.
+     *
+     * This function is symmetric; that is, `a.is_directly_compatible_with(b)`
+     * should return the same result as `b.is_directly_compatible_with(a)`.
+     *
+     * @param other The other type to check compatibility with.
+     * @return bool True if this type is directly compatible with the other
+     * type. False otherwise.
+     * @warning This function may panic if either type is a named type that is
+     * not resolved or is infinitely recursive.
+     */
+    bool is_directly_compatible_with(const std::shared_ptr<Type>& other) {
+        return *this->get_underlying_type() == *other->get_underlying_type();
+    }
+
+    /**
      * @brief Check if this type is assignable a binding of the target type.
      *
      * For clarification, for the assignment `a = b`, this checks if the type of
@@ -323,6 +358,49 @@ public:
         return data_layout.getTypeAllocSize(llvm_type);
     }
 };
+
+namespace types {
+
+/**
+ * @brief Check if a type is an instance of a specific type and, if so, return
+ * it as that type, accounting for named types.
+ *
+ * @tparam T The type to cast.
+ * @param type The type to check and cast.
+ * @return std::optional<std::shared_ptr<T>> An optional containing `type` cast
+ * to `T` if it is an instance of `T`, accounting for named types, or
+ * `std::nullopt` if it is not.
+ */
+template <typename T>
+std::optional<std::shared_ptr<T>> as_a(std::shared_ptr<Type> type) {
+    auto underlying_type =
+        std::dynamic_pointer_cast<T>(type->get_underlying_type());
+    if (underlying_type != nullptr) {
+        return underlying_type;
+    }
+    else {
+        return std::nullopt;
+    }
+}
+
+/**
+ * @brief Check if a type is an instance of a specific type, accounting for
+ * named types.
+ *
+ * Effectively the same as `nico::types::as_a<T>(type).has_value()`, but more
+ * concise and readable in some cases.
+ *
+ * @tparam T The type to check against.
+ * @param type The type to check.
+ * @return bool Whether `type` is an instance of `T`, accounting for named
+ * types.
+ */
+template <typename T>
+bool is_a(std::shared_ptr<Type> type) {
+    return as_a<T>(type).has_value();
+}
+
+} // namespace types
 
 // MARK: Modifier
 

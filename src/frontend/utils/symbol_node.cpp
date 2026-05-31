@@ -271,7 +271,7 @@ llvm::Value* Node::BindingEntry::get_llvm_allocation(
 ) {
     llvm::Value* ptr;
     std::string suffix =
-        PTR_INSTANCEOF(binding.type, Type::Function) ? "$var" : "";
+        types::is_a<Type::Function>(binding.type) ? "$var" : "";
 
     if (is_global) {
         auto ir_module = builder->GetInsertBlock()->getModule();
