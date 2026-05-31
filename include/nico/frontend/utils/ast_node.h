@@ -325,6 +325,9 @@ public:
     std::shared_ptr<Token> identifier;
     // The annotation for the type being defined.
     std::shared_ptr<Annotation> annotation;
+    // A weak pointer to the type definition node in the symbol tree. To be set
+    // during type checking.
+    std::weak_ptr<Node::TypeDef> type_def_node;
 
     TypeDef(
         std::shared_ptr<Token> start_token,

@@ -200,13 +200,29 @@ public:
     add_extern_block(std::shared_ptr<Token> token);
 
     /**
+     * @brief Adds a type definition to the symbol tree.
+     *
+     * If the name already exists, or the current scope does not allow type
+     * definitions, this function does not add the type definition and returns
+     * nullopt.
+     * An error will also be reported.
+     *
+     * @param token The token representing the type definition identifier.
+     * @param type The type being defined by this type definition.
+     * @return std::optional<std::shared_ptr<Node::TypeDef>> The newly created
+     * type definition node if successful, or nullopt if not.
+     */
+    std::optional<std::shared_ptr<Node::TypeDef>>
+    add_type_def(std::shared_ptr<Token> token, std::shared_ptr<Type> type);
+
+    /**
      * @brief Adds a struct definition to the symbol tree, then enters the
      * struct definition scope.
      *
      * If the struct definition already exists, or the current scope does not
      * allow structs, this function does not add the struct and returns nullopt.
      *
-     * @param name The name of the struct.
+     * @param token The token representing the struct definition identifier.
      * @return std::optional<std::shared_ptr<Node>> The struct definition if
      * added successfully, or nullopt if not.
      */

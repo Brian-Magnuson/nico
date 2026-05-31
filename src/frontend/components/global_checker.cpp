@@ -319,7 +319,24 @@ std::any GlobalChecker::visit(Stmt::ExternBlock* stmt) {
 }
 
 std::any GlobalChecker::visit(Stmt::TypeDef* stmt) {
-    // TODO: Implement this method.
+    // First, visit the right side
+    auto anno_type_opt = annotation_checker->annotation_check(stmt->annotation);
+    // This checker's annotation checker will yield a type, even if the names in
+    // the annotation cannot be resolved. However, if the annotation checker
+    // returns no value, that means there was an error in checking the
+    // annotation.
+
+    if (!anno_type_opt.has_value()) {
+        return std::any();
+    }
+
+    auto type = anno_type_opt.value();
+    auto node_opt = symbol_tree->add_type_def(stmt->identifier, type);
+    if (!node_opt.has_value()) {
+        return std::any();
+    }
+    stmt->type_def_node = node_opt.value();
+
     return std::any();
 }
 
