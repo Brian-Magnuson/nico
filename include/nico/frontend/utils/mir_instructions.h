@@ -246,7 +246,7 @@ public:
     )
         : source(source), destination(destination) {
         // Assert that the destination is a pointer type.
-        if (!types::is_a<Type::IPointer>(destination->type)) {
+        if (!Type::is_a<Type::IPointer>(destination->type)) {
             panic(
                 "Instr::Store::Store: Destination must be a pointer type. "
                 "Got `" +
@@ -284,7 +284,7 @@ public:
         : source(source),
           destination(std::make_shared<MIRValue::Temporary>(result_type)) {
         // Assert that the source is a pointer type.
-        if (!types::is_a<Type::IPointer>(source->type)) {
+        if (!Type::is_a<Type::IPointer>(source->type)) {
             panic(
                 "Instr::Load::Load: Source must be a pointer type. Got `" +
                 source->type->to_string() + "`."

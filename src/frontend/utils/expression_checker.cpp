@@ -20,8 +20,8 @@ ExpressionChecker::implicit_full_dereference(std::shared_ptr<Expr>& expr) {
 
     int i = 0;
     while (auto i_pointer_type =
-               types::as_a<Type::IPointer>(expr->type).value_or(nullptr)) {
-        if (!types::is_a<Type::ITypedPtr>(expr->type)) {
+               Type::as_a<Type::IPointer>(expr->type).value_or(nullptr)) {
+        if (!Type::is_a<Type::ITypedPtr>(expr->type)) {
             Logger::inst().log_error(
                 Err::DereferenceNonTypedPointer,
                 expr->location,
@@ -30,7 +30,7 @@ ExpressionChecker::implicit_full_dereference(std::shared_ptr<Expr>& expr) {
             );
             return std::nullopt;
         }
-        if (types::is_a<Type::RawTypedPtr>(expr->type)) {
+        if (Type::is_a<Type::RawTypedPtr>(expr->type)) {
             if (!symbol_tree->is_context_unsafe()) {
                 Logger::inst().log_error(
                     Err::PtrDerefOutsideUnsafeBlock,
@@ -59,7 +59,7 @@ ExpressionChecker::implicit_full_dereference(std::shared_ptr<Expr>& expr) {
             return std::nullopt;
         }
         auto i_ptr_base_type =
-            types::as_a<Type::ITypedPtr>(i_pointer_type).value()->base;
+            Type::as_a<Type::ITypedPtr>(i_pointer_type).value()->base;
         expr->type = i_ptr_base_type;
     }
 
@@ -73,9 +73,9 @@ bool ExpressionChecker::check_pointer_cast(
 ) {
     // Beyond this point, both types must be raw pointer types.
     auto expr_raw_ptr_type =
-        types::as_a<Type::IRawPtr>(expr_type).value_or(nullptr);
+        Type::as_a<Type::IRawPtr>(expr_type).value_or(nullptr);
     auto target_raw_ptr_type =
-        types::as_a<Type::IRawPtr>(target_type).value_or(nullptr);
+        Type::as_a<Type::IRawPtr>(target_type).value_or(nullptr);
     if (!expr_raw_ptr_type || !target_raw_ptr_type) {
         Logger::inst().log_error(
             Err::InvalidCastOperation,
@@ -87,21 +87,21 @@ bool ExpressionChecker::check_pointer_cast(
     }
 
     // Nullptr cast.
-    if (types::is_a<Type::Nullptr>(expr_raw_ptr_type)) {
+    if (Type::is_a<Type::Nullptr>(expr_raw_ptr_type)) {
         // Nullptr can be cast to any raw pointer type.
         return true;
     }
     // Anyptr cast.
-    if (types::is_a<Type::Anyptr>(target_raw_ptr_type)) {
+    if (Type::is_a<Type::Anyptr>(target_raw_ptr_type)) {
         // You can cast any mutable raw pointer type to `anyptr`.
         return expr_raw_ptr_type->is_mutable;
     }
 
     // Beyond this point, both pointer types must have typed bases.
     auto expr_typed_ptr_type =
-        types::as_a<Type::RawTypedPtr>(expr_raw_ptr_type).value_or(nullptr);
+        Type::as_a<Type::RawTypedPtr>(expr_raw_ptr_type).value_or(nullptr);
     auto target_typed_ptr_type =
-        types::as_a<Type::RawTypedPtr>(target_raw_ptr_type).value_or(nullptr);
+        Type::as_a<Type::RawTypedPtr>(target_raw_ptr_type).value_or(nullptr);
     if (!expr_typed_ptr_type || !target_typed_ptr_type) {
         Logger::inst().log_error(
             Err::InvalidCastOperation,
@@ -114,10 +114,9 @@ bool ExpressionChecker::check_pointer_cast(
 
     // Multi-level pointer cast.
     auto expr_base_ptr_type =
-        types::as_a<Type::IPointer>(expr_typed_ptr_type->base)
-            .value_or(nullptr);
+        Type::as_a<Type::IPointer>(expr_typed_ptr_type->base).value_or(nullptr);
     auto target_base_ptr_type =
-        types::as_a<Type::IPointer>(target_typed_ptr_type->base)
+        Type::as_a<Type::IPointer>(target_typed_ptr_type->base)
             .value_or(nullptr);
 
     if (expr_base_ptr_type || target_base_ptr_type) {
@@ -156,12 +155,12 @@ bool ExpressionChecker::check_pointer_cast(
 
     // Array pointer cast.
     if (auto target_array_type =
-            types::as_a<Type::Array>(target_typed_ptr_type->base)
+            Type::as_a<Type::Array>(target_typed_ptr_type->base)
                 .value_or(nullptr)) {
         // The base type of the expression pointer type must also be an
         // array type.
         auto expr_array_type =
-            types::as_a<Type::Array>(expr_typed_ptr_type->base)
+            Type::as_a<Type::Array>(expr_typed_ptr_type->base)
                 .value_or(nullptr);
         if (!expr_array_type) {
             Logger::inst().log_error(
@@ -368,7 +367,7 @@ std::any ExpressionChecker::visit(Expr::Logical* expr, bool as_lvalue) {
     auto l_type_opt = expr_check(expr->left, false);
     if (!l_type_opt.has_value())
         has_error = true;
-    if (!types::is_a<Type::Bool>(l_type_opt.value())) {
+    if (!Type::is_a<Type::Bool>(l_type_opt.value())) {
         Logger::inst().log_error(
             Err::NoOperatorOverload,
             expr->op->location,
@@ -380,7 +379,7 @@ std::any ExpressionChecker::visit(Expr::Logical* expr, bool as_lvalue) {
     auto r_type_opt = expr_check(expr->right, false);
     if (!r_type_opt.has_value())
         has_error = true;
-    else if (!types::is_a<Type::Bool>(r_type_opt.value())) {
+    else if (!Type::is_a<Type::Bool>(r_type_opt.value())) {
         Logger::inst().log_error(
             Err::NoOperatorOverload,
             expr->op->location,
@@ -422,9 +421,9 @@ std::any ExpressionChecker::visit(Expr::Binary* expr, bool as_lvalue) {
     auto l_type = l_type_opt.value();
     auto r_type = r_type_opt.value();
 
-    if (types::is_a<Type::Int>(l_type) &&
+    if (Type::is_a<Type::Int>(l_type) &&
         l_type->is_directly_compatible_with(r_type)) {
-        bool is_signed = types::as_a<Type::Int>(l_type).value()->is_signed;
+        bool is_signed = Type::as_a<Type::Int>(l_type).value()->is_signed;
         switch (expr->op->tok_type) {
         case Tok::Plus:
             expr->operation = Expr::Binary::Operation::IntAdd;
@@ -475,7 +474,7 @@ std::any ExpressionChecker::visit(Expr::Binary* expr, bool as_lvalue) {
         }
     }
     else if (
-        types::is_a<Type::Float>(l_type) &&
+        Type::is_a<Type::Float>(l_type) &&
         l_type->is_directly_compatible_with(r_type)
     ) {
         switch (expr->op->tok_type) {
@@ -522,9 +521,8 @@ std::any ExpressionChecker::visit(Expr::Binary* expr, bool as_lvalue) {
         }
     }
     else if (
-        (types::is_a<Type::Bool>(l_type) && types::is_a<Type::Bool>(r_type)) ||
-        (types::is_a<Type::IRawPtr>(l_type) &&
-         types::is_a<Type::IRawPtr>(r_type))
+        (Type::is_a<Type::Bool>(l_type) && Type::is_a<Type::Bool>(r_type)) ||
+        (Type::is_a<Type::IRawPtr>(l_type) && Type::is_a<Type::IRawPtr>(r_type))
     ) {
         switch (expr->op->tok_type) {
         case Tok::EqEq:
@@ -551,8 +549,8 @@ std::any ExpressionChecker::visit(Expr::Binary* expr, bool as_lvalue) {
                 "` is not compatible with type `" + l_type->to_string() +
                 "` for this operation."
         );
-        if (types::is_a<Type::INumeric>(l_type) &&
-            types::is_a<Type::INumeric>(r_type)) {
+        if (Type::is_a<Type::INumeric>(l_type) &&
+            Type::is_a<Type::INumeric>(r_type)) {
             Logger::inst().log_note(
                 expr->op->location,
                 "Basic numeric types must be exactly the same for this "
@@ -589,7 +587,7 @@ std::any ExpressionChecker::visit(Expr::Unary* expr, bool as_lvalue) {
     switch (expr->op->tok_type) {
     case Tok::Negative:
         // Types must inherit from `Type::INumeric`.
-        if (!types::is_a<Type::INumeric>(r_type)) {
+        if (!Type::is_a<Type::INumeric>(r_type)) {
             Logger::inst().log_error(
                 Err::NoOperatorOverload,
                 expr->op->location,
@@ -598,7 +596,7 @@ std::any ExpressionChecker::visit(Expr::Unary* expr, bool as_lvalue) {
             return std::any();
         }
         // Type cannot be an unsigned integer.
-        if (auto int_type = types::as_a<Type::Int>(r_type).value_or(nullptr)) {
+        if (auto int_type = Type::as_a<Type::Int>(r_type).value_or(nullptr)) {
             if (!int_type->is_signed) {
                 Logger::inst().log_error(
                     Err::NegativeOnUnsignedType,
@@ -612,7 +610,7 @@ std::any ExpressionChecker::visit(Expr::Unary* expr, bool as_lvalue) {
         return std::any();
     case Tok::KwNot:
     case Tok::Bang:
-        if (!types::is_a<Type::Bool>(r_type)) {
+        if (!Type::is_a<Type::Bool>(r_type)) {
             Logger::inst().log_error(
                 Err::NoOperatorOverload,
                 expr->op->location,
@@ -696,7 +694,7 @@ std::any ExpressionChecker::visit(Expr::Deref* expr, bool as_lvalue) {
         return std::any();
     auto r_type = r_type_opt.value();
 
-    if (!types::is_a<Type::IPointer>(r_type)) {
+    if (!Type::is_a<Type::IPointer>(r_type)) {
         Logger::inst().log_error(
             Err::DereferenceNonPointer,
             expr->op->location,
@@ -704,8 +702,7 @@ std::any ExpressionChecker::visit(Expr::Deref* expr, bool as_lvalue) {
         );
         return std::any();
     }
-    if (auto ptr_type =
-            types::as_a<Type::ITypedPtr>(r_type).value_or(nullptr)) {
+    if (auto ptr_type = Type::as_a<Type::ITypedPtr>(r_type).value_or(nullptr)) {
         expr->type = ptr_type->base;
         // Remember: pointers are not possible lvalues.
         // For pointer dereference, the assignability is carried over from the
@@ -763,11 +760,11 @@ std::any ExpressionChecker::visit(Expr::Cast* expr, bool as_lvalue) {
         expr->operation = Expr::Cast::Operation::NoOp;
     }
     else if (
-        types::is_a<Type::IPointer>(expr_type) &&
-        types::is_a<Type::IPointer>(target_type)
+        Type::is_a<Type::IPointer>(expr_type) &&
+        Type::is_a<Type::IPointer>(target_type)
     ) {
-        auto expr_ptr_type = types::as_a<Type::IPointer>(expr_type).value();
-        auto target_ptr_type = types::as_a<Type::IPointer>(target_type).value();
+        auto expr_ptr_type = Type::as_a<Type::IPointer>(expr_type).value();
+        auto target_ptr_type = Type::as_a<Type::IPointer>(target_type).value();
         // Pointer cast
         if (!check_pointer_cast(
                 expr_ptr_type,
@@ -781,24 +778,24 @@ std::any ExpressionChecker::visit(Expr::Cast* expr, bool as_lvalue) {
     }
     else if (
         auto target_bool_type =
-            types::as_a<Type::Bool>(target_type).value_or(nullptr)
+            Type::as_a<Type::Bool>(target_type).value_or(nullptr)
     ) {
         // Could be IntToBool, FPToBool
-        if (types::is_a<Type::Int>(expr_type)) {
+        if (Type::is_a<Type::Int>(expr_type)) {
             // Must be IntToBool
             expr->operation = Expr::Cast::Operation::IntToBool;
         }
-        else if (types::is_a<Type::Float>(expr_type)) {
+        else if (Type::is_a<Type::Float>(expr_type)) {
             // Must be FPToBool
             expr->operation = Expr::Cast::Operation::FPToBool;
         }
     }
     else if (
-        auto expr_int_type = types::as_a<Type::Int>(expr_type).value_or(nullptr)
+        auto expr_int_type = Type::as_a<Type::Int>(expr_type).value_or(nullptr)
     ) {
         // Could be SignExt, ZeroExt, IntTrunc, SIntToFP, UIntToFP
         if (auto target_int_type =
-                types::as_a<Type::Int>(target_type).value_or(nullptr)) {
+                Type::as_a<Type::Int>(target_type).value_or(nullptr)) {
             // Could be SignExt, ZeroExt, IntTrunc
             if (expr_int_type->width < target_int_type->width) {
                 // Could be SignExt or ZeroExt
@@ -822,7 +819,7 @@ std::any ExpressionChecker::visit(Expr::Cast* expr, bool as_lvalue) {
         }
         else if (
             auto target_float_type =
-                types::as_a<Type::Float>(target_type).value_or(nullptr)
+                Type::as_a<Type::Float>(target_type).value_or(nullptr)
         ) {
             // Could be SIntToFP or UIntToFP
             if (expr_int_type->is_signed) {
@@ -837,11 +834,11 @@ std::any ExpressionChecker::visit(Expr::Cast* expr, bool as_lvalue) {
     }
     else if (
         auto expr_float_type =
-            types::as_a<Type::Float>(expr_type).value_or(nullptr)
+            Type::as_a<Type::Float>(expr_type).value_or(nullptr)
     ) {
         // Could be FPExt, FPTrunc, FPToSInt, FPToUInt
         if (auto target_float_type =
-                types::as_a<Type::Float>(target_type).value_or(nullptr)) {
+                Type::as_a<Type::Float>(target_type).value_or(nullptr)) {
             // Could be FPExt or FPTrunc
             if (expr_float_type->width < target_float_type->width) {
                 // Must be FPExt
@@ -854,7 +851,7 @@ std::any ExpressionChecker::visit(Expr::Cast* expr, bool as_lvalue) {
         }
         else if (
             auto target_int_type =
-                types::as_a<Type::Int>(target_type).value_or(nullptr)
+                Type::as_a<Type::Int>(target_type).value_or(nullptr)
         ) {
             // Could be FPToSInt or FPToUInt
             if (target_int_type->is_signed) {
@@ -905,8 +902,7 @@ std::any ExpressionChecker::visit(Expr::Access* expr, bool as_lvalue) {
         return std::any();
     }
 
-    if (auto tuple_l_type =
-            types::as_a<Type::Tuple>(l_type).value_or(nullptr)) {
+    if (auto tuple_l_type = Type::as_a<Type::Tuple>(l_type).value_or(nullptr)) {
         if (expr->right_token->tok_type == Tok::TupleIndex) {
             size_t index = std::any_cast<size_t>(expr->right_token->literal);
             if (index >= tuple_l_type->elements.size()) {
@@ -942,7 +938,7 @@ std::any ExpressionChecker::visit(Expr::Access* expr, bool as_lvalue) {
         }
     }
     else if (
-        auto object_l_type = types::as_a<Type::Object>(l_type).value_or(nullptr)
+        auto object_l_type = Type::as_a<Type::Object>(l_type).value_or(nullptr)
     ) {
         auto member_name = std::string(expr->right_token->lexeme);
         auto matched_field_opt = object_l_type->fields.at(member_name);
@@ -1002,8 +998,7 @@ std::any ExpressionChecker::visit(Expr::Subscript* expr, bool as_lvalue) {
         return std::any();
     auto index_type = index_type_opt.value();
 
-    if (auto array_l_type =
-            types::as_a<Type::Array>(l_type).value_or(nullptr)) {
+    if (auto array_l_type = Type::as_a<Type::Array>(l_type).value_or(nullptr)) {
         // Array element type must be a sized type.
         if (!array_l_type->base->is_sized_type().value_or(false)) {
             Logger::inst().log_error(
@@ -1019,7 +1014,7 @@ std::any ExpressionChecker::visit(Expr::Subscript* expr, bool as_lvalue) {
             return std::any();
         }
         // Index must be an integer type.
-        if (!types::is_a<Type::Int>(index_type)) {
+        if (!Type::is_a<Type::Int>(index_type)) {
             Logger::inst().log_error(
                 Err::ArrayIndexNotInteger,
                 expr->index->location,
@@ -1056,18 +1051,18 @@ std::any ExpressionChecker::visit(Expr::Call* expr, bool as_lvalue) {
 
     // If the callee is an exact function, add it to the candidate list.
     if (auto func_type =
-            types::as_a<Type::Function>(callee_type).value_or(nullptr)) {
+            Type::as_a<Type::Function>(callee_type).value_or(nullptr)) {
         candidate_funcs.push_back(func_type);
     }
     // If the callee is an overloaded function, add all overloads to the
     // candidate list.
     else if (
         auto overload_type =
-            types::as_a<Type::OverloadedFn>(callee_type).value_or(nullptr)
+            Type::as_a<Type::OverloadedFn>(callee_type).value_or(nullptr)
     ) {
         for (auto overload : overload_type->overload_group.lock()->overloads) {
             auto func_type =
-                types::as_a<Type::Function>(overload->binding.type).value();
+                Type::as_a<Type::Function>(overload->binding.type).value();
             candidate_funcs.push_back(func_type);
             overload_binding_entries.push_back(overload);
         }
@@ -1210,7 +1205,7 @@ std::any ExpressionChecker::visit(Expr::Alloc* expr, bool as_lvalue) {
             return std::any();
         auto amount_type = amount_type_opt.value();
 
-        if (!types::is_a<Type::Int>(amount_type)) {
+        if (!Type::is_a<Type::Int>(amount_type)) {
             Logger::inst().log_error(
                 Err::AllocAmountNotInteger,
                 expr->amount_expr.value()->location,
@@ -1571,7 +1566,7 @@ std::any ExpressionChecker::visit(Expr::Conditional* expr, bool as_lvalue) {
         has_error = true;
 
     // The condition must be of type `bool`.
-    if (!has_error && !types::is_a<Type::Bool>(cond_type_opt.value())) {
+    if (!has_error && !Type::is_a<Type::Bool>(cond_type_opt.value())) {
         Logger::inst().log_error(
             Err::ConditionNotBool,
             expr->condition->location,
@@ -1648,7 +1643,7 @@ std::any ExpressionChecker::visit(Expr::Loop* expr, bool as_lvalue) {
         auto cond_type_opt = expr_check(expr->condition.value(), false);
         if (!cond_type_opt.has_value())
             has_error = true;
-        if (!has_error && !types::is_a<Type::Bool>(cond_type_opt.value())) {
+        if (!has_error && !Type::is_a<Type::Bool>(cond_type_opt.value())) {
             Logger::inst().log_error(
                 Err::ConditionNotBool,
                 expr->condition.value()->location,
@@ -1665,8 +1660,8 @@ std::any ExpressionChecker::visit(Expr::Loop* expr, bool as_lvalue) {
     if (!has_error && expr->condition.has_value()) {
         // If the loop has a condition and its body does not yield void or
         // unit...
-        if (!types::is_a<Type::Void>(body_type_opt.value()) &&
-            !types::is_a<Type::Unit>(body_type_opt.value())) {
+        if (!Type::is_a<Type::Void>(body_type_opt.value()) &&
+            !Type::is_a<Type::Unit>(body_type_opt.value())) {
             Logger::inst().log_error(
                 Err::WhileLoopYieldingNonVoid,
                 expr->body->location,

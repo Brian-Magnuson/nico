@@ -357,50 +357,46 @@ public:
             builder->GetInsertBlock()->getModule()->getDataLayout();
         return data_layout.getTypeAllocSize(llvm_type);
     }
+
+    /**
+     * @brief Check if a type is an instance of a specific type and, if so,
+     * return it as that type, accounting for named types.
+     *
+     * @tparam T The type to cast.
+     * @param type The type to check and cast.
+     * @return std::optional<std::shared_ptr<T>> An optional containing `type`
+     * cast to `T` if it is an instance of `T`, accounting for named types, or
+     * `std::nullopt` if it is not.
+     */
+    template <typename T>
+    static std::optional<std::shared_ptr<T>> as_a(std::shared_ptr<Type> type) {
+        auto underlying_type =
+            std::dynamic_pointer_cast<T>(type->get_underlying_type());
+        if (underlying_type != nullptr) {
+            return underlying_type;
+        }
+        else {
+            return std::nullopt;
+        }
+    }
+
+    /**
+     * @brief Check if a type is an instance of a specific type, accounting for
+     * named types.
+     *
+     * Effectively the same as `nico::Type::as_a<T>(type).has_value()`, but
+     * more concise and readable in some cases.
+     *
+     * @tparam T The type to check against.
+     * @param type The type to check.
+     * @return bool Whether `type` is an instance of `T`, accounting for named
+     * types.
+     */
+    template <typename T>
+    static bool is_a(std::shared_ptr<Type> type) {
+        return as_a<T>(type).has_value();
+    }
 };
-
-namespace types {
-
-/**
- * @brief Check if a type is an instance of a specific type and, if so, return
- * it as that type, accounting for named types.
- *
- * @tparam T The type to cast.
- * @param type The type to check and cast.
- * @return std::optional<std::shared_ptr<T>> An optional containing `type` cast
- * to `T` if it is an instance of `T`, accounting for named types, or
- * `std::nullopt` if it is not.
- */
-template <typename T>
-std::optional<std::shared_ptr<T>> as_a(std::shared_ptr<Type> type) {
-    auto underlying_type =
-        std::dynamic_pointer_cast<T>(type->get_underlying_type());
-    if (underlying_type != nullptr) {
-        return underlying_type;
-    }
-    else {
-        return std::nullopt;
-    }
-}
-
-/**
- * @brief Check if a type is an instance of a specific type, accounting for
- * named types.
- *
- * Effectively the same as `nico::types::as_a<T>(type).has_value()`, but more
- * concise and readable in some cases.
- *
- * @tparam T The type to check against.
- * @param type The type to check.
- * @return bool Whether `type` is an instance of `T`, accounting for named
- * types.
- */
-template <typename T>
-bool is_a(std::shared_ptr<Type> type) {
-    return as_a<T>(type).has_value();
-}
-
-} // namespace types
 
 // MARK: Modifier
 

@@ -270,8 +270,7 @@ llvm::Value* Node::BindingEntry::get_llvm_allocation(
     std::unique_ptr<llvm::IRBuilder<>>& builder
 ) {
     llvm::Value* ptr;
-    std::string suffix =
-        types::is_a<Type::Function>(binding.type) ? "$var" : "";
+    std::string suffix = Type::is_a<Type::Function>(binding.type) ? "$var" : "";
 
     if (is_global) {
         auto ir_module = builder->GetInsertBlock()->getModule();

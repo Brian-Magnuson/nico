@@ -380,9 +380,9 @@ What we want is not to check for type equivalence, but direct compatibility.
 We must define a new function that checks for direct compatibility between two types, and use it in our type checker instead of checking for type equivalence.
 It may look something like this:
 ```cpp
-types::instance_of<Type::Tuple>(expr->type);
-auto tuple_type = types::as<Type::Tuple>(expr->type);
-types::are_directly_compatible(expr->type, other->type);
+Type::instance_of<Type::Tuple>(expr->type);
+auto tuple_type = Type::as<Type::Tuple>(expr->type);
+Type::are_directly_compatible(expr->type, other->type);
 ```
 
 These functions will take the place of `std::dynamic_pointer_cast` and `Type::operator==` and will check for direct compatibility instead of type equivalence.

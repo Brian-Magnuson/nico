@@ -33,7 +33,7 @@ llvm::FunctionType* Type::Function::get_llvm_function_type(
     }
     llvm::Type* return_llvm_type;
 
-    if (types::is_a<Type::Void>(return_type)) {
+    if (Type::is_a<Type::Void>(return_type)) {
         return_llvm_type = llvm::Type::getVoidTy(builder->getContext());
     }
     else {
