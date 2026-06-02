@@ -376,9 +376,9 @@ public:
         return dynamic_cast<const Nullptr*>(&other) != nullptr;
     }
 
-    virtual bool is_assignable_to(const Type& other) const override {
+    virtual bool is_assignable_to(std::shared_ptr<Type> other) override {
         // nullptr can be assigned to any instance of IRawPtr.
-        return dynamic_cast<const Type::IRawPtr*>(&other) != nullptr;
+        return Type::as_a<Type::IRawPtr>(other).has_value();
     }
 };
 
@@ -461,21 +461,21 @@ public:
         return {"%p", {value}};
     }
 
-    virtual bool is_assignable_to(const Type& other) const override {
-        if (const auto* other_pointer =
-                dynamic_cast<const RawTypedPtr*>(&other)) {
+    virtual bool is_assignable_to(std::shared_ptr<Type> other) override {
+        if (auto other_pointer =
+                Type::as_a<Type::RawTypedPtr>(other).value_or(nullptr)) {
             // You can assign to a pointer if the base types are the same and
             // the mutability is compatible.
 
             // not (not this->is_mutable and target->is_mutable)
             // !(!A & B) == A | !B
-            return base->is_assignable_to(*other_pointer->base) &&
+            return base->is_assignable_to(other_pointer->base) &&
                    (is_mutable || !other_pointer->is_mutable);
             // If this pointer is mutable or the other pointer is not mutable,
             // we either have an equivalent type or a loss of mutability.
             // We explicitly allow a loss of mutability.
         }
-        else if (dynamic_cast<const Type::Anyptr*>(&other) != nullptr) {
+        else if (Type::as_a<Type::Anyptr>(other).has_value()) {
             // You can assign to `anyptr` if this pointer is mutable.
             return is_mutable;
         }
@@ -517,10 +517,10 @@ public:
         return base->to_print_args(builder, val, include_quotes);
     }
 
-    virtual bool is_assignable_to(const Type& other) const override {
-        if (const auto* other_pointer =
-                dynamic_cast<const Reference*>(&other)) {
-            return base->is_assignable_to(*other_pointer->base) &&
+    virtual bool is_assignable_to(std::shared_ptr<Type> other) override {
+        if (auto other_pointer =
+                Type::as_a<Type::Reference>(other).value_or(nullptr)) {
+            return base->is_assignable_to(other_pointer->base) &&
                    (is_mutable || !other_pointer->is_mutable);
         }
         return false;
@@ -609,8 +609,9 @@ public:
         return false;
     }
 
-    virtual bool is_assignable_to(const Type& other) const override {
-        if (const auto* other_array = dynamic_cast<const Array*>(&other)) {
+    virtual bool is_assignable_to(std::shared_ptr<Type> other) override {
+        if (auto other_array =
+                Type::as_a<Type::Array>(other).value_or(nullptr)) {
             bool sizes_compatible = false;
             /*
             We allow assignment in these cases:
@@ -624,7 +625,7 @@ public:
                 sizes_compatible = true;
             }
 
-            return base->is_assignable_to(*other_array->base) &&
+            return base->is_assignable_to(other_array->base) &&
                    sizes_compatible;
         }
         return false;
@@ -711,8 +712,9 @@ public:
         );
     }
 
-    virtual bool is_assignable_to(const Type& other) const override {
-        if (const auto* other_array = dynamic_cast<const Array*>(&other)) {
+    virtual bool is_assignable_to(std::shared_ptr<Type> other) override {
+        if (auto other_array =
+                Type::as_a<Type::Array>(other).value_or(nullptr)) {
             return other_array->size.has_value() &&
                    other_array->size.value() == 0;
         }
@@ -777,7 +779,7 @@ public:
         return false;
     }
 
-    virtual bool is_assignable_to(const Type& other) const override;
+    virtual bool is_assignable_to(std::shared_ptr<Type> other) override;
 
     virtual llvm::Type*
     get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
@@ -896,8 +898,9 @@ public:
         return true;
     }
 
-    virtual bool is_assignable_to(const Type& other) const override {
-        if (const auto* other_object = dynamic_cast<const Object*>(&other)) {
+    virtual bool is_assignable_to(std::shared_ptr<Type> other) override {
+        if (auto other_object =
+                Type::as_a<Type::Object>(other).value_or(nullptr)) {
             if (fields.size() != other_object->fields.size()) {
                 return false;
             }
@@ -907,7 +910,7 @@ public:
                 // Field names must match and field types must be assignable.
                 if (this_it->first != other_it->first ||
                     !this_it->second.type->is_assignable_to(
-                        *other_it->second.type
+                        other_it->second.type
                     )) {
                     return false;
                 }
@@ -1131,13 +1134,15 @@ public:
         return dynamic_cast<const Void*>(&other) != nullptr;
     }
 
-    virtual bool is_assignable_to(const Type& other) const override {
+    virtual bool is_assignable_to(std::shared_ptr<Type> other) override {
         // Void can be assigned to void...
-        if (dynamic_cast<const Void*>(&other) != nullptr) {
+        if (auto other_void = Type::as_a<Type::Void>(other)) {
             return true;
         }
         // Or an empty tuple...
-        else if (auto* other_tuple = dynamic_cast<const Tuple*>(&other)) {
+        else if (
+            auto other_tuple = Type::as_a<Type::Tuple>(other).value_or(nullptr)
+        ) {
             return other_tuple->elements.empty();
         }
 

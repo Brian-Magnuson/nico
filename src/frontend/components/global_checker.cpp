@@ -352,6 +352,8 @@ void GlobalChecker::run_check(std::unique_ptr<FrontendContext>& context) {
         context->stmts[i]->accept(this);
     }
 
+    symbol_tree->resolve_unresolved_types();
+
     if (Logger::inst().get_errors().empty()) {
         context->status = Status::Ok();
     }

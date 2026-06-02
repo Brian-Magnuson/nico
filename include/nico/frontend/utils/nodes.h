@@ -255,7 +255,7 @@ public:
      * @warning This function may panic if either type is a named type that is
      * not resolved or is infinitely recursive.
      */
-    bool is_directly_compatible_with(const std::shared_ptr<Type>& other) {
+    bool is_directly_compatible_with(std::shared_ptr<Type> other) {
         return *this->get_underlying_type() == *other->get_underlying_type();
     }
 
@@ -268,7 +268,7 @@ public:
      * This function is assymmetric; that is, `a.is_assignable_to(b)` may not
      * return the same result as `b.is_assignable_to(a)`.
      *
-     * For most cases, this is equivalent to checking for equality.
+     * For most cases, this is equivalent to checking for direct compatibility.
      * For pointer types, assigning a mutable pointer to an immutable pointer is
      * allowed.
      *
@@ -276,8 +276,8 @@ public:
      * @return True if this type is assignable to the target type. False
      * otherwise.
      */
-    virtual bool is_assignable_to(const Type& target_type) const {
-        return *this == target_type;
+    virtual bool is_assignable_to(std::shared_ptr<Type> target_type) {
+        return is_directly_compatible_with(target_type);
     }
 
     /**
@@ -292,30 +292,9 @@ public:
      * @return True if this type is bidirectionally assignment-compatible with
      * the other type. False otherwise.
      */
-    bool is_bidirectionally_assignable_with(const Type& other) const {
-        return is_assignable_to(other) && other.is_assignable_to(*this);
-    }
-
-    /**
-     * @brief Check if this type is assignable a binding of the target type.
-     *
-     * For clarification, for the assignment `a = b`, this checks if the type of
-     * `b` (this) is assignable to the type of `a` (other).
-     *
-     * This function is assymmetric; that is, `a.is_assignable_to(b)` may not
-     * return the same result as `b.is_assignable_to(a)`.
-     *
-     * For most cases, this is equivalent to checking for equality.
-     * For pointer types, assigning a mutable pointer to an immutable pointer is
-     * allowed.
-     *
-     * @param target_type The target type to check assignability against.
-     * @return True if this type is assignable to the target type. False
-     * otherwise.
-     */
-    virtual bool
-    is_assignable_to(const std::shared_ptr<Type>& target_type) const {
-        return is_assignable_to(*target_type);
+    bool is_bidirectionally_assignable_with(std::shared_ptr<Type> other) {
+        return is_assignable_to(other) &&
+               other->is_assignable_to(shared_from_this());
     }
 
     /**

@@ -4,19 +4,19 @@
 
 namespace nico {
 
-bool Type::Tuple::is_assignable_to(const Type& other) const {
-    if (const auto* other_tuple = dynamic_cast<const Tuple*>(&other)) {
+bool Type::Tuple::is_assignable_to(std::shared_ptr<Type> other) {
+    if (auto other_tuple = Type::as_a<Type::Tuple>(other).value_or(nullptr)) {
         if (elements.size() != other_tuple->elements.size()) {
             return false;
         }
         for (size_t i = 0; i < elements.size(); ++i) {
-            if (!elements[i]->is_assignable_to(*(other_tuple->elements[i]))) {
+            if (!elements[i]->is_assignable_to(other_tuple->elements[i])) {
                 return false;
             }
         }
         return true;
     }
-    else if (dynamic_cast<const Void*>(&other) != nullptr) {
+    else if (Type::is_a<Type::Void>(other)) {
         // A tuple can be assigned to void if it's empty.
         return elements.empty();
     }

@@ -260,7 +260,7 @@ ExpressionChecker::try_match_args_to_params(
             continue;
         }
         const auto [param_name, param_binding] = *param_optional;
-        if (!pos_args[i]->type->is_assignable_to(*param_binding.type)) {
+        if (!pos_args[i]->type->is_assignable_to(param_binding.type)) {
             // Positional argument type does not match parameter type.
             return std::nullopt;
         }
@@ -274,7 +274,7 @@ ExpressionChecker::try_match_args_to_params(
             return std::nullopt;
         }
         if (!arg_expr->type->is_assignable_to(
-                *func_type->parameters.at(arg_name)->type
+                func_type->parameters.at(arg_name)->type
             )) {
             // Named argument type does not match parameter type.
             return std::nullopt;
@@ -338,7 +338,7 @@ std::any ExpressionChecker::visit(Expr::Assign* expr, bool as_lvalue) {
 
     // The types of the left and right sides must match.
     // if (*l_type != *r_type) {
-    if (!r_type->is_assignable_to(*l_type)) {
+    if (!r_type->is_assignable_to(l_type)) {
         Logger::inst().log_error(
             Err::AssignmentTypeMismatch,
             expr->op->location,
@@ -1268,7 +1268,7 @@ std::any ExpressionChecker::visit(Expr::Alloc* expr, bool as_lvalue) {
                 return std::any();
             auto init_type = init_type_opt.value();
 
-            if (!init_type->is_assignable_to(*alloc_inner_type)) {
+            if (!init_type->is_assignable_to(alloc_inner_type)) {
                 Logger::inst().log_error(
                     Err::AllocInitTypeMismatch,
                     expr->expression.value()->location,
@@ -1594,7 +1594,7 @@ std::any ExpressionChecker::visit(Expr::Conditional* expr, bool as_lvalue) {
     auto else_type = else_type_opt.value();
 
     // If-expression branches must yield compatible types
-    if (!then_type->is_bidirectionally_assignable_with(*else_type)) {
+    if (!then_type->is_bidirectionally_assignable_with(else_type)) {
         Logger::inst().log_error(
             Err::ConditionalBranchTypeMismatch,
             expr->location,

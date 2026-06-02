@@ -40,7 +40,7 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
 
         // If an initializer is present, check that the annotation type and
         // initializer type are compatible.
-        if (expr_type != nullptr && !expr_type->is_assignable_to(*anno_type)) {
+        if (expr_type != nullptr && !expr_type->is_assignable_to(anno_type)) {
             Logger::inst().log_error(
                 Err::LetTypeMismatch,
                 stmt->expression.value()->location,
@@ -129,7 +129,7 @@ std::any LocalChecker::visit(Stmt::Static* stmt) {
 
     // If the type of the initializer expression is not assignable to the type
     // of the binding...
-    if (!expr_type->is_assignable_to(*binding_type)) {
+    if (!expr_type->is_assignable_to(binding_type)) {
         Logger::inst().log_error(
             Err::StaticTypeMismatch,
             stmt->expression.value()->location,
@@ -194,7 +194,7 @@ std::any LocalChecker::visit(Stmt::Func* stmt) {
                 has_error = true;
             }
             else if (!default_expr_type_opt.value()->is_assignable_to(
-                         *param_binding.type
+                         param_binding.type
                      )) {
                 Logger::inst().log_error(
                     Err::DefaultArgTypeMismatch,
@@ -230,9 +230,7 @@ std::any LocalChecker::visit(Stmt::Func* stmt) {
         // Ignore error, already reported.
     }
     // Body type must be assignable to the return type.
-    else if (!body_type_opt.value()->is_assignable_to(
-                 *func_type->return_type
-             )) {
+    else if (!body_type_opt.value()->is_assignable_to(func_type->return_type)) {
         Logger::inst().log_error(
             Err::FunctionReturnTypeMismatch,
             stmt->body.value()->location,
@@ -314,7 +312,7 @@ std::any LocalChecker::visit(Stmt::Yield* stmt) {
         // If this local scope does not currently have a yield type...
         local_scope->yield_type = expr_type;
     }
-    else if (!expr_type->is_assignable_to(*local_scope->yield_type.value())) {
+    else if (!expr_type->is_assignable_to(local_scope->yield_type.value())) {
         // If this local scope has a yield type, check that the new yield
         // expression is compatible with it.
         Logger::inst().log_error(

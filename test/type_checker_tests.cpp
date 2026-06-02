@@ -2283,3 +2283,73 @@ TEST_CASE("Custom symbol declarations", "[checker]") {
         );
     }
 }
+
+TEST_CASE("Check typedef declarations", "[checker]") {
+    SECTION("Valid typedef declaration") {
+        run_checker_test(
+            R"(
+            typedef MyInt = i32
+        )"
+        );
+    }
+
+    SECTION("Valid typedef declaration and usage") {
+        run_checker_test(
+            R"(
+            typedef MyInt = i32
+            let var x: MyInt = 42
+            x = x + 37
+        )"
+        );
+    }
+
+    SECTION("Typedef name already exists") {
+        run_checker_test(
+            R"(
+            typedef MyInt = i32
+            typedef MyInt = f64
+            )",
+            Err::NameAlreadyExists
+        );
+    }
+
+    SECTION("Typedef name is reserved") {
+        run_checker_test(
+            R"(
+            typedef bool = i32
+            )",
+            Err::NameIsReserved
+        );
+    }
+
+    SECTION("Variable name conflicts with typedef name") {
+        run_checker_test(
+            R"(
+            let var MyInt: i32 = 42
+            typedef MyInt = i32
+            )",
+            Err::NameAlreadyExists
+        );
+    }
+
+    SECTION("Typedef name is scoped") {
+        run_checker_test(
+            R"(
+            namespace ns {
+                typedef MyInt = i32
+                static var x: MyInt = 42
+            }
+            static var y: ns::MyInt = 43
+            )"
+        );
+    }
+
+    SECTION("Typedef use before declaration") {
+        run_checker_test(
+            R"(
+            static var x: MyInt = 42
+            typedef MyInt = i32
+            )"
+        );
+    }
+}
