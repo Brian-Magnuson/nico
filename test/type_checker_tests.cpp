@@ -2352,4 +2352,81 @@ TEST_CASE("Check typedef declarations", "[checker]") {
             )"
         );
     }
+
+    SECTION("Typedef never resolves") {
+        run_checker_test(
+            R"(
+            typedef MyInt = SomeInt
+            )",
+            Err::TypeNameNotFound
+        );
+    }
+
+    SECTION("Unknown named type") {
+        run_checker_test(
+            R"(
+            static var x: UnknownType = 42
+            )",
+            Err::TypeNameNotFound
+        );
+    }
+
+    SECTION("Typedef with unknown underlying type") {
+        run_checker_test(
+            R"(
+            typedef MyInt = UnknownType
+            static var x: MyInt = 42
+            )",
+            Err::TypeNameNotFound
+        );
+    }
+
+    SECTION("Typedef self reference") {
+        run_checker_test(
+            R"(
+            typedef MyInt = MyInt
+            )",
+            Err::UnsizedNamedType
+        );
+    }
+
+    SECTION("Typedef cycle of 2") {
+        run_checker_test(
+            R"(
+            typedef A = B
+            typedef B = A
+            )",
+            Err::UnsizedNamedType
+        );
+    }
+
+    SECTION("Typedef cycle of 3") {
+        run_checker_test(
+            R"(
+            typedef A = B
+            typedef B = C
+            typedef C = A
+            )",
+            Err::UnsizedNamedType
+        );
+    }
+
+    SECTION("Typedef self reference behind pointer") {
+        run_checker_test(
+            R"(
+            typedef MyInt = @MyInt
+            )"
+        );
+    }
+
+    SECTION("Typedef diamond dependencies") {
+        run_checker_test(
+            R"(
+            typedef D = (B, C)
+            typedef C = A
+            typedef B = A
+            typedef A = i32
+            )"
+        );
+    }
 }
