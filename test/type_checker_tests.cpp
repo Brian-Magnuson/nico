@@ -2381,6 +2381,16 @@ TEST_CASE("Check typedef declarations", "[checker]") {
         );
     }
 
+    SECTION("Typedef with tuple with unknown underlying type") {
+        run_checker_test(
+            R"(
+            typedef MyTuple = (i32, UnknownType)
+            static var x: MyTuple = (42, 43)
+            )",
+            Err::TypeNameNotFound
+        );
+    }
+
     SECTION("Typedef self reference") {
         run_checker_test(
             R"(
@@ -2415,6 +2425,74 @@ TEST_CASE("Check typedef declarations", "[checker]") {
         run_checker_test(
             R"(
             typedef MyInt = @MyInt
+            )"
+        );
+    }
+
+    SECTION("Typedef cycle of 2 broken by pointer") {
+        run_checker_test(
+            R"(
+            typedef A = B
+            typedef B = @A
+            )"
+        );
+    }
+
+    SECTION("Typedef cycle of 3 broken by pointer") {
+        run_checker_test(
+            R"(
+            typedef A = B
+            typedef B = C
+            typedef C = @A
+            )"
+        );
+    }
+
+    SECTION("Typedef long chain") {
+        run_checker_test(
+            R"(
+            typedef E = D
+            typedef D = C
+            typedef C = B
+            typedef B = A
+            typedef A = i32
+            )"
+        );
+    }
+
+    SECTION("Typedef big tuple") {
+        run_checker_test(
+            R"(
+            typedef MyTuple = (A, B, C, D, E, F, G)
+            
+            static t: MyTuple = (1, 2, 3, 4, 5, 6, 7)
+
+            typedef A = i32
+            typedef B = i32
+            typedef C = i32
+            typedef D = i32
+            typedef E = i32
+            typedef F = i32
+            typedef G = i32
+            )"
+        );
+    }
+
+    SECTION("Typedef tree") {
+        run_checker_test(
+            R"(
+            typedef A = (B, C)
+            typedef B = (D, E)
+            typedef C = (F, G)
+            typedef E = (H, I)
+            typedef F = (J, K)
+
+            typedef D = i32
+            typedef G = i32
+            typedef H = i32
+            typedef I = i32
+            typedef J = i32
+            typedef K = i32
             )"
         );
     }
