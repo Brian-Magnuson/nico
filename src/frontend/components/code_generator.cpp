@@ -86,7 +86,7 @@ std::any CodeGenerator::visit(Stmt::Func* stmt) {
 
     auto binding_entry = stmt->binding_entry.lock();
     auto binding_type = binding_entry->binding.type;
-    auto func_type = std::dynamic_pointer_cast<Type::Function>(binding_type);
+    auto func_type = Type::as_a<Type::Function>(binding_type).value();
 
     llvm::FunctionType* llvm_func_type =
         func_type->get_llvm_function_type(builder);
@@ -310,9 +310,7 @@ std::any CodeGenerator::visit(Stmt::ExternBlock* stmt) {
 }
 
 std::any CodeGenerator::visit(Stmt::TypeDef* /*stmt*/) {
-    // TODO: Implement this method.
-    // Although, all the logic for typedef statements are handled in the type
-    // checker, so it's possible this method will be empty.
+    // Typedef declarations do not generate any code.
     return std::any();
 }
 
@@ -609,7 +607,7 @@ std::any CodeGenerator::visit(Expr::Cast* expr, bool as_lvalue) {
         break;
     case Expr::Cast::Operation::FPToSInt: {
         // Clamp the FP value to the range of the target signed integer type
-        auto int_type = std::dynamic_pointer_cast<Type::Int>(expr->type);
+        auto int_type = Type::as_a<Type::Int>(expr->type).value();
         auto min_val = llvm::ConstantFP::get(
             inner_expr->getType(),
             (double)int_type->get_min_value()
@@ -633,7 +631,7 @@ std::any CodeGenerator::visit(Expr::Cast* expr, bool as_lvalue) {
     }
     case Expr::Cast::Operation::FPToUInt: {
         // Clamp the FP value to the range of the target unsigned integer type
-        auto int_type = std::dynamic_pointer_cast<Type::Int>(expr->type);
+        auto int_type = Type::as_a<Type::Int>(expr->type).value();
         auto min_val = llvm::ConstantFP::get(
             inner_expr->getType(),
             0.0
@@ -717,9 +715,10 @@ std::any CodeGenerator::visit(Expr::Access* expr, bool as_lvalue) {
             );
         }
     }
-    else if (Type::is_a<Type::Object>(expr->left->type)) {
+    else if (
         auto obj_type =
-            std::dynamic_pointer_cast<Type::Object>(expr->left->type);
+            Type::as_a<Type::Object>(expr->left->type).value_or(nullptr)
+    ) {
         auto field_index =
             obj_type->fields.get_index(std::string(expr->right_token->lexeme));
         if (field_index == -1) {
@@ -765,7 +764,7 @@ std::any CodeGenerator::visit(Expr::Subscript* expr, bool as_lvalue) {
 
     // Handle array types
     if (auto array_type =
-            std::dynamic_pointer_cast<Type::Array>(expr->left->type)) {
+            Type::as_a<Type::Array>(expr->left->type).value_or(nullptr)) {
 
         if (array_type->size.has_value()) {
             add_array_bounds_check(
@@ -806,7 +805,7 @@ std::any CodeGenerator::visit(Expr::Call* expr, bool as_lvalue) {
     auto callee =
         std::any_cast<llvm::Value*>(expr->callee->accept(this, false));
     auto callee_fn_type =
-        std::dynamic_pointer_cast<Type::Function>(expr->callee->type);
+        Type::as_a<Type::Function>(expr->callee->type).value();
     if (!callee_fn_type) {
         panic(
             "Codegenerator::visit(Expr::Call*): Callee is not a function type. "
@@ -859,14 +858,13 @@ std::any CodeGenerator::visit(Expr::Alloc* expr, bool as_lvalue) {
     llvm::Value* result = nullptr;
     llvm::Value* alloc_size = nullptr;
 
-    auto pointer_type =
-        std::dynamic_pointer_cast<Type::RawTypedPtr>(expr->type);
+    auto pointer_type = Type::as_a<Type::RawTypedPtr>(expr->type).value();
 
     if (expr->amount_expr.has_value()) {
         // `alloc for`
-        size_t type_size =
-            std::dynamic_pointer_cast<Type::Array>(pointer_type->base)
-                ->base->get_llvm_type_size(builder);
+        size_t type_size = Type::as_a<Type::Array>(pointer_type->base)
+                               .value()
+                               ->base->get_llvm_type_size(builder);
 
         llvm::Value* type_size_value = llvm::ConstantInt::get(
             llvm::Type::getInt64Ty(*mod_ctx.llvm_context),

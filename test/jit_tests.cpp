@@ -1919,3 +1919,40 @@ TEST_CASE("JIT external linkage declarations", "[jit]") {
         );
     }
 }
+
+TEST_CASE("JIT typedef declarations", "[jit]") {
+    SECTION("Simple typedef") {
+        run_jit_test(
+            R"(
+            typedef MyInt = i32
+            let x: MyInt = 42
+            printout x
+            )",
+            "42"
+        );
+    }
+
+    SECTION("Typedef with struct") {
+        run_jit_test(
+            R"(
+            typedef Point = { x: f64, y: f64 }
+            let p: Point = { x: 1.5, y: 2.5 }
+            printout p.x, ",", p.y
+            )",
+            "1.5,2.5"
+        );
+    }
+
+    SECTION("Self referencial typedef") {
+        run_jit_test(
+            R"(
+            typedef Node = { value: i32, next: @Node }
+            let node1: Node = { value: 1, next: nullptr }
+            let node2: Node = { value: 2, next: @node1 }
+            unsafe:
+                printout node2.value, ",", node2.next.value
+            )",
+            "2,1"
+        );
+    }
+}
