@@ -719,7 +719,7 @@ TEST_CASE("Parser extern block statements", "[parser]") {
             "extern {\n"
             "    func foo()\n"
             "}\n",
-            Err::UnexpectedTokenAfterExtern
+            Err::NotAnIdentifier
         );
     }
 

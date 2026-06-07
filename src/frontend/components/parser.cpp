@@ -1483,12 +1483,36 @@ std::optional<std::shared_ptr<Stmt>> Parser::namespace_statement() {
     );
 }
 
-std::optional<std::shared_ptr<Stmt>> Parser::extern_block_statement(
-    std::shared_ptr<nico::Token> start_token, ABI abi
-) {
+std::optional<std::shared_ptr<Stmt>> Parser::extern_block_statement() {
+    auto start_token = previous();
     bool defer_error = false;
-    auto identifier = previous();
 
+    // Optional ABI string
+    auto abi = ABI::C;
+    if (match({Tok::Str})) {
+        auto abi_string = previous()->lexeme;
+        if (abi_string == "\"C\"" || abi_string == "\"c\"") {
+            abi = ABI::C;
+        }
+        else {
+            Logger::inst().log_error(
+                Err::ExternBlockUnrecognizedABI,
+                previous()->location,
+                "Unknown ABI specified in extern block declaration."
+            );
+            Logger::inst().log_note("Supported ABIs are: \"C\".");
+            defer_error = true;
+        }
+    }
+
+    if (!match({Tok::Identifier})) {
+        Logger::inst().log_error(
+            Err::NotAnIdentifier,
+            peek()->location,
+            "Expected identifier after `extern`."
+        );
+        return std::nullopt;
+    }
     if (match({Tok::ColonColon})) {
         Logger::inst().log_error(
             Err::DeclarationIdentWithColonColon,
@@ -1497,6 +1521,7 @@ std::optional<std::shared_ptr<Stmt>> Parser::extern_block_statement(
         );
         return std::nullopt;
     }
+    auto identifier = previous();
 
     Tok closing_token_type;
     if (match({Tok::Indent})) {
@@ -1570,50 +1595,6 @@ std::optional<std::shared_ptr<Stmt>> Parser::extern_block_statement(
         std::move(body_stmts),
         abi
     );
-}
-
-std::optional<std::shared_ptr<Stmt>> Parser::extern_statement() {
-    // TODO: Merge this function with extern_block_statement now that we
-    // no longer support any other forms of extern statements.
-
-    auto start_token = previous();
-    bool defer_error = false;
-
-    // Optional ABI string
-    auto abi = ABI::C;
-    if (match({Tok::Str})) {
-        auto abi_string = previous()->lexeme;
-        if (abi_string == "\"C\"" || abi_string == "\"c\"") {
-            abi = ABI::C;
-        }
-        else {
-            Logger::inst().log_error(
-                Err::ExternBlockUnrecognizedABI,
-                previous()->location,
-                "Unknown ABI specified in extern block declaration."
-            );
-            Logger::inst().log_note("Supported ABIs are: \"C\".");
-            defer_error = true;
-        }
-    }
-
-    // If the extern statement is an extern namespace (block)...
-    if (match({Tok::Identifier})) {
-        auto stmt = extern_block_statement(start_token, abi);
-        if (!stmt || defer_error) {
-            // At this point, an error has already been logged.
-            return std::nullopt;
-        }
-        return stmt;
-    }
-    else {
-        Logger::inst().log_error(
-            Err::UnexpectedTokenAfterExtern,
-            peek()->location,
-            "Expected identifier after `extern`."
-        );
-        return std::nullopt;
-    }
 }
 
 std::optional<std::shared_ptr<Stmt>> Parser::typedef_statement() {
@@ -1737,7 +1718,7 @@ std::optional<std::shared_ptr<Stmt>> Parser::statement() {
         stmt = namespace_statement();
     }
     else if (match({Tok::KwExtern})) {
-        stmt = extern_statement();
+        stmt = extern_block_statement();
     }
     else if (match({Tok::KwTypedef})) {
         stmt = typedef_statement();
