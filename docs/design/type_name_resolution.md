@@ -246,3 +246,210 @@ This means:
 This also means we cannot check *expressions* in declaration space since expression checking involves checking the types of expressions, which may involve checking the properties of types.
 But declaration space is not meant for expression checking anyway, so this is not a problem.
 
+
+## Type Equivalence Problem
+
+Question: If `i32` is given the type alias `MyInt`, is `MyInt` considered equivalent to `i32`?
+
+Currently the Nico programming language describes three forms of type compatibility:
+- **Type equivalence**: When two types are considered the same type.
+- **Assignment compatibility**: When a value of one type can be assigned to a variable of another type without a transformation.
+- **Cast compatibility**: When there exists a valid transformation (cast) that can convert a value of one type to another type.
+
+In one sense, we can say that `MyInt` is not equivalent to `i32`.
+They have different names and the former is defined in terms of the latter.
+The relationship is not symmetric.
+
+They are definitely assignment compatible since the value of a `MyInt` can be assigned to a variable of type `i32` without any transformation and vice versa.
+
+Consider the following code:
+```
+let x: MyInt = 1
+let y: i32 = 2
+let z = x + y
+```
+
+When we create a type alias, we want values with the alias type to behave in the same way as values with the original type.
+In the above code, we want `x` and `y` to be able to interact with each other as if they were the same type.
+We want to allow this addition operation.
+
+However, assignment compatibility alone would not be enough to determine if `x` and `y` can be added together.
+Assignment compatibility, as the name implies, is used to check the validity of an assignment, not an addition operation.
+And it would be tedious to register new operator overloads for every new type alias we create.
+
+The answer must then be that the compatibility between `MyInt` and `i32` is weaker than type equivalence but stronger than assignment compatibility.
+That is, they are in a fourth category of compatibility between type equivalence and assignment compatibility.
+
+We can call this category **direct compatibility** and define it as such:
+Two types `A` and `B` are directly compatible if a value of type `A` can be used in any context where a value of type `B` is expected without any transformation, and vice versa.
+An alternative definition is that two types `A` and `B` are directly compatible if the underlying LLVM IR types of `A` and `B` are the same.
+
+Some notes about direct type compatibility: 
+- It is symmetric, meaning if `A` is directly compatible with `B`, then `B` is directly compatible with `A`.
+- If `A` and `B` are directly compatible, then they are also assignment compatible, but not necessarily type equivalent.
+- If `A` and `B` are type equivalent, then they are also directly compatible.
+
+This matters a lot in our compiler because of how we currently check for type equivalence.
+For example, when we try to type-check access expressions (e.g., `p.x`), we want to make sure that `p` is of an object type or a tuple.
+We currently achieve this using code like this:
+```cpp
+if (auto tuple_type = std::dynamic_pointer_cast<Type::Tuple>(expr->type)) {
+    // Handle tuple access
+} else if (auto object_type = std::dynamic_pointer_cast<Type::Object>(expr->type)) {
+    // Handle object access
+}
+```
+
+But if the type of `p` is a named type, like `Point`, then the expression's type will be `Type::Named` which is neither a tuple nor an object.
+
+What we want is not to check for type equivalence, but direct compatibility.
+We must define a new function that checks for direct compatibility between two types, and use it in our type checker instead of checking for type equivalence.
+It may look something like this:
+```cpp
+Type::is_a<Type::Tuple>(expr->type);
+auto tuple_type = Type::as_a<Type::Tuple>(expr->type);
+expr->type->is_directly_compatible_with(tuple_type);
+```
+
+These functions will take the place of `std::dynamic_pointer_cast` and `Type::operator==` and will check for direct compatibility instead of type equivalence.
+
+## Self-Referential Problem
+
+Question: Can a named type be defined in terms of itself?
+
+There are a few ways to do this, and, as we'll see, only some of them are valid.
+
+Let's start with this first case:
+```
+typedef Foo: Foo
+```
+This is obviously invalid, though not for the reason that it is circular.
+
+When the type checker first tries to resolve `Foo`, it will see that it is defined in terms of `Foo`, which has not been fully resolved yet.
+The next step would be to wait until `Foo` is fully resolved, but this will never happen because `Foo` cannot be resolved until `Foo` is resolved.
+
+Let's observe the next case, 
+```
+typedef Foo: (Foo)
+```
+
+This is also invalid for similar reasons as the first case.
+The type checker must first resolve `(Foo)`, which requires resolving `Foo`, which is not yet resolved.
+
+Notice how we have to resolve the right side first.
+We have to first make sure the type on the right side is fully resolved before we can establish the binding between `Foo` and the right side.
+If the right side is not fully resolved, then we cannot establish the binding, and we cannot resolve `Foo`.
+
+Let's observe the next case:
+```
+typedef Foo: (i32, Foo)
+```
+
+This case seems very similar to the previous case, and it is indeed invalid.
+
+But there's a good reason we want to look at this case: consider the size of `Foo` if it were valid.
+```
+sizeof(Foo) == sizeof(i32) + sizeof(Foo)
+```
+
+It is a recursive definition of `Foo` that leads to an infinite size, which is not valid.
+This reveals an important aspect of valid named types: they must have a finite size.
+A lack of a finite size is perhaps the biggest indicator of an invalid named type.
+
+Let us examine one more case:
+```
+typedef Foo: (@Foo)
+```
+
+Although this may seem invalid, let us consider the size of `Foo`.
+`Foo` is a tuple containing a pointer to `Foo`.
+The size of a pointer is always finite.
+Therefore the size of the tuple is finite.
+Therefore, the size of `Foo` is finite, and there is no infinite recursion in the definition of `Foo`.
+
+Indeed, this is a valid named type.
+The presense of the pointer breaks the infinite recursion and allows `Foo` to have a finite size.
+
+## Infinite Pointer Problem
+
+If a named type can reference itself like this:
+```
+typedef Foo: (@Foo)
+```
+
+Then we see no reason to disallow this:
+```
+typedef Foo: @Foo
+```
+
+Indeed, we would consider this a valid named type as well.
+The size of `Foo` is the size of a pointer, which is finite.
+
+But thinking about it more deeply, this type is quite strange.
+The type is a pointer to itself, which is a pointer to itself, which is a pointer to itself, and so on.
+Without named types, we literally cannot write a type like this; it would be infinitely long: `...@@@@@@@@type`.
+
+This type also seemingly has no practical use.
+
+It would not be hard for the user to create values of this type:
+```
+typedef Foo: @Foo
+let var p: Foo
+p = @p
+```
+
+We don't even need a transmute cast to make this possible.
+We create `p`, which is a pointer, and we assign `p` its own address.
+
+Explicit casts would also work as normal. When we dereference `p`, we would get a real address, which we can dereference again, giving us the same address, and so on.
+```
+^p -> 0x123abc
+^^p -> 0x123abc
+^^^p -> 0x123abc
+```
+
+The real issue arises when we *implicitly* dereference `p`.
+We do implicit dereferencing when using dot access or subscript access on a pointer type.
+```
+let x = [0, 1, 2]
+let xp = @x
+let xpp = @xp
+printout x[0], xp[0], xpp[0]
+```
+When we use a dot operator or subscript operator on a pointer type, we implicitly dereference the pointer *completely* to access the underlying value.
+
+But we cannot do this with pointers that contain their own address as this would cause an infinite loop of dereferencing.
+```
+printout p[0]  // Too many implicit dereferences
+```
+
+It doesn't matter that `p` is not even an array or a struct; as long as it is a pointer, we have to dereference it until we can confirm that it is or is not an array or struct.
+
+This is a very unique and bizarre error that can only occur with named types: "too many implicit dereferences" or "too much indirection".
+
+Luckily, this is a very easy error to detect and report.
+When we try to implicitly dereference a pointer type, we can keep track of how many times we have dereferenced it.
+If we dereference a pointer type more than a certain threshold (e.g., 256), we can report an error about too much indirection and stop the program from entering an infinite loop of dereferencing.
+
+This doesn't stop the user from creating these pointers nor dereferencing them explicitly.
+In any case where implicit dereferencing would occur, the user is still free to use explicit dereferencing to access the underlying value, which would work as normal and would not cause an infinite loop.
+
+## Type Resolution Strategy
+
+Type definitions are declaration-space-only statements, meaning they can only be defined in declaration space.
+The parser enforces this.
+Therefore, when we reach the end of declaration space, we can be sure that all type definitions have been processed.
+Therefore, if there were any type definitions that were not fully resolved during declaration space, we can attempt to resolve them at the end of declaration space when we know that all types have been defined.
+
+If a type definition cannot be resolved at the end of declaration space, then we can be confident that it is invalid and report an error to the user.
+
+Our strategy is simple:
+1. During our first pass through declaration space, we attempt to resolve type definitions as we encounter them.
+   1. If we encounter a named type annotation that cannot be fully resolved, we create a placeholder node to represent the unresolved type.
+   2. We store the placeholder node in a list of unresolved type definitions to revisit later.
+   3. We continue processing declaration space as if the unresolved type were fully resolved, allowing us to handle cases where the named type is defined in terms of itself or in terms of another named type that is defined later in declaration space.
+2. Once we reach the end of declaration space, we revisit all unresolved type definitions and attempt to resolve them now that we know all type definitions have been processed.
+   1. If any unresolved type definition cannot be resolved at this point, we report an error to the user indicating that the type definition is invalid.
+   2. If an unresolved type definition can be resolved, we update the named type nodes that reference the placeholder node to reference the actual node for the type definition, ensuring that all named types are correctly resolved to their definitions.
+   3. We then check if the resolved type definitions are valid (e.g., they have a finite size) and report any errors if they are not valid.
+3. After all type definitions have been resolved and validated, we can proceed to check the rest of the code in execution space, knowing that all named types have been correctly resolved to their definitions.
