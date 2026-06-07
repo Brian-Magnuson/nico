@@ -15,6 +15,9 @@
 
 using nico::Err;
 
+// TODO: Consider reorganizing tests, especially the checker tests, which are
+// currently all in this file.
+
 /**
  * @brief Run a checker test with the given source code and expected error.
  *

@@ -12,6 +12,8 @@
 
 namespace nico {
 
+// TODO: Consider if Logger needs to be renamed.
+
 /**
  * @brief Logger singleton for logging errors and messages.
  */
