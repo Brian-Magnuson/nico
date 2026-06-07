@@ -49,7 +49,13 @@ void Parser::synchronize() {
     while (!is_at_end()) {
         switch (peek()->tok_type) {
         case Tok::Eof:
-        case Tok::KwLet:
+        case Tok::KwStatic:
+        case Tok::KwFunc:
+        case Tok::KwNamespace:
+        case Tok::KwStruct:
+        case Tok::KwClass:
+        case Tok::KwEnum:
+        case Tok::KwTypedef:
             return;
         default:
             break;
