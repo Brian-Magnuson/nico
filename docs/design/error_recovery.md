@@ -89,3 +89,38 @@ let e = c + d
 The statement `let e = c + d` is also problematic, as `c` is not properly declared.
 This error is a consequence of the initial error in the statement `let c`.
 Is it okay to report this error as well?
+
+In this case, it is reasonable to report the error in `let e = c + d` as well, as it provides additional information to the programmer about the consequences of the initial error.
+The programmer can see this error and trace it back to the initial error in `let c`, which may help them identify and fix the root cause more quickly.
+
+The more errors we can report to the programmer, the more information they have to work with when trying to fix their code.
+And as we can see here, cascading errors *can* be helpful for the programmer in identifying the root cause of the initial error, as long as they are sensible and not overwhelming.
+
+### Importance of Statement Groups
+
+Our language features different constructs that allow statements to be grouped together, including blocks, functions, and classes.
+In the context of error recovery, we may call these constructs *statement groups*.
+
+When we parse statement groups, we need to be careful about how we handle errors within these groups.
+
+Let's look at an example:
+```
+block {
+    let a = 5
+    let b
+    let c = a + b
+}
+let d = 20
+```
+
+This example is similar to the previous one, but now we have a block that contains the statements.
+The statement `let b` is problematic, as it is an immutable variable declaration without an initializer.
+
+We need to make sure that we handle this error properly in the context of the block.
+If our parser exists the block when it encounters the error in `let b`, it may find an additional `}` token that it does not expect, which may lead to a confusing error message about an unexpected token.
+
+When we encounter the error, we need to recognize that we are within a statement group, and that the next statement may be part of the same group.
+In this case, the next statement, `let c = a + b`, is indeed part of the same block.
+
+It's true that the block expression as a whole will be considered problematic, as it contains the error in `let b`, but we need to recognize the boundaries of the block for proper error recovery.
+We need to recognize that the declaration for `c` is part of the block and the declaration for `d` is not, so that we can report the error in `let c = a + b` as a consequence of the error in `let b`, while still allowing the parser to continue processing from `let d = 20`.
