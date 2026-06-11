@@ -77,6 +77,27 @@ The third statement here is problematic; it is an immutable variable declaration
 However, all the surrounding statements are perfectly valid.
 We should be free to continue processing from the fourth statement, which may reveal more errors if they are present.
 
+Detecting when statements begin can be somewhat tricky.
+Our language does not require statement separators, so we cannot simply look for a semicolon to determine when a statement ends.
+Most statements in our language begin with a special keyword, like `let`, `func`, `typedef`, etc., so we can start by looking for these keywords to determine when a new statement begins.
+Expression statements are a bit more difficult to detect, as they do not always begin with a special keyword.
+
+```
+let b = 10
+error_statement
+alloc for 5 of i32
+[1, 2, 3 + 4]
+12 * 34 + 56
+some_function_call()
+let c = 20
+```
+
+In this example, the second statement is an error statement.
+After the error statement, we have multiple expression statements.
+
+We could ignore expression statements after the error statement.
+Expression statements only appear in execution space, like in a function body, so we can probably get away with skipping a few of them without causing too much confusion for the programmer.
+
 ### Sensible Cascading Errors
 
 Revisiting the example in the previous section, suppose we add a statement after the problematic statement:
@@ -124,3 +145,41 @@ In this case, the next statement, `let c = a + b`, is indeed part of the same bl
 
 It's true that the block expression as a whole will be considered problematic, as it contains the error in `let b`, but we need to recognize the boundaries of the block for proper error recovery.
 We need to recognize that the declaration for `c` is part of the block and the declaration for `d` is not, so that we can report the error in `let c = a + b` as a consequence of the error in `let b`, while still allowing the parser to continue processing from `let d = 20`.
+
+Let's look at another example:
+```
+block {
+    good_statement_1
+    good_statement_2
+    error_statement
+}
+good_statement_3
+```
+
+Here, we'll use the terms *good statement* and *error statement* to refer to statements that are valid and invalid, respectively.
+The key idea here is that the error statement is the last statement in the block.
+When we encounter the error statement, we *could* keep consuming tokens until we find the starting token of the next statement (`good_statement_3`), but then our parser might be in an inconsistent state if it doesn't realize it has exited the block, which may lead to confusing error messages about unexpected tokens.
+
+So we have to be able to detect when a statement group ends while we are in panic mode, so that we can properly exit the statement group and continue processing from the next statement after the group.
+
+Let's look at one more example:
+```
+block {
+    good_statement_1
+    block BAD_TOKEN {
+        good_statement_2
+    }
+    good_statement_3
+}
+good_statement_4
+```
+
+In this example, we have a block that contains another block.
+The inner block has an extra token `BAD_TOKEN` that is not expected in the syntax of a block.
+We then enter panic mode, looking for either the next statement in the outer block or a closing token for the outer block.
+We end up encountering a closing token (`}`) first and we mistake it for the closing token of the outer block.
+Then, when we parse good_statement_3, we think we are outside the block, when in reality we are still inside the block, which may lead to confusing error messages about unexpected tokens.
+
+This example illustrates that we cannot simply use the presence of a closing token to determine when we have exited a statement group, as we may encounter unexpected closing tokens while in panic mode.
+We need to be able to recognize grouping token pairs, even while in panic mode, so that we can properly identify the token that closes our current statement group.
+
