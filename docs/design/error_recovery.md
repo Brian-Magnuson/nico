@@ -57,6 +57,19 @@ There are pros and cons to this approach:
     - It may require multiple compilation runs to identify and fix all errors, which can be time-consuming.
     - Once the user fixes all their issues in one stage, they may encounter new errors in the next stage, which can be frustrating.
 
+## Error Recovery in the Parsing Phase
+
+The parsing phase is arguably where error recovery is most difficult.
+The goal of the parser is to take a stream of tokens and produce an abstract syntax tree (AST) that represents the structure of the code.
+
+If we want to hope to recover from errors in the parsing phase, we need to somehow maintain the validity of our AST's structure, even when we encounter errors.
+If we don't do this, our parser may end up in an inconsistent state as it tries to continue parsing after an error, which may lead to confusing error messages about unexpected tokens or invalid syntax.
+
+Error recovery is simpler during type checking since the AST is already built.
+Even when an error occurs during type checking, the AST is still structurally valid, making it easy to skip over statements and problematic subtrees of the AST to continue type checking the remaining code.
+
+When the parser encounters an error, we enter *panic mode*, a special mode that interrupts the normal parsing process and allows the parser to skip over tokens until it finds a suitable point to resume parsing.
+
 ### Importance of Statements for Error Recovery
 
 When allowing the compiler to continue after an error is encountered, *statements* provide a natural boundary for error recovery.
@@ -183,3 +196,13 @@ Then, when we parse good_statement_3, we think we are outside the block, when in
 This example illustrates that we cannot simply use the presence of a closing token to determine when we have exited a statement group, as we may encounter unexpected closing tokens while in panic mode.
 We need to be able to recognize grouping token pairs, even while in panic mode, so that we can properly identify the token that closes our current statement group.
 
+There are only two types of grouping tokens that are used to enclose statement groups in our language: `{` and `}`, and INDENT and DEDENT tokens.
+Due to how our lexer is designed, all of these token types are paired and valid if present at the parsing stage.
+Additionally, INDENT and DEDENT tokens never appear between brace tokens, though this may not help our final algorithm much.
+
+Since these tokens are always paired and valid, we don't need to worry about which *type* of token we encounter.
+Only the *nesting level* of the token matters.
+When we encounter a grouping token while in panic mode, we can adjust our nesting level accordingly, and only consider the statement group to be closed when we encounter a closing token at the same nesting level as when we entered panic mode.
+
+And remember: when we encounter a closing token that closes our current statement group, we do not consume that token.
+We resume parsing and let normal parsing logic handle that token, which will allow us to properly exit the statement group and continue processing from the next statement after the group.
