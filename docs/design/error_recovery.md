@@ -204,5 +204,25 @@ Since these tokens are always paired and valid, we don't need to worry about whi
 Only the *nesting level* of the token matters.
 When we encounter a grouping token while in panic mode, we can adjust our nesting level accordingly, and only consider the statement group to be closed when we encounter a closing token at the same nesting level as when we entered panic mode.
 
-And remember: when we encounter a closing token that closes our current statement group, we do not consume that token.
-We resume parsing and let normal parsing logic handle that token, which will allow us to properly exit the statement group and continue processing from the next statement after the group.
+### Groups That Are Not Statement Groups
+
+There are other constructs in our language that have a group syntax, but are not statement groups.
+These include:
+- Function parameter lists
+- Array literals
+- Tuple literals
+- Struct literals
+- Modifier lists
+
+These constructs are not statement groups because they do not contain statements; they contain expressions or modifiers.
+Because there are no statements, we need to handle errors in these constructs differently than we handle errors in statement groups.
+
+There are some similarities in the syntax of these constructs:
+- They use grouping tokens, like `(`, `)`, `[`, `]`, `{`, and `}`, to enclose their contents.
+- Elements are separated using commas.
+
+Since elements are separated using commas, we can use commas as boundaries for error recovery.
+When we encounter an error in one of these constructs, we can skip tokens until we find a comma or the closing token for the construct, which may allow us to continue parsing the remaining elements in the construct and report more errors if they are present.
+
+This synchronization function will be separate from the synchronization function used for statement groups, as the logic for determining when to stop skipping tokens is different.
+We can call the first synchronization function `synchronize_statements` and the second synchronization function `synchronize_elements`, to reflect the different types of constructs they are designed to handle.

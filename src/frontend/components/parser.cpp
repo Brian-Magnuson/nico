@@ -43,6 +43,16 @@ bool Parser::match(const std::vector<Tok>& types) {
     return false;
 }
 
+void Parser::synchronize_elements() {
+    // TODO: Implement this function based on the design in
+    // docs/design/error_recovery.md
+}
+
+void Parser::synchronize_statements() {
+    // TODO: Implement this function based on the design in
+    // docs/design/error_recovery.md
+}
+
 void Parser::synchronize() {
     advance();
 

@@ -87,8 +87,41 @@ class Parser {
     bool match(const std::vector<Tok>& types);
 
     /**
+     * @brief Recover from errors that occur while parsing elements in list-like
+     * constructs.
+     *
+     * List-like constructs include function parameter lists, argument lists,
+     * arrays, tuples, objects, certain annotations, and modifier lists.
+     *
+     * This function is designed to stop at the next comma or the closing token
+     * for the construct, which may allow the parser to continue parsing the
+     * remaining elements in the construct and report more errors if they are
+     * present.
+     *
+     */
+    void synchronize_elements();
+
+    /**
+     * @brief Recover from errors that occur while parsing statements in
+     * statement group constructs.
+     *
+     * Statement group constructs are any construct that contains a sequence of
+     * statements, such as blocks, functions, struct definitions, etc.
+     *
+     * This function is designed to stop at the next safe token or the closing
+     * token for the construct, which may allow the parser to continue parsing
+     * the remaining statements in the construct and report more errors if they
+     * are present.
+     *
+     */
+    void synchronize_statements();
+
+    /**
      * @brief Consumes tokens until a safe token is reached. Used to recover
      * from errors.
+     *
+     * @deprecated Use `synchronize_statements` or `synchronize_elements`
+     * instead, depending on the context of the error.
      */
     void synchronize();
 
