@@ -44,8 +44,31 @@ bool Parser::match(const std::vector<Tok>& types) {
 }
 
 void Parser::synchronize_elements() {
-    // TODO: Implement this function based on the design in
-    // docs/design/error_recovery.md
+    size_t nesting_level = 0;
+    while (!is_at_end()) {
+        if (peek()->tok_type == Tok::LParen ||
+            peek()->tok_type == Tok::LSquare ||
+            peek()->tok_type == Tok::LBrace) {
+            nesting_level++;
+        }
+        else if (
+            peek()->tok_type == Tok::RParen ||
+            peek()->tok_type == Tok::RSquare || peek()->tok_type == Tok::RBrace
+        ) {
+            if (nesting_level > 0) {
+                nesting_level--;
+            }
+            else {
+                // Unmatched closing token, we can stop here.
+                return;
+            }
+        }
+        else if (peek()->tok_type == Tok::Comma && nesting_level == 0) {
+            // Found a comma at the top level, we can stop here.
+            return;
+        }
+        advance();
+    }
 }
 
 void Parser::synchronize_statements() {
@@ -144,9 +167,12 @@ std::optional<std::vector<Modifier>> Parser::modifier_list() {
     std::vector<Modifier> modifiers;
     do {
         auto mod = modifier();
-        if (!mod)
-            return std::nullopt;
-        modifiers.push_back(*mod);
+        if (!mod) {
+            synchronize_elements();
+        }
+        else {
+            modifiers.push_back(*mod);
+        }
     } while (match({Tok::Comma}));
 
     if (!match({Tok::RSquare})) {
@@ -450,9 +476,12 @@ std::optional<std::shared_ptr<Expr>> Parser::grouping_or_tuple() {
             break;
         }
         auto expr = expression();
-        if (!expr)
-            return std::nullopt;
-        elements.push_back(*expr);
+        if (!expr) {
+            synchronize_elements();
+        }
+        else {
+            elements.push_back(*expr);
+        }
         comma_matched = match({Tok::Comma});
     } while (comma_matched);
 
@@ -489,9 +518,12 @@ std::optional<std::shared_ptr<Expr>> Parser::array() {
             break;
         }
         auto expr = expression();
-        if (!expr)
-            return std::nullopt;
-        elements.push_back(*expr);
+        if (!expr) {
+            synchronize_elements();
+        }
+        else {
+            elements.push_back(*expr);
+        }
         comma_matched = match({Tok::Comma});
     } while (comma_matched);
 
@@ -533,7 +565,8 @@ std::optional<std::shared_ptr<Expr>> Parser::object() {
                 "Expected an identifier for the field name in object "
                 "literal."
             );
-            return std::nullopt;
+            synchronize_elements();
+            continue;
         }
         auto field_token = previous();
         if (!match({Tok::Colon})) {
@@ -542,12 +575,17 @@ std::optional<std::shared_ptr<Expr>> Parser::object() {
                 peek()->location,
                 "Expected a colon after the field name in object literal."
             );
-            return std::nullopt;
+            synchronize_elements();
+            continue;
         }
         auto expr = expression();
-        if (!expr)
-            return std::nullopt;
-        fields.emplace_back(mutability, field_token, *expr);
+        if (!expr) {
+            synchronize_elements();
+        }
+        else {
+            fields.emplace_back(mutability, field_token, *expr);
+        }
+
     } while (match({Tok::Comma}));
 
     if (!match({Tok::RBrace})) {
@@ -846,7 +884,7 @@ std::optional<std::shared_ptr<Expr>> Parser::primary() {
     else {
         Logger::inst().log_error(
             Err::NotAnExpression,
-            peek()->location,
+            advance()->location,
             "Expected expression."
         );
     }
@@ -1279,7 +1317,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
                     peek()->location,
                     "Expected closing `)` after variadic parameter."
                 );
-                return std::nullopt;
+                synchronize_elements();
+                continue;
             }
             is_variadic = true;
             break;
@@ -1294,7 +1333,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
                 peek()->location,
                 "Expected identifier in function parameter."
             );
-            return std::nullopt;
+            synchronize_elements();
+            continue;
         }
         auto param_name = previous();
         // Annotation (always required)
@@ -1304,12 +1344,14 @@ std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
                 peek()->location,
                 "Expected type annotation in function parameter."
             );
-            return std::nullopt;
+            synchronize_elements();
+            continue;
         }
         auto param_type = annotation();
         if (!param_type) {
             // At this point, an error has already been logged.
-            return std::nullopt;
+            synchronize_elements();
+            continue;
         }
         // Optional default value
         std::optional<std::shared_ptr<Expr>> default_value = std::nullopt;
@@ -1317,7 +1359,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
             default_value = expression();
             if (!default_value) {
                 // At this point, an error has already been logged.
-                return std::nullopt;
+                synchronize_elements();
+                continue;
             }
         }
         parameters.push_back(
@@ -1708,7 +1751,7 @@ std::optional<std::shared_ptr<Stmt>> Parser::statement() {
         else {
             Logger::inst().log_error(
                 Err::UnexpectedTokenAfterHash,
-                peek()->location,
+                previous()->location,
                 "Expected directive or modifier list after `#`."
             );
             return std::nullopt;
@@ -1824,9 +1867,12 @@ std::optional<std::shared_ptr<Annotation>> Parser::tuple_annotation() {
             break;
         }
         auto anno = annotation();
-        if (!anno)
-            return std::nullopt;
-        elements.push_back(*anno);
+        if (!anno) {
+            synchronize_elements();
+        }
+        else {
+            elements.push_back(*anno);
+        }
     } while (match({Tok::Comma}));
 
     if (!match({Tok::RParen})) {
@@ -1909,7 +1955,8 @@ std::optional<std::shared_ptr<Annotation>> Parser::object_annotation() {
                 peek()->location,
                 "Expected identifier in object annotation field."
             );
-            return std::nullopt;
+            synchronize_elements();
+            continue;
         }
         auto field_name_token = previous();
         if (!match({Tok::Colon})) {
@@ -1918,11 +1965,14 @@ std::optional<std::shared_ptr<Annotation>> Parser::object_annotation() {
                 peek()->location,
                 "Expected `:` after field name in object annotation."
             );
-            return std::nullopt;
+            synchronize_elements();
+            continue;
         }
         auto field_anno = annotation();
-        if (!field_anno)
-            return std::nullopt;
+        if (!field_anno) {
+            synchronize_elements();
+            continue;
+        }
         std::optional<std::shared_ptr<Expr>> default_value = std::nullopt;
 
         fields.push_back(
