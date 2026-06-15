@@ -72,8 +72,37 @@ void Parser::synchronize_elements() {
 }
 
 void Parser::synchronize_statements() {
-    // TODO: Implement this function based on the design in
-    // docs/design/error_recovery.md
+    size_t nesting_level = 0;
+    while (!is_at_end()) {
+        if (peek()->tok_type == Tok::LParen ||
+            peek()->tok_type == Tok::LSquare ||
+            peek()->tok_type == Tok::LBrace ||
+            peek()->tok_type == Tok::Indent) {
+            nesting_level++;
+        }
+        else if (
+            peek()->tok_type == Tok::RParen ||
+            peek()->tok_type == Tok::RSquare ||
+            peek()->tok_type == Tok::RBrace || peek()->tok_type == Tok::Dedent
+        ) {
+            if (nesting_level > 0) {
+                nesting_level--;
+            }
+            else {
+                // Unmatched closing token, we can stop here.
+                return;
+            }
+        }
+        else if (
+            tokens::is_stmt_starting_keyword(peek()->tok_type) &&
+            nesting_level == 0
+        ) {
+            // Found the start of a new statement at the top level, we can stop
+            // here.
+            return;
+        }
+        advance();
+    }
 }
 
 void Parser::synchronize() {
@@ -119,11 +148,13 @@ Parser::binary_op_from_compound_op(const std::shared_ptr<Token>& compound_op) {
         break;
     default:
         panic(
-            "Parser::binary_op_from_compound_op: Unknown compound assignment "
+            "Parser::binary_op_from_compound_op: Unknown compound "
+            "assignment "
             "operator."
         );
     }
-    // Create a new token for the binary operator, adjusting length to exclude
+    // Create a new token for the binary operator, adjusting length to
+    // exclude
     // '='
     auto binary_op_loc = compound_op->location;
     binary_op_loc.length -= 1;
@@ -140,8 +171,8 @@ std::optional<Modifier> Parser::modifier() {
         if (match({Tok::LParen})) {
             // Modifier arguments are special.
             // Rather than being a comma separate list of expressions,
-            // they are just a list of tokens that are passed verbatim to the
-            // modifier.
+            // they are just a list of tokens that are passed verbatim to
+            // the modifier.
             while (!match({Tok::RParen})) {
                 if (is_at_end()) {
                     panic("Parser::modifier: Unterminated modifier arguments.");
@@ -205,7 +236,8 @@ std::optional<std::shared_ptr<Expr>> Parser::block(Expr::Block::Kind kind) {
             "Unexpected `:` after `block` keyword."
         );
         Logger::inst().log_note(
-            "Indentation is possibly ignored here. Consider using `{` for this "
+            "Indentation is possibly ignored here. Consider using `{` for "
+            "this "
             "block or using indentation for the surrounding scope."
         );
         return std::nullopt;
@@ -224,8 +256,10 @@ std::optional<std::shared_ptr<Expr>> Parser::block(Expr::Block::Kind kind) {
     bool defer_error = false;
     while (!match({closing_token_type})) {
         auto stmt = statement();
-        if (!stmt)
-            return std::nullopt;
+        if (!stmt) {
+            synchronize_statements();
+            continue;
+        }
         auto exec_allowed_stmt =
             std::dynamic_pointer_cast<Stmt::IExecAllowed>(*stmt);
         if (!exec_allowed_stmt) {
@@ -280,7 +314,8 @@ std::optional<std::shared_ptr<Expr>> Parser::conditional() {
             "Unexpected `:` after condition clause."
         );
         Logger::inst().log_note(
-            "Indentation is possibly ignored here. Consider using `{` for this "
+            "Indentation is possibly ignored here. Consider using `{` for "
+            "this "
             "block or using indentation for the surrounding scope."
         );
         return std::nullopt;
@@ -365,7 +400,8 @@ std::optional<std::shared_ptr<Expr>> Parser::loop() {
                 "Unexpected `:` after while loop condition."
             );
             Logger::inst().log_note(
-                "Indentation is possibly ignored here. Consider using `{` for "
+                "Indentation is possibly ignored here. Consider using `{` "
+                "for "
                 "this "
                 "block or using indentation for the surrounding scope."
             );
@@ -406,7 +442,8 @@ std::optional<std::shared_ptr<Expr>> Parser::loop() {
                 "Unexpected `:` after `do` keyword."
             );
             Logger::inst().log_note(
-                "Indentation is possibly ignored here. Consider using `{` for "
+                "Indentation is possibly ignored here. Consider using `{` "
+                "for "
                 "this "
                 "block or using indentation for the surrounding scope."
             );
@@ -616,7 +653,8 @@ std::optional<std::shared_ptr<Expr>> Parser::allocation() {
             Logger::inst().log_error(
                 Err::AllocForWithoutOf,
                 peek()->location,
-                "Expected `of` keyword after amount expression after `alloc "
+                "Expected `of` keyword after amount expression after "
+                "`alloc "
                 "for`."
             );
             return std::nullopt;
@@ -685,7 +723,8 @@ std::optional<size_t> Parser::array_size() {
                 "Array size contains non-digit characters."
             );
             Logger::inst().log_note(
-                "Only base-10 digits (0-9) and underscores are allowed in this "
+                "Only base-10 digits (0-9) and underscores are allowed in "
+                "this "
                 "number."
             );
             return std::nullopt;
@@ -717,7 +756,8 @@ std::optional<std::shared_ptr<Name>> Parser::name() {
     std::shared_ptr<Token> identifier = previous();
     if (identifier->tok_type != Tok::Identifier) {
         panic(
-            "Parser::name: Attempted to parse a name, but previous token is "
+            "Parser::name: Attempted to parse a name, but previous token "
+            "is "
             "not an identifier."
         );
     }
@@ -949,7 +989,8 @@ std::optional<std::shared_ptr<Expr>> Parser::postfix() {
                     named_args.insert(std::string(name_token->lexeme), *expr);
                 }
                 else {
-                    // Not a named argument, just a normal positional argument.
+                    // Not a named argument, just a normal positional
+                    // argument.
                     auto expr = expression();
                     if (!expr)
                         return std::nullopt;
@@ -1180,7 +1221,7 @@ std::optional<std::shared_ptr<Stmt>> Parser::variable_statement() {
     if (!match({Tok::Identifier})) {
         Logger::inst().log_error(
             Err::NotAnIdentifier,
-            peek()->location,
+            previous()->location,
             "Expected identifier in declaration."
         );
         return std::nullopt;
@@ -1221,7 +1262,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::variable_statement() {
             Logger::inst().log_error(
                 Err::NonCompileTimeExpr,
                 previous()->location,
-                "Static variable initializer is not a compile-time constant."
+                "Static variable initializer is not a compile-time "
+                "constant."
             );
             Logger::inst().log_note(
                 "Static variables must be initialized with compile-time "
@@ -1422,7 +1464,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
             "Unexpected `:` after `block` keyword."
         );
         Logger::inst().log_note(
-            "Indentation is possibly ignored here. Consider using `{` for this "
+            "Indentation is possibly ignored here. Consider using `{` for "
+            "this "
             "block or using indentation for the surrounding scope."
         );
         return std::nullopt;
@@ -1481,7 +1524,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::namespace_statement() {
             "Unexpected `:` after namespace identifier."
         );
         Logger::inst().log_note(
-            "Indentation is possibly ignored here. Consider using `{` for this "
+            "Indentation is possibly ignored here. Consider using `{` for "
+            "this "
             "block or using indentation for the surrounding scope."
         );
         return std::nullopt;
@@ -1501,9 +1545,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::namespace_statement() {
     while (!match({closing_token_type})) {
         auto stmt = statement();
         if (!stmt) {
-            // At this point, an error has already been logged.
-            return std::nullopt;
-            // TODO: Consider synchronizing instead of returning immediately.
+            synchronize_statements();
+            continue;
         }
         auto decl_allowed_stmt =
             std::dynamic_pointer_cast<Stmt::IDeclAllowed>(*stmt);
@@ -1514,8 +1557,10 @@ std::optional<std::shared_ptr<Stmt>> Parser::namespace_statement() {
                 "Namespace does not allow this kind of statement."
             );
             Logger::inst().log_note(
-                "Only declaration-space statements are allowed directly inside "
-                "a namespace. Execution-space statements must be in a local "
+                "Only declaration-space statements are allowed directly "
+                "inside "
+                "a namespace. Execution-space statements must be in a "
+                "local "
                 "scope or at the top level."
             );
             if (PTR_INSTANCEOF(stmt.value(), Stmt::Let)) {
@@ -1596,7 +1641,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::extern_block_statement() {
             "Unexpected `:` after extern block identifier."
         );
         Logger::inst().log_note(
-            "Indentation is possibly ignored here. Consider using `{` for this "
+            "Indentation is possibly ignored here. Consider using `{` for "
+            "this "
             "block or using indentation for the surrounding scope."
         );
         return std::nullopt;
@@ -1615,9 +1661,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::extern_block_statement() {
     while (!match({closing_token_type})) {
         auto stmt_opt = statement();
         if (!stmt_opt) {
-            // At this point, an error has already been logged.
-            return std::nullopt;
-            // TODO: Consider synchronizing instead of returning immediately.
+            synchronize_statements();
+            continue;
         }
         auto stmt = stmt_opt.value();
 
@@ -1626,7 +1671,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::extern_block_statement() {
             Logger::inst().log_error(
                 Err::ExternBlockStmtNotVarOrFunc,
                 stmt->location,
-                "Expected function declaration or static variable declaration "
+                "Expected function declaration or static variable "
+                "declaration "
                 "in extern block."
             );
             if (PTR_INSTANCEOF(stmt, Stmt::Let)) {
@@ -2034,7 +2080,8 @@ std::optional<std::shared_ptr<Annotation>> Parser::annotation() {
         Logger::inst().log_error(
             Err::UnexpectedVarInAnnotation,
             previous()->location,
-            "`var` is not allowed here. Use only with pointers or references."
+            "`var` is not allowed here. Use only with pointers or "
+            "references."
         );
         return std::nullopt;
     }
@@ -2086,7 +2133,7 @@ void Parser::run_parse(std::unique_ptr<FrontendContext>& context) {
             return;
         }
         else {
-            synchronize();
+            synchronize_statements();
         }
     }
 

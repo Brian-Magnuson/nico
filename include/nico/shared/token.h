@@ -127,6 +127,28 @@ enum class Tok {
     // Keywords
 
     _KeywordsStart,
+    _KwStatementStartersStart,
+    KwLet,
+    KwStatic,
+    KwField,
+    KwFunc,
+    KwNamespace,
+    KwExtern,
+    KwStruct,
+    KwClass,
+    KwEnum,
+    KwTypedef,
+
+    KwBreak,
+    KwContinue,
+    KwReturn,
+    KwYield,
+    KwPass,
+
+    KwDealloc,
+    KwPrintout, // Temporary print keyword for development.
+    _KwStatementStartersEnd,
+
     KwAnd,
     KwOr,
     KwNot,
@@ -142,26 +164,11 @@ enum class Tok {
     KwFor,
     KwOf,
     KwWith,
-    KwBreak,
-    KwContinue,
-    KwReturn,
-    KwYield,
-    KwPass,
 
-    KwLet,
-    KwStatic,
-    KwField,
     KwVar,
     KwMut,
     KwConst,
     KwGlobal,
-    KwFunc,
-    KwNamespace,
-    KwExtern,
-    KwStruct,
-    KwClass,
-    KwEnum,
-    KwTypedef,
 
     KwAs,
     KwIs,
@@ -169,9 +176,6 @@ enum class Tok {
     KwTypeof,
     KwTransmute,
     KwAlloc,
-    KwDealloc,
-
-    KwPrintout, // Temporary print keyword for development.
 
     _KeywordsEnd
 };
@@ -276,6 +280,27 @@ inline bool is_comparison_operator(Tok tok) {
  */
 inline bool is_keyword(Tok tok) {
     return tok > Tok::_KeywordsStart && tok < Tok::_KeywordsEnd;
+}
+
+/**
+ * @brief Checks if a token type is a keyword that can start a statement.
+ *
+ * Examples of statement-starting keyword token types are KwLet, KwStatic,
+ * KwFunc, KwStruct, etc.
+ *
+ * Useful for statement synchronization for error recovery in the parser.
+ *
+ * This function tests if the token type is within the range of defined
+ * statement-starting keyword token types, making it more efficient than testing
+ * each type individually.
+ *
+ * @param tok The token type to check.
+ * @return bool True if the token type is a statement-starting keyword, false
+ * otherwise.
+ */
+inline bool is_stmt_starting_keyword(Tok tok) {
+    return tok > Tok::_KwStatementStartersStart &&
+           tok < Tok::_KwStatementStartersEnd;
 }
 
 } // namespace tokens
