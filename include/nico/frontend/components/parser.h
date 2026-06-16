@@ -117,15 +117,6 @@ class Parser {
     void synchronize_statements();
 
     /**
-     * @brief Consumes tokens until a safe token is reached. Used to recover
-     * from errors.
-     *
-     * @deprecated Use `synchronize_statements` or `synchronize_elements`
-     * instead, depending on the context of the error.
-     */
-    void synchronize();
-
-    /**
      * @brief Helper function to create a binary operator token from a compound
      * assignment operator token.
      *

@@ -105,28 +105,6 @@ void Parser::synchronize_statements() {
     }
 }
 
-void Parser::synchronize() {
-    advance();
-
-    while (!is_at_end()) {
-        switch (peek()->tok_type) {
-        case Tok::Eof:
-        case Tok::KwStatic:
-        case Tok::KwFunc:
-        case Tok::KwNamespace:
-        case Tok::KwStruct:
-        case Tok::KwClass:
-        case Tok::KwEnum:
-        case Tok::KwTypedef:
-            return;
-        default:
-            break;
-        }
-
-        advance();
-    }
-}
-
 std::shared_ptr<Token>
 Parser::binary_op_from_compound_op(const std::shared_ptr<Token>& compound_op) {
     Tok binary_op_type;
@@ -253,7 +231,6 @@ std::optional<std::shared_ptr<Expr>> Parser::block(Expr::Block::Kind kind) {
     auto opening_tok = advance();
 
     std::vector<std::shared_ptr<Stmt::IExecAllowed>> statements;
-    bool defer_error = false;
     while (!match({closing_token_type})) {
         auto stmt = statement();
         if (!stmt) {
@@ -273,14 +250,10 @@ std::optional<std::shared_ptr<Expr>> Parser::block(Expr::Block::Kind kind) {
                 "expressions. Declarations must be made outside of block "
                 "expressions."
             );
-            defer_error = true;
             continue;
         }
         statements.push_back(exec_allowed_stmt);
     }
-
-    if (defer_error)
-        return std::nullopt;
 
     return std::make_shared<Expr::Block>(
         opening_tok,
@@ -1541,7 +1514,6 @@ std::optional<std::shared_ptr<Stmt>> Parser::namespace_statement() {
 
     // Body
     std::vector<std::shared_ptr<Stmt::IDeclAllowed>> body_stmts;
-    bool defer_error = false;
     while (!match({closing_token_type})) {
         auto stmt = statement();
         if (!stmt) {
@@ -1569,14 +1541,9 @@ std::optional<std::shared_ptr<Stmt>> Parser::namespace_statement() {
                     "statements. Consider using `static` instead of `let`."
                 );
             }
-            defer_error = true;
             continue;
         }
         body_stmts.push_back(decl_allowed_stmt);
-    }
-
-    if (defer_error) {
-        return std::nullopt;
     }
 
     return std::make_shared<Stmt::Namespace>(
@@ -1589,7 +1556,6 @@ std::optional<std::shared_ptr<Stmt>> Parser::namespace_statement() {
 
 std::optional<std::shared_ptr<Stmt>> Parser::extern_block_statement() {
     auto start_token = previous();
-    bool defer_error = false;
 
     // Optional ABI string
     auto abi = ABI::C;
@@ -1605,7 +1571,6 @@ std::optional<std::shared_ptr<Stmt>> Parser::extern_block_statement() {
                 "Unknown ABI specified in extern block declaration."
             );
             Logger::inst().log_note("Supported ABIs are: \"C\".");
-            defer_error = true;
         }
     }
 
@@ -1681,17 +1646,12 @@ std::optional<std::shared_ptr<Stmt>> Parser::extern_block_statement() {
                     "statements. Consider using `static` instead of `let`."
                 );
             }
-            defer_error = true;
             continue;
         }
 
         auto decl_allowed_stmt =
             std::dynamic_pointer_cast<Stmt::IDeclAllowed>(stmt);
         body_stmts.push_back(decl_allowed_stmt);
-    }
-
-    if (defer_error) {
-        return std::nullopt;
     }
 
     return std::make_shared<Stmt::ExternBlock>(
