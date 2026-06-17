@@ -12,7 +12,7 @@ std::any AnnotationChecker::visit(Annotation::NameRef* annotation) {
             type = type_node->type;
             return type;
         }
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::NameNotAType,
             annotation->name->identifier->location,
             "Name reference `" + annotation->name->to_string() +
@@ -26,7 +26,7 @@ std::any AnnotationChecker::visit(Annotation::NameRef* annotation) {
         type = node->referencing_type_object;
         return type;
     }
-    Logger::inst().log_error(
+    Diagnostics::inst().log_error(
         Err::NameNotFound,
         annotation->name->identifier->location,
         "Could not resolve name `" + annotation->name->to_string() + "`."
@@ -98,13 +98,13 @@ std::any AnnotationChecker::visit(Annotation::Object* annotation) {
     for (const auto& field : annotation->fields) {
         auto field_name = std::string(field.identifier->lexeme);
         if (auto existing_binding = fields_dict.at(field_name)) {
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::DuplicateObjectAnnotationFieldName,
                 field.identifier->location,
                 "Duplicate field name in object annotation: `" + field_name +
                     "`."
             );
-            Logger::inst().log_note(
+            Diagnostics::inst().log_note(
                 existing_binding->location,
                 "Previous field with the same name declared here."
             );
@@ -155,7 +155,7 @@ std::any AnnotationChecker::visit(Annotation::Tuple* annotation) {
 
 std::any AnnotationChecker::visit(Annotation::TypeOf* annotation) {
     if (expr_checker.expired()) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::UncheckableTypeofAnnotation,
             annotation->location,
             "Cannot use `typeof` annotation in declaration space."

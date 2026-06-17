@@ -2,8 +2,8 @@
 
 #include "nico/frontend/utils/annotation_checker.h"
 #include "nico/frontend/utils/type_node.h"
+#include "nico/shared/diagnostics.h"
 #include "nico/shared/error_code.h"
-#include "nico/shared/logger.h"
 
 namespace nico {
 
@@ -22,7 +22,7 @@ ExpressionChecker::implicit_full_dereference(std::shared_ptr<Expr>& expr) {
     while (auto i_pointer_type =
                Type::as_a<Type::IPointer>(expr->type).value_or(nullptr)) {
         if (!Type::is_a<Type::ITypedPtr>(expr->type)) {
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::DereferenceNonTypedPointer,
                 expr->location,
                 "Cannot implicitly dereference non-typed pointer `" +
@@ -32,7 +32,7 @@ ExpressionChecker::implicit_full_dereference(std::shared_ptr<Expr>& expr) {
         }
         if (Type::is_a<Type::RawTypedPtr>(expr->type)) {
             if (!symbol_tree->is_context_unsafe()) {
-                Logger::inst().log_error(
+                Diagnostics::inst().log_error(
                     Err::PtrDerefOutsideUnsafeBlock,
                     expr->location,
                     "Cannot implicitly dereference `" +
@@ -48,7 +48,7 @@ ExpressionChecker::implicit_full_dereference(std::shared_ptr<Expr>& expr) {
         );
         i++;
         if (i > MAX_ALLOWED_IMPLICIT_DEREFERENCES) {
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::TooManyImplicitDereferences,
                 expr->location,
                 "Pointer type `" + initial_type->to_string() +
@@ -77,7 +77,7 @@ bool ExpressionChecker::check_pointer_cast(
     auto target_raw_ptr_type =
         Type::as_a<Type::IRawPtr>(target_type).value_or(nullptr);
     if (!expr_raw_ptr_type || !target_raw_ptr_type) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::InvalidCastOperation,
             as_token->location,
             "Invalid pointer cast from `" + expr_type->to_string() + "` to `" +
@@ -103,7 +103,7 @@ bool ExpressionChecker::check_pointer_cast(
     auto target_typed_ptr_type =
         Type::as_a<Type::RawTypedPtr>(target_raw_ptr_type).value_or(nullptr);
     if (!expr_typed_ptr_type || !target_typed_ptr_type) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::InvalidCastOperation,
             as_token->location,
             "Invalid pointer cast from `" + expr_type->to_string() + "` to `" +
@@ -121,7 +121,7 @@ bool ExpressionChecker::check_pointer_cast(
 
     if (expr_base_ptr_type || target_base_ptr_type) {
         if (!target_base_ptr_type) {
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::InvalidCastOperation,
                 as_token->location,
                 "Cannot cast pointer type `" +
@@ -133,7 +133,7 @@ bool ExpressionChecker::check_pointer_cast(
             return false;
         }
         else if (!expr_base_ptr_type) {
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::InvalidCastOperation,
                 as_token->location,
                 "Cannot cast non-pointer type `" +
@@ -163,7 +163,7 @@ bool ExpressionChecker::check_pointer_cast(
             Type::as_a<Type::Array>(expr_typed_ptr_type->base)
                 .value_or(nullptr);
         if (!expr_array_type) {
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::InvalidCastOperation,
                 as_token->location,
                 "Cannot cast pointer of type `" + expr_type->to_string() +
@@ -174,7 +174,7 @@ bool ExpressionChecker::check_pointer_cast(
         }
         // The element types must be the same, not just compatible.
         if (*expr_array_type->base != *target_array_type->base) {
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::InvalidCastOperation,
                 as_token->location,
                 "Array pointer element types `" +
@@ -186,7 +186,7 @@ bool ExpressionChecker::check_pointer_cast(
         }
         // The target array type must be unsized for this kind of cast.
         if (target_array_type->size.has_value()) {
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::InvalidCastOperation,
                 as_token->location,
                 "Array pointer cast is only valid when target array type "
@@ -201,7 +201,7 @@ bool ExpressionChecker::check_pointer_cast(
     }
 
     // Cast is invalid.
-    Logger::inst().log_error(
+    Diagnostics::inst().log_error(
         Err::InvalidCastOperation,
         as_token->location,
         "Invalid pointer cast from `" + expr_type->to_string() + "` to `" +
@@ -300,7 +300,7 @@ ExpressionChecker::try_match_args_to_params(
 std::any ExpressionChecker::visit(Expr::Assign* expr, bool as_lvalue) {
     // An assignment expression should never be an lvalue.
     if (as_lvalue) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::NotAPossibleLValue,
             expr->op->location,
             "Assignment expression cannot be an lvalue."
@@ -316,13 +316,13 @@ std::any ExpressionChecker::visit(Expr::Assign* expr, bool as_lvalue) {
 
     // The left side must be an assignable lvalue.
     if (!l_lvalue->assignable) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::AssignToImmutable,
             expr->left->location,
             "Left side of assignment is not assignable."
         );
         if (l_lvalue->error_location) {
-            Logger::inst().log_note(
+            Diagnostics::inst().log_note(
                 *l_lvalue->error_location,
                 "This is not mutable."
             );
@@ -339,7 +339,7 @@ std::any ExpressionChecker::visit(Expr::Assign* expr, bool as_lvalue) {
     // The types of the left and right sides must match.
     // if (*l_type != *r_type) {
     if (!r_type->is_assignable_to(l_type)) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::AssignmentTypeMismatch,
             expr->op->location,
             std::string("Type `") + r_type->to_string() +
@@ -354,7 +354,7 @@ std::any ExpressionChecker::visit(Expr::Assign* expr, bool as_lvalue) {
 
 std::any ExpressionChecker::visit(Expr::Logical* expr, bool as_lvalue) {
     if (as_lvalue) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::NotAPossibleLValue,
             expr->op->location,
             "Logical expression cannot be an lvalue."
@@ -368,7 +368,7 @@ std::any ExpressionChecker::visit(Expr::Logical* expr, bool as_lvalue) {
     if (!l_type_opt.has_value())
         has_error = true;
     if (!Type::is_a<Type::Bool>(l_type_opt.value())) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::NoOperatorOverload,
             expr->op->location,
             "Left operand must be of type `bool`."
@@ -380,7 +380,7 @@ std::any ExpressionChecker::visit(Expr::Logical* expr, bool as_lvalue) {
     if (!r_type_opt.has_value())
         has_error = true;
     else if (!Type::is_a<Type::Bool>(r_type_opt.value())) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::NoOperatorOverload,
             expr->op->location,
             "Right operand must be of type `bool`."
@@ -397,7 +397,7 @@ std::any ExpressionChecker::visit(Expr::Logical* expr, bool as_lvalue) {
 
 std::any ExpressionChecker::visit(Expr::Binary* expr, bool as_lvalue) {
     if (as_lvalue) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::NotAPossibleLValue,
             expr->op->location,
             "Binary expression cannot be an lvalue."
@@ -465,7 +465,7 @@ std::any ExpressionChecker::visit(Expr::Binary* expr, bool as_lvalue) {
                                         : Expr::Binary::Operation::UIntLE;
             break;
         default:
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::NoOperatorOverload,
                 expr->op->location,
                 "Operator `" + std::string(expr->op->lexeme) +
@@ -512,7 +512,7 @@ std::any ExpressionChecker::visit(Expr::Binary* expr, bool as_lvalue) {
             expr->operation = Expr::Binary::Operation::FPLE;
             break;
         default:
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::NoOperatorOverload,
                 expr->op->location,
                 "Operator `" + std::string(expr->op->lexeme) +
@@ -532,7 +532,7 @@ std::any ExpressionChecker::visit(Expr::Binary* expr, bool as_lvalue) {
             expr->operation = Expr::Binary::Operation::IntNeq;
             break;
         default:
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::NoOperatorOverload,
                 expr->op->location,
                 "Operator `" + std::string(expr->op->lexeme) +
@@ -542,7 +542,7 @@ std::any ExpressionChecker::visit(Expr::Binary* expr, bool as_lvalue) {
     }
     else {
         // Types are not compatible with each other.
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::NoOperatorOverload,
             expr->op->location,
             std::string("Type `") + r_type->to_string() +
@@ -551,7 +551,7 @@ std::any ExpressionChecker::visit(Expr::Binary* expr, bool as_lvalue) {
         );
         if (Type::is_a<Type::INumeric>(l_type) &&
             Type::is_a<Type::INumeric>(r_type)) {
-            Logger::inst().log_note(
+            Diagnostics::inst().log_note(
                 expr->op->location,
                 "Basic numeric types must be exactly the same for this "
                 "operation."
@@ -571,7 +571,7 @@ std::any ExpressionChecker::visit(Expr::Binary* expr, bool as_lvalue) {
 std::any ExpressionChecker::visit(Expr::Unary* expr, bool as_lvalue) {
     // An unary expression should never be an lvalue.
     if (as_lvalue) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::NotAPossibleLValue,
             expr->op->location,
             "Unary expression cannot be an lvalue."
@@ -588,7 +588,7 @@ std::any ExpressionChecker::visit(Expr::Unary* expr, bool as_lvalue) {
     case Tok::Negative:
         // Types must inherit from `Type::INumeric`.
         if (!Type::is_a<Type::INumeric>(r_type)) {
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::NoOperatorOverload,
                 expr->op->location,
                 "Operand must be of a numeric type."
@@ -598,7 +598,7 @@ std::any ExpressionChecker::visit(Expr::Unary* expr, bool as_lvalue) {
         // Type cannot be an unsigned integer.
         if (auto int_type = Type::as_a<Type::Int>(r_type).value_or(nullptr)) {
             if (!int_type->is_signed) {
-                Logger::inst().log_error(
+                Diagnostics::inst().log_error(
                     Err::NegativeOnUnsignedType,
                     expr->op->location,
                     "Cannot use unary '-' on unsigned integer type."
@@ -611,7 +611,7 @@ std::any ExpressionChecker::visit(Expr::Unary* expr, bool as_lvalue) {
     case Tok::KwNot:
     case Tok::Bang:
         if (!Type::is_a<Type::Bool>(r_type)) {
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::NoOperatorOverload,
                 expr->op->location,
                 "Operand must be of type `bool`."
@@ -632,7 +632,7 @@ std::any ExpressionChecker::visit(Expr::Unary* expr, bool as_lvalue) {
 
 std::any ExpressionChecker::visit(Expr::Address* expr, bool as_lvalue) {
     if (as_lvalue) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::NotAPossibleLValue,
             expr->op->location,
             "Address-of expression cannot be an lvalue."
@@ -670,13 +670,13 @@ std::any ExpressionChecker::visit(Expr::Address* expr, bool as_lvalue) {
     }
 
     if (expr->has_var && !r_lvalue->assignable) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::AddressOfImmutable,
             expr->op->location,
             "Cannot create a mutable pointer/reference to an immutable value."
         );
         if (r_lvalue->error_location) {
-            Logger::inst().log_note(
+            Diagnostics::inst().log_note(
                 *r_lvalue->error_location,
                 "This is not mutable."
             );
@@ -695,7 +695,7 @@ std::any ExpressionChecker::visit(Expr::Deref* expr, bool as_lvalue) {
     auto r_type = r_type_opt.value();
 
     if (!Type::is_a<Type::IPointer>(r_type)) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::DereferenceNonPointer,
             expr->op->location,
             "Cannot dereference non-pointer type `" + r_type->to_string() + "`."
@@ -711,7 +711,7 @@ std::any ExpressionChecker::visit(Expr::Deref* expr, bool as_lvalue) {
         expr->error_location = expr->right->location;
 
         if (!symbol_tree->is_context_unsafe()) {
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::PtrDerefOutsideUnsafeBlock,
                 expr->op->location,
                 "Cannot dereference raw pointer outside of an unsafe block."
@@ -722,7 +722,7 @@ std::any ExpressionChecker::visit(Expr::Deref* expr, bool as_lvalue) {
         return std::any();
     }
     else {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::DereferenceNonTypedPointer,
             expr->op->location,
             "Cannot dereference non-typed pointer `" + r_type->to_string() +
@@ -734,7 +734,7 @@ std::any ExpressionChecker::visit(Expr::Deref* expr, bool as_lvalue) {
 
 std::any ExpressionChecker::visit(Expr::Cast* expr, bool as_lvalue) {
     if (as_lvalue) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::NotAPossibleLValue,
             expr->as_token->location,
             "Cast expression cannot be an lvalue."
@@ -867,7 +867,7 @@ std::any ExpressionChecker::visit(Expr::Cast* expr, bool as_lvalue) {
 
     if (expr->operation == Expr::Cast::Operation::Null) {
         // No possible cast operation was found.
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::InvalidCastOperation,
             expr->as_token->location,
             std::string("Cannot cast from type `") + expr_type->to_string() +
@@ -890,13 +890,13 @@ std::any ExpressionChecker::visit(Expr::Access* expr, bool as_lvalue) {
     auto l_type = l_type_opt.value();
 
     if (!l_type->is_sized_type().value_or(false)) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::UnsizedTypeMemberAccess,
             expr->left->location,
             "Cannot access members of unsized type `" + l_type->to_string() +
                 "`."
         );
-        Logger::inst().log_note(
+        Diagnostics::inst().log_note(
             "Aggregate type members must be sized to calculate member offsets."
         );
         return std::any();
@@ -906,14 +906,14 @@ std::any ExpressionChecker::visit(Expr::Access* expr, bool as_lvalue) {
         if (expr->right_token->tok_type == Tok::TupleIndex) {
             size_t index = std::any_cast<size_t>(expr->right_token->literal);
             if (index >= tuple_l_type->elements.size()) {
-                Logger::inst().log_error(
+                Diagnostics::inst().log_error(
                     Err::TupleIndexOutOfBounds,
                     expr->right_token->location,
                     "Tuple index " + std::to_string(index) +
                         " is out of bounds for tuple of size " +
                         std::to_string(tuple_l_type->elements.size()) + "."
                 );
-                Logger::inst().log_note(
+                Diagnostics::inst().log_note(
                     expr->left->location,
                     "Expression has type `" + l_type->to_string() + "`."
                 );
@@ -929,7 +929,7 @@ std::any ExpressionChecker::visit(Expr::Access* expr, bool as_lvalue) {
             return std::any();
         }
         else {
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::InvalidTupleAccess,
                 expr->right_token->location,
                 "Tuple can only be accessed with an integer literal."
@@ -943,7 +943,7 @@ std::any ExpressionChecker::visit(Expr::Access* expr, bool as_lvalue) {
         auto member_name = std::string(expr->right_token->lexeme);
         auto matched_field_opt = object_l_type->fields.at(member_name);
         if (!matched_field_opt.has_value()) {
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::UnknownError,
                 expr->right_token->location,
                 "Type `" + l_type->to_string() + "` has no member named `" +
@@ -975,7 +975,7 @@ std::any ExpressionChecker::visit(Expr::Access* expr, bool as_lvalue) {
         return std::any();
     }
     else {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::OperatorNotValidForExpr,
             expr->left->location,
             "Dot operator is not valid for this kind of expression."
@@ -1001,13 +1001,13 @@ std::any ExpressionChecker::visit(Expr::Subscript* expr, bool as_lvalue) {
     if (auto array_l_type = Type::as_a<Type::Array>(l_type).value_or(nullptr)) {
         // Array element type must be a sized type.
         if (!array_l_type->base->is_sized_type().value_or(false)) {
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::UnsizedTypeArrayAccess,
                 expr->left->location,
                 "Cannot access array elements of unsized type `" +
                     array_l_type->base->to_string() + "`."
             );
-            Logger::inst().log_note(
+            Diagnostics::inst().log_note(
                 "Array element types must be sized to calculate element "
                 "offsets."
             );
@@ -1015,7 +1015,7 @@ std::any ExpressionChecker::visit(Expr::Subscript* expr, bool as_lvalue) {
         }
         // Index must be an integer type.
         if (!Type::is_a<Type::Int>(index_type)) {
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::ArrayIndexNotInteger,
                 expr->index->location,
                 "Array index must be of an integer type."
@@ -1030,7 +1030,7 @@ std::any ExpressionChecker::visit(Expr::Subscript* expr, bool as_lvalue) {
         expr->error_location = l_lvalue->error_location;
     }
     else {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::OperatorNotValidForExpr,
             expr->left->location,
             "Subscript operator is not valid for this kind of expression."
@@ -1068,12 +1068,12 @@ std::any ExpressionChecker::visit(Expr::Call* expr, bool as_lvalue) {
         }
     }
     else {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::NotACallable,
             expr->callee->location,
             "Callee expression is not callable."
         );
-        Logger::inst().log_note(expr->location, "Call occurs here.");
+        Diagnostics::inst().log_note(expr->location, "Call occurs here.");
         return std::any();
     }
 
@@ -1126,7 +1126,7 @@ std::any ExpressionChecker::visit(Expr::Call* expr, bool as_lvalue) {
     }
     else if (matched_candidate_indices.size() > 1) {
         // More than one candidate matched.
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::MultipleMatchingFunctionOverloads,
             expr->callee->location,
             "Function call matched multiple overloads."
@@ -1135,12 +1135,12 @@ std::any ExpressionChecker::visit(Expr::Call* expr, bool as_lvalue) {
         for (auto index : matched_candidate_indices) {
             note_msg += " - " + candidate_funcs[index]->to_string() + "\n";
         }
-        Logger::inst().log_note(note_msg);
+        Diagnostics::inst().log_note(note_msg);
         return std::any();
     }
     else {
         // No candidates matched.
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::NoMatchingFunctionOverload,
             expr->callee->location,
             "No matching function overload found for the provided arguments."
@@ -1149,7 +1149,7 @@ std::any ExpressionChecker::visit(Expr::Call* expr, bool as_lvalue) {
         for (auto& candidate_func : candidate_funcs) {
             note_msg += " - " + candidate_func->to_string() + "\n";
         }
-        Logger::inst().log_note(note_msg);
+        Diagnostics::inst().log_note(note_msg);
         return std::any();
     }
 
@@ -1158,7 +1158,7 @@ std::any ExpressionChecker::visit(Expr::Call* expr, bool as_lvalue) {
 
 std::any ExpressionChecker::visit(Expr::SizeOf* expr, bool as_lvalue) {
     if (as_lvalue) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::NotAPossibleLValue,
             expr->location,
             "Sizeof expression cannot be an lvalue."
@@ -1171,7 +1171,7 @@ std::any ExpressionChecker::visit(Expr::SizeOf* expr, bool as_lvalue) {
         return std::any();
     auto type = std::any_cast<std::shared_ptr<Type>>(type_any);
     if (!type->is_sized_type().value_or(false)) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::SizeOfUnsizedType,
             expr->location,
             "Cannot measure size of unsized type `" + type->to_string() + "`."
@@ -1187,7 +1187,7 @@ std::any ExpressionChecker::visit(Expr::SizeOf* expr, bool as_lvalue) {
 std::any ExpressionChecker::visit(Expr::Alloc* expr, bool as_lvalue) {
     // As a reminder: pointers are not possible lvalues.
     if (as_lvalue) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::NotAPossibleLValue,
             expr->location,
             "Alloc expression cannot be an lvalue."
@@ -1206,7 +1206,7 @@ std::any ExpressionChecker::visit(Expr::Alloc* expr, bool as_lvalue) {
         auto amount_type = amount_type_opt.value();
 
         if (!Type::is_a<Type::Int>(amount_type)) {
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::AllocAmountNotInteger,
                 expr->amount_expr.value()->location,
                 "Amount expression for alloc must be of an integer type."
@@ -1220,13 +1220,13 @@ std::any ExpressionChecker::visit(Expr::Alloc* expr, bool as_lvalue) {
         auto alloc_inner_type = std::any_cast<std::shared_ptr<Type>>(anno_any);
         // alloc inner type must be sized.
         if (!alloc_inner_type->is_sized_type().value_or(false)) {
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::UnsizedTypeAllocation,
                 expr->type_annotation.value()->location,
                 "Cannot allocate memory for unsized type `" +
                     alloc_inner_type->to_string() + "`."
             );
-            Logger::inst().log_note(
+            Diagnostics::inst().log_note(
                 "Allocated types must be sized to calculate memory layout."
             );
             return std::any();
@@ -1250,13 +1250,13 @@ std::any ExpressionChecker::visit(Expr::Alloc* expr, bool as_lvalue) {
         auto alloc_inner_type = std::any_cast<std::shared_ptr<Type>>(anno_any);
         // alloc inner type must be sized.
         if (!alloc_inner_type->is_sized_type().value_or(false)) {
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::UnsizedTypeAllocation,
                 expr->type_annotation.value()->location,
                 "Cannot allocate memory for unsized type `" +
                     alloc_inner_type->to_string() + "`."
             );
-            Logger::inst().log_note(
+            Diagnostics::inst().log_note(
                 "Allocated types must be sized to calculate memory layout."
             );
             return std::any();
@@ -1269,7 +1269,7 @@ std::any ExpressionChecker::visit(Expr::Alloc* expr, bool as_lvalue) {
             auto init_type = init_type_opt.value();
 
             if (!init_type->is_assignable_to(alloc_inner_type)) {
-                Logger::inst().log_error(
+                Diagnostics::inst().log_error(
                     Err::AllocInitTypeMismatch,
                     expr->expression.value()->location,
                     std::string("Initializer expression of type `") +
@@ -1293,7 +1293,7 @@ std::any ExpressionChecker::visit(Expr::Alloc* expr, bool as_lvalue) {
 
 std::any ExpressionChecker::visit(Expr::NameRef* expr, bool as_lvalue) {
     if (!symbol_tree->try_resolve_name(expr->name)) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::NameNotFound,
             expr->name->identifier->location,
             "Could not resolve name `" + expr->name->to_string() + "`."
@@ -1313,7 +1313,7 @@ std::any ExpressionChecker::visit(Expr::NameRef* expr, bool as_lvalue) {
             };
             auto it = possible_commands.find(expr->name->to_string());
             if (it != possible_commands.end()) {
-                Logger::inst().log_note("Did you mean `:" + *it + "`?");
+                Diagnostics::inst().log_note("Did you mean `:" + *it + "`?");
             }
         }
         return std::any();
@@ -1322,7 +1322,7 @@ std::any ExpressionChecker::visit(Expr::NameRef* expr, bool as_lvalue) {
     auto binding_entry =
         std::dynamic_pointer_cast<Node::BindingEntry>(resolved_node);
     if (!binding_entry) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::NotAVariable,
             expr->location,
             "Name reference `" + expr->name->to_string() +
@@ -1347,7 +1347,7 @@ std::any ExpressionChecker::visit(Expr::NameRef* expr, bool as_lvalue) {
 
 std::any ExpressionChecker::visit(Expr::Literal* expr, bool as_lvalue) {
     if (as_lvalue) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::NotAPossibleLValue,
             expr->location,
             "Literal expression cannot be an lvalue."
@@ -1409,7 +1409,7 @@ std::any ExpressionChecker::visit(Expr::Literal* expr, bool as_lvalue) {
 
 std::any ExpressionChecker::visit(Expr::Tuple* expr, bool as_lvalue) {
     if (as_lvalue) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::NotAPossibleLValue,
             expr->location,
             "Tuple expression cannot be an lvalue."
@@ -1438,7 +1438,7 @@ std::any ExpressionChecker::visit(Expr::Tuple* expr, bool as_lvalue) {
 
 std::any ExpressionChecker::visit(Expr::Array* expr, bool as_lvalue) {
     if (as_lvalue) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::NotAPossibleLValue,
             expr->location,
             "Array expression cannot be an lvalue."
@@ -1463,12 +1463,12 @@ std::any ExpressionChecker::visit(Expr::Array* expr, bool as_lvalue) {
     // Ensure all elements have the same type.
     for (size_t i = 1; i < expr->elements.size(); i++) {
         if (*expr->elements[i]->type != *first_elem_type) {
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::ArrayElementTypeMismatch,
                 expr->elements[i]->location,
                 "Array element type inconsistent with first element."
             );
-            Logger::inst().log_note(
+            Diagnostics::inst().log_note(
                 "Expected type `" + first_elem_type->to_string() + "`."
             );
             has_error = true;
@@ -1484,7 +1484,7 @@ std::any ExpressionChecker::visit(Expr::Array* expr, bool as_lvalue) {
 
 std::any ExpressionChecker::visit(Expr::Object* expr, bool as_lvalue) {
     if (as_lvalue) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::NotAPossibleLValue,
             expr->location,
             "Object expression cannot be an lvalue."
@@ -1519,7 +1519,7 @@ std::any ExpressionChecker::visit(Expr::Object* expr, bool as_lvalue) {
 
 std::any ExpressionChecker::visit(Expr::Block* expr, bool as_lvalue) {
     if (as_lvalue) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::NotAPossibleLValue,
             expr->location,
             "Block expression cannot be an lvalue."
@@ -1549,7 +1549,7 @@ std::any ExpressionChecker::visit(Expr::Block* expr, bool as_lvalue) {
 
 std::any ExpressionChecker::visit(Expr::Conditional* expr, bool as_lvalue) {
     if (as_lvalue) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::NotAPossibleLValue,
             expr->location,
             "Conditional expression cannot be an lvalue."
@@ -1567,7 +1567,7 @@ std::any ExpressionChecker::visit(Expr::Conditional* expr, bool as_lvalue) {
 
     // The condition must be of type `bool`.
     if (!has_error && !Type::is_a<Type::Bool>(cond_type_opt.value())) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::ConditionNotBool,
             expr->condition->location,
             "Condition expression must be of type `bool`, not `" +
@@ -1595,23 +1595,23 @@ std::any ExpressionChecker::visit(Expr::Conditional* expr, bool as_lvalue) {
 
     // If-expression branches must yield compatible types
     if (!then_type->is_bidirectionally_assignable_with(else_type)) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::ConditionalBranchTypeMismatch,
             expr->location,
             "Yielded expression types of conditional branches are not "
             "compatible."
         );
-        Logger::inst().log_note(
+        Diagnostics::inst().log_note(
             expr->then_branch->location,
             "Then branch has type `" + then_type->to_string() + "`."
         );
         if (expr->implicit_else) {
-            Logger::inst().log_note(
+            Diagnostics::inst().log_note(
                 "Implicit else branch yields a void value with type `void`."
             );
         }
         else {
-            Logger::inst().log_note(
+            Diagnostics::inst().log_note(
                 expr->else_branch->location,
                 "Else branch has type `" + else_type->to_string() + "`."
             );
@@ -1629,7 +1629,7 @@ std::any ExpressionChecker::visit(Expr::Conditional* expr, bool as_lvalue) {
 
 std::any ExpressionChecker::visit(Expr::Loop* expr, bool as_lvalue) {
     if (as_lvalue) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::NotAPossibleLValue,
             expr->location,
             "Loop expression cannot be an lvalue."
@@ -1644,7 +1644,7 @@ std::any ExpressionChecker::visit(Expr::Loop* expr, bool as_lvalue) {
         if (!cond_type_opt.has_value())
             has_error = true;
         if (!has_error && !Type::is_a<Type::Bool>(cond_type_opt.value())) {
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::ConditionNotBool,
                 expr->condition.value()->location,
                 "Condition expression must be of type `bool`, not `" +
@@ -1662,7 +1662,7 @@ std::any ExpressionChecker::visit(Expr::Loop* expr, bool as_lvalue) {
         // unit...
         if (!Type::is_a<Type::Void>(body_type_opt.value()) &&
             !Type::is_a<Type::Unit>(body_type_opt.value())) {
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::WhileLoopYieldingNonVoid,
                 expr->body->location,
                 "Body of while loop must yield type `void`, not `" +
@@ -1707,7 +1707,7 @@ std::optional<std::shared_ptr<Type>> ExpressionChecker::expr_check(
         return std::nullopt;
     if (!expr->type->is_sized_type().value_or(false) && !as_lvalue &&
         !allow_unsized_rvalue) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::UnsizedRValue,
             expr->location,
             "Unsized type `" + expr->type->to_string() +

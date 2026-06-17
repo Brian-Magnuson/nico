@@ -186,7 +186,7 @@ Example:
 #include <llvm/IR/Verifier.h>
 
 #include "nico/shared/utils.h"
-#include "nico/shared/logger.h"
+#include "nico/shared/diagnostics.h"
 ```
 
 For C standard library headers with a C++ counterpart, prefer using the C++ counterpart.
@@ -232,9 +232,9 @@ namespace nico {
 The closing comment is required and must match the namespace name.
 
 Outside of the `nico` namespace:
-- Use the fully qualified name (e.g., `nico::Logger`, `nico::Type`).
+- Use the fully qualified name (e.g., `nico::Diagnostics`, `nico::Type`).
 - Do not use using directives, i.e., `using namespace nico;`.
-- Do not use using declarations, i.e., `using nico::Logger;` in header files.
+- Do not use using declarations, i.e., `using nico::Diagnostics;` in header files.
 - Avoid using declarations in implementation files.
   - Exceptions include `nico::Tok` and `nico::Err` as they are used frequently in testing.
 
@@ -285,10 +285,10 @@ errors caused by any of the following should also be treated as unrecoverable:
 In any of the above cases, `panic` should be called to abort the program.
 
 For errors in the user's source code:
-- Log the error using the `Logger` singleton.
+- Report the error using the `Diagnostics` singleton.
 - Always try to point out the location of the error when applicable.
 - Provide a clear and concise error message that explains the issue.
-- For suggestions or extra guidance, use the logger to log a note.
+- For suggestions or extra guidance, use the diagnostics reporter to add a note.
 - Avoid panicking or otherwise aborting the program immediately.
 - Messages logged should use proper sentence case and end with a period.
 

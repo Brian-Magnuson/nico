@@ -1,7 +1,7 @@
 #include "nico/driver/repl.h"
 
 #include "nico/shared/code_file.h"
-#include "nico/shared/logger.h"
+#include "nico/shared/diagnostics.h"
 #include "nico/shared/status.h"
 
 namespace nico {
@@ -138,7 +138,7 @@ void REPL::run_repl() {
 
     while (true) {
         print_prompt();
-        Logger::inst().reset();
+        Diagnostics::inst().reset();
         std::string line;
         if (!std::getline(*in, line)) {
             // Exit REPL on EOF (Ctrl+D)

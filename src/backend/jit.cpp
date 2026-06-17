@@ -3,8 +3,8 @@
 #include <llvm/Support/InitLLVM.h>
 #include <llvm/Support/TargetSelect.h>
 
+#include "nico/shared/diagnostics.h"
 #include "nico/shared/error_code.h"
-#include "nico/shared/logger.h"
 #include "nico/shared/utils.h"
 
 namespace nico {
@@ -16,7 +16,7 @@ IJIT::run_main_func(int argc, char** argv, std::string_view main_fn_name) {
         std::string err_msg =
             "Failed to find '" + std::string(main_fn_name) +
             "' function in JIT module: " + llvm::toString(symbol.takeError());
-        Logger::inst().log_error(Err::JITMissingEntryPoint, err_msg);
+        Diagnostics::inst().log_error(Err::JITMissingEntryPoint, err_msg);
         return llvm::make_error<llvm::StringError>(
             err_msg,
             llvm::inconvertibleErrorCode()
@@ -81,7 +81,7 @@ llvm::Error SimpleJIT::add_static_library(const std::string& lib_path) {
         std::string err_msg = "Failed to add static library '" + lib_path +
                               "' to JIT: " + llvm::toString(std::move(err));
 
-        Logger::inst().log_error(Err::JITCannotAddStaticLibrary, err_msg);
+        Diagnostics::inst().log_error(Err::JITCannotAddStaticLibrary, err_msg);
 
         return llvm::make_error<llvm::StringError>(
             err_msg,

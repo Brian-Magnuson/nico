@@ -1,7 +1,7 @@
 #include "nico/frontend/components/global_checker.h"
 
+#include "nico/shared/diagnostics.h"
 #include "nico/shared/dictionary.h"
-#include "nico/shared/logger.h"
 #include "nico/shared/status.h"
 
 namespace nico {
@@ -29,7 +29,7 @@ std::any GlobalChecker::visit(Stmt::Static* stmt) {
         expr_type = anno_type_opt.value();
     }
     else {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::StaticMissingTypeAnnotation,
             stmt->identifier->location,
             "Static variable declaration must have a type annotation."
@@ -39,7 +39,7 @@ std::any GlobalChecker::visit(Stmt::Static* stmt) {
 
     if (PTR_INSTANCEOF(symbol_tree->current_scope, Node::ExternBlock)) {
         if (stmt->expression.has_value()) {
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::ExternStaticWithInitializer,
                 stmt->identifier->location,
                 "Static variable declared in extern block cannot have an "
@@ -47,7 +47,7 @@ std::any GlobalChecker::visit(Stmt::Static* stmt) {
             );
         }
         if (stmt->linkage_opt == Linkage::Internal) {
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::ExternBindingWithInternalLinkage,
                 stmt->identifier->location,
                 "Static variable declared in extern block cannot have internal "
@@ -58,7 +58,7 @@ std::any GlobalChecker::visit(Stmt::Static* stmt) {
         stmt->linkage_opt = Linkage::External;
     }
     else if (!stmt->has_var && !stmt->expression.has_value()) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::ImmutableWithoutInitializer,
             stmt->identifier->location,
             "Immutable variable declaration must have an initializer."
@@ -118,12 +118,12 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
         // Check for duplicate parameter names.
         if (auto it = param_bindings.find(param_string);
             it != param_bindings.end()) {
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::DuplicateFunctionParameterName,
                 param.identifier->location,
                 "Duplicate parameter name `" + param_string + "`."
             );
-            Logger::inst().log_note(
+            Diagnostics::inst().log_note(
                 *it->second.location,
                 "Previous declaration of parameter `" + param_string + "` here."
             );
@@ -162,14 +162,14 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
     // If the function is declared in an extern block...
     if (PTR_INSTANCEOF(symbol_tree->current_scope, Node::ExternBlock)) {
         if (stmt->body.has_value()) {
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::ExternBlockFuncWithBody,
                 stmt->identifier->location,
                 "Function declared in extern block cannot have a body."
             );
         }
         if (stmt->linkage_opt == Linkage::Internal) {
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::ExternBindingWithInternalLinkage,
                 stmt->identifier->location,
                 "Function declared in extern block cannot have internal "
@@ -184,7 +184,7 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
     // If the function is not declared in an extern block...
     else {
         if (!stmt->body.has_value()) {
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::FuncWithoutBody,
                 stmt->identifier->location,
                 "Function is missing a body."
@@ -193,7 +193,7 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
             // rest of the statement.
         }
         if (stmt->is_variadic) {
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::NonExternVariadicFunc,
                 stmt->identifier->location,
                 "Non-extern function declaration is not allowed to be variadic."
@@ -354,7 +354,7 @@ void GlobalChecker::run_check(std::unique_ptr<FrontendContext>& context) {
 
     symbol_tree->resolve_unresolved_types();
 
-    if (Logger::inst().get_errors().empty()) {
+    if (Diagnostics::inst().get_errors().empty()) {
         context->status = Status::Ok();
     }
     else if (repl_mode) {

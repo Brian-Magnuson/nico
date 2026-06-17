@@ -12,8 +12,8 @@
 #include "nico/backend/jit.h"
 #include "nico/frontend/frontend.h"
 #include "nico/frontend/utils/frontend_context.h"
+#include "nico/shared/diagnostics.h"
 #include "nico/shared/error_code.h"
-#include "nico/shared/logger.h"
 #include "nico/shared/status.h"
 
 #include "test_utils.h"
@@ -66,13 +66,13 @@ struct JITTestOptions {
 void run_jit_test(
     std::string_view source, JITTestOptions options = JITTestOptions()
 ) {
-    nico::Logger::inst().reset();
+    nico::Diagnostics::inst().reset();
 
     auto file = nico::make_test_code_file(source);
 
     // Note: When captured_stdout is used, the error message will appear in the
     // stderr string.
-    nico::Logger::inst().set_printing_enabled(true);
+    nico::Diagnostics::inst().set_printing_enabled(true);
 
     nico::Frontend frontend;
     if (options.expect_panic) {
@@ -124,7 +124,7 @@ void run_jit_test(
 
     // Logged errors.
     if (options.expected_error_code.has_value()) {
-        auto errors_logged = nico::Logger::inst().get_errors();
+        auto errors_logged = nico::Diagnostics::inst().get_errors();
         REQUIRE(!errors_logged.empty());
         CHECK(errors_logged[0] == *options.expected_error_code);
     }

@@ -15,8 +15,8 @@
 #include <llvm/Target/TargetOptions.h>
 #include <llvm/TargetParser/Host.h>
 
+#include "nico/shared/diagnostics.h"
 #include "nico/shared/error_code.h"
-#include "nico/shared/logger.h"
 
 namespace nico {
 
@@ -92,7 +92,7 @@ public:
         std::string error;
         auto target = llvm::TargetRegistry::lookupTarget(target_triple, error);
         if (!target) {
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::CannotLookupTarget,
                 "Failed to lookup target: " + error
             );
@@ -112,7 +112,7 @@ public:
             ));
 
         if (!target_machine) {
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::CannotCreateTargetMachine,
                 "Failed to create target machine for triple: " + target_triple
             );

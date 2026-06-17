@@ -9,7 +9,7 @@
 #include "nico/frontend/components/lexer.h"
 #include "nico/frontend/components/local_checker.h"
 #include "nico/frontend/components/parser.h"
-#include "nico/shared/logger.h"
+#include "nico/shared/diagnostics.h"
 
 #include "test_utils.h"
 
@@ -42,9 +42,9 @@ void run_checker_test(
     // If there is no expected error, we enable printing to look for unexpected
     // errors.
     bool printing_enabled = print_errors.value_or(!expected_error.has_value());
-    nico::Logger::inst().set_printing_enabled(printing_enabled);
+    nico::Diagnostics::inst().set_printing_enabled(printing_enabled);
 
-    auto& errors = nico::Logger::inst().get_errors();
+    auto& errors = nico::Diagnostics::inst().get_errors();
     auto context = std::make_unique<nico::FrontendContext>();
     auto file = nico::make_test_code_file(src_code);
     nico::Lexer::scan(context, file);
@@ -66,7 +66,7 @@ void run_checker_test(
     }
 
     context->initialize();
-    nico::Logger::inst().reset();
+    nico::Diagnostics::inst().reset();
 }
 
 TEST_CASE("Check variable declarations", "[checker]") {

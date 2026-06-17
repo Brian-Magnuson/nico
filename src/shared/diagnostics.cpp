@@ -1,4 +1,4 @@
-#include "nico/shared/logger.h"
+#include "nico/shared/diagnostics.h"
 
 #include <cctype>
 #include <iomanip>
@@ -7,7 +7,7 @@
 
 namespace nico {
 
-void Logger::print_code_at_location(
+void Diagnostics::print_code_at_location(
     const Location& location, std::ostream& (*color_manip)(std::ostream& o)
 ) {
     const std::string& src_code = location.file->src_code;
@@ -48,7 +48,7 @@ void Logger::print_code_at_location(
     */
 }
 
-void Logger::print_message_with_breaks(
+void Diagnostics::print_message_with_breaks(
     std::string_view message, size_t indent
 ) {
     int terminal_width = get_terminal_width();
@@ -81,13 +81,13 @@ void Logger::print_message_with_breaks(
     }
 }
 
-void Logger::reset() {
+void Diagnostics::reset() {
     out = &std::cerr;
     errors.clear();
     printing_enabled = true;
 }
 
-void Logger::log_error(
+void Diagnostics::log_error(
     Err ec, const Location& location, std::string_view message
 ) {
     errors.push_back(ec);
@@ -101,7 +101,7 @@ void Logger::log_error(
     }
 }
 
-void Logger::log_error(Err ec, std::string_view message) {
+void Diagnostics::log_error(Err ec, std::string_view message) {
     errors.push_back(ec);
     if (printing_enabled) {
         *out << colorize::red << "Error " << errors.size() << ": "
@@ -109,7 +109,7 @@ void Logger::log_error(Err ec, std::string_view message) {
     }
 }
 
-void Logger::log_note(const Location& location, std::string_view message) {
+void Diagnostics::log_note(const Location& location, std::string_view message) {
     if (printing_enabled) {
         *out << colorize::cyan << "⤷ Note: " << colorize::reset;
         print_message_with_breaks(message, 8);
@@ -117,7 +117,7 @@ void Logger::log_note(const Location& location, std::string_view message) {
     }
 }
 
-void Logger::log_note(std::string_view message) {
+void Diagnostics::log_note(std::string_view message) {
     if (printing_enabled) {
         *out << colorize::cyan << "⤷ Note: " << colorize::reset;
         print_message_with_breaks(message, 8);

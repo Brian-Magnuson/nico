@@ -3,8 +3,8 @@
 #include <charconv>
 #include <string>
 
+#include "nico/shared/diagnostics.h"
 #include "nico/shared/error_code.h"
-#include "nico/shared/logger.h"
 #include "nico/shared/status.h"
 #include "nico/shared/utils.h"
 
@@ -217,7 +217,7 @@ void Lexer::consume_whitespace() {
     // If user tried to mix left spacing...
     if (current_spaces > 0 && current_tabs > 0) {
         auto token = make_token(Tok::Unknown);
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::MixedLeftSpacing,
             token->location,
             "Line left spacing contains both tabs and spaces."
@@ -226,7 +226,7 @@ void Lexer::consume_whitespace() {
     }
     else if (current_spaces && left_spacing_type == '\t') {
         auto token = make_token(Tok::Unknown);
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::InconsistentLeftSpacing,
             token->location,
             "Left spacing uses spaces when previous lines used tabs."
@@ -235,7 +235,7 @@ void Lexer::consume_whitespace() {
     }
     else if (current_tabs && left_spacing_type == ' ') {
         auto token = make_token(Tok::Unknown);
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::InconsistentLeftSpacing,
             token->location,
             "Left spacing uses tabs when previous lines used spaces."
@@ -260,14 +260,14 @@ void Lexer::consume_whitespace() {
         if (curr_line_left_spacing <= prev_line_left_spacing) {
             // If the current left spacing is not greater than the previous
             // line's spacing, log an error.
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::MalformedIndent,
                 tokens.back()->location,
                 "Expected indent with left-spacing greater than " +
                     std::to_string(prev_line_left_spacing) + "."
 
             );
-            Logger::inst().log_note(
+            Diagnostics::inst().log_note(
                 make_token(Tok::Unknown)->location,
                 "Next line only has left-spacing of " +
                     std::to_string(curr_line_left_spacing) +
@@ -301,7 +301,7 @@ void Lexer::identifier() {
         token->tok_type = it->second;
     }
     else if (reserved_words.find(text) != reserved_words.end()) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::WordIsReserved,
             token->location,
             "'" + std::string(token->lexeme) +
@@ -327,7 +327,7 @@ void Lexer::tuple_index() {
     );
 
     if (result.ec == std::errc::result_out_of_range) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::TupleIndexOutOfRange,
             make_token(Tok::Unknown)->location,
             "Tuple index is too large."
@@ -376,7 +376,7 @@ void Lexer::numeric_literal() {
             if (has_dot || has_exp || base != 10 || !is_digit(peek())) {
                 auto prev_start = start;
                 start = current - 1;
-                Logger::inst().log_error(
+                Diagnostics::inst().log_error(
                     Err::UnexpectedDotInNumber,
                     make_token(Tok::Unknown)->location,
                     "Unexpected '.' in number."
@@ -400,7 +400,7 @@ void Lexer::numeric_literal() {
             if (has_exp || base != 10 || !is_digit(peek())) {
                 auto prev_start = start;
                 start = current - 1;
-                Logger::inst().log_error(
+                Diagnostics::inst().log_error(
                     Err::UnexpectedExpInNumber,
                     make_token(Tok::Unknown)->location,
                     "Unexpected exponent in number."
@@ -416,7 +416,7 @@ void Lexer::numeric_literal() {
         // prefix.
         auto prev_start = start;
         start = current;
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::UnexpectedEndOfNumber,
             make_token(Tok::Unknown)->location,
             "Expected base " + std::to_string(base) + " digit."
@@ -483,7 +483,7 @@ void Lexer::numeric_literal() {
     if (is_digit(peek(), 16)) {
         auto prev_start = start;
         start = current;
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::DigitInWrongBase,
             make_token(Tok::Unknown)->location,
             "Digit not allowed in numbers of base " + std::to_string(base) + "."
@@ -493,12 +493,12 @@ void Lexer::numeric_literal() {
     else if (is_alpha(peek())) {
         auto prev_start = start;
         start = current;
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::InvalidCharAfterNumber,
             make_token(Tok::Unknown)->location,
             "Number cannot be followed by an alphabetic character."
         );
-        Logger::inst().log_note("Consider adding a space here.");
+        Diagnostics::inst().log_note("Consider adding a space here.");
         start = prev_start;
     }
 }
@@ -508,7 +508,7 @@ void Lexer::str_literal() {
     while (peek() != '"' && !is_at_end()) {
         // A normal str literal cannot span multiple lines
         if (peek() == '\n') {
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::UnterminatedStr,
                 make_token(Tok::Unknown)->location,
                 "Unterminated string."
@@ -557,7 +557,7 @@ void Lexer::str_literal() {
             default: {
                 auto prev_start = start;
                 start = current - 1;
-                Logger::inst().log_error(
+                Diagnostics::inst().log_error(
                     Err::InvalidEscSeq,
                     make_token(Tok::Unknown)->location,
                     "Invalid escape sequence."
@@ -572,7 +572,7 @@ void Lexer::str_literal() {
     }
 
     if (is_at_end()) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::UnterminatedStr,
             make_token(Tok::Unknown)->location,
             "Unterminated string."
@@ -596,7 +596,7 @@ void Lexer::multi_line_comment() {
                 return;
             }
 
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::UnclosedComment,
                 opening_token->location,
                 "Unclosed multi-line comment."
@@ -608,7 +608,10 @@ void Lexer::multi_line_comment() {
             for (unsigned i = 0; i < open_count; i++)
                 msg += "*/";
             msg += "` here.";
-            Logger::inst().log_note(make_token(Tok::Unknown)->location, msg);
+            Diagnostics::inst().log_note(
+                make_token(Tok::Unknown)->location,
+                msg
+            );
             start = prev_start;
             return;
         }
@@ -654,14 +657,14 @@ void Lexer::scan_token() {
     case ')': {
         auto t = make_token(Tok::RParen);
         if (grouping_token_stack.empty()) {
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::ClosingUnopenedGrouping,
                 t->location,
                 "Found ')' without '('."
             );
         }
         else if (grouping_token_stack.back() != c) {
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::UnclosedGrouping,
                 t->location,
                 "Expected '" + std::string(1, grouping_token_stack.back()) +
@@ -677,14 +680,14 @@ void Lexer::scan_token() {
     case '}': {
         auto t = make_token(Tok::RBrace);
         if (grouping_token_stack.empty()) {
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::ClosingUnopenedGrouping,
                 t->location,
                 "Found '}' without '{'."
             );
         }
         else if (grouping_token_stack.back() != c) {
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::UnclosedGrouping,
                 t->location,
                 "Expected '" + std::string(1, grouping_token_stack.back()) +
@@ -700,14 +703,14 @@ void Lexer::scan_token() {
     case ']': {
         auto t = make_token(Tok::RSquare);
         if (grouping_token_stack.empty()) {
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::ClosingUnopenedGrouping,
                 t->location,
                 "Found ']' without '['."
             );
         }
         else if (grouping_token_stack.back() != c) {
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::UnclosedGrouping,
                 t->location,
                 "Expected '" + std::string(1, grouping_token_stack.back()) +
@@ -753,7 +756,7 @@ void Lexer::scan_token() {
         if (match('='))
             add_token(Tok::StarEq);
         else if (match('/'))
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::ClosingUnopenedComment,
                 make_token(Tok::Unknown)->location,
                 "Found '*/' without '/*'."
@@ -824,7 +827,7 @@ void Lexer::scan_token() {
         }
         else {
             auto token = make_token(Tok::Unknown);
-            Logger::inst().log_error(
+            Diagnostics::inst().log_error(
                 Err::UnexpectedChar,
                 token->location,
                 "Unexpected character."
@@ -852,7 +855,7 @@ void Lexer::run_scan(std::unique_ptr<FrontendContext>& context) {
     auto eof_token = make_token(Tok::Eof);
 
     if (!grouping_token_stack.empty()) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::UnclosedGrouping,
             eof_token->location,
             "Expected '" + std::string(1, grouping_token_stack.back()) +
@@ -867,7 +870,7 @@ void Lexer::run_scan(std::unique_ptr<FrontendContext>& context) {
 
     tokens.push_back(eof_token);
 
-    if (Logger::inst().get_errors().empty()) {
+    if (Diagnostics::inst().get_errors().empty()) {
         context->status = Status::Ok();
         context->scanned_tokens = std::move(tokens);
     }

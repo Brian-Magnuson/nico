@@ -81,7 +81,7 @@ set(DRIVER_SRC
 
 # Shared files
 set(SHARED_SRC
-    src/shared/logger.cpp
+    src/shared/diagnostics.cpp
     src/shared/utils.cpp
 )
 

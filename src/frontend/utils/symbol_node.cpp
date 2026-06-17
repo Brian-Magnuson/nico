@@ -2,7 +2,7 @@
 
 #include "nico/frontend/utils/symbol_tree.h"
 #include "nico/frontend/utils/type_node.h"
-#include "nico/shared/logger.h"
+#include "nico/shared/diagnostics.h"
 
 namespace nico {
 
@@ -30,7 +30,7 @@ bool Node::IScope::add_child(
 
     // Step 2: Check if the name is reserved.
     if (symbol_tree.is_name_reserved(child->short_name)) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::NameIsReserved,
             child->location,
             "Name `" + child->short_name + "` is reserved and cannot be used."
@@ -40,14 +40,14 @@ bool Node::IScope::add_child(
 
     // Step 3: Check if the name already exists in this scope.
     if (auto existing = children.at(child->short_name)) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::NameAlreadyExists,
             child->location,
             "Name `" + child->short_name + "` already exists in this scope."
         );
         if (auto existing_locatable =
                 std::dynamic_pointer_cast<Node::ILocatable>(existing.value())) {
-            Logger::inst().log_note(
+            Diagnostics::inst().log_note(
                 existing_locatable->location,
                 "Previous declaration of name `" + child->short_name +
                     "` found here."
@@ -94,7 +94,7 @@ bool Node::ExternBlock::add_child(
     // Extern blocks can only contain binding entries that represent functions.
     if (auto extern_child =
             std::dynamic_pointer_cast<Node::ExternBlock>(child)) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::ExternBlockInExternBlock,
             child->location,
             "Extern block cannot contain another extern block."
@@ -102,7 +102,7 @@ bool Node::ExternBlock::add_child(
         return false;
     }
     else if (auto ns = std::dynamic_pointer_cast<Node::Namespace>(child)) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::NamespaceInExternBlock,
             child->location,
             "Namespace is not allowed in extern block."
@@ -112,7 +112,7 @@ bool Node::ExternBlock::add_child(
     else if (
         auto struct_def = std::dynamic_pointer_cast<Node::StructDef>(child)
     ) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::StructDefInExternBlock,
             child->location,
             "Struct definition is not allowed in extern block."
@@ -183,7 +183,7 @@ bool Node::StructDef::add_child(
     std::optional<std::string> custom_symbol
 ) {
     if (auto ns = std::dynamic_pointer_cast<Node::Namespace>(child)) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::NamespaceInStructDef,
             child->location,
             "Namespace is not allowed in struct definition."
@@ -193,7 +193,7 @@ bool Node::StructDef::add_child(
     else if (
         auto struct_def = std::dynamic_pointer_cast<Node::StructDef>(child)
     ) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::StructDefInStructDef,
             child->location,
             "Struct definition is not allowed in struct definition."
@@ -210,7 +210,7 @@ bool Node::StructDef::add_child(
     else if (
         auto extern_block = std::dynamic_pointer_cast<Node::ExternBlock>(child)
     ) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::ExternBlockInStructDef,
             child->location,
             "Extern block is not allowed in struct definition."

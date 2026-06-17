@@ -5,7 +5,7 @@
 
 #include "nico/frontend/components/lexer.h"
 #include "nico/frontend/utils/frontend_context.h"
-#include "nico/shared/logger.h"
+#include "nico/shared/diagnostics.h"
 #include "nico/shared/token.h"
 
 #include "test_utils.h"
@@ -28,7 +28,7 @@ void run_lexer_test(
     CHECK(extract_token_types(context->scanned_tokens) == expected);
 
     context->initialize();
-    nico::Logger::inst().reset();
+    nico::Diagnostics::inst().reset();
 }
 
 /**
@@ -44,18 +44,18 @@ void run_lexer_test(
 void run_lexer_error_test(
     std::string_view src_code, Err expected_error, bool print_errors = false
 ) {
-    nico::Logger::inst().set_printing_enabled(print_errors);
+    nico::Diagnostics::inst().set_printing_enabled(print_errors);
 
     auto context = std::make_unique<nico::FrontendContext>();
     auto file = nico::make_test_code_file(src_code);
     nico::Lexer::scan(context, file);
 
-    auto& errors = nico::Logger::inst().get_errors();
+    auto& errors = nico::Diagnostics::inst().get_errors();
     REQUIRE(errors.size() >= 1);
     CHECK(errors.at(0) == expected_error);
 
     context->initialize();
-    nico::Logger::inst().reset();
+    nico::Diagnostics::inst().reset();
 }
 
 TEST_CASE("Sanity check", "[sanity]") {

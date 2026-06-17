@@ -5,7 +5,7 @@
 
 #include "nico/frontend/components/lexer.h"
 #include "nico/frontend/components/parser.h"
-#include "nico/shared/logger.h"
+#include "nico/shared/diagnostics.h"
 
 #include "ast_printer.h"
 #include "test_utils.h"
@@ -32,7 +32,7 @@ void run_parser_expr_test(
     CHECK(printer.stmts_to_strings(context->stmts) == expected);
 
     context->initialize();
-    nico::Logger::inst().reset();
+    nico::Diagnostics::inst().reset();
 }
 
 /**
@@ -49,19 +49,19 @@ void run_parser_expr_test(
 void run_parser_expr_error_test(
     std::string_view src_code, Err expected_error, bool print_errors = false
 ) {
-    nico::Logger::inst().set_printing_enabled(print_errors);
+    nico::Diagnostics::inst().set_printing_enabled(print_errors);
 
     auto context = std::make_unique<nico::FrontendContext>();
     auto file = nico::make_test_code_file(src_code);
     nico::Lexer::scan(context, file);
     nico::Parser::parse(context);
 
-    auto& errors = nico::Logger::inst().get_errors();
+    auto& errors = nico::Diagnostics::inst().get_errors();
     REQUIRE(errors.size() >= 1);
     CHECK(errors.at(0) == expected_error);
 
     context->initialize();
-    nico::Logger::inst().reset();
+    nico::Diagnostics::inst().reset();
 }
 
 // MARK: Parser expr tests

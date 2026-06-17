@@ -1,5 +1,5 @@
-#ifndef NICO_LOGGER_H
-#define NICO_LOGGER_H
+#ifndef NICO_DIAGNOSTICS_H
+#define NICO_DIAGNOSTICS_H
 
 #include <iostream>
 #include <string_view>
@@ -12,22 +12,20 @@
 
 namespace nico {
 
-// TODO: Consider if Logger needs to be renamed.
-
 /**
- * @brief Logger singleton for logging errors and messages.
+ * @brief Diagnostics singleton for reporting errors and messages.
  */
-class Logger {
+class Diagnostics {
     // A pointer to the output stream to log errors to.
     std::ostream* out = &std::cerr;
-    // A list of the errors that have been logged.
+    // A list of the errors that have been reported.
     std::vector<Err> errors;
-    // A boolean to determine if the error logger should print to the ostream.
+    // A boolean to determine if the error reported should print to the ostream.
     bool printing_enabled = true;
 
-    Logger() = default;
-    Logger(const Logger&) = delete;
-    Logger& operator=(const Logger&) = delete;
+    Diagnostics() = default;
+    Diagnostics(const Diagnostics&) = delete;
+    Diagnostics& operator=(const Diagnostics&) = delete;
 
     /**
      * @brief Prints the line of code at the provided location and underlines
@@ -67,19 +65,19 @@ class Logger {
 
 public:
     /**
-     * @brief Get the instance of the Logger singleton.
+     * @brief Get the instance of the Diagnostics singleton.
      *
      * If the instance does not exist, it will be created.
      *
-     * @return A reference to the Logger singleton instance.
+     * @return A reference to the Diagnostics singleton instance.
      */
-    static Logger& inst() {
-        static Logger instance;
+    static Diagnostics& inst() {
+        static Diagnostics instance;
         return instance;
     }
 
     /**
-     * @brief Sets the logger to enable or disable printing.
+     * @brief Sets the reporter to enable or disable printing.
      *
      * When printing is enabled, error messages will be printed to the output
      * stream.
@@ -89,7 +87,7 @@ public:
     void set_printing_enabled(bool enabled) { printing_enabled = enabled; }
 
     /**
-     * @brief Resets the logger to its default state.
+     * @brief Resets the reporter to its default state.
      *
      * The output stream is reset to std::cerr, the list of errors is cleared,
      * and printing is enabled.
@@ -97,92 +95,92 @@ public:
     void reset();
 
     /**
-     * @brief Logs an error message with a location.
+     * @brief Reports an error message with a location.
      *
      * If printing is enabled, the error message will be printed to the output
      * stream. The error code will be added to the stored list of errors.
      *
-     * @param ec The error code to log.
+     * @param ec The error code to report.
      * @param location The location of the error in the source code.
-     * @param message The message to log with the error.
+     * @param message The message to report with the error.
      */
     void log_error(Err ec, const Location& location, std::string_view message);
 
     /**
-     * @brief Logs an error message with a location pointer.
+     * @brief Reports an error message with a location pointer.
      *
      * If printing is enabled, the error message will be printed to the output
      * stream. The error code will be added to the stored list of errors.
      *
-     * @param ec The error code to log.
+     * @param ec The error code to report.
      * @param location The location of the error in the source code.
-     * @param message The message to log with the error.
+     * @param message The message to report with the error.
      *
      * @warning If `location` is `nullptr`, this function will panic.
      */
     void log_error(Err ec, const Location* location, std::string_view message) {
         if (location == nullptr)
-            panic("Logger::log_error was given a null Location pointer");
+            panic("Diagnostics::log_error was given a null Location pointer");
         log_error(ec, *location, message);
     }
 
     /**
-     * @brief Logs an error message without a location.
+     * @brief Reports an error message without a location.
      *
      * If printing is enabled, the error message will be printed to the output
      * stream. The error code will be added to the stored list of errors.
      *
-     * @param ec The error code to log.
-     * @param message The message to log with the error.
+     * @param ec The error code to report.
+     * @param message The message to report with the error.
      */
     void log_error(Err ec, std::string_view message);
 
     /**
-     * @brief Logs a note message with a location.
+     * @brief Reports a note message with a location.
      *
      * If printing is enabled, the note message will be printed to the output
      * stream. Otherwise, this function does nothing.
      *
      * @param location The location of the note in the source code.
-     * @param message The message to log with the note.
+     * @param message The message to report with the note.
      */
     void log_note(const Location& location, std::string_view message);
 
     /**
-     * @brief Logs a note message with a location pointer.
+     * @brief Reports a note message with a location pointer.
      *
      * If printing is enabled, the note message will be printed to the output
      * stream. Otherwise, this function does nothing.
      *
      * @param location The location of the note in the source code.
-     * @param message The message to log with the note.
+     * @param message The message to report with the note.
      *
      * @warning If `location` is `nullptr`, this function will panic.
      */
     void log_note(const Location* location, std::string_view message) {
         if (location == nullptr)
-            panic("Logger::log_note was given a null Location pointer");
+            panic("Diagnostics::note was given a null Location pointer");
         log_note(*location, message);
     }
 
     /**
-     * @brief Logs a note message without a location.
+     * @brief Reports a note message without a location.
      *
      * If printing is enabled, the note message will be printed to the output
      * stream. Otherwise, this function does nothing.
      *
-     * @param message The message to log with the note.
+     * @param message The message to report with the note.
      */
     void log_note(std::string_view message);
 
     /**
-     * @brief Gets the errors that have been logged.
+     * @brief Gets the errors that have been reported.
      * @return A read-only reference to the list of errors that have been
-     * logged.
+     * reported.
      */
     const std::vector<Err>& get_errors() const { return errors; }
 };
 
 } // namespace nico
 
-#endif // NICO_LOGGER_H
+#endif // NICO_DIAGNOSTICS_H

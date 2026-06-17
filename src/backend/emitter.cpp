@@ -8,7 +8,7 @@
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Target/TargetMachine.h>
 
-#include "nico/shared/logger.h"
+#include "nico/shared/diagnostics.h"
 
 namespace nico {
 
@@ -19,7 +19,7 @@ void Emitter::emit(
     std::error_code err;
     llvm::raw_fd_ostream dest(target_destination, err, llvm::sys::fs::OF_None);
     if (err) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::FileIO,
             "Error opening output file: " + err.message()
         );
@@ -31,7 +31,7 @@ void Emitter::emit(
     auto file_type = llvm::CodeGenFileType::ObjectFile;
     if (mod_ctx.target_machine
             ->addPassesToEmitFile(pass, dest, nullptr, file_type)) {
-        Logger::inst().log_error(
+        Diagnostics::inst().log_error(
             Err::EmitterCannotEmitFile,
             "Target machine cannot emit a file of this type."
         );
