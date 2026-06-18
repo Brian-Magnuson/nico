@@ -92,7 +92,7 @@ public:
         std::string error;
         auto target = llvm::TargetRegistry::lookupTarget(target_triple, error);
         if (!target) {
-            Diagnostics::inst().log_error(
+            Diagnostics::inst().emit_error(
                 Err::CannotLookupTarget,
                 "Failed to lookup target: " + error
             );
@@ -112,7 +112,7 @@ public:
             ));
 
         if (!target_machine) {
-            Diagnostics::inst().log_error(
+            Diagnostics::inst().emit_error(
                 Err::CannotCreateTargetMachine,
                 "Failed to create target machine for triple: " + target_triple
             );

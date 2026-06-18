@@ -12,7 +12,7 @@ bool Stmt::IBindingDecl::apply_modifier(const Modifier& modifier) {
     // (internal or external).
     if (modifier.identifier == "linkage") {
         if (linkage_opt.has_value()) {
-            Diagnostics::inst().log_error(
+            Diagnostics::inst().emit_error(
                 Err::ModifierAlreadyApplied,
                 *modifier.location,
                 "Linkage modifier has already been set by a previous modifier."
@@ -20,7 +20,7 @@ bool Stmt::IBindingDecl::apply_modifier(const Modifier& modifier) {
         }
         if (modifier.args.size() != 1 ||
             modifier.args.at(0)->tok_type != Tok::Str) {
-            Diagnostics::inst().log_error(
+            Diagnostics::inst().emit_error(
                 Err::ModifierInvalidArguments,
                 *modifier.location,
                 "Modifier `linkage` requires a string literal argument "
@@ -41,7 +41,7 @@ bool Stmt::IBindingDecl::apply_modifier(const Modifier& modifier) {
             return true;
         }
 
-        Diagnostics::inst().log_error(
+        Diagnostics::inst().emit_error(
             Err::ModifierInvalidArguments,
             *modifier.location,
             "Invalid argument for `linkage` modifier: expected "
@@ -54,7 +54,7 @@ bool Stmt::IBindingDecl::apply_modifier(const Modifier& modifier) {
     // Symbol modifier: specifies a custom symbol for this declaration.
     if (modifier.identifier == "symbol") {
         if (custom_symbol_opt.has_value()) {
-            Diagnostics::inst().log_error(
+            Diagnostics::inst().emit_error(
                 Err::ModifierAlreadyApplied,
                 *modifier.location,
                 "Symbol modifier has already been set by a previous modifier."
@@ -62,7 +62,7 @@ bool Stmt::IBindingDecl::apply_modifier(const Modifier& modifier) {
         }
         if (modifier.args.size() != 1 ||
             modifier.args.at(0)->tok_type != Tok::Str) {
-            Diagnostics::inst().log_error(
+            Diagnostics::inst().emit_error(
                 Err::ModifierInvalidArguments,
                 *modifier.location,
                 "Modifier `symbol` requires a string literal argument "

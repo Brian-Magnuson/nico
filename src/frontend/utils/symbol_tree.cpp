@@ -181,7 +181,7 @@ bool SymbolTree::register_symbol(
         symbol.value_or(node->parent.lock()->symbol + "::" + node->short_name);
 
     if (reserved_symbols.contains(the_symbol)) {
-        Diagnostics::inst().log_error(
+        Diagnostics::inst().emit_error(
             Err::SymbolIsReserved,
             node->location,
             "Symbol `" + the_symbol + "` is reserved and cannot be used."
@@ -213,12 +213,12 @@ bool SymbolTree::register_symbol(
         }
 
         // If the symbol is already in use by another node...
-        Diagnostics::inst().log_error(
+        Diagnostics::inst().emit_error(
             Err::SymbolAlreadyExists,
             node->location,
             "Symbol `" + the_symbol + "` already exists."
         );
-        Diagnostics::inst().log_note(
+        Diagnostics::inst().emit_note(
             it->second,
             "Previous declaration of symbol `" + the_symbol + "` found here."
         );
@@ -374,7 +374,7 @@ SymbolTree::add_binding_entry(
 ) {
     // Make sure the name is not reserved.
     if (auto node = reserved_scope->children.at(binding.name)) {
-        Diagnostics::inst().log_error(
+        Diagnostics::inst().emit_error(
             Err::NameIsReserved,
             *binding.location,
             "Name `" + std::string(binding.name) +
@@ -385,7 +385,7 @@ SymbolTree::add_binding_entry(
 
     // Make sure the name does not already exist in the current scope.
     if (auto node = current_scope->children.at(binding.name)) {
-        Diagnostics::inst().log_error(
+        Diagnostics::inst().emit_error(
             Err::NameAlreadyExists,
             *binding.location,
             "Name `" + binding.name + "` already exists in the current scope."
@@ -394,14 +394,14 @@ SymbolTree::add_binding_entry(
             Type::is_a<Type::Function>(binding.type)) {
             // The binding being declared is a non-overloadable function, but
             // there is an overload group with the same name.
-            Diagnostics::inst().log_note(
+            Diagnostics::inst().emit_note(
                 "This is a non-overloadable function, which cannot share a "
                 "name with an overloadable function."
             );
         }
         if (auto locatable =
                 std::dynamic_pointer_cast<Node::ILocatable>(node.value())) {
-            Diagnostics::inst().log_note(
+            Diagnostics::inst().emit_note(
                 locatable->location,
                 "Previous declaration here."
             );
@@ -426,7 +426,7 @@ std::optional<std::shared_ptr<Node::BindingEntry>>
 SymbolTree::add_overloadable_func(const Binding& binding) {
     // Make sure the name is not reserved.
     if (auto node = reserved_scope->children.at(binding.name)) {
-        Diagnostics::inst().log_error(
+        Diagnostics::inst().emit_error(
             Err::NameIsReserved,
             *binding.location,
             "Name `" + binding.name + "` is reserved and cannot be used."
@@ -445,7 +445,7 @@ SymbolTree::add_overloadable_func(const Binding& binding) {
         }
         else {
             // If existing name is not an overload group...
-            Diagnostics::inst().log_error(
+            Diagnostics::inst().emit_error(
                 Err::NameAlreadyExists,
                 *binding.location,
                 "Name `" + binding.name +
@@ -454,7 +454,7 @@ SymbolTree::add_overloadable_func(const Binding& binding) {
             );
             if (auto locatable =
                     std::dynamic_pointer_cast<Node::ILocatable>(node.value())) {
-                Diagnostics::inst().log_note(
+                Diagnostics::inst().emit_note(
                     locatable->location,
                     "Previous declaration here."
                 );
@@ -504,7 +504,7 @@ SymbolTree::add_overloadable_func(const Binding& binding) {
         }
     }
     if (!conflicts.empty()) {
-        Diagnostics::inst().log_error(
+        Diagnostics::inst().emit_error(
             Err::FunctionOverloadConflict,
             *binding.location,
             "Function overload conflict for function `" + binding.name + "`."
@@ -512,12 +512,12 @@ SymbolTree::add_overloadable_func(const Binding& binding) {
         for (const auto& conflict : conflicts) {
             if (auto locatable =
                     std::dynamic_pointer_cast<Node::ILocatable>(conflict)) {
-                Diagnostics::inst().log_note(
+                Diagnostics::inst().emit_note(
                     locatable->location,
                     "Conflicting overload declared here."
                 );
             }
-            Diagnostics::inst().log_note(
+            Diagnostics::inst().emit_note(
                 "Two function overloads conflict if they have the same "
                 "set of parameters, or if one set of parameters is a "
                 "superset of the other, differing only by optional "
@@ -566,7 +566,7 @@ bool SymbolTree::resolve_unresolved_types() {
         auto name = node->name.lock();
         auto name_found = try_resolve_name_from_scope(name, node->scope.lock());
         if (!name_found) {
-            Diagnostics::inst().log_error(
+            Diagnostics::inst().emit_error(
                 Err::TypeNameNotFound,
                 name->identifier->location,
                 "Could not resolve type name `" +
@@ -579,7 +579,7 @@ bool SymbolTree::resolve_unresolved_types() {
             std::dynamic_pointer_cast<Node::ITypeNode>(name->node.lock());
         // Confirm that the resolved name is indeed a type.
         if (!type_node) {
-            Diagnostics::inst().log_error(
+            Diagnostics::inst().emit_error(
                 Err::NameNotAType,
                 name->identifier->location,
                 "Name reference `" + std::string(name->identifier->lexeme) +
@@ -598,12 +598,12 @@ bool SymbolTree::resolve_unresolved_types() {
             // Node should always be locatable; only primitive types are not
             // locatable, and they are always be resolved.
             auto locatable = std::dynamic_pointer_cast<Node::ILocatable>(node);
-            Diagnostics::inst().log_error(
+            Diagnostics::inst().emit_error(
                 Err::UnsizedNamedType,
                 locatable ? locatable->location : nullptr,
                 "Unsized named type `" + type->to_string() + "` is not allowed."
             );
-            Diagnostics::inst().log_note(
+            Diagnostics::inst().emit_note(
                 "A named type may be unsized if it is excessively deep due to "
                 "possible infinite recursion or if it contains another unsized "
                 "type."

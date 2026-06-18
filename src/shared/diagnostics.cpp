@@ -87,7 +87,7 @@ void Diagnostics::reset() {
     printing_enabled = true;
 }
 
-void Diagnostics::log_error(
+void Diagnostics::emit_error(
     Err ec, const Location& location, std::string_view message
 ) {
     errors.push_back(ec);
@@ -101,7 +101,7 @@ void Diagnostics::log_error(
     }
 }
 
-void Diagnostics::log_error(Err ec, std::string_view message) {
+void Diagnostics::emit_error(Err ec, std::string_view message) {
     errors.push_back(ec);
     if (printing_enabled) {
         *out << colorize::red << "Error " << errors.size() << ": "
@@ -109,7 +109,9 @@ void Diagnostics::log_error(Err ec, std::string_view message) {
     }
 }
 
-void Diagnostics::log_note(const Location& location, std::string_view message) {
+void Diagnostics::emit_note(
+    const Location& location, std::string_view message
+) {
     if (printing_enabled) {
         *out << colorize::cyan << "⤷ Note: " << colorize::reset;
         print_message_with_breaks(message, 8);
@@ -117,7 +119,7 @@ void Diagnostics::log_note(const Location& location, std::string_view message) {
     }
 }
 
-void Diagnostics::log_note(std::string_view message) {
+void Diagnostics::emit_note(std::string_view message) {
     if (printing_enabled) {
         *out << colorize::cyan << "⤷ Note: " << colorize::reset;
         print_message_with_breaks(message, 8);

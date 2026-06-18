@@ -41,7 +41,7 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
         // If an initializer is present, check that the annotation type and
         // initializer type are compatible.
         if (expr_type != nullptr && !expr_type->is_assignable_to(anno_type)) {
-            Diagnostics::inst().log_error(
+            Diagnostics::inst().emit_error(
                 Err::LetTypeMismatch,
                 stmt->expression.value()->location,
                 "Type of initializer expression `" + expr_type->to_string() +
@@ -59,7 +59,7 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
     // At this point, expr_type is not null.
 
     if (!expr_type->is_sized_type().value_or(false)) {
-        Diagnostics::inst().log_error(
+        Diagnostics::inst().emit_error(
             Err::UnsizedTypeAllocation,
             stmt->identifier->location,
             "Cannot allocate variable `" +
@@ -70,7 +70,7 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
     }
 
     if (!stmt->has_var && !stmt->expression.has_value()) {
-        Diagnostics::inst().log_error(
+        Diagnostics::inst().emit_error(
             Err::ImmutableWithoutInitializer,
             stmt->identifier->location,
             "Immutable variable declaration must have an initializer."
@@ -130,7 +130,7 @@ std::any LocalChecker::visit(Stmt::Static* stmt) {
     // If the type of the initializer expression is not assignable to the type
     // of the binding...
     if (!expr_type->is_assignable_to(binding_type)) {
-        Diagnostics::inst().log_error(
+        Diagnostics::inst().emit_error(
             Err::StaticTypeMismatch,
             stmt->expression.value()->location,
             std::string("Type of initializer expression `") +
@@ -141,7 +141,7 @@ std::any LocalChecker::visit(Stmt::Static* stmt) {
     }
     // If the type of the initializer expression is not sized...
     else if (!expr_type->is_sized_type().value_or(false)) {
-        Diagnostics::inst().log_error(
+        Diagnostics::inst().emit_error(
             Err::UnsizedTypeAllocation,
             stmt->identifier->location,
             "Cannot allocate variable `" +
@@ -196,7 +196,7 @@ std::any LocalChecker::visit(Stmt::Func* stmt) {
             else if (!default_expr_type_opt.value()->is_assignable_to(
                          param_binding.type
                      )) {
-                Diagnostics::inst().log_error(
+                Diagnostics::inst().emit_error(
                     Err::DefaultArgTypeMismatch,
                     default_expr_ptr->location,
                     std::string("Type `") +
@@ -231,7 +231,7 @@ std::any LocalChecker::visit(Stmt::Func* stmt) {
     }
     // Body type must be assignable to the return type.
     else if (!body_type_opt.value()->is_assignable_to(func_type->return_type)) {
-        Diagnostics::inst().log_error(
+        Diagnostics::inst().emit_error(
             Err::FunctionReturnTypeMismatch,
             stmt->body.value()->location,
             std::string("Function body type `") +
@@ -260,7 +260,7 @@ std::any LocalChecker::visit(Stmt::Yield* stmt) {
         target_scope =
             symbol_tree->get_local_scope_of_kind(Expr::Block::Kind::Loop);
         if (!target_scope) {
-            Diagnostics::inst().log_error(
+            Diagnostics::inst().emit_error(
                 Err::BreakOutsideLoop,
                 stmt->yield_token->location,
                 "Cannot break outside of a loop."
@@ -272,7 +272,7 @@ std::any LocalChecker::visit(Stmt::Yield* stmt) {
         target_scope =
             symbol_tree->get_local_scope_of_kind(Expr::Block::Kind::Function);
         if (!target_scope) {
-            Diagnostics::inst().log_error(
+            Diagnostics::inst().emit_error(
                 Err::ReturnOutsideFunction,
                 stmt->yield_token->location,
                 "Cannot return outside of a function."
@@ -285,7 +285,7 @@ std::any LocalChecker::visit(Stmt::Yield* stmt) {
             symbol_tree->current_scope
         );
         if (!target_scope.has_value() || target_scope.value() == nullptr) {
-            Diagnostics::inst().log_error(
+            Diagnostics::inst().emit_error(
                 Err::YieldOutsideLocalScope,
                 stmt->yield_token->location,
                 "Cannot yield outside of a local scope."
@@ -315,7 +315,7 @@ std::any LocalChecker::visit(Stmt::Yield* stmt) {
     else if (!expr_type->is_assignable_to(local_scope->yield_type.value())) {
         // If this local scope has a yield type, check that the new yield
         // expression is compatible with it.
-        Diagnostics::inst().log_error(
+        Diagnostics::inst().emit_error(
             Err::YieldTypeMismatch,
             stmt->expression->location,
             std::string("Type `") + stmt->expression->type->to_string() +
@@ -331,7 +331,7 @@ std::any LocalChecker::visit(Stmt::Continue* stmt) {
     auto target_scope =
         symbol_tree->get_local_scope_of_kind(Expr::Block::Kind::Loop);
     if (!target_scope) {
-        Diagnostics::inst().log_error(
+        Diagnostics::inst().emit_error(
             Err::ContinueOutsideLoop,
             stmt->continue_token->location,
             "Cannot use continue outside of a loop."
@@ -358,7 +358,7 @@ std::any LocalChecker::visit(Stmt::Dealloc* stmt) {
     auto expr_type = expr_type_opt.value();
 
     if (Type::is_a<Type::Nullptr>(expr_type)) {
-        Diagnostics::inst().log_error(
+        Diagnostics::inst().emit_error(
             Err::DeallocNullptr,
             stmt->expression->location,
             "Cannot deallocate pointer of nullptr type."
@@ -366,7 +366,7 @@ std::any LocalChecker::visit(Stmt::Dealloc* stmt) {
         return std::any();
     }
     else if (!Type::is_a<Type::IRawPtr>(expr_type)) {
-        Diagnostics::inst().log_error(
+        Diagnostics::inst().emit_error(
             Err::DeallocNonRawPointer,
             stmt->expression->location,
             "Cannot deallocate non-raw pointer type `" +
@@ -375,7 +375,7 @@ std::any LocalChecker::visit(Stmt::Dealloc* stmt) {
         return std::any();
     }
     else if (!symbol_tree->is_context_unsafe()) {
-        Diagnostics::inst().log_error(
+        Diagnostics::inst().emit_error(
             Err::DeallocOutsideUnsafeBlock,
             stmt->expression->location,
             "Cannot deallocate outside of unsafe context."

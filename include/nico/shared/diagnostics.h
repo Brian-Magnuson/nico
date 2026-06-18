@@ -104,7 +104,7 @@ public:
      * @param location The location of the error in the source code.
      * @param message The message to report with the error.
      */
-    void log_error(Err ec, const Location& location, std::string_view message);
+    void emit_error(Err ec, const Location& location, std::string_view message);
 
     /**
      * @brief Reports an error message with a location pointer.
@@ -118,10 +118,11 @@ public:
      *
      * @warning If `location` is `nullptr`, this function will panic.
      */
-    void log_error(Err ec, const Location* location, std::string_view message) {
+    void
+    emit_error(Err ec, const Location* location, std::string_view message) {
         if (location == nullptr)
-            panic("Diagnostics::log_error was given a null Location pointer");
-        log_error(ec, *location, message);
+            panic("Diagnostics::emit_error was given a null Location pointer");
+        emit_error(ec, *location, message);
     }
 
     /**
@@ -133,7 +134,7 @@ public:
      * @param ec The error code to report.
      * @param message The message to report with the error.
      */
-    void log_error(Err ec, std::string_view message);
+    void emit_error(Err ec, std::string_view message);
 
     /**
      * @brief Reports a note message with a location.
@@ -144,7 +145,7 @@ public:
      * @param location The location of the note in the source code.
      * @param message The message to report with the note.
      */
-    void log_note(const Location& location, std::string_view message);
+    void emit_note(const Location& location, std::string_view message);
 
     /**
      * @brief Reports a note message with a location pointer.
@@ -157,10 +158,10 @@ public:
      *
      * @warning If `location` is `nullptr`, this function will panic.
      */
-    void log_note(const Location* location, std::string_view message) {
+    void emit_note(const Location* location, std::string_view message) {
         if (location == nullptr)
-            panic("Diagnostics::note was given a null Location pointer");
-        log_note(*location, message);
+            panic("Diagnostics::emit_note was given a null Location pointer");
+        emit_note(*location, message);
     }
 
     /**
@@ -171,7 +172,7 @@ public:
      *
      * @param message The message to report with the note.
      */
-    void log_note(std::string_view message);
+    void emit_note(std::string_view message);
 
     /**
      * @brief Gets the errors that have been reported.
