@@ -149,6 +149,11 @@ enum class Tok {
     KwPrintout, // Temporary print keyword for development.
     _KwStatementStartersEnd,
 
+    KwVar,
+    KwMut,
+    KwConst,
+    KwGlobal,
+
     KwAnd,
     KwOr,
     KwNot,
@@ -157,7 +162,6 @@ enum class Tok {
     KwIf,
     KwThen,
     KwElse,
-    KwElif,
     KwLoop,
     KwWhile,
     KwDo,
@@ -165,17 +169,13 @@ enum class Tok {
     KwOf,
     KwWith,
 
-    KwVar,
-    KwMut,
-    KwConst,
-    KwGlobal,
-
     KwAs,
     KwIs,
     KwSizeof,
     KwTypeof,
     KwTransmute,
     KwAlloc,
+    KwNew,
 
     _KeywordsEnd
 };

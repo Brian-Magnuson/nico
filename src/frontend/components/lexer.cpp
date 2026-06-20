@@ -26,12 +26,30 @@ std::unordered_map<std::string_view, Tok> Lexer::keywords = {
 
     // Keywords
 
+    {"let", Tok::KwLet},
+    {"static", Tok::KwStatic},
+    {"field", Tok::KwField},
+    {"func", Tok::KwFunc},
+    {"namespace", Tok::KwNamespace},
+    {"extern", Tok::KwExtern},
+    {"struct", Tok::KwStruct},
+    {"typedef", Tok::KwTypedef},
+
+    {"break", Tok::KwBreak},
+    {"continue", Tok::KwContinue},
+    {"return", Tok::KwReturn},
+    {"yield", Tok::KwYield},
+    {"pass", Tok::KwPass},
+
+    {"dealloc", Tok::KwDealloc},
+    {"printout", Tok::KwPrintout},
+
+    {"var", Tok::KwVar},
+    {"mut", Tok::KwMut},
+
     {"and", Tok::KwAnd},
     {"or", Tok::KwOr},
     {"not", Tok::KwNot},
-    {"as", Tok::KwAs},
-    {"is", Tok::KwIs},
-
     {"block", Tok::KwBlock},
     {"unsafe", Tok::KwUnsafe},
     {"if", Tok::KwIf},
@@ -43,31 +61,14 @@ std::unordered_map<std::string_view, Tok> Lexer::keywords = {
     {"for", Tok::KwFor},
     {"of", Tok::KwOf},
     {"with", Tok::KwWith},
+
+    {"as", Tok::KwAs},
+    {"is", Tok::KwIs},
     {"sizeof", Tok::KwSizeof},
-    {"alloc", Tok::KwAlloc},
-    {"transmute", Tok::KwTransmute},
-
     {"typeof", Tok::KwTypeof},
-
-    {"let", Tok::KwLet},
-    {"static", Tok::KwStatic},
-    {"field", Tok::KwField},
-    {"var", Tok::KwVar},
-    {"mut", Tok::KwMut},
-    {"func", Tok::KwFunc},
-    {"namespace", Tok::KwNamespace},
-    {"extern", Tok::KwExtern},
-    {"struct", Tok::KwStruct},
-    {"typedef", Tok::KwTypedef},
-
-    {"pass", Tok::KwPass},
-    {"yield", Tok::KwYield},
-    {"break", Tok::KwBreak},
-    {"continue", Tok::KwContinue},
-    {"return", Tok::KwReturn},
-    {"dealloc", Tok::KwDealloc},
-
-    {"printout", Tok::KwPrintout},
+    {"transmute", Tok::KwTransmute},
+    {"alloc", Tok::KwAlloc},
+    {"new", Tok::KwNew}
 };
 
 std::unordered_set<std::string_view> Lexer::reserved_words = {
