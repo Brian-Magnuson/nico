@@ -51,6 +51,7 @@ class LocalChecker : public Stmt::Visitor {
     std::any visit(Stmt::Namespace* stmt) override;
     std::any visit(Stmt::ExternBlock* stmt) override;
     std::any visit(Stmt::TypeDef* stmt) override;
+    std::any visit(Stmt::StructDef* stmt) override;
     std::any visit(Stmt::Eof* stmt) override;
 
     /**

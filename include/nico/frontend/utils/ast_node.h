@@ -310,6 +310,22 @@ public:
     std::shared_ptr<Token> identifier;
     // The properties of the struct.
     std::vector<Prop> properties;
+    // The non-property statements in the struct body.
+    std::vector<std::shared_ptr<Stmt::IDeclAllowed>> stmts;
+
+    StructDef(
+        std::shared_ptr<Token> start_token,
+        std::shared_ptr<Token> identifier,
+        std::vector<Prop>&& properties,
+        std::vector<std::shared_ptr<Stmt::IDeclAllowed>>&& stmts
+    )
+        : identifier(identifier),
+          properties(std::move(properties)),
+          stmts(std::move(stmts)) {
+        location = &start_token->location;
+    }
+
+    std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };
 
 /**

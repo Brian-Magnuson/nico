@@ -456,6 +456,7 @@ public:
         virtual std::any visit(Namespace* stmt) = 0;
         virtual std::any visit(ExternBlock* stmt) = 0;
         virtual std::any visit(TypeDef* stmt) = 0;
+        virtual std::any visit(StructDef* stmt) = 0;
         virtual std::any visit(Eof* stmt) = 0;
     };
 

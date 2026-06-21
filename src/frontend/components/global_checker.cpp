@@ -340,6 +340,11 @@ std::any GlobalChecker::visit(Stmt::TypeDef* stmt) {
     return std::any();
 }
 
+std::any GlobalChecker::visit(Stmt::StructDef* stmt) {
+    // TODO: Implement struct definitions.
+    return std::any();
+}
+
 std::any GlobalChecker::visit(Stmt::Eof*) {
     // Do nothing.
     return std::any();

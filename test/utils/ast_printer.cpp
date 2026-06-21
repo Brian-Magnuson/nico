@@ -1,5 +1,6 @@
 #include "ast_printer.h"
 
+#include <any>
 #include <cstdint>
 
 namespace nico {
@@ -194,6 +195,11 @@ std::any AstPrinter::visit(Stmt::TypeDef* stmt) {
     str += " " + stmt->annotation->to_string();
     str += ")";
     return str;
+}
+
+std::any AstPrinter::visit(Stmt::StructDef* stmt) {
+    // TODO: Implement struct definitions.
+    return std::string("(stmt:structdef UNIMPLEMENTED)");
 }
 
 std::any AstPrinter::visit(Stmt::Eof* /*stmt*/) {

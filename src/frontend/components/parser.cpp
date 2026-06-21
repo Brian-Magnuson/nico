@@ -1692,6 +1692,11 @@ std::optional<std::shared_ptr<Stmt>> Parser::typedef_statement() {
     );
 }
 
+std::optional<std::shared_ptr<Stmt>> Parser::struct_def_statement() {
+    // TODO: Implement struct definitions.
+    return std::nullopt;
+}
+
 std::optional<std::shared_ptr<Stmt>> Parser::print_statement() {
     auto print_token = previous();
     std::vector<std::shared_ptr<Expr>> expressions;
@@ -1787,6 +1792,9 @@ std::optional<std::shared_ptr<Stmt>> Parser::statement() {
     }
     else if (match({Tok::KwTypedef})) {
         stmt = typedef_statement();
+    }
+    else if (match({Tok::KwStruct})) {
+        stmt = struct_def_statement();
     }
     else if (match({Tok::Eof})) {
         if (modifiers.has_value()) {

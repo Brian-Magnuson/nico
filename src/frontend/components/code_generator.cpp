@@ -314,6 +314,11 @@ std::any CodeGenerator::visit(Stmt::TypeDef* /*stmt*/) {
     return std::any();
 }
 
+std::any CodeGenerator::visit(Stmt::StructDef* stmt) {
+    // TODO: Implement struct definitions.
+    return std::any();
+}
+
 std::any CodeGenerator::visit(Stmt::Eof* stmt) {
     // Generate code for the end-of-file (EOF) statement
     return std::any();

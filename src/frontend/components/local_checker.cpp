@@ -417,6 +417,14 @@ std::any LocalChecker::visit(Stmt::TypeDef* /*stmt*/) {
     return std::any();
 }
 
+std::any LocalChecker::visit(Stmt::StructDef* stmt) {
+    // TODO: Implement struct definitions.
+
+    // Struct definitions may contain functions, which contain execution-space
+    // statements, so we need to check struct definitions.
+    return std::any();
+}
+
 std::any LocalChecker::visit(Stmt::Eof* stmt) {
     return std::any();
 }
