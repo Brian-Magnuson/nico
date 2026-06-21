@@ -198,8 +198,33 @@ std::any AstPrinter::visit(Stmt::TypeDef* stmt) {
 }
 
 std::any AstPrinter::visit(Stmt::StructDef* stmt) {
-    // TODO: Implement struct definitions.
-    return std::string("(stmt:structdef UNIMPLEMENTED)");
+    std::string str =
+        "(stmt:structdef " + std::string(stmt->identifier->lexeme);
+
+    for (const auto& prop : stmt->properties) {
+        std::string prop_str = " (";
+        if (prop.mutability == Binding::Mutability::Mut) {
+            prop_str += "mut ";
+        }
+        else if (prop.mutability == Binding::Mutability::Var) {
+            prop_str += "var ";
+        }
+        prop_str += std::string(prop.identifier->lexeme) + " " +
+                    prop.annotation->to_string();
+        if (prop.expression.has_value()) {
+            prop_str += " " + std::any_cast<std::string>(
+                                  prop.expression.value()->accept(this, false)
+                              );
+        }
+        prop_str += ")";
+        str += " " + prop_str;
+    }
+    str += " {";
+    for (const auto& inner_stmt : stmt->stmts) {
+        str += " " + std::any_cast<std::string>(inner_stmt->accept(this));
+    }
+    str += " })";
+    return str;
 }
 
 std::any AstPrinter::visit(Stmt::Eof* /*stmt*/) {
