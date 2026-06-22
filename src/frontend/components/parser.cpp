@@ -2091,8 +2091,17 @@ void Parser::run_parse(std::unique_ptr<FrontendContext>& context) {
 
     while (!is_at_end()) {
         auto stmt = statement();
-        if (stmt) {
-            context->stmts.push_back(*stmt);
+        if (!stmt.has_value()) {
+            synchronize_statements();
+            continue;
+        }
+        else if (!PTR_INSTANCEOF(stmt.value(), Stmt::ITopLevel)) {
+            Diagnostics::inst().emit_error(
+                Err::NonTopLevelAllowedStmt,
+                stmt.value()->location,
+                "Top level does not allow this kind of statement."
+            );
+            continue;
         }
         else if (repl_mode && incomplete_statement) {
             context->status = Status::Pause(Request::Input);
@@ -2100,9 +2109,7 @@ void Parser::run_parse(std::unique_ptr<FrontendContext>& context) {
             context->stmts.resize(start_size);
             return;
         }
-        else {
-            synchronize_statements();
-        }
+        context->stmts.push_back(*stmt);
     }
 
     if (Diagnostics::inst().get_errors().empty()) {

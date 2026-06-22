@@ -76,6 +76,8 @@ enum class Err {
     // A non-declaration-space statement was found in a region that only allows
     // declaration-space statements.
     NonDeclAllowedStmt,
+    // A non-top-level statement was found at the top level.
+    NonTopLevelAllowedStmt,
     // An extern block statement was neither a variable nor a function.
     ExternBlockStmtNotVarOrFunc,
     // A compile-time constant expression was expected but not found.

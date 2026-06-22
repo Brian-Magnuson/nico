@@ -413,8 +413,10 @@ public:
  */
 class Stmt : public std::enable_shared_from_this<Stmt> {
 public:
+    class ITopLevel;
     class IDeclAllowed;
     class IBindingDecl;
+    class IStructMember;
 
     class IExecAllowed;
 
@@ -425,8 +427,10 @@ public:
     class Func;
     class Namespace;
     class ExternBlock;
-    class StructDef;
     class TypeDef;
+    class StructDef;
+
+    class Field;
 
     class Print;
     class Dealloc;

@@ -15,13 +15,27 @@ namespace nico {
 // MARK: Statements
 
 /**
- * @brief A statement in the AST that is allowed in a region that is strictly
- * declaration space.
+ * @brief A statement in the AST that is allowed at the top level of a file.
+ *
+ * Includes both declaration-space and execution-space statements.
  *
  * This class adds no additional members to Stmt.
  * It is used for organizational purposes.
  */
-class Stmt::IDeclAllowed : virtual public Stmt {};
+class Stmt::ITopLevel : virtual public Stmt {};
+
+/**
+ * @brief A statement in the AST that is allowed in a region that is strictly
+ * declaration space.
+ *
+ * To put it another way, for regions that only allow declaration-space
+ * statements, this statement will be allowed in that region. Statements that do
+ * not inherit this interface will not be allowed in that region.
+ *
+ * This class adds no additional members to Stmt::ITopLevelAllowed.
+ * It is used for organizational purposes.
+ */
+class Stmt::IDeclAllowed : virtual public Stmt::ITopLevel {};
 
 /**
  * @brief A declaration-space allowed statement that has its own binding entry.
@@ -45,13 +59,28 @@ public:
 };
 
 /**
+ * @brief A struct member statement.
+ *
+ * This class adds no additional members to Stmt.
+ * It is used to differentiate struct members from other kinds of declarations.
+ * It is also used to allow special modifiers for struct members in the future,
+ * such as visibility modifiers.
+ *
+ */
+class Stmt::IStructMember : virtual public Stmt {};
+
+/**
  * @brief A statement in the AST that is allowed in a region that is strictly
  * execution space.
  *
- * This class adds no additional members to Stmt.
+ * To put it another way, for regions that only allow execution-space
+ * statements, this statement will be allowed in that region. Statements that do
+ * not inherit this interface will not be allowed in that region.
+ *
+ * This class adds no additional members to Stmt::ITopLevelAllowed.
  * It is used for organizational purposes.
  */
-class Stmt::IExecAllowed : virtual public Stmt {};
+class Stmt::IExecAllowed : virtual public Stmt::ITopLevel {};
 
 /**
  * @brief An expression statement.
@@ -269,66 +298,6 @@ public:
 };
 
 /**
- * @brief A struct definition statement.
- *
- * Struct definition statements introduce a new struct type into the current
- * scope and contain a list of properties that are part of the struct.
- */
-class Stmt::StructDef : public Stmt::IDeclAllowed {
-public:
-    /**
-     * @brief A property in a struct definition.
-     *
-     * Properties are similar to variables in that they have a name and type
-     * annotation. But unlike variables, they do not have a binding entry. This
-     * is because properties are accessed through the binding entry of the
-     * struct instance in which they are contained.
-     */
-    struct Prop {
-        // The mutability of the property.
-        Binding::Mutability mutability;
-        // The identifier token.
-        std::shared_ptr<Token> identifier;
-        // The type annotation, always required.
-        std::shared_ptr<Annotation> annotation;
-        // An optional expression for the default value.
-        std::optional<std::shared_ptr<Expr>> expression;
-
-        Prop(
-            Binding::Mutability mutability,
-            std::shared_ptr<Token> identifier,
-            std::shared_ptr<Annotation> annotation,
-            std::optional<std::shared_ptr<Expr>> expression
-        )
-            : mutability(mutability),
-              identifier(identifier),
-              annotation(annotation),
-              expression(expression) {}
-    };
-
-    // The name of the struct.
-    std::shared_ptr<Token> identifier;
-    // The properties of the struct.
-    std::vector<Prop> properties;
-    // The non-property statements in the struct body.
-    std::vector<std::shared_ptr<Stmt::IDeclAllowed>> stmts;
-
-    StructDef(
-        std::shared_ptr<Token> start_token,
-        std::shared_ptr<Token> identifier,
-        std::vector<Prop>&& properties,
-        std::vector<std::shared_ptr<Stmt::IDeclAllowed>>&& stmts
-    )
-        : identifier(identifier),
-          properties(std::move(properties)),
-          stmts(std::move(stmts)) {
-        location = &start_token->location;
-    }
-
-    std::any accept(Visitor* visitor) override { return visitor->visit(this); }
-};
-
-/**
  * @brief A type definition statement.
  *
  * Type definition statements are a kind of declaration statement used to bind a
@@ -355,6 +324,65 @@ public:
     }
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
+};
+
+/**
+ * @brief A struct definition statement.
+ *
+ * Struct definition statements introduce a new struct type into the current
+ * scope and contain a list of properties that are part of the struct.
+ */
+class Stmt::StructDef : public Stmt::IDeclAllowed {
+public:
+    // The name of the struct.
+    std::shared_ptr<Token> identifier;
+    // The fields of the struct.
+    std::vector<std::shared_ptr<Stmt::Field>> fields;
+    // The non-field statements in the struct body.
+    std::vector<std::shared_ptr<Stmt::IDeclAllowed>> stmts;
+
+    StructDef(
+        std::shared_ptr<Token> start_token,
+        std::shared_ptr<Token> identifier,
+        std::vector<std::shared_ptr<Stmt::Field>>&& fields,
+        std::vector<std::shared_ptr<Stmt::IDeclAllowed>>&& stmts
+    )
+        : identifier(identifier),
+          fields(std::move(fields)),
+          stmts(std::move(stmts)) {
+        location = &start_token->location;
+    }
+
+    std::any accept(Visitor* visitor) override { return visitor->visit(this); }
+};
+
+/**
+ * @brief
+ *
+ */
+class Stmt::Field : public Stmt::IStructMember {
+public:
+    // The mutability of the field.
+    Binding::Mutability mutability;
+    // The identifier token.
+    std::shared_ptr<Token> identifier;
+    // The type annotation for the field, always required.
+    std::shared_ptr<Annotation> annotation;
+    // The expression for the field initializer; nullopt if absent.
+    std::optional<std::shared_ptr<Expr>> expression;
+
+    Field(
+        Binding::Mutability mutability,
+        std::shared_ptr<Token> identifier,
+        std::shared_ptr<Annotation> annotation,
+        std::optional<std::shared_ptr<Expr>> expression
+    )
+        : mutability(mutability),
+          identifier(identifier),
+          annotation(annotation),
+          expression(expression) {
+        location = &identifier->location;
+    }
 };
 
 /**
