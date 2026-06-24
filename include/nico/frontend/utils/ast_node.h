@@ -32,7 +32,7 @@ class Stmt::ITopLevel : virtual public Stmt {};
  * statements, this statement will be allowed in that region. Statements that do
  * not inherit this interface will not be allowed in that region.
  *
- * This class adds no additional members to Stmt::ITopLevelAllowed.
+ * This class adds no additional members to Stmt::ITopLevel.
  * It is used for organizational purposes.
  */
 class Stmt::IDeclAllowed : virtual public Stmt::ITopLevel {};
@@ -77,7 +77,7 @@ class Stmt::IStructMember : virtual public Stmt {};
  * statements, this statement will be allowed in that region. Statements that do
  * not inherit this interface will not be allowed in that region.
  *
- * This class adds no additional members to Stmt::ITopLevelAllowed.
+ * This class adds no additional members to Stmt::ITopLevel.
  * It is used for organizational purposes.
  */
 class Stmt::IExecAllowed : virtual public Stmt::ITopLevel {};
@@ -386,10 +386,7 @@ public:
         location = &start_token->location;
     }
 
-    std::any accept(Visitor* visitor) override {
-        // TODO: Determine if this needs an implementation.
-        panic("Stmt::Field::accept: Not implemented yet.");
-    }
+    std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };
 
 /**

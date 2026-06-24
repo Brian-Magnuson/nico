@@ -227,6 +227,25 @@ std::any AstPrinter::visit(Stmt::StructDef* stmt) {
     return str;
 }
 
+std::any AstPrinter::visit(Stmt::Field* stmt) {
+    std::string str = "(stmt:field ";
+    if (stmt->mutability == Binding::Mutability::Mut) {
+        str += "mut ";
+    }
+    else if (stmt->mutability == Binding::Mutability::Var) {
+        str += "var ";
+    }
+    str += std::string(stmt->identifier->lexeme) + " " +
+           stmt->annotation->to_string();
+    if (stmt->expression.has_value()) {
+        str += " " + std::any_cast<std::string>(
+                         stmt->expression.value()->accept(this, false)
+                     );
+    }
+    str += ")";
+    return str;
+}
+
 std::any AstPrinter::visit(Stmt::Eof* /*stmt*/) {
     return std::string("(stmt:eof)");
 }

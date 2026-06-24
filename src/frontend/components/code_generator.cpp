@@ -319,6 +319,11 @@ std::any CodeGenerator::visit(Stmt::StructDef* stmt) {
     return std::any();
 }
 
+std::any CodeGenerator::visit(Stmt::Field* /*stmt*/) {
+    // Field definitions do not generate any code.
+    return std::any();
+}
+
 std::any CodeGenerator::visit(Stmt::Eof* stmt) {
     // Generate code for the end-of-file (EOF) statement
     return std::any();

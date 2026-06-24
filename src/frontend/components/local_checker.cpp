@@ -425,6 +425,11 @@ std::any LocalChecker::visit(Stmt::StructDef* stmt) {
     return std::any();
 }
 
+std::any LocalChecker::visit(Stmt::Field* /*stmt*/) {
+    // Field definitions do not contain execution-space statements.
+    return std::any();
+}
+
 std::any LocalChecker::visit(Stmt::Eof* stmt) {
     return std::any();
 }

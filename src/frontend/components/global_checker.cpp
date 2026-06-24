@@ -345,6 +345,11 @@ std::any GlobalChecker::visit(Stmt::StructDef* stmt) {
     return std::any();
 }
 
+std::any GlobalChecker::visit(Stmt::Field* stmt) {
+    // TODO: Implement field definitions.
+    return std::any();
+}
+
 std::any GlobalChecker::visit(Stmt::Eof*) {
     // Do nothing.
     return std::any();

@@ -84,6 +84,11 @@ std::any MIRBuilder::visit(Stmt::StructDef* stmt) {
     return {};
 }
 
+std::any MIRBuilder::visit(Stmt::Field* stmt) {
+    // TODO: Implementation for visiting Field statements goes here.
+    return {};
+}
+
 std::any MIRBuilder::visit(Stmt::Eof* stmt) {
     // TODO: Implementation for visiting Eof statements goes here.
     return {};
