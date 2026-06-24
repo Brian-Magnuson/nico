@@ -100,6 +100,8 @@ enum class Err {
     UnexpectedToken,
     // A let statement was found without a type or value.
     VariableWithoutTypeOrValue,
+    // A field statement was found without a type annotation.
+    FieldWithoutType,
     // A typeof annotation was found without an opening parenthesis.
     TypeofWithoutOpeningParen,
     // A function statement was found without an opening parenthesis.

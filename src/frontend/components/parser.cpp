@@ -1282,6 +1282,74 @@ std::optional<std::shared_ptr<Stmt>> Parser::variable_statement() {
     }
 }
 
+std::optional<std::shared_ptr<Stmt>> Parser::field_statement() {
+    auto start_token = previous();
+    // Check for `var` or `mut`
+    Binding::Mutability mutability = Binding::Mutability::None;
+    if (match({Tok::KwVar})) {
+        mutability = Binding::Mutability::Var;
+    }
+    else if (match({Tok::KwMut})) {
+        mutability = Binding::Mutability::Mut;
+    }
+
+    // Get identifier
+    if (!match({Tok::Identifier})) {
+        Diagnostics::inst().emit_error(
+            Err::NotAnIdentifier,
+            previous()->location,
+            "Expected identifier in field declaration."
+        );
+        return std::nullopt;
+    }
+    auto identifier = previous();
+
+    if (match({Tok::ColonColon})) {
+        Diagnostics::inst().emit_error(
+            Err::DeclarationIdentWithColonColon,
+            previous()->location,
+            "Declaration identifier cannot contain `::`."
+        );
+        return std::nullopt;
+    }
+
+    // Get type annotation
+    std::optional<std::shared_ptr<Annotation>> anno = std::nullopt;
+    if (match({Tok::Colon})) {
+        anno = annotation();
+        if (!anno) {
+            // At this point, an error has already been logged.
+            return std::nullopt;
+        }
+    }
+    else {
+        Diagnostics::inst().emit_error(
+            Err::FieldWithoutType,
+            peek()->location,
+            "Field declaration must have a type annotation."
+        );
+        return std::nullopt;
+    }
+
+    // Get optional default value
+    std::optional<std::shared_ptr<Expr>> default_value = std::nullopt;
+    if (match({Tok::Eq})) {
+        default_value = expression();
+        if (!default_value) {
+            // At this point, an error has already been logged.
+            return std::nullopt;
+        }
+    }
+
+    return std::make_shared<Stmt::Field>(
+        start_token,
+        mutability,
+        identifier,
+        anno.value(),
+        default_value
+    );
+}
+
 std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
     auto start_token = previous();
     // Identifier
@@ -1780,6 +1848,9 @@ std::optional<std::shared_ptr<Stmt>> Parser::statement() {
 
     if (match({Tok::KwLet, Tok::KwStatic})) {
         stmt = variable_statement();
+    }
+    else if (match({Tok::KwField})) {
+        stmt = field_statement();
     }
     else if (match({Tok::KwFunc})) {
         stmt = func_statement();

@@ -485,6 +485,17 @@ class Parser {
     std::optional<std::shared_ptr<Stmt>> variable_statement();
 
     /**
+     * @brief Parses a field statement.
+     *
+     * A field statement is used in struct definitions to define a field of the
+     * struct.
+     *
+     * @return std::optional<std::shared_ptr<Stmt>> A shared pointer to the
+     * parsed statement, or nullopt if the statement could not be parsed.
+     */
+    std::optional<std::shared_ptr<Stmt>> field_statement();
+
+    /**
      * @brief Parses a function statement.
      *
      * A function statement introduces a new function into the current scope.

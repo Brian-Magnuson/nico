@@ -357,8 +357,9 @@ public:
 };
 
 /**
- * @brief
+ * @brief A field declaration statement.
  *
+ * Field declaration statements introduce a new field into a struct definition.
  */
 class Stmt::Field : public Stmt::IStructMember {
 public:
@@ -372,6 +373,7 @@ public:
     std::optional<std::shared_ptr<Expr>> expression;
 
     Field(
+        std::shared_ptr<Token> start_token,
         Binding::Mutability mutability,
         std::shared_ptr<Token> identifier,
         std::shared_ptr<Annotation> annotation,
@@ -381,7 +383,12 @@ public:
           identifier(identifier),
           annotation(annotation),
           expression(expression) {
-        location = &identifier->location;
+        location = &start_token->location;
+    }
+
+    std::any accept(Visitor* visitor) override {
+        // TODO: Determine if this needs an implementation.
+        panic("Stmt::Field::accept: Not implemented yet.");
     }
 };
 
