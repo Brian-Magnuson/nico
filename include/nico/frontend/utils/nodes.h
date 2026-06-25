@@ -416,7 +416,7 @@ public:
     class ITopLevel;
     class IDeclAllowed;
     class IBindingDecl;
-    class IStructMember;
+    class IStructAllowed;
 
     class IExecAllowed;
 

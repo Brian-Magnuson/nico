@@ -76,6 +76,8 @@ enum class Err {
     // A non-declaration-space statement was found in a region that only allows
     // declaration-space statements.
     NonDeclAllowedStmt,
+    // A non-struct-allowed statement was found in a struct definition.
+    NonStructAllowedStmt,
     // A non-top-level statement was found at the top level.
     NonTopLevelAllowedStmt,
     // An extern block statement was neither a variable nor a function.
@@ -128,6 +130,8 @@ enum class Err {
     NamespaceWithoutBlock,
     // An extern block declaration was found without a block.
     ExternBlockWithoutBlock,
+    // A struct definition was found without a block.
+    StructWithoutBlock,
     // A `var` keyword was found without an address-of operator.
     UnexpectedVarInExpression,
     // A variable annotation contained an unexpected `var` keyword.

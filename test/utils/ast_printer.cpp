@@ -199,27 +199,7 @@ std::any AstPrinter::visit(Stmt::TypeDef* stmt) {
 
 std::any AstPrinter::visit(Stmt::StructDef* stmt) {
     std::string str =
-        "(stmt:structdef " + std::string(stmt->identifier->lexeme);
-
-    for (const auto& field : stmt->fields) {
-        std::string prop_str = " (";
-        if (field->mutability == Binding::Mutability::Mut) {
-            prop_str += "mut ";
-        }
-        else if (field->mutability == Binding::Mutability::Var) {
-            prop_str += "var ";
-        }
-        prop_str += std::string(field->identifier->lexeme) + " " +
-                    field->annotation->to_string();
-        if (field->expression.has_value()) {
-            prop_str += " " + std::any_cast<std::string>(
-                                  field->expression.value()->accept(this, false)
-                              );
-        }
-        prop_str += ")";
-        str += " " + prop_str;
-    }
-    str += " {";
+        "(stmt:structdef " + std::string(stmt->identifier->lexeme) + " {";
     for (const auto& inner_stmt : stmt->stmts) {
         str += " " + std::any_cast<std::string>(inner_stmt->accept(this));
     }

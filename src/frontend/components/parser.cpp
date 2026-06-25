@@ -1761,8 +1761,84 @@ std::optional<std::shared_ptr<Stmt>> Parser::typedef_statement() {
 }
 
 std::optional<std::shared_ptr<Stmt>> Parser::struct_def_statement() {
-    // TODO: Implement struct definitions.
-    return std::nullopt;
+    auto struct_token = previous();
+    if (!match({Tok::Identifier})) {
+        Diagnostics::inst().emit_error(
+            Err::NotAnIdentifier,
+            peek()->location,
+            "Expected identifier after `struct`."
+        );
+    }
+    auto identifier = previous();
+
+    Tok closing_token_type;
+    if (match({Tok::Indent})) {
+        closing_token_type = Tok::Dedent;
+    }
+    else if (match({Tok::LBrace})) {
+        closing_token_type = Tok::RBrace;
+    }
+    else if (peek()->tok_type == Tok::Colon) {
+        Diagnostics::inst().emit_error(
+            Err::ColonInsteadOfIndent,
+            peek()->location,
+            "Unexpected `:` after extern block identifier."
+        );
+        Diagnostics::inst().emit_note(
+            "Indentation is possibly ignored here. Consider using `{` for "
+            "this "
+            "block or using indentation for the surrounding scope."
+        );
+        return std::nullopt;
+    }
+    else {
+        Diagnostics::inst().emit_error(
+            Err::StructWithoutBlock,
+            peek()->location,
+            "Expected indented block or `{` after struct declaration."
+        );
+        return std::nullopt;
+    }
+
+    // Body
+    std::vector<std::shared_ptr<Stmt::IStructAllowed>> body_stmts;
+    while (!match({closing_token_type})) {
+        auto stmt_opt = statement();
+        if (!stmt_opt) {
+            synchronize_statements();
+            continue;
+        }
+        auto stmt = stmt_opt.value();
+
+        if (!PTR_INSTANCEOF(stmt, Stmt::IStructAllowed)) {
+            Diagnostics::inst().emit_error(
+                Err::NonStructAllowedStmt,
+                stmt->location,
+                "Struct does not allow this kind of statement."
+            );
+            Diagnostics::inst().emit_note(
+                "Only struct member declarations and declaration-space "
+                "statements are allowed in struct definitions."
+            );
+            if (PTR_INSTANCEOF(stmt, Stmt::Let)) {
+                Diagnostics::inst().emit_note(
+                    "Variables declared with `let` are execution-space "
+                    "statements. Consider using `static` instead of `let`."
+                );
+            }
+            continue;
+        }
+
+        auto struct_allowed_stmt =
+            std::dynamic_pointer_cast<Stmt::IStructAllowed>(stmt);
+        body_stmts.push_back(struct_allowed_stmt);
+    }
+
+    return std::make_shared<Stmt::StructDef>(
+        struct_token,
+        identifier,
+        std::move(body_stmts)
+    );
 }
 
 std::optional<std::shared_ptr<Stmt>> Parser::print_statement() {

@@ -25,6 +25,17 @@ namespace nico {
 class Stmt::ITopLevel : virtual public Stmt {};
 
 /**
+ * @brief A statement that is allowed inside a struct definition.
+ *
+ * This class adds no additional members to Stmt.
+ * It is used to differentiate struct members from other kinds of declarations.
+ * It is also used to allow special modifiers for struct members in the future,
+ * such as visibility modifiers.
+ *
+ */
+class Stmt::IStructAllowed : virtual public Stmt {};
+
+/**
  * @brief A statement in the AST that is allowed in a region that is strictly
  * declaration space.
  *
@@ -32,10 +43,11 @@ class Stmt::ITopLevel : virtual public Stmt {};
  * statements, this statement will be allowed in that region. Statements that do
  * not inherit this interface will not be allowed in that region.
  *
- * This class adds no additional members to Stmt::ITopLevel.
- * It is used for organizational purposes.
+ * This class adds no additional members to Stmt::ITopLevel or
+ * Stmt::IStructAllowed. It is used for organizational purposes.
  */
-class Stmt::IDeclAllowed : virtual public Stmt::ITopLevel {};
+class Stmt::IDeclAllowed : virtual public Stmt::ITopLevel,
+                           virtual public Stmt::IStructAllowed {};
 
 /**
  * @brief A declaration-space allowed statement that has its own binding entry.
@@ -57,17 +69,6 @@ public:
 
     virtual bool apply_modifier(const Modifier& modifier) override;
 };
-
-/**
- * @brief A struct member statement.
- *
- * This class adds no additional members to Stmt.
- * It is used to differentiate struct members from other kinds of declarations.
- * It is also used to allow special modifiers for struct members in the future,
- * such as visibility modifiers.
- *
- */
-class Stmt::IStructMember : virtual public Stmt {};
 
 /**
  * @brief A statement in the AST that is allowed in a region that is strictly
@@ -336,20 +337,15 @@ class Stmt::StructDef : public Stmt::IDeclAllowed {
 public:
     // The name of the struct.
     std::shared_ptr<Token> identifier;
-    // The fields of the struct.
-    std::vector<std::shared_ptr<Stmt::Field>> fields;
-    // The non-field statements in the struct body.
-    std::vector<std::shared_ptr<Stmt::IDeclAllowed>> stmts;
+    // The statements in the struct body.
+    std::vector<std::shared_ptr<Stmt::IStructAllowed>> stmts;
 
     StructDef(
         std::shared_ptr<Token> start_token,
         std::shared_ptr<Token> identifier,
-        std::vector<std::shared_ptr<Stmt::Field>>&& fields,
-        std::vector<std::shared_ptr<Stmt::IDeclAllowed>>&& stmts
+        std::vector<std::shared_ptr<Stmt::IStructAllowed>>&& stmts
     )
-        : identifier(identifier),
-          fields(std::move(fields)),
-          stmts(std::move(stmts)) {
+        : identifier(identifier), stmts(std::move(stmts)) {
         location = &start_token->location;
     }
 
@@ -361,7 +357,7 @@ public:
  *
  * Field declaration statements introduce a new field into a struct definition.
  */
-class Stmt::Field : public Stmt::IStructMember {
+class Stmt::Field : public Stmt::IStructAllowed {
 public:
     // The mutability of the field.
     Binding::Mutability mutability;
