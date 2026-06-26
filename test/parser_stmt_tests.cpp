@@ -783,6 +783,31 @@ TEST_CASE("Parser typedef statements", "[parser]") {
     }
 }
 
+TEST_CASE("Parser struct statements", "[parser]") {
+    SECTION("Field statement at top level") {
+        run_parser_stmt_error_test(
+            "field var x: i32",
+            Err::NonTopLevelAllowedStmt
+        );
+    }
+
+    SECTION("Empty struct") {
+        run_parser_stmt_test(
+            "struct EmptyStruct {}",
+            {"(stmt:structdef EmptyStruct { })", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Struct with fields") {
+        run_parser_stmt_test(
+            "struct Point { field var x: f64 field var y: f64 }",
+            {"(stmt:structdef Point { (stmt:field var x f64) "
+             "(stmt:field var y f64) })",
+             "(stmt:eof)"}
+        );
+    }
+}
+
 TEST_CASE("Parser tuple annotations", "[parser]") {
     SECTION("Tuple annotation 1") {
         run_parser_stmt_test(
