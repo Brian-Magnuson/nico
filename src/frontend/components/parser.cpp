@@ -1740,6 +1740,14 @@ std::optional<std::shared_ptr<Stmt>> Parser::typedef_statement() {
         );
         return std::nullopt;
     }
+    if (match({Tok::ColonColon})) {
+        Diagnostics::inst().emit_error(
+            Err::DeclarationIdentWithColonColon,
+            previous()->location,
+            "Declaration identifier cannot contain `::`."
+        );
+        return std::nullopt;
+    }
     auto identifier = previous();
     if (!match({Tok::Eq})) {
         Diagnostics::inst().emit_error(
@@ -1769,6 +1777,14 @@ std::optional<std::shared_ptr<Stmt>> Parser::struct_def_statement() {
             "Expected identifier after `struct`."
         );
     }
+    if (match({Tok::ColonColon})) {
+        Diagnostics::inst().emit_error(
+            Err::DeclarationIdentWithColonColon,
+            previous()->location,
+            "Declaration identifier cannot contain `::`."
+        );
+        return std::nullopt;
+    }
     auto identifier = previous();
 
     Tok closing_token_type;
@@ -1782,7 +1798,7 @@ std::optional<std::shared_ptr<Stmt>> Parser::struct_def_statement() {
         Diagnostics::inst().emit_error(
             Err::ColonInsteadOfIndent,
             peek()->location,
-            "Unexpected `:` after extern block identifier."
+            "Unexpected `:` after struct identifier."
         );
         Diagnostics::inst().emit_note(
             "Indentation is possibly ignored here. Consider using `{` for "

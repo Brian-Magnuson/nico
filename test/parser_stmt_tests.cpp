@@ -781,6 +781,17 @@ TEST_CASE("Parser typedef statements", "[parser]") {
     SECTION("Typedef missing equals") {
         run_parser_stmt_error_test("typedef MyInt i32", Err::UnexpectedToken);
     }
+
+    SECTION("Typedef missing type") {
+        run_parser_stmt_error_test("typedef MyInt =", Err::NotAType);
+    }
+
+    SECTION("Typedef with colon colon in identifier") {
+        run_parser_stmt_error_test(
+            "typedef My::Int = i32",
+            Err::DeclarationIdentWithColonColon
+        );
+    }
 }
 
 TEST_CASE("Parser struct statements", "[parser]") {
@@ -804,6 +815,74 @@ TEST_CASE("Parser struct statements", "[parser]") {
             {"(stmt:structdef Point { (stmt:field var x f64) "
              "(stmt:field var y f64) })",
              "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Struct with mut fields") {
+        run_parser_stmt_test(
+            "struct MutablePoint { field mut x: f64 field mut y: f64 }",
+            {"(stmt:structdef MutablePoint { (stmt:field mut x f64) "
+             "(stmt:field mut y f64) })",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Struct with other declaration-space stmts") {
+        run_parser_stmt_test(
+            "struct Config { static var default_port: u16 func "
+            "get_default_port() -> u16 => default_port }",
+            {"(stmt:structdef Config { (stmt:static var default_port u16) "
+             "(stmt:func get_default_port u16 => (block (stmt:yield => "
+             "(nameref default_port)))) })",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Struct with inner struct") {
+        run_parser_stmt_test(
+            "struct Outer { struct Inner { field var x: i32 } field var inner: "
+            "Inner }",
+            {"(stmt:structdef Outer { (stmt:structdef Inner { (stmt:field var "
+             "x i32) }) "
+             "(stmt:field var inner Inner) })",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Struct missing identifier") {
+        run_parser_stmt_error_test("struct {}", Err::NotAnIdentifier);
+    }
+
+    SECTION("Struct with colon colon in identifier") {
+        run_parser_stmt_error_test(
+            "struct Outer::Inner {}",
+            Err::DeclarationIdentWithColonColon
+        );
+    }
+
+    SECTION("Struct with execution-space stmt") {
+        run_parser_stmt_error_test(
+            "struct InvalidStruct { let x = 10 }",
+            Err::NonStructAllowedStmt
+        );
+    }
+
+    SECTION("Struct with missing block") {
+        run_parser_stmt_error_test(
+            "struct InvalidStruct",
+            Err::StructWithoutBlock
+        );
+    }
+
+    SECTION("Struct colon instead of indent") {
+        run_parser_stmt_error_test(
+            R"(
+            namespace ns1 {
+                struct InvalidStruct:
+                    field var x: i32
+            }
+            )",
+            Err::ColonInsteadOfIndent
         );
     }
 }
