@@ -223,10 +223,10 @@ public:
      * allow structs, this function does not add the struct and returns nullopt.
      *
      * @param token The token representing the struct definition identifier.
-     * @return std::optional<std::shared_ptr<Node>> The struct definition if
-     * added successfully, or nullopt if not.
+     * @return std::optional<std::shared_ptr<Node::StructDef>> The struct
+     * definition if added successfully, or nullopt if not.
      */
-    std::optional<std::shared_ptr<Node>>
+    std::optional<std::shared_ptr<Node::StructDef>>
     add_struct_def(std::shared_ptr<Token> token, bool is_class = false);
 
     /**

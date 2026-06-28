@@ -339,6 +339,9 @@ public:
     std::shared_ptr<Token> identifier;
     // The statements in the struct body.
     std::vector<std::shared_ptr<Stmt::IStructAllowed>> stmts;
+    // A weak pointer to the struct definition node in the symbol tree. To be
+    // set during type checking.
+    std::weak_ptr<Node::StructDef> struct_def_node;
 
     StructDef(
         std::shared_ptr<Token> start_token,

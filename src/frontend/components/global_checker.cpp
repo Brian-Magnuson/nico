@@ -341,12 +341,56 @@ std::any GlobalChecker::visit(Stmt::TypeDef* stmt) {
 }
 
 std::any GlobalChecker::visit(Stmt::StructDef* stmt) {
-    // TODO: Implement struct definitions.
+    auto struct_node_opt = symbol_tree->add_struct_def(stmt->identifier, false);
+    if (!struct_node_opt.has_value()) {
+        return std::any();
+    }
+    auto struct_node = struct_node_opt.value();
+
+    for (auto& stmt : stmt->stmts) {
+        if (auto field_stmt = std::dynamic_pointer_cast<Stmt::Field>(stmt)) {
+            auto type_opt =
+                annotation_checker->annotation_check(field_stmt->annotation);
+            if (!type_opt.has_value()) {
+                continue;
+            }
+            Binding field_binding(
+                field_stmt->mutability,
+                std::string(field_stmt->identifier->lexeme),
+                &field_stmt->identifier->location,
+                type_opt.value()
+            );
+            if (auto existing_field =
+                    struct_node->fields.at(field_binding.name)) {
+                Diagnostics::inst().emit_error(
+                    Err::DuplicateStructFieldName,
+                    *field_binding.location,
+                    "Duplicate field name `" + field_binding.name +
+                        "` in "
+                        "struct definition."
+                );
+                Diagnostics::inst().emit_note(
+                    existing_field->location,
+                    "Previous declaration of field `" + field_binding.name +
+                        "` here."
+                );
+                continue;
+            }
+
+            struct_node->fields.insert(field_binding.name, field_binding);
+        }
+        else {
+            stmt->accept(this);
+        }
+    }
+
+    stmt->struct_def_node = struct_node;
+    symbol_tree->exit_scope();
     return std::any();
 }
 
 std::any GlobalChecker::visit(Stmt::Field* stmt) {
-    // TODO: Implement field definitions.
+    // Do nothing. The field is processed in the StructDef visitor.
     return std::any();
 }
 

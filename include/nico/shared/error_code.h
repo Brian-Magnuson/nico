@@ -213,6 +213,9 @@ enum class Err {
     ExternStaticWithInitializer,
     // An object annotation contained duplicate field names.
     DuplicateObjectAnnotationFieldName,
+    // A struct field was declared with a name that duplicates another field in
+    // the same struct.
+    DuplicateStructFieldName,
     // A named type annotation could not be resolved.
     TypeNameNotFound,
     // A named type was found to be unsized.

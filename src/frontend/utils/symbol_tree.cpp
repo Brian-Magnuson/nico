@@ -270,7 +270,7 @@ std::optional<std::shared_ptr<Node::TypeDef>> SymbolTree::add_type_def(
     return new_node;
 }
 
-std::optional<std::shared_ptr<Node>>
+std::optional<std::shared_ptr<Node::StructDef>>
 SymbolTree::add_struct_def(std::shared_ptr<Token> token, bool is_class) {
     auto new_node = Node::StructDef::create(current_scope, token, is_class);
     auto ok = current_scope->add_child(*this, new_node);
