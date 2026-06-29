@@ -297,6 +297,9 @@ public:
                other->is_assignable_to(shared_from_this());
     }
 
+    // TODO: This function sometimes returns std::nullopt, but we never actually
+    // use this case. We should simplify this function to always return a bool,
+    // and remove the std::nullopt case.
     /**
      * @brief Check if this type is sized, i.e., has a known size at compile
      * time.

@@ -418,10 +418,15 @@ std::any LocalChecker::visit(Stmt::TypeDef* /*stmt*/) {
 }
 
 std::any LocalChecker::visit(Stmt::StructDef* stmt) {
-    // TODO: Implement struct definitions.
+    auto previous_scope = symbol_tree->current_scope;
+    symbol_tree->current_scope = stmt->struct_def_node.lock();
 
-    // Struct definitions may contain functions, which contain execution-space
-    // statements, so we need to check struct definitions.
+    for (auto& stmt : stmt->stmts) {
+        stmt->accept(this);
+    }
+
+    symbol_tree->current_scope = previous_scope;
+
     return std::any();
 }
 
