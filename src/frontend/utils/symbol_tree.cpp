@@ -593,7 +593,7 @@ bool SymbolTree::resolve_unresolved_types() {
     }
     // Next, check for any unsized named types, which are not allowed.
     for (const auto& type : pending_validity_check) {
-        if (!type->is_sized_type().value_or(false)) {
+        if (!type->is_definitely_sized()) {
             auto node = type->node.lock();
             // Node should always be locatable; only primitive types are not
             // locatable, and they are always be resolved.

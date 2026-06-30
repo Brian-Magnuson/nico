@@ -631,15 +631,15 @@ public:
         return false;
     }
 
-    virtual std::optional<bool>
-    is_sized_type(size_t recursion_level = 0) const override {
+    virtual bool
+    is_definitely_sized(size_t recursion_level = 0) const override {
         if (recursion_level > MAX_RECURSION_DEPTH) {
             return false;
         }
         if (!size.has_value()) {
             return false;
         }
-        return base->is_sized_type(recursion_level + 1);
+        return base->is_definitely_sized(recursion_level + 1);
     }
 
     virtual llvm::Type*
@@ -750,14 +750,13 @@ public:
         return result;
     }
 
-    std::optional<bool>
-    is_sized_type(size_t recursion_level = 0) const override {
+    bool is_definitely_sized(size_t recursion_level = 0) const override {
         if (recursion_level > MAX_RECURSION_DEPTH) {
             return false;
         }
         for (const auto& element : elements) {
-            auto result = element->is_sized_type(recursion_level + 1);
-            if (!result.has_value() || !result.value()) {
+            auto result = element->is_definitely_sized(recursion_level + 1);
+            if (!result) {
                 return result;
             }
         }
@@ -884,14 +883,13 @@ public:
         return false;
     }
 
-    std::optional<bool>
-    is_sized_type(size_t recursion_level = 0) const override {
+    bool is_definitely_sized(size_t recursion_level = 0) const override {
         if (recursion_level > MAX_RECURSION_DEPTH) {
             return false;
         }
         for (const auto& [key, value] : fields) {
-            auto result = value.type->is_sized_type(recursion_level + 1);
-            if (!result.has_value() || !result.value()) {
+            auto result = value.type->is_definitely_sized(recursion_level + 1);
+            if (!result) {
                 return result;
             }
         }
@@ -1232,8 +1230,7 @@ public:
         return false;
     }
 
-    std::optional<bool>
-    is_sized_type(size_t recursion_level = 0) const override {
+    bool is_definitely_sized(size_t recursion_level = 0) const override {
         if (recursion_level > MAX_RECURSION_DEPTH) {
             return false;
         }
@@ -1243,9 +1240,9 @@ public:
         }
         if (PTR_INSTANCEOF(node_ptr, Node::UnresolvedType)) {
             // Size is indeterminate until the type is resolved.
-            return std::nullopt;
+            return false;
         }
-        return node_ptr->type->is_sized_type(recursion_level + 1);
+        return node_ptr->type->is_definitely_sized(recursion_level + 1);
     }
 
     virtual llvm::Type*

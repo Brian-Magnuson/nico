@@ -297,12 +297,12 @@ public:
                other->is_assignable_to(shared_from_this());
     }
 
-    // TODO: This function sometimes returns std::nullopt, but we never actually
-    // use this case. We should simplify this function to always return a bool,
-    // and remove the std::nullopt case.
     /**
-     * @brief Check if this type is sized, i.e., has a known size at compile
+     * @brief Check if this type has a known size at compile
      * time.
+     *
+     * If the size of the type cannot be determined, this function returns
+     * false.
      *
      * Note: A type may be considered unsized if it is excessively deep, even if
      * it is actually finite in depth.
@@ -310,12 +310,10 @@ public:
      * @param recursion_level The current recursion level for checking sized
      * types. Used to prevent infinite recursion when checking recursive types.
      * Default is 0. External callers should ignore this parameter.
-     * @return std::optional<bool> True if the type is sized, false if it is
-     * unsized, or std::nullopt if indeterminate (e.g. due to unresolved named
-     * types).
+     * @return True if the type is definitely sized, false if unsized or
+     * indeterminate.
      */
-    virtual std::optional<bool>
-    is_sized_type(size_t recursion_level = 0) const {
+    virtual bool is_definitely_sized(size_t recursion_level = 0) const {
         return true;
     }
 

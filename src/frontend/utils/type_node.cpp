@@ -51,7 +51,7 @@ std::string Type::Named::to_string() const {
 
 llvm::Type*
 Type::Named::get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const {
-    if (!is_sized_type().value_or(false)) {
+    if (!is_definitely_sized()) {
         panic(
             "Type::Named::get_llvm_type: Cannot get LLVM type of unsized type."
         );
