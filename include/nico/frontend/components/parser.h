@@ -320,6 +320,19 @@ class Parser {
     std::optional<std::shared_ptr<Expr>> object();
 
     /**
+     * @brief Parses an instance initializer expression.
+     *
+     * Instance initializers are used to initialize instances of structs and
+     * classes.
+     * They begin with the `new` keyword, followed by a type annotation, and an
+     * object literal to initialize the instance.
+     *
+     * @return std::optional<std::shared_ptr<Expr>> A shared pointer to the
+     * parsed expression, or nullopt if the expression could not be parsed.
+     */
+    std::optional<std::shared_ptr<Expr>> instance_initializer();
+
+    /**
      * @brief Parses an allocation expression.
      *
      * An allocation expression is used to manually allocate heap memory for

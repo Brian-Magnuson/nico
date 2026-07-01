@@ -610,6 +610,31 @@ std::optional<std::shared_ptr<Expr>> Parser::object() {
     return std::make_shared<Expr::Object>(lbrace, std::move(fields));
 }
 
+std::optional<std::shared_ptr<Expr>> Parser::instance_initializer() {
+    auto new_kw = previous();
+    auto type_annotation = annotation();
+    if (!type_annotation) {
+        return std::nullopt;
+    }
+
+    if (!match({Tok::LBrace})) {
+        Diagnostics::inst().emit_error(
+            Err::UnexpectedToken,
+            peek()->location,
+            "Expected `{` after type annotation in instance initializer."
+        );
+        return std::nullopt;
+    }
+
+    auto object_expr_opt = object();
+    if (!object_expr_opt) {
+        return std::nullopt;
+    }
+
+    // TODO: Create instance initializer expression class and return it here.
+    return std::nullopt;
+}
+
 std::optional<std::shared_ptr<Expr>> Parser::allocation() {
     auto alloc_kw = previous();
 
