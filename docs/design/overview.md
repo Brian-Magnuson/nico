@@ -1837,6 +1837,34 @@ If the allocated memory is not explicitly deallocated, the memory will remain al
 Continued failure to deallocate memory will result in less available memory for the program, potentially impacting performance or causing the program to run out of memory.
 It is the programmer's responsibility to ensure allocated memory is properly deallocated when no longer needed.
 
+### Instance initializer expressions
+
+An instance initializer expression is used to create an instance of a struct or class. 
+This uses the `new` keyword followed by the type name reference and an object value:
+```
+new MyStruct { x: 0, y: 3.14 }
+new MyClass { x: 0, y: 3.14 }
+```
+
+Although these expressions contain object expressions, the object expression is not created in memory.
+Instead, its field values are read to initialize the new instance that will be created in memory.
+
+The order of the fields within the object expression does not matter.
+The order of fields always conforms to the order in the struct or class definition (unless a different packing behavior is specified).
+The final size of the new instance will be based on this order with any padding added to satisfy alignment requirements.
+
+If a struct defines a field with a default value, the field may be omitted from the object expression.
+In such cases, the default value will be used to initialize the field.
+```
+struct MyStruct:
+    field x: i32 = 0
+    field y: f64 = 3.14
+
+let s1 = new MyStruct { x: 42 }   // y will be initialized to 3.14
+let s2 = new MyStruct { y: 2.71 } // x will be initialized to 0
+let s3 = new MyStruct { }         // x will be initialized to 0, y will be initialized to 3.14
+```
+
 ### Block expressions
 
 A block expression is used to group statements together. It may be written in idented form or braced form:
