@@ -923,6 +923,14 @@ std::any CodeGenerator::visit(Expr::Alloc* expr, bool as_lvalue) {
     return result;
 }
 
+std::any CodeGenerator::visit(Expr::NewInst* expr, bool as_lvalue) {
+    llvm::Value* result = nullptr;
+
+    // TODO: Implement this function.
+
+    return result;
+}
+
 std::any CodeGenerator::visit(Expr::NameRef* expr, bool as_lvalue) {
     llvm::Value* result = nullptr;
     llvm::Value* ptr = expr->binding_entry.lock()->get_llvm_allocation(builder);

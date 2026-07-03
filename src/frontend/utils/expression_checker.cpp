@@ -1291,6 +1291,21 @@ std::any ExpressionChecker::visit(Expr::Alloc* expr, bool as_lvalue) {
     return std::any();
 }
 
+std::any ExpressionChecker::visit(Expr::NewInst* expr, bool as_lvalue) {
+    // As a reminder: pointers are not possible lvalues.
+    if (as_lvalue) {
+        Diagnostics::inst().emit_error(
+            Err::NotAPossibleLValue,
+            expr->location,
+            "New instance expression cannot be an lvalue."
+        );
+        return std::any();
+    }
+
+    // TODO: Implement new instance checking.
+    return std::any();
+}
+
 std::any ExpressionChecker::visit(Expr::NameRef* expr, bool as_lvalue) {
     if (!symbol_tree->try_resolve_name(expr->name)) {
         Diagnostics::inst().emit_error(

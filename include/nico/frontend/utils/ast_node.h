@@ -1028,6 +1028,34 @@ public:
 };
 
 /**
+ * @brief An instance initializer expression.
+ *
+ * Instance initializer expressions are used to create a new instance of a
+ * struct or class using the `new` keyword.
+ *
+ */
+class Expr::NewInst : public Expr {
+public:
+    // The 'new' keyword token.
+    std::shared_ptr<Token> new_token;
+    // The type annotation for the new instance.
+    std::shared_ptr<Annotation> type_annotation;
+    // The object expression to initialize the new instance.
+    std::shared_ptr<Expr::Object> initializer;
+
+    NewInst(
+        std::shared_ptr<Token> new_token,
+        std::shared_ptr<Annotation> type_annotation,
+        std::shared_ptr<Expr::Object> initializer
+    )
+        : new_token(new_token),
+          type_annotation(type_annotation),
+          initializer(initializer) {
+        location = &new_token->location;
+    }
+};
+
+/**
  * @brief A name reference expression.
  *
  * A name reference expression is used to refer to a variable, function, or

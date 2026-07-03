@@ -337,6 +337,14 @@ std::any AstPrinter::visit(Expr::Alloc* expr, bool as_lvalue) {
     return str;
 }
 
+std::any AstPrinter::visit(Expr::NewInst* expr, bool as_lvalue) {
+    std::string str = "(newinst " + expr->type_annotation->to_string();
+    str += " " +
+           std::any_cast<std::string>(expr->initializer->accept(this, false));
+    str += ")";
+    return str;
+}
+
 std::any AstPrinter::visit(Expr::NameRef* expr, bool as_lvalue) {
     return std::string("(nameref " + expr->name->to_string() + ")");
 }

@@ -513,6 +513,7 @@ public:
     class Call;
     class SizeOf;
     class Alloc;
+    class NewInst;
     class NameRef;
     class Literal;
 
@@ -544,6 +545,7 @@ public:
         virtual std::any visit(Call* expr, bool as_lvalue) = 0;
         virtual std::any visit(SizeOf* expr, bool as_lvalue) = 0;
         virtual std::any visit(Alloc* expr, bool as_lvalue) = 0;
+        virtual std::any visit(NewInst* expr, bool as_lvalue) = 0;
         virtual std::any visit(NameRef* expr, bool as_lvalue) = 0;
         virtual std::any visit(Literal* expr, bool as_lvalue) = 0;
         virtual std::any visit(Tuple* expr, bool as_lvalue) = 0;
