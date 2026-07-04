@@ -610,7 +610,7 @@ std::optional<std::shared_ptr<Expr>> Parser::object() {
     return std::make_shared<Expr::Object>(lbrace, std::move(fields));
 }
 
-std::optional<std::shared_ptr<Expr>> Parser::instance_initializer() {
+std::optional<std::shared_ptr<Expr>> Parser::new_instance() {
     auto new_kw = previous();
     auto type_annotation = annotation();
     if (!type_annotation) {
@@ -631,8 +631,11 @@ std::optional<std::shared_ptr<Expr>> Parser::instance_initializer() {
         return std::nullopt;
     }
 
-    // TODO: Create instance initializer expression class and return it here.
-    return std::nullopt;
+    return std::make_shared<Expr::NewInst>(
+        new_kw,
+        *type_annotation,
+        std::dynamic_pointer_cast<Expr::Object>(*object_expr_opt)
+    );
 }
 
 std::optional<std::shared_ptr<Expr>> Parser::allocation() {
@@ -905,6 +908,9 @@ std::optional<std::shared_ptr<Expr>> Parser::primary() {
     }
     if (match({Tok::KwAlloc})) {
         return allocation();
+    }
+    if (match({Tok::KwNew})) {
+        return new_instance();
     }
     if (match({Tok::LParen})) {
         return grouping_or_tuple();

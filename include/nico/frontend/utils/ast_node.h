@@ -1053,6 +1053,10 @@ public:
           initializer(initializer) {
         location = &new_token->location;
     }
+
+    std::any accept(Visitor* visitor, bool as_lvalue) override {
+        return visitor->visit(this, as_lvalue);
+    }
 };
 
 /**

@@ -330,7 +330,7 @@ class Parser {
      * @return std::optional<std::shared_ptr<Expr>> A shared pointer to the
      * parsed expression, or nullopt if the expression could not be parsed.
      */
-    std::optional<std::shared_ptr<Expr>> instance_initializer();
+    std::optional<std::shared_ptr<Expr>> new_instance();
 
     /**
      * @brief Parses an allocation expression.
