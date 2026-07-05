@@ -1840,20 +1840,23 @@ It is the programmer's responsibility to ensure allocated memory is properly dea
 ### Instance initializer expressions
 
 An instance initializer expression is used to create an instance of a struct or class. 
-This uses the `new` keyword followed by the type name reference and an object value:
+This uses the `new` keyword followed by the type name reference and a set of braces containing a list of named arguments.
 ```
 new MyStruct { x: 0, y: 3.14 }
 new MyClass { x: 0, y: 3.14 }
 ```
 
-Although these expressions contain object expressions, the object expression is not created in memory.
-Instead, its field values are read to initialize the new instance that will be created in memory.
+The braced portion of the syntax is called the field initializer list. It is used to initialize the fields of the new instance.
 
-The order of the fields within the object expression does not matter.
+It is similar to an object expression, but it is not considered an object expression.
+You cannot use mutability specifiers like `var` or `mut`.
+It is also similar to a function call expression, but you cannot use positional arguments.
+
+The order of the fields within the field initializer list does not matter.
 The order of fields always conforms to the order in the struct or class definition (unless a different packing behavior is specified).
 The final size of the new instance will be based on this order with any padding added to satisfy alignment requirements.
 
-If a struct defines a field with a default value, the field may be omitted from the object expression.
+If a struct defines a field with a default value, the field may be omitted from the field initializer list.
 In such cases, the default value will be used to initialize the field.
 ```
 struct MyStruct:
@@ -1863,6 +1866,28 @@ struct MyStruct:
 let s1 = new MyStruct { x: 42 }   // y will be initialized to 3.14
 let s2 = new MyStruct { y: 2.71 } // x will be initialized to 0
 let s3 = new MyStruct { }         // x will be initialized to 0, y will be initialized to 3.14
+```
+
+The new instance will be created on the stack.
+To create the instance on the heap, you can combine this syntax with `alloc with`:
+```
+let p: var@MyStruct = alloc MyStruct with new MyStruct { x: 42, y: 3.14 }
+let p: var@MyStruct = alloc with new MyStruct { x: 42, y: 3.14 }  // Shorter and less redundant
+```
+
+Instance initializer expressions initialize the fields of a struct or class instance without any additional side effects.
+There is no special syntax for a constructor function.
+You can use a shared function to create an instance of a struct or class with additional side effects, such as validation or logging.
+```
+struct MyStruct:
+    field x: i32
+    field y: f64
+
+    func create(x: i32, y: f64) -> MyStruct:
+        printout "Creating a new instance of MyStruct\n"
+        return new MyStruct { x: x, y: y }
+
+let s = MyStruct::create(42, 3.14)
 ```
 
 ### Block expressions

@@ -339,8 +339,10 @@ std::any AstPrinter::visit(Expr::Alloc* expr, bool as_lvalue) {
 
 std::any AstPrinter::visit(Expr::NewInst* expr, bool as_lvalue) {
     std::string str = "(newinst " + expr->type_annotation->to_string();
-    str += " " +
-           std::any_cast<std::string>(expr->initializer->accept(this, false));
+    for (const auto& [name, arg] : expr->provided_args) {
+        str += " (" + name + ": " +
+               std::any_cast<std::string>(arg->accept(this, false)) + ")";
+    }
     str += ")";
     return str;
 }

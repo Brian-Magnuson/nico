@@ -1493,7 +1493,7 @@ TEST_CASE("Parser new instance expressions", "[parser]") {
     SECTION("New instance with no arguments") {
         run_parser_expr_test(
             "new MyClass {}",
-            {"(expr (newinst MyClass (object)))", "(stmt:eof)"}
+            {"(expr (newinst MyClass))", "(stmt:eof)"}
         );
     }
 }

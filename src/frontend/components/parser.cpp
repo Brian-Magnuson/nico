@@ -626,15 +626,57 @@ std::optional<std::shared_ptr<Expr>> Parser::new_instance() {
         return std::nullopt;
     }
 
-    auto object_expr_opt = object();
-    if (!object_expr_opt) {
+    Dictionary<std::string, std::shared_ptr<Expr>> provided_args;
+    // Parse the field initializer list.
+    do {
+        if (peek()->tok_type == Tok::RBrace) {
+            // We allow trailing commas.
+            break;
+        }
+
+        if (!match({Tok::Identifier})) {
+            Diagnostics::inst().emit_error(
+                Err::NotAnIdentifier,
+                peek()->location,
+                "Expected an identifier for the field name in object "
+                "literal."
+            );
+            synchronize_elements();
+            continue;
+        }
+        auto field_token = previous();
+        if (!match({Tok::Colon})) {
+            Diagnostics::inst().emit_error(
+                Err::UnexpectedToken,
+                peek()->location,
+                "Expected a colon after the field name in object literal."
+            );
+            synchronize_elements();
+            continue;
+        }
+        auto expr = expression();
+        if (!expr) {
+            synchronize_elements();
+        }
+        else {
+            provided_args.insert(std::string(field_token->lexeme), *expr);
+        }
+
+    } while (match({Tok::Comma}));
+
+    if (!match({Tok::RBrace})) {
+        Diagnostics::inst().emit_error(
+            Err::UnexpectedToken,
+            peek()->location,
+            "Expected `}` after object literal."
+        );
         return std::nullopt;
     }
 
     return std::make_shared<Expr::NewInst>(
         new_kw,
         *type_annotation,
-        std::dynamic_pointer_cast<Expr::Object>(*object_expr_opt)
+        std::move(provided_args)
     );
 }
 
