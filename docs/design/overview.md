@@ -1840,7 +1840,7 @@ It is the programmer's responsibility to ensure allocated memory is properly dea
 ### Instance initializer expressions
 
 An instance initializer expression is used to create an instance of a struct or class. 
-This uses the `new` keyword followed by the type name reference and a set of braces containing a list of named arguments.
+This uses the `new` keyword followed by a named type and a set of braces containing a list of named arguments.
 ```
 new MyStruct { x: 0, y: 3.14 }
 new MyClass { x: 0, y: 3.14 }
@@ -1851,6 +1851,10 @@ The braced portion of the syntax is called the field initializer list. It is use
 It is similar to an object expression, but it is not considered an object expression.
 You cannot use mutability specifiers like `var` or `mut`.
 It is also similar to a function call expression, but you cannot use positional arguments.
+
+The type must be a named type that references a struct or class definition.
+If it is not a named type, a parser error will occur.
+If it does not reference a struct or class definition, a semantic error will occur.
 
 The order of the fields within the field initializer list does not matter.
 The order of fields always conforms to the order in the struct or class definition (unless a different packing behavior is specified).

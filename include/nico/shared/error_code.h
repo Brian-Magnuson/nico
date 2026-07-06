@@ -98,6 +98,8 @@ enum class Err {
     NegativeOnUnsignedLiteral,
     // A type was expected but not found.
     NotAType,
+    // A named type was expected but not found.
+    NotANamedType,
     // An unexpected token was found where specific token was expected.
     UnexpectedToken,
     // A let statement was found without a type or value.

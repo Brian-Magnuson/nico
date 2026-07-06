@@ -612,7 +612,15 @@ std::optional<std::shared_ptr<Expr>> Parser::object() {
 
 std::optional<std::shared_ptr<Expr>> Parser::new_instance() {
     auto new_kw = previous();
-    auto type_annotation = annotation();
+    if (!match({Tok::Identifier})) {
+        Diagnostics::inst().emit_error(
+            Err::NotANamedType,
+            peek()->location,
+            "Expected a named type after `new` keyword."
+        );
+        return std::nullopt;
+    }
+    auto type_annotation = named_type_annotation();
     if (!type_annotation) {
         return std::nullopt;
     }
@@ -2107,6 +2115,13 @@ std::optional<std::shared_ptr<Annotation>> Parser::type_of_annotation() {
     return std::make_shared<Annotation::TypeOf>(typeof_token, *expr);
 }
 
+std::optional<std::shared_ptr<Annotation>> Parser::named_type_annotation() {
+    auto name_opt = name();
+    if (!name_opt)
+        return std::nullopt;
+    return std::make_shared<Annotation::NameRef>(name_opt.value());
+}
+
 std::optional<std::shared_ptr<Annotation>> Parser::tuple_annotation() {
     // Tuple annotation
     auto lparen_token = previous();
@@ -2295,10 +2310,7 @@ std::optional<std::shared_ptr<Annotation>> Parser::annotation() {
         return type_of_annotation();
     }
     if (match({Tok::Identifier})) {
-        auto name_opt = name();
-        if (!name_opt)
-            return std::nullopt;
-        return std::make_shared<Annotation::NameRef>(name_opt.value());
+        return named_type_annotation();
     }
     if (match({Tok::Nullptr})) {
         return std::make_shared<Annotation::Nullptr>(previous());

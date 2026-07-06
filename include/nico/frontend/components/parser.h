@@ -630,6 +630,17 @@ class Parser {
     std::optional<std::shared_ptr<Annotation>> type_of_annotation();
 
     /**
+     * @brief Parses a named type annotation.
+     *
+     * A named type annotation consists of a name, which is a sequence of
+     * identifiers separated by `::`. E.g. `foo::bar::baz`
+     *
+     * @return The parsed annotation, or nullopt if the annotation could not be
+     * parsed.
+     */
+    std::optional<std::shared_ptr<Annotation>> named_type_annotation();
+
+    /**
      * @brief Parses a tuple annotation.
      *
      * A tuple annotation consists of a parenthesized, comma-separated list of

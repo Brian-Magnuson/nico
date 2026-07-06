@@ -1496,4 +1496,35 @@ TEST_CASE("Parser new instance expressions", "[parser]") {
             {"(expr (newinst MyClass))", "(stmt:eof)"}
         );
     }
+
+    SECTION("New instance with arguments") {
+        run_parser_expr_test(
+            "new MyClass { x: 1, y: 2 }",
+            {"(expr (newinst MyClass (x: (lit i32 1)) (y: (lit i32 2))))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("New instance with trailing comma") {
+        run_parser_expr_test(
+            "new MyClass { x: 1, y: 2, }",
+            {"(expr (newinst MyClass (x: (lit i32 1)) (y: (lit i32 2))))",
+             "(stmt:eof)"}
+        );
+    }
+
+    SECTION("New instance missing type") {
+        run_parser_expr_error_test("new {}", Err::NotANamedType);
+    }
+
+    SECTION("New instance missing braces") {
+        run_parser_expr_error_test("new MyClass", Err::UnexpectedToken);
+    }
+
+    SECTION("New instance improper fields") {
+        run_parser_expr_error_test(
+            "new MyClass { 1: 2 }",
+            Err::NotAnIdentifier
+        );
+    }
 }
