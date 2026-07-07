@@ -139,6 +139,7 @@ public:
     class Tuple;
     class Unit;
     class Object;
+    class Struct;
 
     // Callable types
     class ICallable;

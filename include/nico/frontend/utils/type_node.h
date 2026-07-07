@@ -956,6 +956,52 @@ public:
     }
 };
 
+/**
+ * @brief A struct object type.
+ *
+ * Used for types that are defined by struct definitions in the source code.
+ */
+class Type::Struct : public Type {
+public:
+    // The node associated with this struct type; uses a weak pointer to avoid
+    // circular references.
+    std::weak_ptr<Node::StructDef> node;
+
+    virtual ~Struct() = default;
+
+    Struct(std::weak_ptr<Node::StructDef> node)
+        : node(node) {
+        if (node.expired()) {
+            panic("Type::Struct: Node is expired");
+        }
+    }
+
+    std::string to_string() const override;
+
+    bool operator==(const Type& other) const override {
+        if (const auto* other_named = dynamic_cast<const Struct*>(&other)) {
+            return node.lock() == other_named->node.lock();
+        }
+        return false;
+    }
+
+    virtual bool is_assignable_to(std::shared_ptr<Type> other) override {
+        if (auto other_named =
+                Type::as_a<Type::Struct>(other).value_or(nullptr)) {
+            return node.lock() == other_named->node.lock();
+        }
+        return false;
+    }
+
+    virtual std::pair<std::string, std::vector<llvm::Value*>> to_print_args(
+        std::unique_ptr<llvm::IRBuilder<>>& builder,
+        llvm::Value* value,
+        bool include_quotes = false
+    ) const override {
+        return {to_string(), {}};
+    }
+};
+
 // MARK: Callable types
 
 class Type::ICallable : public Type {
@@ -1169,7 +1215,7 @@ public:
     Named(std::weak_ptr<Node::ITypeNode> node)
         : node(node) {
         if (node.expired()) {
-            panic("Type::Named: Node cannot be null.");
+            panic("Type::Named: Node is expired.");
         }
     }
 
@@ -1250,6 +1296,14 @@ public:
 
     virtual std::shared_ptr<Type> get_underlying_type() override {
         return get_inner_type();
+    }
+
+    virtual std::pair<std::string, std::vector<llvm::Value*>> to_print_args(
+        std::unique_ptr<llvm::IRBuilder<>>& builder,
+        llvm::Value* value,
+        bool include_quotes = false
+    ) const override {
+        return {to_string(), {}};
     }
 };
 
