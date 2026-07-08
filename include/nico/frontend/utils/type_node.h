@@ -966,17 +966,29 @@ public:
     // The node associated with this struct type; uses a weak pointer to avoid
     // circular references.
     std::weak_ptr<Node::StructDef> node;
+    // The fields of the struct.
+    Dictionary<std::string, Binding> fields;
 
     virtual ~Struct() = default;
 
-    Struct(std::weak_ptr<Node::StructDef> node)
-        : node(node) {
+    Struct(
+        std::weak_ptr<Node::StructDef> node,
+        Dictionary<std::string, Binding>&& fields
+    )
+        : node(node), fields(std::move(fields)) {
         if (node.expired()) {
             panic("Type::Struct: Node is expired");
         }
     }
 
-    std::string to_string() const override;
+    std::string to_string() const override {
+        if (auto node_ptr = node.lock()) {
+            return node_ptr->symbol;
+        }
+        else {
+            panic("Type::Struct: Node is expired");
+        }
+    }
 
     bool operator==(const Type& other) const override {
         if (const auto* other_named = dynamic_cast<const Struct*>(&other)) {
@@ -999,6 +1011,17 @@ public:
         bool include_quotes = false
     ) const override {
         return {to_string(), {}};
+    }
+
+    virtual llvm::Type*
+    get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
+        // TODO: This is a temporary implementation that returns a struct type
+        // with the same fields as the struct.
+        std::vector<llvm::Type*> field_types;
+        for (const auto& [key, value] : fields) {
+            field_types.push_back(value.type->get_llvm_type(builder));
+        }
+        return llvm::StructType::get(builder->getContext(), field_types);
     }
 };
 

@@ -312,18 +312,6 @@ class Node::StructDef : public virtual Node::IGlobalScope,
                         public virtual Node::ITypeNode,
                         public virtual Node::ILocatable {
 public:
-    // Whether this struct is declared with `class` or not. Classes may
-    // follow different semantic rules than structs, such as memory
-    // management.
-    bool is_class = false;
-    // A dictionary of fields (bindings) in this struct, indexed by their
-    // names.
-    Dictionary<std::string, Binding> fields;
-    // A dictionary of methods in this struct, indexed by their names.
-    // Methods are also stored as bindings, but are never `var` and always
-    // have a type of `Function`.
-    Dictionary<std::string, Binding> methods;
-
     virtual ~StructDef() = default;
 
     StructDef(Private)

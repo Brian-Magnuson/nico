@@ -345,7 +345,7 @@ std::any GlobalChecker::visit(Stmt::StructDef* stmt) {
     if (!struct_node_opt.has_value()) {
         return std::any();
     }
-    auto struct_node = struct_node_opt.value();
+    Dictionary<std::string, Binding> struct_fields;
 
     for (auto& stmt : stmt->stmts) {
         if (auto field_stmt = std::dynamic_pointer_cast<Stmt::Field>(stmt)) {
@@ -360,8 +360,7 @@ std::any GlobalChecker::visit(Stmt::StructDef* stmt) {
                 &field_stmt->identifier->location,
                 type_opt.value()
             );
-            if (auto existing_field =
-                    struct_node->fields.at(field_binding.name)) {
+            if (auto existing_field = struct_fields.at(field_binding.name)) {
                 Diagnostics::inst().emit_error(
                     Err::DuplicateStructFieldName,
                     *field_binding.location,
@@ -377,14 +376,26 @@ std::any GlobalChecker::visit(Stmt::StructDef* stmt) {
                 continue;
             }
 
-            struct_node->fields.insert(field_binding.name, field_binding);
+            struct_fields.insert(field_binding.name, field_binding);
         }
         else {
             stmt->accept(this);
         }
     }
 
-    stmt->struct_def_node = struct_node;
+    // Create the struct type
+    auto struct_type = std::make_shared<Type::Struct>(
+        std::weak_ptr(struct_node_opt.value()),
+        std::move(struct_fields)
+    );
+
+    // TODO: Determine if these extra pointers are necessary.
+    // Set the type of the struct node to the struct type.
+    struct_node_opt.value()->type = struct_type;
+
+    // Set the struct_def_node of the statement to the struct node.
+    stmt->struct_def_node = struct_node_opt.value();
+
     symbol_tree->exit_scope();
     return std::any();
 }

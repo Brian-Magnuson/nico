@@ -171,9 +171,6 @@ std::shared_ptr<Node::StructDef> Node::StructDef::create(
     node->parent = parent;
     node->short_name = std::string(token->lexeme);
     node->location = &token->location;
-    node->is_class = is_class;
-
-    node->type = std::make_shared<Type::Named>(node);
     return node;
 }
 
