@@ -358,7 +358,8 @@ std::any GlobalChecker::visit(Stmt::StructDef* stmt) {
                 field_stmt->mutability,
                 std::string(field_stmt->identifier->lexeme),
                 &field_stmt->identifier->location,
-                type_opt.value()
+                type_opt.value(),
+                field_stmt->expression
             );
             if (auto existing_field = struct_fields.at(field_binding.name)) {
                 Diagnostics::inst().emit_error(

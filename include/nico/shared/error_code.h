@@ -241,6 +241,9 @@ enum class Err {
     // A type mismatch was found between a function's body expression and its
     // declared return type.
     FunctionReturnTypeMismatch,
+    // A type mismatch was found between a struct field's default expression and
+    // its declared type.
+    DefaultFieldTypeMismatch,
     // An array literal element had a type inconsistent with previous elements.
     ArrayElementTypeMismatch,
     // An attempt was made to allocate memory for an unsized type.

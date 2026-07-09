@@ -421,8 +421,48 @@ std::any LocalChecker::visit(Stmt::StructDef* stmt) {
     auto previous_scope = symbol_tree->current_scope;
     symbol_tree->current_scope = stmt->struct_def_node.lock();
 
-    for (auto& stmt : stmt->stmts) {
-        stmt->accept(this);
+    // Get the struct type from the struct_def_node.
+    auto struct_type_opt =
+        Type::as_a<Type::Struct>(stmt->struct_def_node.lock()->type);
+    if (!struct_type_opt) {
+        panic(
+            "LocalChecker::visit(Stmt::StructDef*): Struct definition node "
+            "does not have a struct type."
+        );
+    }
+    auto struct_type = struct_type_opt.value();
+
+    for (auto& inner_stmt : stmt->stmts) {
+        if (auto field_stmt =
+                std::dynamic_pointer_cast<Stmt::Field>(inner_stmt)) {
+            auto field_binding =
+                struct_type->fields
+                    .at(std::string(field_stmt->identifier->lexeme))
+                    .value();
+            // If the field has an initializer expression, check it.
+            if (field_binding.default_expr.has_value()) {
+                auto default_expr_ptr =
+                    field_binding.default_expr.value().lock();
+                auto default_expr_type_opt =
+                    expression_checker->expr_check(default_expr_ptr, false);
+                if (default_expr_type_opt.has_value() &&
+                    !default_expr_type_opt.value()->is_assignable_to(
+                        field_binding.type
+                    )) {
+                    Diagnostics::inst().emit_error(
+                        Err::DefaultFieldTypeMismatch,
+                        default_expr_ptr->location,
+                        std::string("Type `") +
+                            default_expr_type_opt.value()->to_string() +
+                            "` is not compatible with field type `" +
+                            field_binding.type->to_string() + "`."
+                    );
+                }
+            }
+        }
+        else {
+            inner_stmt->accept(this);
+        }
     }
 
     symbol_tree->current_scope = previous_scope;
