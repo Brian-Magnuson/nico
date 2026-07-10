@@ -265,6 +265,17 @@ To make a field mutable, add the `var` or `mut` keyword before the field name:
 Fields marked with `var` are mutable as long as the overall object value is also mutable.
 Fields marked with `mut` are mutable regardless of the mutability of the overall object value.
 
+Fields are not stored in the symbol tree, and thus, do not have a symbol.
+This means that, as long as field names do not collide with each other, any non-keyword identifier can be used as a field name.
+This includes identifiers that would normally match reserved names, such as `bool`, `i32`, or `str`.
+This is acceptable:
+```
+{ bool: bool, i32: i32, str: str }
+```
+
+This feature helps ensure objects are highly-flexible and can be used in a wide variety of contexts without worrying about naming conflicts.
+However, for clarity, it is recommended to avoid using reserved names as field names for internal code.
+
 Object literal values may be written using curly braces:
 ```
 { x: 42, y: 3.14 }

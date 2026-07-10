@@ -1427,3 +1427,53 @@ TEST_CASE("Check typedef declarations", "[checker]") {
         );
     }
 }
+
+TEST_CASE("Check struct def declarations", "[checker]") {
+    SECTION("Valid struct declaration") {
+        run_checker_stmt_test(
+            R"(
+            struct MyStruct {
+                field var x: i32
+                field var y: f64
+            }
+            )"
+        );
+    }
+
+    SECTION("Struct with reserved name") {
+        run_checker_stmt_test(
+            R"(
+            struct bool {
+                field var x: i32
+            }
+            )",
+            Err::NameIsReserved
+        );
+    }
+
+    SECTION("Struct name already exists") {
+        run_checker_stmt_test(
+            R"(
+            struct MyStruct {
+                field var x: i32
+            }
+            struct MyStruct {
+                field var y: f64
+            }
+            )",
+            Err::NameAlreadyExists
+        );
+    }
+
+    SECTION("Struct field name already exists") {
+        run_checker_stmt_test(
+            R"(
+            struct MyStruct {
+                field var x: i32
+                field var x: f64
+            }
+            )",
+            Err::DuplicateStructFieldName
+        );
+    }
+}
