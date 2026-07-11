@@ -994,6 +994,10 @@ TEST_CASE("Check object expressions", "[checker]") {
     SECTION("Object immutable with mut field") {
         run_checker_expr_test("let a = { mut x: 1, y: 2.0 } a.x = 10");
     }
+
+    SECTION("Object field with reserved name OK") {
+        run_checker_expr_test("let var a = { var i32: 1 } a.i32 = 2");
+    }
 }
 
 TEST_CASE("Check conditional expressions", "[checker]") {

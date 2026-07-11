@@ -1476,4 +1476,35 @@ TEST_CASE("Check struct def declarations", "[checker]") {
             Err::DuplicateStructFieldName
         );
     }
+
+    SECTION("Struct field reserved name OK") {
+        run_checker_stmt_test(
+            R"(
+            struct MyStruct {
+                field var bool: i32
+            }
+            )"
+        );
+    }
+
+    SECTION("Struct field with default value") {
+        run_checker_stmt_test(
+            R"(
+            struct MyStruct {
+                field var x: i32 = 42
+            }
+            )"
+        );
+    }
+
+    SECTION("Struct field default value type mismatch") {
+        run_checker_stmt_test(
+            R"(
+            struct MyStruct {
+                field var x: i32 = true
+            }
+            )",
+            Err::DefaultFieldTypeMismatch
+        );
+    }
 }
