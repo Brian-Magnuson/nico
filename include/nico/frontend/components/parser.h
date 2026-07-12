@@ -638,7 +638,7 @@ class Parser {
      * @return The parsed annotation, or nullopt if the annotation could not be
      * parsed.
      */
-    std::optional<std::shared_ptr<Annotation>> named_type_annotation();
+    std::optional<std::shared_ptr<Annotation::NameRef>> named_type_annotation();
 
     /**
      * @brief Parses a tuple annotation.
@@ -649,7 +649,7 @@ class Parser {
      * @return The parsed annotation, or nullopt if the annotation could not be
      * parsed.
      */
-    std::optional<std::shared_ptr<Annotation>> tuple_annotation();
+    std::optional<std::shared_ptr<Annotation::Tuple>> tuple_annotation();
 
     /**
      * @brief Parses an array annotation.
@@ -660,7 +660,7 @@ class Parser {
      * @return The parsed annotation, or nullopt if the annotation could not be
      * parsed.
      */
-    std::optional<std::shared_ptr<Annotation>> array_annotation();
+    std::optional<std::shared_ptr<Annotation::Array>> array_annotation();
 
     /**
      * @brief Parses an object annotation.
@@ -672,7 +672,7 @@ class Parser {
      * @return The parsed annotation, or nullopt if the annotation could not be
      * parsed.
      */
-    std::optional<std::shared_ptr<Annotation>> object_annotation();
+    std::optional<std::shared_ptr<Annotation::Object>> object_annotation();
 
     /**
      * @brief Parses a type annotation.

@@ -1507,4 +1507,16 @@ TEST_CASE("Check struct def declarations", "[checker]") {
             Err::DefaultFieldTypeMismatch
         );
     }
+
+    SECTION("Struct type eventually resolves") {
+        run_checker_stmt_test(
+            R"(
+            let var s: MyStruct
+
+            struct MyStruct {
+                field var x: i32
+            }
+            )"
+        );
+    }
 }

@@ -2115,14 +2115,15 @@ std::optional<std::shared_ptr<Annotation>> Parser::type_of_annotation() {
     return std::make_shared<Annotation::TypeOf>(typeof_token, *expr);
 }
 
-std::optional<std::shared_ptr<Annotation>> Parser::named_type_annotation() {
+std::optional<std::shared_ptr<Annotation::NameRef>>
+Parser::named_type_annotation() {
     auto name_opt = name();
     if (!name_opt)
         return std::nullopt;
     return std::make_shared<Annotation::NameRef>(name_opt.value());
 }
 
-std::optional<std::shared_ptr<Annotation>> Parser::tuple_annotation() {
+std::optional<std::shared_ptr<Annotation::Tuple>> Parser::tuple_annotation() {
     // Tuple annotation
     auto lparen_token = previous();
     std::vector<std::shared_ptr<Annotation>> elements;
@@ -2156,7 +2157,7 @@ std::optional<std::shared_ptr<Annotation>> Parser::tuple_annotation() {
     );
 }
 
-std::optional<std::shared_ptr<Annotation>> Parser::array_annotation() {
+std::optional<std::shared_ptr<Annotation::Array>> Parser::array_annotation() {
     // Array annotation
     auto lsquare_token = previous();
     if (match({Tok::RSquare})) {
@@ -2197,7 +2198,7 @@ std::optional<std::shared_ptr<Annotation>> Parser::array_annotation() {
     );
 }
 
-std::optional<std::shared_ptr<Annotation>> Parser::object_annotation() {
+std::optional<std::shared_ptr<Annotation::Object>> Parser::object_annotation() {
     // Object annotation
     auto lbrace_token = previous();
     std::vector<Annotation::Object::Field> fields;

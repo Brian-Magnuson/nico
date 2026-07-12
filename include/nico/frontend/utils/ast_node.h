@@ -1039,7 +1039,7 @@ public:
     // The 'new' keyword token.
     std::shared_ptr<Token> new_token;
     // The type annotation for the new instance.
-    std::shared_ptr<Annotation> type_annotation;
+    std::shared_ptr<Annotation::NameRef> annotation;
     // The named arguments that were provided for the new instance.
     Dictionary<std::string, std::shared_ptr<Expr>> provided_args;
     // The actual arguments to be used in the new instance; to be filled in by
@@ -1048,11 +1048,11 @@ public:
 
     NewInst(
         std::shared_ptr<Token> new_token,
-        std::shared_ptr<Annotation> type_annotation,
+        std::shared_ptr<Annotation::NameRef> annotation,
         Dictionary<std::string, std::shared_ptr<Expr>>&& provided_args
     )
         : new_token(new_token),
-          type_annotation(type_annotation),
+          annotation(annotation),
           provided_args(std::move(provided_args)) {
         location = &new_token->location;
     }

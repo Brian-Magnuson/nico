@@ -297,6 +297,17 @@ enum class Err {
     UnsizedTypeMemberAccess,
     // An attempt was made to access an array element of an unsized type.
     UnsizedTypeArrayAccess,
+    // An attempt was made to create a new instance of a type that is not a
+    // struct type.
+    NewInstNotStruct,
+    // A new instance expression was found with a field name that does not exist
+    // in the struct.
+    NewInstUnknownField,
+    // A new instance expression was found with a field name that has a type
+    // that does not match the struct's field type.
+    NewInstFieldTypeMismatch,
+    // A new instance expression was found that is missing a required field.
+    NewInstMissingRequiredField,
     // A cast expression was found that cannot perform the requested cast.
     InvalidCastOperation,
     // A control structure was found with a condition that does not have a

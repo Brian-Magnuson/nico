@@ -1292,7 +1292,6 @@ std::any ExpressionChecker::visit(Expr::Alloc* expr, bool as_lvalue) {
 }
 
 std::any ExpressionChecker::visit(Expr::NewInst* expr, bool as_lvalue) {
-    // As a reminder: pointers are not possible lvalues.
     if (as_lvalue) {
         Diagnostics::inst().emit_error(
             Err::NotAPossibleLValue,
@@ -1302,7 +1301,87 @@ std::any ExpressionChecker::visit(Expr::NewInst* expr, bool as_lvalue) {
         return std::any();
     }
 
-    // TODO: Implement new instance checking.
+    // First, get the type of the new instance from the annotation.
+    auto anno_any = expr->annotation->accept(annotation_checker.get());
+    if (!anno_any.has_value())
+        return std::any();
+    auto new_inst_type = std::any_cast<std::shared_ptr<Type>>(anno_any);
+
+    if (!Type::is_a<Type::Struct>(new_inst_type)) {
+        Diagnostics::inst().emit_error(
+            Err::NewInstNotStruct,
+            expr->annotation->location,
+            "Non-struct type `" + new_inst_type->to_string() +
+                "` cannot be instantiated using `new`."
+        );
+        return std::any();
+    }
+    auto struct_type = Type::as_a<Type::Struct>(new_inst_type).value();
+
+    // Next, apply all default arguments to the provided arguments.
+    Dictionary<std::string, std::weak_ptr<Expr>> arg_mapping;
+    for (auto& [field_name, field_binding] : struct_type->fields) {
+        arg_mapping.insert(
+            field_name,
+            field_binding.default_expr.value_or(std::weak_ptr<Expr>())
+        );
+        // We insert an empty pointer if there is no default expression.
+        // This ensures the dictionary has the correct keys for all fields in
+        // the correct order.
+    }
+
+    // Next, apply the provided arguments to the mapping, overriding any
+    // defaults.
+    for (auto& [arg_name, arg_expr] : expr->provided_args) {
+        if (!arg_mapping.contains(arg_name)) {
+            Diagnostics::inst().emit_error(
+                Err::NewInstUnknownField,
+                arg_expr->location,
+                "Struct type `" + struct_type->to_string() +
+                    "` has no field named `" + arg_name + "`."
+            );
+        }
+        if (!arg_expr->type->is_assignable_to(
+                struct_type->fields.at(arg_name)->type
+            )) {
+            Diagnostics::inst().emit_error(
+                Err::NewInstFieldTypeMismatch,
+                arg_expr->location,
+                "Provided expression of type `" + arg_expr->type->to_string() +
+                    "` is not compatible with field `" + arg_name +
+                    "` of type `" +
+                    struct_type->fields.at(arg_name)->type->to_string() + "`."
+            );
+            Diagnostics::inst().emit_note(
+                struct_type->fields.at(arg_name)->location,
+                "Field `" + arg_name + "` is declared here."
+            );
+        }
+        arg_mapping[arg_name] = arg_expr;
+    }
+
+    // Finally, check that all fields have been provided with an expression.
+    for (auto& [field_name, field_binding] : struct_type->fields) {
+        if (arg_mapping.at(field_name)->lock() == nullptr) {
+            Diagnostics::inst().emit_error(
+                Err::NewInstMissingRequiredField,
+                expr->location,
+                "Value not provided for required field `" + field_name +
+                    "` of struct `" + struct_type->to_string() + "`."
+            );
+            Diagnostics::inst().emit_note(
+                field_binding.location,
+                "Field `" + field_name + "` is declared here."
+            );
+        }
+    }
+
+    // Set the arg mapping
+    expr->actual_args = std::move(arg_mapping);
+
+    // The type of the new instance expression is the struct type.
+    expr->type = struct_type;
+
     return std::any();
 }
 
