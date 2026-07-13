@@ -935,6 +935,8 @@ TEST_CASE("Check subscript expressions", "[checker]") {
     }
 }
 
+// TODO: Object access needs further testing.
+
 TEST_CASE("Check object expressions", "[checker]") {
     SECTION("Valid object expression 1") {
         run_checker_expr_test("let a = { x: 1, y: 2.0 }");

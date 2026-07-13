@@ -295,6 +295,8 @@ enum class Err {
     InvalidTupleAccess,
     // An attempt was made to access a member of an unsized type.
     UnsizedTypeMemberAccess,
+    // An attempt was made to access a member that does not exist in the type.
+    NonExistentMemberAccess,
     // An attempt was made to access an array element of an unsized type.
     UnsizedTypeArrayAccess,
     // An attempt was made to create a new instance of a type that is not a
