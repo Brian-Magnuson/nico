@@ -1519,4 +1519,85 @@ TEST_CASE("Check struct def declarations", "[checker]") {
             )"
         );
     }
+
+    SECTION("Struct field access") {
+        run_checker_stmt_test(
+            R"(
+            struct MyStruct {
+                field x: i32
+            }
+
+            let s: MyStruct = new MyStruct { x: 42 }
+            let x: i32 = s.x
+        )"
+        );
+    }
+
+    SECTION("Immutable struct with var field assignment") {
+        run_checker_stmt_test(
+            R"(
+            struct MyStruct {
+                field var x: i32
+            }
+
+            let s: MyStruct = new MyStruct { x: 42 }
+            s.x = 43
+        )",
+            Err::AssignToImmutable
+        );
+    }
+
+    SECTION("Mutable struct with immutable field assignment") {
+        run_checker_stmt_test(
+            R"(
+            struct MyStruct {
+                field x: i32
+            }
+
+            let var s: MyStruct = new MyStruct { x: 42 }
+            s.x = 43
+        )",
+            Err::AssignToImmutable
+        );
+    }
+
+    SECTION("Immutable struct with mut field assignment") {
+        run_checker_stmt_test(
+            R"(
+            struct MyStruct {
+                field mut x: i32
+            }
+
+            let s: MyStruct = new MyStruct { x: 42 }
+            s.x = 43
+        )"
+        );
+    }
+
+    SECTION("Mutable struct with var field assignment") {
+        run_checker_stmt_test(
+            R"(
+            struct MyStruct {
+                field var x: i32
+            }
+
+            let var s: MyStruct = new MyStruct { x: 42 }
+            s.x = 43
+        )"
+        );
+    }
+
+    SECTION("Struct field does not exist") {
+        run_checker_stmt_test(
+            R"(
+            struct MyStruct {
+                field x: i32
+            }
+
+            let s: MyStruct = new MyStruct { x: 42 }
+            let y: i32 = s.y
+        )",
+            Err::NonExistentMemberAccess
+        );
+    }
 }

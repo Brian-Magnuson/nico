@@ -935,8 +935,6 @@ TEST_CASE("Check subscript expressions", "[checker]") {
     }
 }
 
-// TODO: Object access needs further testing.
-
 TEST_CASE("Check object expressions", "[checker]") {
     SECTION("Valid object expression 1") {
         run_checker_expr_test("let a = { x: 1, y: 2.0 }");
@@ -999,6 +997,13 @@ TEST_CASE("Check object expressions", "[checker]") {
 
     SECTION("Object field with reserved name OK") {
         run_checker_expr_test("let var a = { var i32: 1 } a.i32 = 2");
+    }
+
+    SECTION("Object field does not exist") {
+        run_checker_expr_test(
+            "let a = { x: 1, y: 2.0 } let b = a.z",
+            Err::NonExistentMemberAccess
+        );
     }
 }
 

@@ -1370,6 +1370,7 @@ std::any ExpressionChecker::visit(Expr::NewInst* expr, bool as_lvalue) {
     // Next, apply the provided arguments to the mapping, overriding any
     // defaults.
     for (auto& [arg_name, arg_expr] : expr->provided_args) {
+        bool has_error = false;
         if (!arg_mapping.contains(arg_name)) {
             Diagnostics::inst().emit_error(
                 Err::NewInstUnknownField,
@@ -1377,7 +1378,13 @@ std::any ExpressionChecker::visit(Expr::NewInst* expr, bool as_lvalue) {
                 "Struct type `" + struct_type->to_string() +
                     "` has no field named `" + arg_name + "`."
             );
+            has_error = true;
         }
+        has_error = has_error || !expr_check(arg_expr, false).has_value();
+        if (has_error) {
+            continue;
+        }
+
         if (!arg_expr->type->is_assignable_to(
                 struct_type->fields.at(arg_name)->type
             )) {
