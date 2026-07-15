@@ -390,7 +390,6 @@ std::any GlobalChecker::visit(Stmt::StructDef* stmt) {
         std::move(struct_fields)
     );
 
-    // TODO: Determine if these extra pointers are necessary.
     // Set the type of the struct node to the struct type.
     struct_node_opt.value()->type = struct_type;
 

@@ -1015,13 +1015,26 @@ public:
 
     virtual llvm::Type*
     get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
-        // TODO: This is a temporary implementation that returns a struct type
-        // with the same fields as the struct.
-        std::vector<llvm::Type*> field_types;
-        for (const auto& [key, value] : fields) {
-            field_types.push_back(value.type->get_llvm_type(builder));
+        // Check if the struct was already defined in the LLVM module.
+        auto struct_type = llvm::StructType::getTypeByName(
+            builder->getContext(),
+            node.lock()->symbol
+        );
+        if (!struct_type) {
+            struct_type = llvm::StructType::create(
+                builder->getContext(),
+                node.lock()->symbol
+            );
+            // The struct type declaration and definition must be done as two
+            // separate steps. This ensures that recursive struct types can be
+            // defined correctly.
+            std::vector<llvm::Type*> field_types;
+            for (const auto& [_, binding] : fields) {
+                field_types.push_back(binding.type->get_llvm_type(builder));
+            }
+            struct_type->setBody(field_types);
         }
-        return llvm::StructType::get(builder->getContext(), field_types);
+        return struct_type;
     }
 };
 
