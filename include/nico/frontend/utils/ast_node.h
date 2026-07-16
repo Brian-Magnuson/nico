@@ -1060,6 +1060,22 @@ public:
     std::any accept(Visitor* visitor, bool as_lvalue) override {
         return visitor->visit(this, as_lvalue);
     }
+
+    bool is_constant() const override {
+        // Instance initializers are constant iff all actual arguments are
+        // constant.
+        for (const auto& [_, arg] : actual_args) {
+            if (arg.expired()) {
+                panic(
+                    "Expr::NewInst::is_constant: actual argument is expired."
+                );
+            }
+            if (!arg.lock()->is_constant()) {
+                return false;
+            }
+        }
+        return true;
+    }
 };
 
 /**

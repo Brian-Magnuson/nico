@@ -315,7 +315,10 @@ std::any CodeGenerator::visit(Stmt::TypeDef* /*stmt*/) {
 }
 
 std::any CodeGenerator::visit(Stmt::StructDef* stmt) {
-    // TODO: Implement struct definitions.
+    // Visit each statement in the struct definition block.
+    for (const auto& decl : stmt->stmts) {
+        decl->accept(this);
+    }
     return std::any();
 }
 
@@ -926,7 +929,46 @@ std::any CodeGenerator::visit(Expr::Alloc* expr, bool as_lvalue) {
 std::any CodeGenerator::visit(Expr::NewInst* expr, bool as_lvalue) {
     llvm::Value* result = nullptr;
 
-    // TODO: Implement this function.
+    auto struct_type = Type::as_a<Type::Struct>(expr->type).value();
+    auto llvm_struct_type =
+        llvm::cast<llvm::StructType>(expr->type->get_llvm_type(builder));
+
+    if (expr->is_constant()) {
+        std::vector<llvm::Constant*> field_constants;
+        for (auto& [name, expression] : expr->actual_args) {
+            auto value = std::any_cast<llvm::Value*>(
+                expression.lock()->accept(this, false)
+            );
+            field_constants.push_back(llvm::cast<llvm::Constant>(value));
+        }
+        result = llvm::ConstantStruct::get(llvm_struct_type, field_constants);
+    }
+    else {
+        // Allocate the struct on the stack.
+        auto struct_alloc =
+            builder->CreateAlloca(llvm_struct_type, nullptr, "newinst");
+
+        // Store fields in declaration order.
+        size_t field_index = 0;
+        for (const auto& [field_name, field_binding] : struct_type->fields) {
+            auto field_ptr = builder->CreateStructGEP(
+                llvm_struct_type,
+                struct_alloc,
+                field_index,
+                "field"
+            );
+
+            auto field_value = std::any_cast<llvm::Value*>(
+                expr->actual_args.at(field_name)->lock()->accept(this, false)
+            );
+
+            builder->CreateStore(field_value, field_ptr);
+            ++field_index;
+        }
+
+        // The expression produces the struct value itself.
+        result = builder->CreateLoad(llvm_struct_type, struct_alloc);
+    }
 
     return result;
 }
