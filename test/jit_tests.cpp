@@ -1956,3 +1956,19 @@ TEST_CASE("JIT typedef declarations", "[jit]") {
         );
     }
 }
+
+TEST_CASE("JIT struct declarations", "[jit]") {
+    SECTION("Simple struct") {
+        run_jit_test(
+            R"(
+            struct Point {
+                field x: f64
+                field y: f64
+            }
+            let p = new Point { x: 3.0, y: 4.0 }
+            printout p.x, ",", p.y
+            )",
+            "3,4"
+        );
+    }
+}

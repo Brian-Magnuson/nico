@@ -759,6 +759,38 @@ std::any CodeGenerator::visit(Expr::Access* expr, bool as_lvalue) {
             );
         }
     }
+    else if (
+        auto struct_type =
+            Type::as_a<Type::Struct>(expr->left->type).value_or(nullptr)
+    ) {
+        auto field_index = struct_type->fields.get_index(
+            std::string(expr->right_token->lexeme)
+        );
+        if (field_index == -1) {
+            panic(
+                "CodeGenerator::visit(Expr::Access*): Field '" +
+                std::string(expr->right_token->lexeme) +
+                "' not found in type '" + struct_type->to_string() + "'."
+            );
+        }
+
+        llvm::Value* field_ptr = builder->CreateStructGEP(
+            struct_type->get_llvm_type(builder),
+            left,
+            field_index,
+            "struct_field"
+        );
+
+        if (as_lvalue) {
+            result = field_ptr;
+        }
+        else {
+            result = builder->CreateLoad(
+                expr->type->get_llvm_type(builder),
+                field_ptr
+            );
+        }
+    }
     else {
         panic(
             "CodeGenerator::visit(Expr::Access*): Accessing fields of this "
