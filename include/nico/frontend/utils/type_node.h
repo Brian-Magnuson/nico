@@ -971,11 +971,8 @@ public:
 
     virtual ~Struct() = default;
 
-    Struct(
-        std::weak_ptr<Node::StructDef> node,
-        Dictionary<std::string, Binding>&& fields
-    )
-        : node(node), fields(std::move(fields)) {
+    Struct(std::weak_ptr<Node::StructDef> node)
+        : node(node) {
         if (node.expired()) {
             panic("Type::Struct: Node is expired");
         }
@@ -1010,7 +1007,25 @@ public:
         llvm::Value* value,
         bool include_quotes = false
     ) const override {
-        return {to_string(), {}};
+        std::string format_str = to_string() + "{";
+        std::vector<llvm::Value*> args;
+        unsigned index = 0;
+        for (const auto& [field_name, binding] : fields) {
+            auto [fmt, vals] = binding.type->to_print_args(
+                builder,
+                builder->CreateExtractValue(value, {index}),
+                true
+            );
+            format_str += field_name + ": " + fmt + ", ";
+            args.insert(args.end(), vals.begin(), vals.end());
+            ++index;
+        }
+        if (!fields.empty()) {
+            format_str.pop_back();
+            format_str.pop_back();
+        }
+        format_str += "}";
+        return {format_str, args};
     }
 
     virtual llvm::Type*

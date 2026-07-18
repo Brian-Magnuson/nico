@@ -1971,4 +1971,67 @@ TEST_CASE("JIT struct declarations", "[jit]") {
             "3,4"
         );
     }
+
+    SECTION("Struct printout") {
+        run_jit_test(
+            R"(
+            struct Point {
+                field x: f64
+                field y: f64
+            }
+            let p = new Point { x: 3.0, y: 4.0 }
+            printout p
+            )",
+            "::Point{x: 3, y: 4}"
+        );
+    }
+
+    SECTION("Struct update fields") {
+        run_jit_test(
+            R"(
+            struct Point {
+                field var x: f64
+                field var y: f64
+            }
+            let var p = new Point { x: 3.0, y: 4.0 }
+            printout p, "\n"
+            p.x = 5.0
+            p.y = 6.0
+            printout p
+            )",
+            "::Point{x: 3, y: 4}\n::Point{x: 5, y: 6}"
+        );
+    }
+
+    SECTION("Struct use before declare") {
+        run_jit_test(
+            R"(
+            let p = new Point { x: 1.0, y: 2.0 }
+            printout p
+
+            struct Point {
+                field x: f64
+                field y: f64
+            }
+            )",
+            "::Point{x: 1, y: 2}"
+        );
+    }
+
+    // TODO: Add a test like this in type checker tests.
+    SECTION("Struct self referencing") {
+        run_jit_test(
+            R"(
+            struct Node {
+                field value: i32
+                field next: @Node
+            }
+            let node1 = new Node { value: 1, next: nullptr }
+            let node2 = new Node { value: 2, next: @node1 }
+            unsafe:
+                printout node2.value, ",", node2.next.value
+            )",
+            "2,1"
+        );
+    }
 }

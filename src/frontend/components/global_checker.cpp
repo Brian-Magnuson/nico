@@ -345,6 +345,10 @@ std::any GlobalChecker::visit(Stmt::StructDef* stmt) {
     if (!struct_node_opt.has_value()) {
         return std::any();
     }
+    auto struct_node = struct_node_opt.value();
+    auto struct_type = std::make_shared<Type::Struct>(struct_node);
+    struct_node->type = struct_type;
+
     Dictionary<std::string, Binding> struct_fields;
 
     for (auto& stmt : stmt->stmts) {
@@ -383,18 +387,10 @@ std::any GlobalChecker::visit(Stmt::StructDef* stmt) {
             stmt->accept(this);
         }
     }
-
-    // Create the struct type
-    auto struct_type = std::make_shared<Type::Struct>(
-        std::weak_ptr(struct_node_opt.value()),
-        std::move(struct_fields)
-    );
-
-    // Set the type of the struct node to the struct type.
-    struct_node_opt.value()->type = struct_type;
+    struct_type->fields = std::move(struct_fields);
 
     // Set the struct_def_node of the statement to the struct node.
-    stmt->struct_def_node = struct_node_opt.value();
+    stmt->struct_def_node = struct_node;
 
     symbol_tree->exit_scope();
     return std::any();
