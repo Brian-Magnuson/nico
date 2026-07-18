@@ -2018,7 +2018,6 @@ TEST_CASE("JIT struct declarations", "[jit]") {
         );
     }
 
-    // TODO: Add a test like this in type checker tests.
     SECTION("Struct self referencing") {
         run_jit_test(
             R"(

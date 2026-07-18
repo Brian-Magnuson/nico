@@ -1600,4 +1600,29 @@ TEST_CASE("Check struct def declarations", "[checker]") {
             Err::NonExistentMemberAccess
         );
     }
+
+    SECTION("Struct self referencing field type") {
+        run_checker_stmt_test(
+            R"(
+            struct Node {
+                field value: i32
+                field next: @Node
+            }
+            let node1 = new Node { value: 1, next: nullptr }
+            let node2 = new Node { value: 2, next: @node1 }
+            )"
+        );
+    }
+
+    SECTION("Struct as namespace") {
+        run_checker_stmt_test(
+            R"(
+            struct Math {
+                field var x: i32
+                func add(a: i32, b: i32) -> i32 => a + b
+            }
+            let result = Math::add(1, 2)
+            )"
+        );
+    }
 }
