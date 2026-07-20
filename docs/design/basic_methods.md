@@ -125,3 +125,48 @@ let my_struct = new MyStruct { a: 5 }
 let result = my_struct.add(3)  // result is 8
 ```
 
+In my opinion, this design is weak.
+The method signature does not indicate where `self` comes from or what this function does with it.
+This is especially important since we care about immutability in our language.
+```
+let my_struct = new MyStruct { a: 5 }
+my_struct.add(3)  // If this modifies my_struct, then it's not allowed since my_struct is immutable.
+```
+
+C++ lets you specify whether a method is `const` or not, which indicates whether it modifies the instance or not.
+```cpp
+struct MyStruct {
+    int a;
+
+    int add(int b) const {  // This method does not modify the instance.
+        return a + b;
+    }
+};
+```
+
+Rust has a similar feature, except that `self` is written as a *parameter* to the method, which makes it more explicit.
+```rust
+struct MyStruct {
+    a: i32,
+}
+impl MyStruct {
+    fn add(&self, b: i32) -> i32 {  // This method does not modify the instance.
+        self.a + b
+    }
+}
+```
+
+The design choice of having `self` as a parameter is somewhat elegant.
+With parameters, you can already specify whether the parameter is mutable or not, so we can use the same syntax for `self` as well.
+
+There are some drawbacks to this approach, however:
+- You can't specify just any type for `self`. It must be the type of the struct that the method is defined on.
+- This parameter always has to be first in the parameter list.
+- You can't pass the instance directly as an argument to the method. You have to use the `.` operator to call the method on the instance.
+
+Drawbacks aside, I find that this design offers the cleanest and clearest syntax for methods.
+
+
+## The self parameter
+
+...
