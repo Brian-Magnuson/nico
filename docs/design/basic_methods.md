@@ -167,6 +167,56 @@ There are some drawbacks to this approach, however:
 Drawbacks aside, I find that this design offers the cleanest and clearest syntax for methods.
 
 
-## The self parameter
+## The receiver parameter
 
-...
+Here, we will refine our method design to use the `self` parameter, and examine the `self` parameter in more detail.
+
+```
+method add(self: MyStruct, b: i32) -> i32 {
+    return self.a + b
+}
+```
+
+The first parameter of a method in Nico is called the **receiver parameter**.
+The receiver parameter is a special parameter that represents the instance of the struct that the method is called on.
+It is required to be the first parameter of a method definition and must use an allowed type for the struct that the method is defined on.
+
+We name this parameter `self`, but it can be named anything.
+We can even allow the user to omit the name of the receiver parameter, in which case it will default to `self`.
+```
+method add(this: MyStruct, b: i32) -> i32 => this.a + b
+
+method add(:MyStruct, b: i32) -> i32 => self.a + b
+```
+
+This is the only time you can omit a name for a parameter in Nico.
+When doing so, the colon is required to indicate that the type is being specified without a name.
+
+When calling a method, you do not provide an argument for the receiver parameter.
+Attempting to do so is an error.
+Instead, the instance of the struct that the method is called on is automatically passed as the argument for the receiver parameter.
+```
+let my_struct = new MyStruct { a: 5 }
+let result = my_struct.add(3)  // result is 8
+MyStruct.add(my_struct, 3)  // Error: add has no overload that takes a MyStruct as the first argument
+```
+
+The receiver parameter is only allowed a certain set of types.
+For a struct `T`, the receiver parameter is currently allowed to be one of the following types:
+- `T`: The receiver parameter is a copy of the instance.
+- `@T`: The receiver parameter is a raw, immutable pointer to the instance.
+- `var@T`: The receiver parameter is a raw, mutable pointer to the instance.
+
+The way the method is called will not change.
+It is always called using the dot operator:
+```
+my_struct.add(3)
+```
+
+What changes is *how* the instance is passed to the method.
+As we have described, depending on the type of the receiver parameter, the instance may be passed as a copy, or a pointer.
+The user has the freedom to choose which type of receiver parameter they want to use.
+
+Passing by copy ensures the original instance is not modified and the provided instance can be used freely within the method.
+However, it may be less efficient if the struct is large and expensive to copy.
+On the other hand, passing by pointer allows the method to modify the original instance and can be more efficient, but it requires the user to be careful about mutability and ownership.
