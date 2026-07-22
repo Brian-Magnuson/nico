@@ -220,3 +220,36 @@ The user has the freedom to choose which type of receiver parameter they want to
 Passing by copy ensures the original instance is not modified and the provided instance can be used freely within the method.
 However, it may be less efficient if the struct is large and expensive to copy.
 On the other hand, passing by pointer allows the method to modify the original instance and can be more efficient, but it requires the user to be careful about mutability and ownership.
+
+
+## Problems with raw pointers
+
+As explained in the previous section, one of the allowed types for the receiver parameter is a raw pointer to the instance.
+
+Pointers are useful for passing large structs to methods without the overhead of copying them.
+However, *raw* pointers are difficult to work with.
+The language requires that raw pointers be dereferenced only in unsafe contexts:
+```
+method add(self: @MyStruct, b: i32) -> i32 {
+    unsafe {
+        return self.a + b
+    }
+}
+```
+
+Having the user constantly write `unsafe` blocks is cumbersome and error-prone.
+The more `unsafe` blocks you have, the less meaningful they become.
+
+The alternative would be to use references, a safer form of pointer that are guaranteed to be valid and not dangling through the management of ownership and lifetimes.
+However, references are still in development and are complicated to implement.
+It would be nice to have a "middle ground" between raw pointers and references.
+
+There are a few special properties about the receiver parameter that make this middle ground possible:
+- The receiver parameter is a parameter; it is rarely necessary for the user to change the values of parameters inside their function.
+- The receiver parameter is always passed by the caller; it is never created inside the method.
+- It is highly unusual for a method to deallocate the memory of the instance upon which it is called.
+- If the method is called on a pointer, then the pointer is dereferenced at the call site; once inside the method, the instance is guaranteed to be valid and not dangling.
+
+With these properties in mind, we can consider a special kind of raw pointer whose address value cannot be changed and whose memory cannot be deallocated.
+This special pointer would be used exclusively for the receiver parameter in methods.
+These restrictions are highly impractical outside methods, but methods offer special conditions that make them more useful.
