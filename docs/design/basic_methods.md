@@ -222,6 +222,94 @@ However, it may be less efficient if the struct is large and expensive to copy.
 On the other hand, passing by pointer allows the method to modify the original instance and can be more efficient, but it requires the user to be careful about mutability and ownership.
 
 
+## Accessor method problem
+
+This section discusses a special pattern with C++ accessor methods, whether or not Nico also has this pattern, and whether or not it will be a problem in the future.
+
+Users of C++ will know that containers such as `std::vector` with accessor methods like `at` and `operator[]` have two overloads: one that uses const and one that does not.
+Developers of custom data structures in C++ often follow this pattern as well.
+In fact, Nico's special `Dictionary` class has this pattern as well:
+```cpp
+V& operator[](K key);
+
+const V& operator[](K key) const;
+```
+
+Both are needed for their respective use cases.
+
+If we want to be able to modify data, we need to use the non-const version of the accessor method.
+```cpp
+Dictionary modifiable_dict;
+modifiable_dict["key"] = "value";  // Calls the non-const version of operator[]
+```
+
+And if we can't modify data, we need to use the const version of the accessor method.
+```cpp
+const Dictionary const_dict;
+auto value = const_dict["key"];  // Calls the const version of operator[]
+```
+
+Question: Does this problem exist in Nico?
+
+First, there is no plan to support C++-style references.
+So instead, we will see if this problem exists with raw pointers.
+
+Nico does not allow you to create a mutable pointer to an immutable instance, so the following code is not allowed:
+```
+let num = 5
+let ptr = var@num  // Error: cannot create a mutable pointer to an immutable instance
+```
+
+You also cannot convert an immutable pointer to a mutable pointer, so the following code is also not allowed:
+```
+let num = 5
+let ptr = @num  // Immutable pointer to num
+let mutable_ptr: var@i32 = ptr  // Error: cannot convert an immutable pointer to a mutable pointer
+```
+
+The same rules apply inside of structs:
+```
+struct MyStruct:
+    field data: Data
+
+    method get_data(self: @MyStruct) -> var@Data:
+        return var@(self.data)  // Error: cannot create a mutable pointer to an immutable instance
+```
+
+Here, `data` is an immutable field of `MyStruct`, so we cannot create a mutable pointer to it.
+
+Now, let's consider the case where `data` is declared with `var`:
+```
+struct MyStruct:
+    field var data: Data
+
+    method get_data(self: @MyStruct) -> var@Data:
+        return var@(self.data)  // Error: cannot create a mutable pointer since self is not mutable.
+```
+
+According to the rules of Nico assignability, since `data` is declared with `var`, it inherits the mutability of the enclosing instance, which is the dereferenced `self` pointer. 
+The assignability of the dereferenced `self` pointer depends on whether the pointer was a `var@` or a `@` pointer.
+Since the receiver parameter is declared as `@MyStruct`, it is an immutable pointer, so the dereferenced instance is also immutable.
+This means that `data` is also immutable, and we cannot create a mutable pointer to it.
+
+A possible workaround would be to declare `data` with `mut`, which allows it to be mutable regardless of the mutability of the enclosing instance:
+```
+struct MyStruct:
+    field mut data: Data
+```
+However, this is not ideal since it leaves our data unprotected and allows it to be modified even when the enclosing instance is immutable.
+
+Storing `data` as a `var@` has the same problem, since anyone with a pointer to the instance can read `data` and dereference it to get a mutable pointer to it, even if the enclosing instance is immutable.
+```
+struct MyStruct:
+    field data: var@Data
+
+    method get_data(self: @MyStruct) -> var@Data:
+        return self.data  // OK, interior mutability allows this.
+```
+
+...
+
 ## Problems with raw pointers
 
 As explained in the previous section, one of the allowed types for the receiver parameter is a raw pointer to the instance.
