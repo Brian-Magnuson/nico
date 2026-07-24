@@ -221,6 +221,15 @@ Passing by copy ensures the original instance is not modified and the provided i
 However, it may be less efficient if the struct is large and expensive to copy.
 On the other hand, passing by pointer allows the method to modify the original instance and can be more efficient, but it requires the user to be careful about mutability and ownership.
 
+Since the way the method is called does not change, this also means that our compiler will be unable to differentiate overloads that differ only in the type of the receiver parameter:
+```
+method add(self: MyStruct, b: i32) -> i32 => self.a + b
+method add(self: @MyStruct, b: i32) -> i32 => self.a + b  // Error: cannot overload methods based on the type of the receiver parameter
+```
+
+This is not necessarily a bad thing.
+It keeps our overload resolution process simple and avoids potential confusion for the user.
+
 
 ## Accessor method problem
 
@@ -308,7 +317,28 @@ struct MyStruct:
         return self.data  // OK, interior mutability allows this.
 ```
 
-...
+It would seem Nico *does* have the same problem as C++ with accessor methods, and that the only way to allow both mutable and immutable access to `data` is to have two separate methods, one for each case:
+```
+struct MyStruct:
+    field var data: Data
+
+    method get_data(self: @MyStruct) -> @Data => @(self.data)
+
+    method get_data(self: var@MyStruct) -> var@Data => var@(self.data)  // Error: cannot overload methods based on the type of the receiver parameter
+```
+
+However, we now see another problem: we cannot overload methods based on the type of the receiver parameter.
+We can solve this in a few ways:
+- We modify our overload resolution process to allow overloading based on the type of the receiver parameter, ensuring that the correct method is called based on the mutability of the instance.
+- We give our users another means of specifying which method they want to call
+- We avoid this problem by disallowing overloading accessor methods, requiring users to use different names for the mutable and immutable versions of the method.
+
+This last option, while it may be less convenient, is the simplest to implement and can be made clear to the user through documentation and naming conventions.
+
+It is also worth noting that not all programming languages support method overloading.
+For example, Rust does not support method overloading, and instead relies on naming conventions to differentiate between methods with similar functionality.
+So there is precedent for this approach, and it may be the best option for Nico as well.
+
 
 ## Problems with raw pointers
 
