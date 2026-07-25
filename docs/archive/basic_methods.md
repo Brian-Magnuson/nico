@@ -4,8 +4,9 @@ This document discusses how basic methods will be implemented in the Nico progra
 The word "basic" in this context refers to the implementation complexity of these methods in the compiler, not their functionality (though they are also simple in that regard).
 Mainly, we shall focus on struct methods as structs do not support all OOP features and are designed to be simple and efficient.
 
-> [!WARNING]
-> This document is a work in progress and is subject to change.
+> [!CAUTION]
+> This document is incomplete and does not reflect the final design of methods in Nico.
+> It is kept for archival purposes.
 
 ## Introduction
 
@@ -371,3 +372,24 @@ There are a few special properties about the receiver parameter that make this m
 With these properties in mind, we can consider a special kind of raw pointer whose address value cannot be changed and whose memory cannot be deallocated.
 This special pointer would be used exclusively for the receiver parameter in methods.
 These restrictions are highly impractical outside methods, but methods offer special conditions that make them more useful.
+
+## Receiver pointers
+
+Here, we will introduce a new kind of pointer called a **receiver pointer**.
+A receiver pointer is a special kind of pointer that can only be introduced via the receiver parameter of a method.
+They offer the same performance benefits as raw pointers, but with additional safety guarantees that make them easier to work with.
+
+They come in two variants:
+- `read@T`: A **read-only receiver pointer** to an instance of type `T`. The instance cannot be modified through this pointer.
+- `edit@T`: A **read-write receiver pointer** to an instance of type `T`. The instance can be modified through this pointer.
+
+The words "read" and "edit" will not become full keywords in the language.
+They will only have meaning in this context.
+This means that `read@read` is potentially a valid type, as is `read@read@read` and `edit@edit`.
+Remember that for pointers with multiple levels of indirection, the underlying type is always indicated by the rightmost word.
+
+The goal of receiver parameters is to ensure that, for the duration of their lifetime, they are guaranteed to point to a valid instance.
+
+Receiver parameters are designed to have a simpler implementation than references, while still providing the same safety guarantees.
+It may be the case that references will become objectively better than receiver pointers in the future.
+And when this happens, receiver pointers may eventually become deprecated in favor of references.
