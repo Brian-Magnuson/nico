@@ -170,6 +170,11 @@ std::any MIRBuilder::visit(Expr::Alloc* expr, bool as_lvalue) {
     return {};
 }
 
+std::any MIRBuilder::visit(Expr::NewInst* expr, bool as_lvalue) {
+    // TODO: Implementation for visiting NewInst expressions goes here.
+    return {};
+}
+
 std::any MIRBuilder::visit(Expr::NameRef* expr, bool as_lvalue) {
     // TODO: Implementation for visiting NameRef expressions goes here.
     return {};
