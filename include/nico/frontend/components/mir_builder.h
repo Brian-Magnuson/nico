@@ -63,7 +63,7 @@ class MIRBuilder : public Stmt::Visitor, public Expr::Visitor {
     std::any visit(Expr::Conditional* expr, bool as_lvalue) override;
     std::any visit(Expr::Loop* expr, bool as_lvalue) override;
 
-    void run_build();
+    void run_build(std::unique_ptr<FrontendContext>& context);
 
 public:
     /**

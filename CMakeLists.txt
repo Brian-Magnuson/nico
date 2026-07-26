@@ -54,6 +54,7 @@ set(FRONT_END_UTILS_SRC
 # Front end component files
 set(FRONT_END_COMPONENTS_SRC
     src/frontend/components/code_generator.cpp
+    src/frontend/components/mir_builder.cpp
     src/frontend/components/global_checker.cpp
     src/frontend/components/lexer.cpp
     src/frontend/components/local_checker.cpp
@@ -112,6 +113,7 @@ set(TEST_SRC
     test/parser_stmt_tests.cpp
     test/type_checker_expr_tests.cpp
     test/type_checker_stmt_tests.cpp
+    test/mir_tests.cpp
     test/jit_tests.cpp
     test/utils_tests.cpp
 )

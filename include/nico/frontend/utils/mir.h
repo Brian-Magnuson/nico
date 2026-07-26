@@ -54,6 +54,8 @@ public:
     MIRValue(std::shared_ptr<Type> type)
         : type(type) {}
 
+    static void reset_counters() { mir_temp_name_counters.clear(); }
+
     /**
      * @brief Converts this value to a string.
      *
@@ -191,6 +193,12 @@ protected:
 
 public:
     /**
+     * @brief Resets the basic block name counters.
+     *
+     */
+    static void reset_counters() { bb_name_counters.clear(); }
+
+    /**
      * @brief Constructs a new BasicBlock with the given name.
      *
      * This constructor is intended to be called only by the Function class.
@@ -209,6 +217,15 @@ public:
      * @return The name of the basic block.
      */
     std::string get_name() const { return name; }
+
+    /**
+     * @brief Get the parent function of the basic block.
+     *
+     * @return The parent function of the basic block.
+     */
+    std::shared_ptr<Function> get_parent_function() const {
+        return parent_function.lock();
+    }
 
     /**
      * @brief Get the non-terminator instructions in the basic block.
@@ -328,7 +345,7 @@ class Function : public std::enable_shared_from_this<Function> {
     // The parameters of the function.
     std::vector<std::shared_ptr<MIRValue::Variable>> parameters;
     // A special temporary value for the return value.
-    std::shared_ptr<MIRValue::Variable> return_value;
+    std::shared_ptr<MIRValue::Variable> return_variable;
     // The entry basic block of the function.
     std::shared_ptr<BasicBlock> entry_block;
     // The basic blocks in the function aside from the entry block.
@@ -390,6 +407,15 @@ public:
      * @return The return type of the function.
      */
     std::shared_ptr<Type> get_return_type() const;
+
+    /**
+     * @brief Get the return variable of the function.
+     *
+     * @return The return variable of the function.
+     */
+    std::shared_ptr<MIRValue::Variable> get_return_variable() const {
+        return return_variable;
+    }
 
     /**
      * @brief Creates a new basic block and adds it to the function.
@@ -540,7 +566,8 @@ public:
         for (const auto& func : functions) {
             result += func->to_string() + "\n";
         }
-        result += "\n";
+
+        result.resize(result.size() - 1); // Remove the last newline
 
         return result;
     }

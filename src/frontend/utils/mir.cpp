@@ -96,7 +96,7 @@ std::vector<std::shared_ptr<BasicBlock>> BasicBlock::get_successors() const {
 }
 
 std::string BasicBlock::to_string() const {
-    std::string result = name + " <-- [ ";
+    std::string result = "  " + name + " <-- [ ";
     for (const auto& pred_weak : predecessors) {
         if (auto pred = pred_weak.lock()) {
             result += pred->get_name() + " ";
@@ -105,19 +105,19 @@ std::string BasicBlock::to_string() const {
     result += "]\n";
 
     for (const auto& instr : instructions) {
-        result += "  " + instr->to_string() + "\n";
+        result += "    " + instr->to_string() + "\n";
     }
     if (terminator) {
-        result += "  " + terminator->to_string() + "\n";
+        result += "    " + terminator->to_string() + "\n";
     }
     else {
-        result += "  <no terminator>\n";
+        result += "    <no terminator>\n";
     }
     return result;
 }
 
 std::shared_ptr<Type> Function::get_return_type() const {
-    return return_value->type;
+    return return_variable->type;
 }
 
 std::shared_ptr<Function>
@@ -132,12 +132,10 @@ Function::create(std::shared_ptr<Stmt::Func> func_stmt) {
             std::make_shared<MIRValue::Variable>(param.binding_entry.lock());
         func->parameters.push_back(param_var);
     }
-    func->return_value =
+    func->return_variable =
         std::make_shared<MIRValue::Variable>("$ret_val", func->return_type);
 
-    func->entry_block =
-        std::make_shared<BasicBlock>(BasicBlock::Private(), "entry");
-    func->entry_block->parent_function = func;
+    func->entry_block = func->create_basic_block("entry");
 
     auto exit = func->create_basic_block("exit");
     func->exit_block = exit;
@@ -150,14 +148,12 @@ std::shared_ptr<Function> Function::create_script_function() {
     auto func = std::make_shared<Function>(Private());
     func->name = "$script";
     func->return_type = std::make_shared<Type::Unit>();
-    func->return_value = std::make_shared<MIRValue::Variable>(
+    func->return_variable = std::make_shared<MIRValue::Variable>(
         "$script_ret_val",
         func->return_type
     );
 
-    func->entry_block =
-        std::make_shared<BasicBlock>(BasicBlock::Private(), "entry");
-    func->entry_block->parent_function = func;
+    func->entry_block = func->create_basic_block("entry");
 
     auto exit = func->create_basic_block("exit");
     func->exit_block = exit;
@@ -216,6 +212,7 @@ std::string Function::to_string() const {
     for (const auto& bb : basic_blocks) {
         result += bb->to_string() + "\n";
     }
+    result.resize(result.size() - 1); // Remove the last newline
 
     result += "}\n";
     return result;

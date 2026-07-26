@@ -32,7 +32,7 @@ public:
         : MIRValue(type), literal_expr(literal_expr) {}
 
     virtual std::string to_string() const override {
-        return "(" + type->to_string() +
+        return "(" + type->to_string() + " " +
                std::string(literal_expr->token->lexeme) + ")";
     }
 

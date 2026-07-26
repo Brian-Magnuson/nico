@@ -149,6 +149,20 @@ inline std::string project_version() {
 std::vector<std::string_view>
 break_message(std::string_view message, size_t max_length = 72);
 
+/**
+ * @brief Takes a string view and returns a new string with all empty lines
+ * removed.
+ *
+ * A "line" is either a sequence of characters bounded by newline characters or
+ * the start/end of the string. A line is empty if it contains only whitespace
+ * characters (spaces, tabs, etc.) or is completely empty.
+ *
+ * @param input The input string view to process. Will not be modified.
+ * @return std::string A new string with all empty lines removed. The original
+ * string view is not modified.
+ */
+std::string remove_empty_lines(const std::string_view input);
+
 } // namespace nico
 
 #endif // NICO_UTILS_H

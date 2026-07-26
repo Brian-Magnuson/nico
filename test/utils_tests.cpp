@@ -113,6 +113,32 @@ TEST_CASE("Utility break message", "[utils]") {
     }
 }
 
+TEST_CASE("Utility remove empty lines", "[utils]") {
+    SECTION("Remove empty and whitespace-only lines") {
+        std::string_view input =
+            "First line\n\n   \nThird line\n\t\nFourth line";
+        REQUIRE(
+            nico::remove_empty_lines(input) ==
+            "First line\nThird line\nFourth line"
+        );
+    }
+
+    SECTION("Leave non-empty content intact") {
+        std::string_view input = "  keep me  \n\n\t\n\nlast line";
+        REQUIRE(nico::remove_empty_lines(input) == "  keep me  \nlast line");
+    }
+
+    SECTION("Remove lines at the beginning") {
+        std::string_view input = "    \n\n\t\nFirst line\nSecond line";
+        REQUIRE(nico::remove_empty_lines(input) == "First line\nSecond line");
+    }
+
+    SECTION("Remove lines at the end") {
+        std::string_view input = "First line\nSecond line\n\n\t\n   ";
+        REQUIRE(nico::remove_empty_lines(input) == "First line\nSecond line");
+    }
+}
+
 TEST_CASE("Utility set operations", "[utils]") {
     SECTION("Set equals") {
         std::unordered_set<int> set1 = {1, 2, 3};

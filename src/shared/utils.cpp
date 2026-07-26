@@ -1,3 +1,5 @@
+#include <cctype>
+
 #include "nico/shared/utils.h"
 
 namespace nico {
@@ -43,6 +45,43 @@ break_message(std::string_view message, size_t max_length) {
     }
 
     return broken_lines;
+}
+
+std::string remove_empty_lines(const std::string_view input) {
+    std::string output;
+    output.reserve(input.size());
+
+    size_t start = 0;
+    while (start <= input.size()) {
+        size_t end = input.find('\n', start);
+        if (end == std::string_view::npos) {
+            end = input.size();
+        }
+
+        std::string_view line = input.substr(start, end - start);
+        bool is_empty = true;
+        for (unsigned char ch : line) {
+            if (!std::isspace(ch)) {
+                is_empty = false;
+                break;
+            }
+        }
+
+        if (!is_empty) {
+            if (!output.empty()) {
+                output.push_back('\n');
+            }
+            output.append(line);
+        }
+
+        if (end == input.size()) {
+            break;
+        }
+
+        start = end + 1;
+    }
+
+    return output;
 }
 
 } // namespace nico

@@ -181,8 +181,13 @@ std::any MIRBuilder::visit(Expr::NameRef* expr, bool as_lvalue) {
 }
 
 std::any MIRBuilder::visit(Expr::Literal* expr, bool as_lvalue) {
-    // TODO: Implementation for visiting Literal expressions goes here.
-    return {};
+    std::shared_ptr<MIRValue> result;
+
+    result = std::make_shared<MIRValue::Literal>(
+        expr->type,
+        std::dynamic_pointer_cast<Expr::Literal>(expr->shared_from_this())
+    );
+    return result;
 }
 
 std::any MIRBuilder::visit(Expr::Tuple* expr, bool as_lvalue) {
@@ -215,13 +220,24 @@ std::any MIRBuilder::visit(Expr::Loop* expr, bool as_lvalue) {
     return {};
 }
 
-void MIRBuilder::run_build() {
-    // TODO: Implementation of MIR building goes here.
+void MIRBuilder::run_build(std::unique_ptr<FrontendContext>& context) {
+    for (size_t i = context->stmts_processed; i < context->stmts.size(); ++i) {
+        context->stmts[i]->accept(this);
+    }
+    context->mir_module->get_script_function()
+        ->get_entry_block()
+        ->set_successor(
+            context->mir_module->get_script_function()->get_exit_block().value()
+        );
 }
 
 void MIRBuilder::build_mir(std::unique_ptr<FrontendContext>& context) {
+    if (IS_VARIANT(context->status, Status::Error)) {
+        panic("MIRBuilder::run_build: Context is in an error state.");
+    }
+
     MIRBuilder builder(context->mir_module, context->symbol_tree);
-    builder.run_build();
+    builder.run_build(context);
 }
 
 } // namespace nico
