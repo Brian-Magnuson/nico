@@ -67,12 +67,31 @@ TEST_CASE("MIR basic generation", "[mir]") {
 func $script( ) -> () {
   exit#0 <-- [ entry#0 ]
     return
-
   entry#0 <-- [ ]
     alloca i32 (var@i32 ::x)
     store (i32 5) -> (var@i32 ::x)
     jump exit#0
 }
 )"});
+    }
+}
+
+TEST_CASE("MIR arrays", "[mir]") {
+    SECTION("Array creation and access") {
+        run_mir_test(
+            R"(
+            let arr = [1, 2, 3, 4, 5]
+            )",
+            MIRTestOptions{.expected_output = R"(module
+func $script( ) -> () {
+  exit#0 <-- [ entry#0 ]
+    return
+  entry#0 <-- [ ]
+    alloca [i32; 5] (var@[i32; 5] ::arr)
+    array [ (i32 1) (i32 2) (i32 3) (i32 4) (i32 5) ] -> ([i32; 5] #0)
+    store ([i32; 5] #0) -> (var@[i32; 5] ::arr)
+    jump exit#0
+})"}
+        );
     }
 }

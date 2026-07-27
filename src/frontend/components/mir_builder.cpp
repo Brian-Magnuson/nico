@@ -14,6 +14,10 @@ std::any MIRBuilder::visit(Stmt::Expression* stmt) {
 std::any MIRBuilder::visit(Stmt::Let* stmt) {
     auto binding_entry = stmt->binding_entry.lock();
     auto mir_var = std::make_shared<MIRValue::Variable>(binding_entry);
+
+    // TODO: We don't store this variable in the symbol tree yet. We should do
+    // that so that it can be referenced later.
+
     auto alloca_instr =
         std::make_shared<Instr::Alloca>(mir_var, binding_entry->binding.type);
     current_block->add_instruction(alloca_instr);
@@ -196,8 +200,25 @@ std::any MIRBuilder::visit(Expr::Tuple* expr, bool as_lvalue) {
 }
 
 std::any MIRBuilder::visit(Expr::Array* expr, bool as_lvalue) {
-    // TODO: Implementation for visiting Array expressions goes here.
-    return {};
+    std::shared_ptr<MIRValue> result;
+
+    std::vector<std::shared_ptr<MIRValue>> element_values;
+    for (const auto& element : expr->elements) {
+        element_values.push_back(
+            std::any_cast<std::shared_ptr<MIRValue>>(
+                element->accept(this, false)
+            )
+        );
+    }
+    auto array_instr = std::make_shared<Instr::Array>(
+        expr->type,
+        element_values,
+        expr->is_constant()
+    );
+    current_block->add_instruction(array_instr);
+    result = array_instr->destination;
+
+    return result;
 }
 
 std::any MIRBuilder::visit(Expr::Object* expr, bool as_lvalue) {

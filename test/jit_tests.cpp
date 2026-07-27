@@ -1441,6 +1441,19 @@ TEST_CASE("JIT arrays", "[jit]") {
         );
     }
 
+    SECTION("Array non constant expression") {
+        run_jit_test(
+            R"(
+            let elem1 = 1
+            let elem2 = 2
+            let elem3 = 3
+            let arr = [elem1, elem2, elem3]
+            printout arr[0], ",", arr[1], ",", arr[2]
+            )",
+            "1,2,3"
+        );
+    }
+
     SECTION("Array assignment") {
         run_jit_test(
             R"(

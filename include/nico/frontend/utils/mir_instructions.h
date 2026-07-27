@@ -347,6 +347,86 @@ public:
 };
 
 /**
+ * @brief An instruction that creates an array in the MIR.
+ *
+ * In LLVM, the process for creating an array is more complex, but here, we
+ * simplify it to a single instruction for the sake of the MIR.
+ */
+class Instr::Array : public INonTerm {
+public:
+    // The destination where the array is stored.
+    const std::shared_ptr<MIRValue::Temporary> destination;
+    // The elements of the array.
+    const std::vector<std::shared_ptr<MIRValue>> elements;
+    // Whether this array could be created as a constant expression.
+    bool is_constexpr;
+
+    Array(
+        std::shared_ptr<Type> result_type,
+        std::vector<std::shared_ptr<MIRValue>> elements,
+        bool is_constexpr
+    )
+        : destination(std::make_shared<MIRValue::Temporary>(result_type)),
+          elements(elements),
+          is_constexpr(is_constexpr) {}
+
+    virtual ~Array() = default;
+
+    virtual std::any accept(Visitor* visitor) override {
+        return visitor->visit(this);
+    }
+
+    virtual std::string to_string() const override {
+        std::string result = "array [ ";
+        for (const auto& element : elements) {
+            result += element->to_string() + " ";
+        }
+        result += "] -> " + destination->to_string();
+        return result;
+    }
+};
+
+/**
+ * @brief An instruction that creates a struct in the MIR.
+ *
+ * In LLVM, the process for creating a struct is more complex, but here, we
+ * simplify it to a single instruction for the sake of the MIR.
+ */
+class Instr::Struct : public INonTerm {
+public:
+    // The destination where the struct is stored.
+    const std::shared_ptr<MIRValue::Temporary> destination;
+    // The fields of the struct.
+    const std::vector<std::shared_ptr<MIRValue>> fields;
+    // Whether this struct could be created as a constant expression.
+    bool is_constexpr;
+
+    Struct(
+        std::shared_ptr<Type> result_type,
+        std::vector<std::shared_ptr<MIRValue>> fields,
+        bool is_constexpr
+    )
+        : destination(std::make_shared<MIRValue::Temporary>(result_type)),
+          fields(fields),
+          is_constexpr(is_constexpr) {}
+
+    virtual ~Struct() = default;
+
+    virtual std::any accept(Visitor* visitor) override {
+        return visitor->visit(this);
+    }
+
+    virtual std::string to_string() const override {
+        std::string result = "struct { ";
+        for (const auto& field : fields) {
+            result += field->to_string() + " ";
+        }
+        result += "} -> " + destination->to_string();
+        return result;
+    }
+};
+
+/**
  * @brief A terminator instruction in the MIR.
  *
  * Terminator instructions alter the control flow of a basic block. They
