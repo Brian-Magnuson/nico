@@ -60,7 +60,7 @@ public:
         : op(op),
           left_operand(left_operand),
           right_operand(right_operand),
-          destination(std::make_shared<MIRValue::Temporary>(result_type)) {}
+          destination(MIRValue::Temporary::create(result_type)) {}
 
     virtual ~Binary() = default;
 
@@ -120,7 +120,7 @@ public:
     )
         : op(op),
           operand(operand),
-          destination(std::make_shared<MIRValue::Temporary>(result_type)) {}
+          destination(MIRValue::Temporary::create(result_type)) {}
 
     virtual ~Unary() = default;
 
@@ -172,9 +172,7 @@ public:
         : target_function(target_function),
           arguments(arguments),
           destination(
-              std::make_shared<MIRValue::Temporary>(
-                  target_function->get_return_type()
-              )
+              MIRValue::Temporary::create(target_function->get_return_type())
           ) {}
 
     virtual ~Call() = default;
@@ -282,7 +280,7 @@ public:
 
     Load(std::shared_ptr<MIRValue> source, std::shared_ptr<Type> result_type)
         : source(source),
-          destination(std::make_shared<MIRValue::Temporary>(result_type)) {
+          destination(MIRValue::Temporary::create(result_type)) {
         // Assert that the source is a pointer type.
         if (!Type::is_a<Type::IPointer>(source->type)) {
             panic(
@@ -326,7 +324,7 @@ public:
         std::unordered_map<
             std::shared_ptr<BasicBlock>,
             std::shared_ptr<MIRValue>> incoming_values)
-        : destination(std::make_shared<MIRValue::Temporary>(result_type)),
+        : destination(MIRValue::Temporary::create(result_type)),
           incoming_values(incoming_values) {}
 
     virtual ~Phi() = default;
@@ -366,7 +364,7 @@ public:
         std::vector<std::shared_ptr<MIRValue>> elements,
         bool is_constexpr
     )
-        : destination(std::make_shared<MIRValue::Temporary>(result_type)),
+        : destination(MIRValue::Temporary::create(result_type)),
           elements(elements),
           is_constexpr(is_constexpr) {}
 
@@ -406,7 +404,7 @@ public:
         std::vector<std::shared_ptr<MIRValue>> fields,
         bool is_constexpr
     )
-        : destination(std::make_shared<MIRValue::Temporary>(result_type)),
+        : destination(MIRValue::Temporary::create(result_type)),
           fields(fields),
           is_constexpr(is_constexpr) {}
 

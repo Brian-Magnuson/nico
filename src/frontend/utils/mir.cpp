@@ -128,12 +128,11 @@ Function::create(std::shared_ptr<Stmt::Func> func_stmt) {
     func->name = binding_entry->symbol;
     func->return_type = binding_entry->binding.type;
     for (const auto& param : func_stmt->parameters) {
-        auto param_var =
-            std::make_shared<MIRValue::Variable>(param.binding_entry.lock());
+        auto param_var = MIRValue::Variable::create(param.binding_entry.lock());
         func->parameters.push_back(param_var);
     }
     func->return_variable =
-        std::make_shared<MIRValue::Variable>("$ret_val", func->return_type);
+        MIRValue::Variable::create("$ret_val", func->return_type);
 
     func->entry_block = func->create_basic_block("entry");
 
@@ -148,10 +147,8 @@ std::shared_ptr<Function> Function::create_script_function() {
     auto func = std::make_shared<Function>(Private());
     func->name = "$script";
     func->return_type = std::make_shared<Type::Unit>();
-    func->return_variable = std::make_shared<MIRValue::Variable>(
-        "$script_ret_val",
-        func->return_type
-    );
+    func->return_variable =
+        MIRValue::Variable::create("$script_ret_val", func->return_type);
 
     func->entry_block = func->create_basic_block("entry");
 

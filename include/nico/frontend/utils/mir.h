@@ -22,9 +22,17 @@ namespace nico {
  *
  * Only members of this class and its subclasses may be used with instructions.
  */
-class MIRValue {
+class MIRValue : public std::enable_shared_from_this<MIRValue> {
     // A static map to keep track of temporary name counters for unique naming.
     static std::unordered_map<std::string, size_t> mir_temp_name_counters;
+
+protected:
+    /**
+     * @brief A private struct used to restrict access to constructors.
+     */
+    struct Private {
+        explicit Private() = default;
+    };
 
 public:
     class Literal;
@@ -46,12 +54,7 @@ public:
     // The type of this value.
     std::shared_ptr<Type> type;
 
-    /**
-     * @brief Constructs a new MIRValue with the given type.
-     *
-     * @param type The type of the value.
-     */
-    MIRValue(std::shared_ptr<Type> type)
+    MIRValue(Private, std::shared_ptr<Type> type)
         : type(type) {}
 
     static void reset_counters() { mir_temp_name_counters.clear(); }

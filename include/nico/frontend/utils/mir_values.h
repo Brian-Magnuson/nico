@@ -5,7 +5,6 @@
 
 #include <any>
 #include <memory>
-#include <optional>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -27,9 +26,17 @@ public:
     std::shared_ptr<Expr::Literal> literal_expr;
 
     Literal(
-        std::shared_ptr<Type> type, std::shared_ptr<Expr::Literal> literal_expr
+        Private,
+        std::shared_ptr<Type> type,
+        std::shared_ptr<Expr::Literal> literal_expr
     )
-        : MIRValue(type), literal_expr(literal_expr) {}
+        : MIRValue(Private(), type), literal_expr(literal_expr) {}
+
+    static std::shared_ptr<Literal> create(
+        std::shared_ptr<Type> type, std::shared_ptr<Expr::Literal> literal_expr
+    ) {
+        return std::make_shared<Literal>(Private(), type, literal_expr);
+    }
 
     virtual std::string to_string() const override {
         return "(" + type->to_string() + " " +
@@ -50,25 +57,37 @@ class MIRValue::Variable : public MIRValue {
 public:
     // A name for the variable.
     std::string name;
-    // The binding entry node representing the variable.
-    std::optional<std::shared_ptr<Node::BindingEntry>> binding_entry;
 
-    Variable(std::string_view name, std::shared_ptr<Type> type)
-        : MIRValue(std::make_shared<Type::RawTypedPtr>(type, true)),
+    Variable(Private, std::string_view name, std::shared_ptr<Type> type)
+        : MIRValue(Private(), std::make_shared<Type::RawTypedPtr>(type, true)),
           name(
               std::string(name) + "#" +
               std::to_string(mir_temp_name_counters[std::string(name)]++)
-          ),
-          binding_entry(std::nullopt) {}
+          ) {}
 
-    Variable(std::shared_ptr<Node::BindingEntry> binding_entry)
+    Variable(Private, std::shared_ptr<Node::BindingEntry> binding_entry)
         : MIRValue(
+              Private(),
               std::make_shared<Type::RawTypedPtr>(
                   binding_entry->binding.type, true
               )
           ),
-          name(binding_entry->symbol),
-          binding_entry(binding_entry) {}
+          name(binding_entry->symbol) {}
+
+    static std::shared_ptr<Variable>
+    create(std::string_view name, std::shared_ptr<Type> type) {
+        return std::make_shared<Variable>(Private(), name, type);
+    }
+
+    static std::shared_ptr<Variable>
+    create(std::shared_ptr<Node::BindingEntry> binding_entry) {
+        auto variable = std::make_shared<Variable>(Private(), binding_entry);
+        binding_entry->mir_variable =
+            std::dynamic_pointer_cast<MIRValue::Variable>(
+                variable->shared_from_this()
+            );
+        return variable;
+    }
 
     virtual std::string to_string() const override {
         return "(" + type->to_string() + " " + name + ")";
@@ -92,12 +111,17 @@ public:
     // A name for the temporary value.
     const std::string name;
 
-    Temporary(std::shared_ptr<Type> type, std::string_view name = "")
-        : MIRValue(type),
+    Temporary(Private, std::shared_ptr<Type> type, std::string_view name = "")
+        : MIRValue(Private(), type),
           name(
               std::string(name) + "#" +
               std::to_string(mir_temp_name_counters[std::string(name)]++)
           ) {}
+
+    static std::shared_ptr<Temporary>
+    create(std::shared_ptr<Type> type, std::string_view name = "") {
+        return std::make_shared<Temporary>(Private(), type, name);
+    }
 
     virtual std::string to_string() const override {
         return "(" + type->to_string() + " " + name + ")";

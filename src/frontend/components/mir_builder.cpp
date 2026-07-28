@@ -13,10 +13,7 @@ std::any MIRBuilder::visit(Stmt::Expression* stmt) {
 
 std::any MIRBuilder::visit(Stmt::Let* stmt) {
     auto binding_entry = stmt->binding_entry.lock();
-    auto mir_var = std::make_shared<MIRValue::Variable>(binding_entry);
-
-    // TODO: We don't store this variable in the symbol tree yet. We should do
-    // that so that it can be referenced later.
+    auto mir_var = MIRValue::Variable::create(binding_entry);
 
     auto alloca_instr =
         std::make_shared<Instr::Alloca>(mir_var, binding_entry->binding.type);
@@ -187,7 +184,7 @@ std::any MIRBuilder::visit(Expr::NameRef* expr, bool as_lvalue) {
 std::any MIRBuilder::visit(Expr::Literal* expr, bool as_lvalue) {
     std::shared_ptr<MIRValue> result;
 
-    result = std::make_shared<MIRValue::Literal>(
+    result = MIRValue::Literal::create(
         expr->type,
         std::dynamic_pointer_cast<Expr::Literal>(expr->shared_from_this())
     );

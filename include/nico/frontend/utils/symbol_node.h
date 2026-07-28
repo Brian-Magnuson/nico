@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "nico/frontend/utils/ast_node.h"
+#include "nico/frontend/utils/mir.h"
 #include "nico/frontend/utils/nodes.h"
 #include "nico/shared/dictionary.h"
 #include "nico/shared/utils.h"
@@ -430,6 +431,8 @@ public:
     Binding binding;
     // The linkage of this binding entry.
     Linkage linkage;
+    // The MIR variable for this binding entry. This is set during MIR building.
+    std::shared_ptr<MIRValue::Variable> mir_variable;
     // If this binding is a local variable, the pointer to the LLVM
     // allocation.
     llvm::AllocaInst* llvm_ptr = nullptr;
