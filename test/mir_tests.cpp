@@ -64,7 +64,7 @@ TEST_CASE("MIR basic generation", "[mir]") {
     SECTION("Basic let statement") {
         run_mir_test(R"(let x = 5)", MIRTestOptions{.expected_output = R"(module
 
-func $script( ) -> () {
+func $script( ) -> void {
   exit#0 <-- [ entry#0 ]
     return
   entry#0 <-- [ ]
@@ -83,7 +83,7 @@ TEST_CASE("MIR arrays", "[mir]") {
             let arr = [1, 2, 3, 4, 5]
             )",
             MIRTestOptions{.expected_output = R"(module
-func $script( ) -> () {
+func $script( ) -> void {
   exit#0 <-- [ entry#0 ]
     return
   entry#0 <-- [ ]

@@ -146,7 +146,7 @@ Function::create(std::shared_ptr<Stmt::Func> func_stmt) {
 std::shared_ptr<Function> Function::create_script_function() {
     auto func = std::make_shared<Function>(Private());
     func->name = "$script";
-    func->return_type = std::make_shared<Type::Unit>();
+    func->return_type = std::make_shared<Type::Void>();
     func->return_variable =
         MIRValue::Variable::create("$script_ret_val", func->return_type);
 
