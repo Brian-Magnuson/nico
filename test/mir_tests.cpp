@@ -74,6 +74,28 @@ func $script( ) -> void {
 }
 )"});
     }
+
+    SECTION("Local variable read and write") {
+        run_mir_test(
+            R"(
+            let x = 5
+            let y = x
+            )",
+            MIRTestOptions{.expected_output = R"(module
+func $script( ) -> void {
+  exit#0 <-- [ entry#0 ]
+    return
+  entry#0 <-- [ ]
+    alloca i32 (var@i32 ::x)
+    store (i32 5) -> (var@i32 ::x)
+    alloca i32 (var@i32 ::y)
+    load (var@i32 ::x) -> (i32 #0)
+    store (i32 #0) -> (var@i32 ::y)
+    jump exit#0
+}
+)"}
+        );
+    }
 }
 
 TEST_CASE("MIR arrays", "[mir]") {
