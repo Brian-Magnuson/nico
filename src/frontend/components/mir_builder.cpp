@@ -177,8 +177,22 @@ std::any MIRBuilder::visit(Expr::NewInst* expr, bool as_lvalue) {
 }
 
 std::any MIRBuilder::visit(Expr::NameRef* expr, bool as_lvalue) {
-    // TODO: Implementation for visiting NameRef expressions goes here.
-    return {};
+    std::shared_ptr<MIRValue> result;
+    std::shared_ptr<MIRValue::Variable> mir_var =
+        expr->binding_entry.lock()->mir_variable;
+
+    if (as_lvalue) {
+        // If we're treating this as an lvalue, return the variable itself.
+        result = mir_var;
+    }
+    else {
+        // Otherwise, we need to load the value from the variable.
+        auto load_instr = std::make_shared<Instr::Load>(mir_var, expr->type);
+        current_block->add_instruction(load_instr);
+
+        result = load_instr->destination;
+    }
+    return result;
 }
 
 std::any MIRBuilder::visit(Expr::Literal* expr, bool as_lvalue) {

@@ -32,6 +32,15 @@ public:
     )
         : MIRValue(Private(), type), literal_expr(literal_expr) {}
 
+    /**
+     * @brief Creates a new literal value in the MIR.
+     *
+     * @param type The type of the literal value.
+     * @param literal_expr The literal expression from the AST on which this MIR
+     * value is based.
+     * @return std::shared_ptr<Literal> A shared pointer to the newly created
+     * literal value.
+     */
     static std::shared_ptr<Literal> create(
         std::shared_ptr<Type> type, std::shared_ptr<Expr::Literal> literal_expr
     ) {
@@ -74,11 +83,36 @@ public:
           ),
           name(binding_entry->symbol) {}
 
+    /**
+     * @brief Creates a new variable value in the MIR without a binding entry.
+     *
+     * Variables without a binding entry are typically for internal-use
+     * variables, such as function return values.
+     *
+     * If this function is called with a name that has been provided previously,
+     * the number will be appended to the name to ensure uniqueness.
+     *
+     * @param name A name for the variable.
+     * @param type The type of the variable.
+     * @return std::shared_ptr<Variable> A shared pointer to the newly created
+     * variable value.
+     */
     static std::shared_ptr<Variable>
     create(std::string_view name, std::shared_ptr<Type> type) {
         return std::make_shared<Variable>(Private(), name, type);
     }
 
+    /**
+     * @brief Creates a new variable value in the MIR with a binding entry.
+     *
+     * The name of the variable will be based on the symbol from the binding
+     * entry node.
+     *
+     * @param binding_entry The binding entry from the AST on which this MIR
+     * value is based.
+     * @return std::shared_ptr<Variable> A shared pointer to the newly created
+     * variable value.
+     */
     static std::shared_ptr<Variable>
     create(std::shared_ptr<Node::BindingEntry> binding_entry) {
         auto variable = std::make_shared<Variable>(Private(), binding_entry);
@@ -118,6 +152,20 @@ public:
               std::to_string(mir_temp_name_counters[std::string(name)]++)
           ) {}
 
+    /**
+     * @brief Creates a new temporary value in the MIR.
+     *
+     * Names for temporaries are optional.
+     * If a name is not provided, a unique name will be generated based on a
+     * counter. If a name is provided, a number will be appended to the name to
+     * ensure uniqueness.
+     *
+     * @param type The type of the temporary value.
+     * @param name A name for the temporary value. Defaults to an
+     * empty string.
+     * @return std::shared_ptr<Temporary> A shared pointer to the newly created
+     * temporary value.
+     */
     static std::shared_ptr<Temporary>
     create(std::shared_ptr<Type> type, std::string_view name = "") {
         return std::make_shared<Temporary>(Private(), type, name);
