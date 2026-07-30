@@ -116,4 +116,30 @@ func $script( ) -> void {
 })"}
         );
     }
+
+    SECTION("Array creation with variable elements") {
+        run_mir_test(
+            R"(
+            let a = 1
+            let b = 2
+            let arr = [a, b, 3]
+            )",
+            MIRTestOptions{.expected_output = R"(module
+func $script( ) -> void {
+  exit#0 <-- [ entry#0 ]
+    return
+  entry#0 <-- [ ]
+    alloca i32 (var@i32 ::a)
+    store (i32 1) -> (var@i32 ::a)
+    alloca i32 (var@i32 ::b)
+    store (i32 2) -> (var@i32 ::b)
+    alloca [i32; 3] (var@[i32; 3] ::arr)
+    load (var@i32 ::a) -> (i32 #0)
+    load (var@i32 ::b) -> (i32 #1)
+    array [ (i32 #0) (i32 #1) (i32 3) ] -> ([i32; 3] #2)
+    store ([i32; 3] #2) -> (var@[i32; 3] ::arr)
+    jump exit#0
+})"}
+        );
+    }
 }
