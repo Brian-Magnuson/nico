@@ -425,6 +425,37 @@ public:
 };
 
 /**
+ * @brief A printout instruction in the MIR.
+ *
+ * This high-level instruction is made to be one-to-one with the `printout`
+ * statement in the source code.
+ * Lowering this instruction to LLVM IR may require a call instruction that
+ * handles the actual printing.
+ */
+class Instr::Printout : public INonTerm {
+public:
+    // The values to print out.
+    const std::vector<std::shared_ptr<MIRValue>> values;
+
+    Printout(std::vector<std::shared_ptr<MIRValue>> values)
+        : values(values) {}
+
+    virtual ~Printout() = default;
+
+    virtual std::any accept(Visitor* visitor) override {
+        return visitor->visit(this);
+    }
+
+    virtual std::string to_string() const override {
+        std::string result = "printout";
+        for (const auto& value : values) {
+            result += " " + value->to_string();
+        }
+        return result;
+    }
+};
+
+/**
  * @brief A terminator instruction in the MIR.
  *
  * Terminator instructions alter the control flow of a basic block. They

@@ -96,6 +96,28 @@ func $script( ) -> void {
 )"}
         );
     }
+
+    SECTION("Print statement") {
+        run_mir_test(
+            R"(
+            let x = 5
+            printout x
+            )",
+            MIRTestOptions{.expected_output = R"(module
+func $script( ) -> void {
+  exit#0 <-- [ entry#0 ]
+    return
+  entry#0 <-- [ ]
+    alloca i32 (var@i32 ::x)
+    store (i32 5) -> (var@i32 ::x)
+    load (var@i32 ::x) -> (i32 #0)
+    printout (i32 #0)
+    jump exit#0
+}
+)"}
+
+        );
+    }
 }
 
 TEST_CASE("MIR arrays", "[mir]") {

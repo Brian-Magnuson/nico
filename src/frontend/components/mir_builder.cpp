@@ -41,8 +41,16 @@ std::any MIRBuilder::visit(Stmt::Func* stmt) {
 }
 
 std::any MIRBuilder::visit(Stmt::Print* stmt) {
-    // TODO: Implementation for visiting Print statements goes here.
-    return {};
+    std::vector<std::shared_ptr<MIRValue>> mir_values;
+    for (const auto& expr : stmt->expressions) {
+        auto mir_val =
+            std::any_cast<std::shared_ptr<MIRValue>>(expr->accept(this, false));
+        mir_values.push_back(mir_val);
+    }
+    auto printout_instr = std::make_shared<Instr::Printout>(mir_values);
+    current_block->add_instruction(printout_instr);
+
+    return std::any();
 }
 
 std::any MIRBuilder::visit(Stmt::Dealloc* stmt) {
