@@ -118,6 +118,23 @@ func $script( ) -> void {
 
         );
     }
+
+    SECTION("Hello world") {
+        run_mir_test(
+            R"(
+            printout "Hello, world!"
+            )",
+            MIRTestOptions{.expected_output = R"(module
+func $script( ) -> void {
+  exit#0 <-- [ entry#0 ]
+    return
+  entry#0 <-- [ ]
+    printout (str "Hello, world!")
+    jump exit#0
+}
+)"}
+        );
+    }
 }
 
 TEST_CASE("MIR arrays", "[mir]") {
