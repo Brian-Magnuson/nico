@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 
+#include "nico/frontend/utils/ast_node.h"
 #include "nico/frontend/utils/mir.h"
 #include "nico/frontend/utils/mir_values.h"
 #include "nico/frontend/utils/type_node.h"
@@ -31,19 +32,8 @@ public:
  */
 class Instr::Binary : public INonTerm {
 public:
-    /**
-     * @brief The operation performed by the binary instruction.
-     */
-    enum class Op {
-        Add,
-        Sub,
-        Mul,
-        Div
-        // More operations can be added here.
-    };
-
     // The operation of the binary instruction.
-    const Op op;
+    const Expr::Binary::Operation op;
     // The left operand of the binary instruction.
     const std::shared_ptr<MIRValue> left_operand;
     // The right operand of the binary instruction.
@@ -52,7 +42,7 @@ public:
     const std::shared_ptr<MIRValue::Temporary> destination;
 
     Binary(
-        Op op,
+        Expr::Binary::Operation op,
         std::shared_ptr<MIRValue> left_operand,
         std::shared_ptr<MIRValue> right_operand,
         std::shared_ptr<Type> result_type
@@ -68,29 +58,10 @@ public:
         return visitor->visit(this);
     }
 
-    /**
-     * @brief Converts the operation to a string.
-     *
-     * E.g., if `this->op` is `Op::Add`, this function returns `"add"`.
-     *
-     * @return A string representation of the operation.
-     */
-    std::string op_to_string() const {
-        switch (op) {
-        case Op::Add:
-            return "add";
-        case Op::Sub:
-            return "sub";
-        case Op::Mul:
-            return "mul";
-        case Op::Div:
-            return "div";
-        }
-    }
-
     virtual std::string to_string() const override {
-        return op_to_string() + left_operand->to_string() +
-               right_operand->to_string() + " -> " + destination->to_string();
+        return "binary " + Expr::Binary::operation_to_string(op) + " " +
+               left_operand->to_string() + " " + right_operand->to_string() +
+               " -> " + destination->to_string();
     }
 };
 

@@ -114,8 +114,26 @@ std::any MIRBuilder::visit(Expr::Logical* expr, bool as_lvalue) {
 }
 
 std::any MIRBuilder::visit(Expr::Binary* expr, bool as_lvalue) {
-    // TODO: Implementation for visiting Binary expressions goes here.
-    return {};
+    std::shared_ptr<MIRValue> result;
+
+    auto left_operand = std::any_cast<std::shared_ptr<MIRValue>>(
+        expr->left->accept(this, false)
+    );
+    auto right_operand = std::any_cast<std::shared_ptr<MIRValue>>(
+        expr->right->accept(this, false)
+    );
+
+    auto binary_instr = std::make_shared<Instr::Binary>(
+        expr->operation,
+        left_operand,
+        right_operand,
+        expr->type
+    );
+
+    current_block->add_instruction(binary_instr);
+    result = binary_instr->destination;
+
+    return result;
 }
 
 std::any MIRBuilder::visit(Expr::Unary* expr, bool as_lvalue) {

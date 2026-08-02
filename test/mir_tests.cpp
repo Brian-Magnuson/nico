@@ -135,6 +135,33 @@ func $script( ) -> void {
 )"}
         );
     }
+
+    SECTION("Addition") {
+        run_mir_test(
+            R"(
+            let x = 5
+            let y = 10
+            let z = x + y
+            )",
+            MIRTestOptions{.expected_output = R"(module
+func $script( ) -> void {
+  exit#0 <-- [ entry#0 ]
+    return
+  entry#0 <-- [ ]
+    alloca i32 (var@i32 ::x)
+    store (i32 5) -> (var@i32 ::x)
+    alloca i32 (var@i32 ::y)
+    store (i32 10) -> (var@i32 ::y)
+    alloca i32 (var@i32 ::z)
+    load (var@i32 ::x) -> (i32 #0)
+    load (var@i32 ::y) -> (i32 #1)
+    binary intadd (i32 #0) (i32 #1) -> (i32 #2)
+    store (i32 #2) -> (var@i32 ::z)
+    jump exit#0
+}
+)"}
+        );
+    }
 }
 
 TEST_CASE("MIR arrays", "[mir]") {

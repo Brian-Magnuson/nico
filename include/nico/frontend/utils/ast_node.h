@@ -612,6 +612,9 @@ public:
  */
 class Expr::Binary : public Expr {
 public:
+    /**
+     * @brief An operation for a binary expression.
+     */
     enum class Operation {
         // The binary operation is not yet determined.
         Null,
@@ -672,6 +675,77 @@ public:
         // Floating point greater than or equal unordered comparison (fcmp uge)
         FPGE,
     };
+
+    /**
+     * @brief Converts a binary operation to a string.
+     *
+     * @param op The binary operation to convert.
+     * @return std::string The string representation of the operation.
+     */
+    static std::string operation_to_string(Operation op) {
+        switch (op) {
+        case Operation::Null:
+            return "null";
+        case Operation::IntAdd:
+            return "intadd";
+        case Operation::IntSub:
+            return "intsub";
+        case Operation::IntMul:
+            return "intmul";
+        case Operation::SIntDiv:
+            return "sintdiv";
+        case Operation::UIntDiv:
+            return "uintdiv";
+        case Operation::SIntRem:
+            return "sintrem";
+        case Operation::UIntRem:
+            return "uintrem";
+        case Operation::IntEq:
+            return "inteq";
+        case Operation::IntNeq:
+            return "intneq";
+        case Operation::SIntLT:
+            return "sintlt";
+        case Operation::UIntLT:
+            return "uintlt";
+        case Operation::SIntLE:
+            return "sintle";
+        case Operation::UIntLE:
+            return "uintle";
+        case Operation::SIntGT:
+            return "sintgt";
+        case Operation::UIntGT:
+            return "uintgt";
+        case Operation::SIntGE:
+            return "sintge";
+        case Operation::UIntGE:
+            return "uintge";
+        case Operation::FPAdd:
+            return "fpadd";
+        case Operation::FPSub:
+            return "fpsub";
+        case Operation::FPMul:
+            return "fpmul";
+        case Operation::FPDiv:
+            return "fpdiv";
+        case Operation::FPRem:
+            return "fprem";
+        case Operation::FPEq:
+            return "fpeq";
+        case Operation::FPNeq:
+            return "fpneq";
+        case Operation::FPLT:
+            return "fplt";
+        case Operation::FPLE:
+            return "fple";
+        case Operation::FPGT:
+            return "fpgt";
+        case Operation::FPGE:
+            return "fpge";
+        default:
+            panic("Expr::Binary: Unknown operation.");
+        }
+    }
 
     // The left operand expression.
     std::shared_ptr<Expr> left;
