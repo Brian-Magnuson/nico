@@ -512,48 +512,25 @@ std::any CodeGenerator::visit(Expr::Binary* expr, bool as_lvalue) {
 std::any CodeGenerator::visit(Expr::Unary* expr, bool as_lvalue) {
     llvm::Value* result = nullptr;
     auto right = std::any_cast<llvm::Value*>(expr->right->accept(this, false));
-    if (Type::is_a<Type::Float>(expr->right->type)) {
-        switch (expr->op->tok_type) {
-        case Tok::Negative:
-            result = builder->CreateFNeg(right);
-            break;
-        default:
-            panic(
-                "CodeGenerator::visit(Expr::Unary*): Unknown unary operator "
-                "for floating-point number."
-            );
-        }
-    }
-    else if (Type::is_a<Type::Int>(expr->right->type)) {
-        switch (expr->op->tok_type) {
-        case Tok::Negative:
-            result = builder->CreateNeg(right);
-            break;
-        default:
-            panic(
-                "CodeGenerator::visit(Expr::Unary*): Unknown unary operator "
-                "for integer."
-            );
-        }
-    }
-    else if (Type::is_a<Type::Bool>(expr->right->type)) {
-        switch (expr->op->tok_type) {
-        case Tok::KwNot:
-        case Tok::Bang:
-            result = builder->CreateNot(right);
-            break;
-        default:
-            panic(
-                "CodeGenerator::visit(Expr::Unary*): Unknown unary operator "
-                "for boolean."
-            );
-        }
-    }
-    else {
+
+    switch (expr->operation) {
+    case Expr::Unary::Operation::Null:
         panic(
-            "CodeGenerator::visit(Expr::Unary*): Unsupported type for unary "
-            "operation."
+            "CodeGenerator::visit(Expr::Unary*): Unary operation not set. This "
+            "should have been filled in by the type checker."
         );
+        break;
+    case Expr::Unary::Operation::Neg:
+        result = builder->CreateNeg(right);
+        break;
+    case Expr::Unary::Operation::FNeg:
+        result = builder->CreateFNeg(right);
+        break;
+    case Expr::Unary::Operation::Not:
+        result = builder->CreateNot(right);
+        break;
+    default:
+        panic("CodeGenerator::visit(Expr::Unary*): Unknown unary operation.");
     }
 
     return result;

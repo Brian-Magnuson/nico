@@ -779,10 +779,50 @@ public:
  */
 class Expr::Unary : public Expr {
 public:
+    /**
+     * @brief An operation for a unary expression.
+     */
+    enum class Operation {
+        // The unary operation is not yet determined.
+        Null,
+        // Integer negation (not a real LLVM instruction, but can be
+        // implemented with sub from zero)
+        Neg,
+        // Floating point negation (fneg)
+        FNeg,
+        // Boolean logical not (not a real LLVM instruction, but can be
+        // implemented with xor)
+        Not,
+    };
+
+    /**
+     * @brief Converts a unary operation to a string.
+     *
+     * @param op The unary operation to convert.
+     * @return std::string The string representation of the operation.
+     */
+    static std::string operation_to_string(Operation op) {
+        switch (op) {
+        case Operation::Null:
+            return "null";
+        case Operation::Neg:
+            return "neg";
+        case Operation::FNeg:
+            return "fneg";
+        case Operation::Not:
+            return "not";
+        default:
+            panic("Expr::Unary: Unknown operation.");
+        }
+    }
+
     // The operator token.
     std::shared_ptr<Token> op;
     // The operand expression.
     std::shared_ptr<Expr> right;
+    // The unary operation to be performed; to be filled in by the type
+    // checker.
+    Operation operation = Operation::Null;
 
     Unary(std::shared_ptr<Token> op, std::shared_ptr<Expr> right)
         : op(op), right(right) {

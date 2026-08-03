@@ -605,9 +605,13 @@ std::any ExpressionChecker::visit(Expr::Unary* expr, bool as_lvalue) {
                 );
                 return std::any();
             }
+            expr->operation = Expr::Unary::Operation::Neg;
         }
-        expr->type = r_type;
-        return std::any();
+        else {
+            // Type is numeric, but not an int; must be a float.
+            expr->operation = Expr::Unary::Operation::FNeg;
+        }
+        break;
     case Tok::KwNot:
     case Tok::Bang:
         if (!Type::is_a<Type::Bool>(r_type)) {
@@ -618,16 +622,19 @@ std::any ExpressionChecker::visit(Expr::Unary* expr, bool as_lvalue) {
             );
             return std::any();
         }
-        expr->type = r_type; // The result type is `Bool`.
-        return std::any();
+        expr->operation = Expr::Unary::Operation::Not;
+        break;
     default:
         panic(
             "ExpressionChecker::visit(Expr::Unary*): Could not handle case for "
             "operator of token type " +
             std::to_string(static_cast<int>(expr->op->tok_type))
         );
-        return std::any();
     }
+    // It happens that in all cases, the result type is the same as the operand
+    // type.
+    expr->type = r_type;
+    return std::any();
 }
 
 std::any ExpressionChecker::visit(Expr::Address* expr, bool as_lvalue) {
