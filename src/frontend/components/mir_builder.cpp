@@ -137,8 +137,19 @@ std::any MIRBuilder::visit(Expr::Binary* expr, bool as_lvalue) {
 }
 
 std::any MIRBuilder::visit(Expr::Unary* expr, bool as_lvalue) {
-    // TODO: Implementation for visiting Unary expressions goes here.
-    return {};
+    std::shared_ptr<MIRValue> result;
+
+    auto operand = std::any_cast<std::shared_ptr<MIRValue>>(
+        expr->right->accept(this, false)
+    );
+
+    auto unary_instr =
+        std::make_shared<Instr::Unary>(expr->operation, operand, expr->type);
+
+    current_block->add_instruction(unary_instr);
+    result = unary_instr->destination;
+
+    return result;
 }
 
 std::any MIRBuilder::visit(Expr::Address* expr, bool as_lvalue) {

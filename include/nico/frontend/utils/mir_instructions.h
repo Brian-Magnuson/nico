@@ -72,20 +72,15 @@ public:
  */
 class Instr::Unary : public INonTerm {
 public:
-    enum class Op {
-        Neg
-        // More operations can be added here.
-    };
-
     // The operation of the unary instruction.
-    const Op op;
+    const Expr::Unary::Operation op;
     // The operand of the unary instruction.
     const std::shared_ptr<MIRValue> operand;
     // The destination where the result is stored.
     const std::shared_ptr<MIRValue::Temporary> destination;
 
     Unary(
-        Op op,
+        Expr::Unary::Operation op,
         std::shared_ptr<MIRValue> operand,
         std::shared_ptr<Type> result_type
     )
@@ -99,23 +94,9 @@ public:
         return visitor->visit(this);
     }
 
-    /**
-     * @brief Converts the operation to a string.
-     *
-     * E.g., if `this->op` is `Op::Neg`, this function returns `"neg"`.
-     *
-     * @return The string representation of the operation.
-     */
-    std::string op_to_string() const {
-        switch (op) {
-        case Op::Neg:
-            return "neg";
-        }
-    }
-
     virtual std::string to_string() const override {
-        return op_to_string() + operand->to_string() + " -> " +
-               destination->to_string();
+        return "unary " + Expr::Unary::operation_to_string(op) + " " +
+               operand->to_string() + " -> " + destination->to_string();
     }
 };
 
