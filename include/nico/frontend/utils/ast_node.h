@@ -932,6 +932,41 @@ public:
         ReinterpretBits
     };
 
+    static std::string operation_to_string(Operation op) {
+        switch (op) {
+        case Operation::Null:
+            return "null";
+        case Operation::NoOp:
+            return "noop";
+        case Operation::SignExt:
+            return "signext";
+        case Operation::ZeroExt:
+            return "zeroext";
+        case Operation::FPExt:
+            return "fpext";
+        case Operation::IntTrunc:
+            return "inttrunc";
+        case Operation::FPTrunc:
+            return "fptrunc";
+        case Operation::FPToSInt:
+            return "fptosi";
+        case Operation::FPToUInt:
+            return "fptoui";
+        case Operation::SIntToFP:
+            return "sitofp";
+        case Operation::UIntToFP:
+            return "uitofp";
+        case Operation::IntToBool:
+            return "inttobool";
+        case Operation::FPToBool:
+            return "fptobool";
+        case Operation::ReinterpretBits:
+            return "reinterpretbits";
+        default:
+            panic("Expr::Cast: Unknown operation.");
+        }
+    }
+
     // The expression being cast.
     std::shared_ptr<Expr> expression;
     // The 'as' keyword token.

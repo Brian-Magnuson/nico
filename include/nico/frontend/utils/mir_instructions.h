@@ -101,6 +101,41 @@ public:
 };
 
 /**
+ * @brief A cast instruction in the MIR.
+ *
+ * Cast instructions perform type casting operations on a single operand.
+ */
+class Instr::Cast : public INonTerm {
+public:
+    // The operation of the cast instruction.
+    const Expr::Cast::Operation op;
+    // The operand of the cast instruction.
+    const std::shared_ptr<MIRValue> operand;
+    // The destination where the result is stored.
+    const std::shared_ptr<MIRValue::Temporary> destination;
+
+    Cast(
+        Expr::Cast::Operation op,
+        std::shared_ptr<MIRValue> operand,
+        std::shared_ptr<Type> result_type
+    )
+        : op(op),
+          operand(operand),
+          destination(MIRValue::Temporary::create(result_type)) {}
+
+    virtual ~Cast() = default;
+
+    virtual std::any accept(Visitor* visitor) override {
+        return visitor->visit(this);
+    }
+
+    virtual std::string to_string() const override {
+        return "cast " + Expr::Cast::operation_to_string(op) + " " +
+               operand->to_string() + " -> " + destination->to_string();
+    }
+};
+
+/**
  * @brief A call instruction in the MIR.
  *
  * The call instruction represents a function call in the MIR.
