@@ -209,3 +209,27 @@ func $script( ) -> void {
         );
     }
 }
+
+TEST_CASE("MIR casting", "[mir]") {
+    SECTION("SIntToFP cast") {
+        run_mir_test(
+            R"(
+            let x = 5
+            let y = x as f32
+            )",
+            MIRTestOptions{.expected_output = R"(module
+func $script( ) -> void {
+  exit#0 <-- [ entry#0 ]
+    return
+  entry#0 <-- [ ]
+    alloca i32 (var@i32 ::x)
+    store (i32 5) -> (var@i32 ::x)
+    alloca f32 (var@f32 ::y)
+    load (var@i32 ::x) -> (i32 #0)
+    cast sinttofp (i32 #0) -> (f32 #1)
+    store (f32 #1) -> (var@f32 ::y)
+    jump exit#0
+})"}
+        );
+    }
+}

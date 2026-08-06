@@ -179,8 +179,19 @@ std::any MIRBuilder::visit(Expr::Deref* expr, bool as_lvalue) {
 }
 
 std::any MIRBuilder::visit(Expr::Cast* expr, bool as_lvalue) {
-    // TODO: Implementation for visiting Cast expressions goes here.
-    return {};
+    std::shared_ptr<MIRValue> result;
+
+    auto operand = std::any_cast<std::shared_ptr<MIRValue>>(
+        expr->expression->accept(this, false)
+    );
+
+    auto cast_instr =
+        std::make_shared<Instr::Cast>(expr->operation, operand, expr->type);
+
+    current_block->add_instruction(cast_instr);
+    result = cast_instr->destination;
+
+    return result;
 }
 
 std::any MIRBuilder::visit(Expr::Access* expr, bool as_lvalue) {

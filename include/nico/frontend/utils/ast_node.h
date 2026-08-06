@@ -949,13 +949,13 @@ public:
         case Operation::FPTrunc:
             return "fptrunc";
         case Operation::FPToSInt:
-            return "fptosi";
+            return "fptosint";
         case Operation::FPToUInt:
-            return "fptoui";
+            return "fptouint";
         case Operation::SIntToFP:
-            return "sitofp";
+            return "sinttofp";
         case Operation::UIntToFP:
-            return "uitofp";
+            return "uinttofp";
         case Operation::IntToBool:
             return "inttobool";
         case Operation::FPToBool:
