@@ -214,6 +214,62 @@ public:
 };
 
 /**
+ * @brief A heap allocation instruction in the MIR.
+ *
+ * Heap allocation instructions allocate memory on the heap for a specified
+ * size in bytes and yields a pointer to the allocated memory.
+ */
+class Instr::HeapAlloc : public INonTerm {
+public:
+    // The value indicating the amount of memory to allocate in bytes.
+    const std::shared_ptr<MIRValue> size_bytes;
+    // The destination where the allocated memory pointer is stored.
+    const std::shared_ptr<MIRValue::Temporary> destination;
+
+    HeapAlloc(std::shared_ptr<MIRValue> size_bytes)
+        : size_bytes(size_bytes),
+          destination(
+              MIRValue::Temporary::create(std::make_shared<Type::Anyptr>())
+          ) {}
+
+    virtual ~HeapAlloc() = default;
+
+    virtual std::any accept(Visitor* visitor) override {
+        return visitor->visit(this);
+    }
+
+    virtual std::string to_string() const override {
+        return "heapalloc " + size_bytes->to_string() + " -> " +
+               destination->to_string();
+    }
+};
+
+/**
+ * @brief A heap free instruction in the MIR.
+ *
+ * The heap free instruction deallocates memory on the heap that was previously
+ * allocated by a heap allocation instruction.
+ */
+class Instr::HeapFree : public INonTerm {
+public:
+    // The value indicating the pointer to the memory to free.
+    const std::shared_ptr<MIRValue> pointer;
+
+    HeapFree(std::shared_ptr<MIRValue> pointer)
+        : pointer(pointer) {}
+
+    virtual ~HeapFree() = default;
+
+    virtual std::any accept(Visitor* visitor) override {
+        return visitor->visit(this);
+    }
+
+    virtual std::string to_string() const override {
+        return "heapfree " + pointer->to_string();
+    }
+};
+
+/**
  * @brief A store instruction in the MIR.
  *
  * The store instruction copies a value from a source MIR value to a
