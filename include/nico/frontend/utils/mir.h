@@ -96,6 +96,7 @@ public:
     class Cast;
     class Call;
     class Alloca;
+    class SizeOf;
     class HeapAlloc;
     class HeapFree;
     class Store;
@@ -122,6 +123,7 @@ public:
         virtual std::any visit(Cast* instr) = 0;
         virtual std::any visit(Call* instr) = 0;
         virtual std::any visit(Alloca* instr) = 0;
+        virtual std::any visit(SizeOf* instr) = 0;
         virtual std::any visit(HeapAlloc* instr) = 0;
         virtual std::any visit(HeapFree* instr) = 0;
         virtual std::any visit(Store* instr) = 0;

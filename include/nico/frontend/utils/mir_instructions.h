@@ -214,6 +214,43 @@ public:
 };
 
 /**
+ * @brief A size-of instruction in the MIR.
+ *
+ * The size-of instruction computes the size of a type in bytes and stores it in
+ * a temporary.
+ *
+ * This can actually be calculated in the code generator, not requiring an
+ * instruction. But we include it in the MIR to keep its implementation less
+ * dependent on LLVM.
+ */
+class Instr::SizeOf : public INonTerm {
+public:
+    // The type for which to compute the size.
+    const std::shared_ptr<Type> target_type;
+    // The destination where the size in bytes is stored.
+    const std::shared_ptr<MIRValue::Temporary> destination;
+
+    SizeOf(std::shared_ptr<Type> target_type)
+        : target_type(target_type),
+          destination(
+              MIRValue::Temporary::create(
+                  std::make_shared<Type::Int>(false, 64)
+              )
+          ) {}
+
+    virtual ~SizeOf() = default;
+
+    virtual std::any accept(Visitor* visitor) override {
+        return visitor->visit(this);
+    }
+
+    virtual std::string to_string() const override {
+        return "sizeof " + target_type->to_string() + " -> " +
+               destination->to_string();
+    }
+};
+
+/**
  * @brief A heap allocation instruction in the MIR.
  *
  * Heap allocation instructions allocate memory on the heap for a specified
