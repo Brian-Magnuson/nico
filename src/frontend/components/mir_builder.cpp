@@ -210,8 +210,13 @@ std::any MIRBuilder::visit(Expr::Call* expr, bool as_lvalue) {
 }
 
 std::any MIRBuilder::visit(Expr::SizeOf* expr, bool as_lvalue) {
-    // TODO: Implementation for visiting SizeOf expressions goes here.
-    return {};
+    std::shared_ptr<MIRValue> result;
+
+    auto sizeof_instr = std::make_shared<Instr::SizeOf>(expr->inner_type);
+    current_block->add_instruction(sizeof_instr);
+
+    result = sizeof_instr->destination;
+    return result;
 }
 
 std::any MIRBuilder::visit(Expr::Alloc* expr, bool as_lvalue) {

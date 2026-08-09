@@ -1647,6 +1647,13 @@ Note that the expression under `typeof` is not evaluated; it is only used to det
 let size = sizeof typeof(1 / 0) // OK; type is i32, no division by zero occurs
 ```
 
+Unlike `typeof`, `sizeof` does not use parentheses.
+Parenthesized types may be interpreted as tuple types.
+```
+sizeof i32  // OK; size of i32
+sizeof (i32) // OK; size of tuple with one element: (i32)
+```
+
 ### Type-test expression
 
 A type-test expression is used to check if two pointers to related class types point to the same type. The expression yields a boolean value indicated the result of the type test.

@@ -233,3 +233,23 @@ func $script( ) -> void {
         );
     }
 }
+
+TEST_CASE("MIR sizeof", "[mir]") {
+    SECTION("Size of i32") {
+        run_mir_test(
+            R"(
+            let size = sizeof i32
+            )",
+            MIRTestOptions{.expected_output = R"(module
+func $script( ) -> void {
+  exit#0 <-- [ entry#0 ]
+    return
+  entry#0 <-- [ ]
+    alloca u64 (var@u64 ::size)
+    sizeof i32 -> (u64 #0)
+    store (u64 #0) -> (var@u64 ::size)
+    jump exit#0
+})"}
+        );
+    }
+}
