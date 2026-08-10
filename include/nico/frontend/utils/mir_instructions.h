@@ -3,6 +3,8 @@
 
 #include <memory>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "nico/frontend/utils/ast_node.h"
 #include "nico/frontend/utils/mir.h"
@@ -396,14 +398,14 @@ public:
     // The temporary where the result is stored.
     const std::shared_ptr<MIRValue::Temporary> destination;
     // A map of predecessor basic blocks to their corresponding values.
-    const std::
-        unordered_map<std::shared_ptr<BasicBlock>, std::shared_ptr<MIRValue>>
-            incoming_values;
+    const std::vector<
+        std::pair<std::shared_ptr<BasicBlock>, std::shared_ptr<MIRValue>>>
+        incoming_values;
 
     Phi(std::shared_ptr<Type> result_type,
-        std::unordered_map<
-            std::shared_ptr<BasicBlock>,
-            std::shared_ptr<MIRValue>> incoming_values)
+        std::vector<
+            std::pair<std::shared_ptr<BasicBlock>, std::shared_ptr<MIRValue>>>&&
+            incoming_values)
         : destination(MIRValue::Temporary::create(result_type)),
           incoming_values(incoming_values) {}
 

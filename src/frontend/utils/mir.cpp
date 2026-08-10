@@ -163,7 +163,7 @@ std::shared_ptr<BasicBlock>
 Function::create_basic_block(std::string_view bb_name) {
     auto bb = std::make_shared<BasicBlock>(BasicBlock::Private(), bb_name);
     bb->parent_function = shared_from_this();
-    basic_blocks.insert(bb);
+    basic_blocks.push_back(bb);
     return bb;
 }
 

@@ -1,6 +1,8 @@
 #include "nico/frontend/components/mir_builder.h"
 
 #include <memory>
+#include <utility>
+#include <vector>
 
 #include "nico/frontend/utils/mir_instructions.h"
 
@@ -296,8 +298,45 @@ std::any MIRBuilder::visit(Expr::Block* expr, bool as_lvalue) {
 }
 
 std::any MIRBuilder::visit(Expr::Conditional* expr, bool as_lvalue) {
-    // TODO: Implementation for visiting Conditional expressions goes here.
-    return {};
+    std::shared_ptr<MIRValue> result;
+
+    auto function = current_block->get_parent_function();
+
+    auto then_block = function->create_basic_block("cond_then");
+    auto else_block = function->create_basic_block("cond_else");
+    auto merge_block = function->create_basic_block("cond_merge");
+
+    auto condition = std::any_cast<std::shared_ptr<MIRValue>>(
+        expr->condition->accept(this, false)
+    );
+
+    current_block->set_successors(condition, then_block, else_block);
+
+    // Then block
+    current_block = then_block;
+    auto then_value = std::any_cast<std::shared_ptr<MIRValue>>(
+        expr->then_branch->accept(this, false)
+    );
+    current_block->set_successor(merge_block);
+
+    // Else block
+    current_block = else_block;
+    auto else_value = std::any_cast<std::shared_ptr<MIRValue>>(
+        expr->else_branch->accept(this, false)
+    );
+    current_block->set_successor(merge_block);
+
+    // Merge block
+    current_block = merge_block;
+    std::vector<
+        std::pair<std::shared_ptr<BasicBlock>, std::shared_ptr<MIRValue>>>
+        incoming_values({{then_block, then_value}, {else_block, else_value}});
+    auto phi_instr =
+        std::make_shared<Instr::Phi>(expr->type, std::move(incoming_values));
+    current_block->add_instruction(phi_instr);
+
+    result = phi_instr->destination;
+    return result;
 }
 
 std::any MIRBuilder::visit(Expr::Loop* expr, bool as_lvalue) {
@@ -309,11 +348,9 @@ void MIRBuilder::run_build(std::unique_ptr<FrontendContext>& context) {
     for (size_t i = context->stmts_processed; i < context->stmts.size(); ++i) {
         context->stmts[i]->accept(this);
     }
-    context->mir_module->get_script_function()
-        ->get_entry_block()
-        ->set_successor(
-            context->mir_module->get_script_function()->get_exit_block().value()
-        );
+    current_block->set_successor(
+        context->mir_module->get_script_function()->get_exit_block().value()
+    );
 }
 
 void MIRBuilder::build_mir(std::unique_ptr<FrontendContext>& context) {

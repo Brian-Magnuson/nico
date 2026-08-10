@@ -7,7 +7,6 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 #include "nico/frontend/utils/ast_node.h"
@@ -365,7 +364,7 @@ class Function : public std::enable_shared_from_this<Function> {
     // The entry basic block of the function.
     std::shared_ptr<BasicBlock> entry_block;
     // The basic blocks in the function aside from the entry block.
-    std::unordered_set<std::shared_ptr<BasicBlock>> basic_blocks;
+    std::vector<std::shared_ptr<BasicBlock>> basic_blocks;
     // The exit block of the function, also stored in basic_blocks.
     std::weak_ptr<BasicBlock> exit_block;
 

@@ -65,12 +65,12 @@ TEST_CASE("MIR basic generation", "[mir]") {
         run_mir_test(R"(let x = 5)", MIRTestOptions{.expected_output = R"(module
 
 func $script( ) -> void {
-  exit#0 <-- [ entry#0 ]
-    return
   entry#0 <-- [ ]
     alloca i32 (var@i32 ::x)
     store (i32 5) -> (var@i32 ::x)
     jump exit#0
+  exit#0 <-- [ entry#0 ]
+    return
 }
 )"});
     }
@@ -83,8 +83,6 @@ func $script( ) -> void {
             )",
             MIRTestOptions{.expected_output = R"(module
 func $script( ) -> void {
-  exit#0 <-- [ entry#0 ]
-    return
   entry#0 <-- [ ]
     alloca i32 (var@i32 ::x)
     store (i32 5) -> (var@i32 ::x)
@@ -92,6 +90,8 @@ func $script( ) -> void {
     load (var@i32 ::x) -> (i32 #0)
     store (i32 #0) -> (var@i32 ::y)
     jump exit#0
+  exit#0 <-- [ entry#0 ]
+    return
 }
 )"}
         );
@@ -105,14 +105,14 @@ func $script( ) -> void {
             )",
             MIRTestOptions{.expected_output = R"(module
 func $script( ) -> void {
-  exit#0 <-- [ entry#0 ]
-    return
   entry#0 <-- [ ]
     alloca i32 (var@i32 ::x)
     store (i32 5) -> (var@i32 ::x)
     load (var@i32 ::x) -> (i32 #0)
     printout (i32 #0)
     jump exit#0
+  exit#0 <-- [ entry#0 ]
+    return
 }
 )"}
 
@@ -126,11 +126,11 @@ func $script( ) -> void {
             )",
             MIRTestOptions{.expected_output = R"(module
 func $script( ) -> void {
-  exit#0 <-- [ entry#0 ]
-    return
   entry#0 <-- [ ]
     printout (str "Hello, world!")
     jump exit#0
+  exit#0 <-- [ entry#0 ]
+    return
 }
 )"}
         );
@@ -145,8 +145,6 @@ func $script( ) -> void {
             )",
             MIRTestOptions{.expected_output = R"(module
 func $script( ) -> void {
-  exit#0 <-- [ entry#0 ]
-    return
   entry#0 <-- [ ]
     alloca i32 (var@i32 ::x)
     store (i32 5) -> (var@i32 ::x)
@@ -158,6 +156,8 @@ func $script( ) -> void {
     binary intadd (i32 #0) (i32 #1) -> (i32 #2)
     store (i32 #2) -> (var@i32 ::z)
     jump exit#0
+  exit#0 <-- [ entry#0 ]
+    return
 }
 )"}
         );
@@ -172,13 +172,13 @@ TEST_CASE("MIR arrays", "[mir]") {
             )",
             MIRTestOptions{.expected_output = R"(module
 func $script( ) -> void {
-  exit#0 <-- [ entry#0 ]
-    return
   entry#0 <-- [ ]
     alloca [i32; 5] (var@[i32; 5] ::arr)
     array [ (i32 1) (i32 2) (i32 3) (i32 4) (i32 5) ] -> ([i32; 5] #0)
     store ([i32; 5] #0) -> (var@[i32; 5] ::arr)
     jump exit#0
+  exit#0 <-- [ entry#0 ]
+    return
 })"}
         );
     }
@@ -192,8 +192,6 @@ func $script( ) -> void {
             )",
             MIRTestOptions{.expected_output = R"(module
 func $script( ) -> void {
-  exit#0 <-- [ entry#0 ]
-    return
   entry#0 <-- [ ]
     alloca i32 (var@i32 ::a)
     store (i32 1) -> (var@i32 ::a)
@@ -205,6 +203,8 @@ func $script( ) -> void {
     array [ (i32 #0) (i32 #1) (i32 3) ] -> ([i32; 3] #2)
     store ([i32; 3] #2) -> (var@[i32; 3] ::arr)
     jump exit#0
+  exit#0 <-- [ entry#0 ]
+    return
 })"}
         );
     }
@@ -219,8 +219,6 @@ TEST_CASE("MIR casting", "[mir]") {
             )",
             MIRTestOptions{.expected_output = R"(module
 func $script( ) -> void {
-  exit#0 <-- [ entry#0 ]
-    return
   entry#0 <-- [ ]
     alloca i32 (var@i32 ::x)
     store (i32 5) -> (var@i32 ::x)
@@ -229,6 +227,8 @@ func $script( ) -> void {
     cast sinttofp (i32 #0) -> (f32 #1)
     store (f32 #1) -> (var@f32 ::y)
     jump exit#0
+  exit#0 <-- [ entry#0 ]
+    return
 })"}
         );
     }
@@ -242,12 +242,43 @@ TEST_CASE("MIR sizeof", "[mir]") {
             )",
             MIRTestOptions{.expected_output = R"(module
 func $script( ) -> void {
-  exit#0 <-- [ entry#0 ]
-    return
   entry#0 <-- [ ]
     alloca u64 (var@u64 ::size)
     sizeof i32 -> (u64 #0)
     store (u64 #0) -> (var@u64 ::size)
+    jump exit#0
+  exit#0 <-- [ entry#0 ]
+    return
+})"}
+        );
+    }
+}
+
+TEST_CASE("MIR conditional expressions", "[mir]") {
+    SECTION("Simple conditional expression") {
+        run_mir_test(
+            R"(
+            let x = 5
+            let y = if x > 0 then 10 else 20
+            )",
+            MIRTestOptions{.expected_output = R"(module
+func $script( ) -> void {
+  entry#0 <-- [ ]
+    alloca i32 (var@i32 ::x)
+    store (i32 5) -> (var@i32 ::x)
+    alloca i32 (var@i32 ::y)
+    load (var@i32 ::x) -> (i32 #0)
+    binary sintgt (i32 #0) (i32 0) -> (bool #1)
+    branch (bool #1) ? cond_then#0 : cond_else#0
+  exit#0 <-- [ cond_merge#0 ]
+    return
+  cond_then#0 <-- [ entry#0 ]
+    jump cond_merge#0
+  cond_else#0 <-- [ entry#0 ]
+    jump cond_merge#0
+  cond_merge#0 <-- [ cond_then#0 cond_else#0 ]
+    phi [cond_then#0: (i32 10)] [cond_else#0: (i32 20)] -> (i32 #2)
+    store (i32 #2) -> (var@i32 ::y)
     jump exit#0
 })"}
         );
