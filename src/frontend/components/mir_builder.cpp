@@ -222,8 +222,57 @@ std::any MIRBuilder::visit(Expr::SizeOf* expr, bool as_lvalue) {
 }
 
 std::any MIRBuilder::visit(Expr::Alloc* expr, bool as_lvalue) {
-    // TODO: Implementation for visiting Alloc expressions goes here.
-    return {};
+    std::shared_ptr<MIRValue> result;
+    std::shared_ptr<MIRValue> alloc_size;
+
+    auto pointer_type = Type::as_a<Type::RawTypedPtr>(expr->type).value();
+
+    if (expr->amount_expr.has_value()) {
+        auto sizeof_instr = std::make_shared<Instr::SizeOf>(
+            Type::as_a<Type::Array>(pointer_type->base).value()->base
+        );
+        current_block->add_instruction(sizeof_instr);
+        alloc_size = sizeof_instr->destination;
+
+        auto amount_value = std::any_cast<std::shared_ptr<MIRValue>>(
+            expr->amount_expr.value()->accept(this, false)
+        );
+
+        // amount_value is definitely an integer, but may not be a u64.
+        // Use SExt to convert it.
+        if (Type::as_a<Type::Int>(expr->amount_expr.value()->type)
+                .value()
+                ->width != 64) {
+            auto sext_instr = std::make_shared<Instr::Cast>(
+                Expr::Cast::Operation::SignExt,
+                amount_value,
+                std::make_shared<Type::Int>(false, 64)
+            );
+            current_block->add_instruction(sext_instr);
+            amount_value = sext_instr->destination;
+        }
+        // TODO: Add a check for negative allocation sizes here.
+
+        auto mul_instr = std::make_shared<Instr::Binary>(
+            Expr::Binary::Operation::IntMul,
+            alloc_size,
+            amount_value,
+            std::make_shared<Type::Int>(false, 64)
+        );
+        current_block->add_instruction(mul_instr);
+        alloc_size = mul_instr->destination;
+    }
+    else {
+        auto sizeof_instr = std::make_shared<Instr::SizeOf>(pointer_type->base);
+        current_block->add_instruction(sizeof_instr);
+        alloc_size = sizeof_instr->destination;
+    }
+
+    auto alloc_instr = std::make_shared<Instr::HeapAlloc>(alloc_size);
+    current_block->add_instruction(alloc_instr);
+
+    result = alloc_instr->destination;
+    return result;
 }
 
 std::any MIRBuilder::visit(Expr::NewInst* expr, bool as_lvalue) {
