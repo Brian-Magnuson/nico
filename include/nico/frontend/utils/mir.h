@@ -104,6 +104,7 @@ public:
     class Array;
     class Struct;
     class Printout;
+    class Panic;
 
     class ITerm;
     class Jump;
@@ -131,6 +132,7 @@ public:
         virtual std::any visit(Array* instr) = 0;
         virtual std::any visit(Struct* instr) = 0;
         virtual std::any visit(Printout* instr) = 0;
+        virtual std::any visit(Panic* instr) = 0;
         virtual std::any visit(Jump* instr) = 0;
         virtual std::any visit(Branch* instr) = 0;
         virtual std::any visit(Return* instr) = 0;

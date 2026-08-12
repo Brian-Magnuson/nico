@@ -538,6 +538,37 @@ public:
 };
 
 /**
+ * @brief A panic instruction in the MIR.
+ *
+ * This high-level instruction is used to represent a panic in the source code.
+ * Lowering this instruction to LLVM IR may require a call instruction that
+ * handles the actual panic behavior.
+ *
+ * Panic instructions are used for actual panics and error handling for implicit
+ * runtime checks, such as array bounds checking.
+ */
+class Instr::Panic : public INonTerm {
+public:
+    // The panic message to display.
+    std::string panic_message;
+    // The location in the source code where the panic occurred.
+    const Location* location;
+
+    Panic(std::string panic_message, const Location* location)
+        : panic_message(panic_message), location(location) {}
+
+    virtual ~Panic() = default;
+
+    virtual std::any accept(Visitor* visitor) override {
+        return visitor->visit(this);
+    }
+
+    virtual std::string to_string() const override {
+        return "panic \"" + panic_message + "\" at " + location->to_string();
+    }
+};
+
+/**
  * @brief A terminator instruction in the MIR.
  *
  * Terminator instructions alter the control flow of a basic block. They
