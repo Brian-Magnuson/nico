@@ -90,6 +90,7 @@ public:
 class Instr {
 public:
     class INonTerm;
+    class ConstantInt;
     class Binary;
     class Unary;
     class Cast;
@@ -118,6 +119,7 @@ public:
      */
     class Visitor {
     public:
+        virtual std::any visit(ConstantInt* instr) = 0;
         virtual std::any visit(Binary* instr) = 0;
         virtual std::any visit(Unary* instr) = 0;
         virtual std::any visit(Cast* instr) = 0;

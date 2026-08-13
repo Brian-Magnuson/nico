@@ -28,6 +28,40 @@ public:
 };
 
 /**
+ * @brief A constant integer instruction in the MIR.
+ *
+ * Occasionally, it is useful for the MIR builder to create MIRValues that have
+ * specific constant integer values, like 0 or 1. Since the MIR builder cannot
+ * create the Expr required for an MIRValue::Literal, we can instead use this
+ * instruction to bind a constant integer value to a temporary MIRValue.
+ */
+class Instr::ConstantInt : public INonTerm {
+public:
+    // The value to store in the MIRValue.
+    const uint64_t value;
+    // The type of the constant integer.
+    const std::shared_ptr<Type> type;
+    // The destination where the constant integer is stored.
+    const std::shared_ptr<MIRValue::Temporary> destination;
+
+    ConstantInt(uint64_t value, std::shared_ptr<Type> type)
+        : value(value),
+          type(type),
+          destination(MIRValue::Temporary::create(type)) {}
+
+    virtual ~ConstantInt() = default;
+
+    virtual std::any accept(Visitor* visitor) override {
+        return visitor->visit(this);
+    }
+
+    virtual std::string to_string() const override {
+        return "constint " + std::to_string(value) + " -> " +
+               destination->to_string();
+    }
+};
+
+/**
  * @brief A binary instruction in the MIR.
  *
  * Binary instructions perform operations on two operands.
