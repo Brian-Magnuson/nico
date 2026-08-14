@@ -25,6 +25,19 @@ class MIRBuilder : public Stmt::Visitor, public Expr::Visitor {
           symbol_tree(symbol_tree),
           current_block(mir_module->get_script_function()->get_entry_block()) {}
 
+    /**
+     * @brief Adds instructions to check for negative allocation sizes at
+     * runtime. If the size is negative, control is transferred to a block with
+     * a panic instruction.
+     *
+     * @param size_value The value representing the allocation size.
+     * @param location The location in the source code where the allocation is
+     * happening.
+     */
+    void add_negative_alloc_size_check(
+        std::shared_ptr<MIRValue> size_value, const Location* location
+    );
+
     std::any visit(Stmt::Expression* stmt) override;
     std::any visit(Stmt::Let* stmt) override;
     std::any visit(Stmt::Static* stmt) override;

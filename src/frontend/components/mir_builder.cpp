@@ -8,6 +8,46 @@
 
 namespace nico {
 
+void MIRBuilder::add_negative_alloc_size_check(
+    std::shared_ptr<MIRValue> size_value, const Location* location
+) {
+    auto function = current_block->get_parent_function();
+
+    auto panic_block = function->create_basic_block("panic");
+    auto continue_block = function->create_basic_block("continue");
+
+    auto constint_instr = std::make_shared<Instr::ConstantInt>(
+        0,
+        std::make_shared<Type::Int>(false, 64)
+    );
+    auto zero_value = constint_instr->destination;
+    current_block->add_instruction(constint_instr);
+
+    auto cmp_instr = std::make_shared<Instr::Binary>(
+        Expr::Binary::Operation::SIntLT,
+        size_value,
+        zero_value,
+        std::make_shared<Type::Bool>()
+    );
+    current_block->add_instruction(cmp_instr);
+
+    // Branch based on the comparison result.
+    current_block
+        ->set_successors(cmp_instr->destination, panic_block, continue_block);
+
+    // Panic block: Add a panic instruction and terminate the block.
+    current_block = panic_block;
+    auto panic_instr = std::make_shared<Instr::Panic>(
+        "Allocation amount expression evaluated to a negative value.",
+        location
+    );
+    current_block->add_instruction(panic_instr);
+    current_block->set_successor(function->get_exit_block().value());
+
+    // Continue block: Set the current block to continue building.
+    current_block = continue_block;
+}
+
 std::any MIRBuilder::visit(Stmt::Expression* stmt) {
     stmt->expression->accept(this, false);
     return std::any();
@@ -251,7 +291,10 @@ std::any MIRBuilder::visit(Expr::Alloc* expr, bool as_lvalue) {
             current_block->add_instruction(sext_instr);
             amount_value = sext_instr->destination;
         }
-        // TODO: Add a check for negative allocation sizes here.
+        add_negative_alloc_size_check(
+            amount_value,
+            expr->amount_expr.value()->location
+        );
 
         auto mul_instr = std::make_shared<Instr::Binary>(
             Expr::Binary::Operation::IntMul,
