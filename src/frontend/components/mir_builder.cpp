@@ -96,8 +96,13 @@ std::any MIRBuilder::visit(Stmt::Print* stmt) {
 }
 
 std::any MIRBuilder::visit(Stmt::Dealloc* stmt) {
-    // TODO: Implementation for visiting Dealloc statements goes here.
-    return {};
+    auto mir_val = std::any_cast<std::shared_ptr<MIRValue>>(
+        stmt->expression->accept(this, false)
+    );
+    auto dealloc_instr = std::make_shared<Instr::HeapFree>(mir_val);
+    current_block->add_instruction(dealloc_instr);
+
+    return std::any();
 }
 
 std::any MIRBuilder::visit(Stmt::Pass* stmt) {
