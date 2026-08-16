@@ -357,6 +357,81 @@ class Function : public std::enable_shared_from_this<Function> {
         explicit Private() = default;
     };
 
+    // TODO: Inner classes are good, but putting the whole implementation here
+    // is a bit messy. Consider moving them out.
+
+    struct ControlLoop;
+
+    struct ControlBlock : public std::enable_shared_from_this<ControlBlock> {
+        std::optional<std::shared_ptr<ControlBlock>> prev;
+        std::shared_ptr<MIRValue::Variable> yield_variable;
+        std::optional<std::string> label;
+
+        ControlBlock(
+            std::optional<std::shared_ptr<ControlBlock>> prev,
+            std::shared_ptr<MIRValue::Variable> yield_variable,
+            std::optional<std::string> label = std::nullopt
+        )
+            : prev(prev), yield_variable(yield_variable), label(label) {}
+
+        virtual ~ControlBlock() = default;
+
+        virtual std::shared_ptr<ControlBlock>
+        get_block(std::optional<std::string> label = std::nullopt) {
+            if (!label || this->label == label) {
+                return shared_from_this();
+            }
+            else if (auto prev_block = prev.value_or(nullptr)) {
+                return prev_block->get_block(label);
+            }
+            else {
+                return nullptr;
+            }
+        }
+
+        virtual std::shared_ptr<ControlLoop>
+        get_loop(std::optional<std::string> label = std::nullopt) {
+            if (auto prev_block = prev.value_or(nullptr)) {
+                return prev_block->get_loop(label);
+            }
+            else {
+                return nullptr;
+            }
+        }
+    };
+
+    struct ControlLoop : public ControlBlock {
+        std::optional<std::shared_ptr<ControlBlock>> prev;
+        std::weak_ptr<BasicBlock> continue_block;
+        std::weak_ptr<BasicBlock> exit_block;
+
+        ControlLoop(
+            std::optional<std::shared_ptr<ControlBlock>> prev,
+            std::shared_ptr<MIRValue::Variable> yield_variable,
+            std::weak_ptr<BasicBlock> continue_block,
+            std::weak_ptr<BasicBlock> exit_block,
+            std::optional<std::string> label = std::nullopt
+        )
+            : ControlBlock(prev, yield_variable, label),
+              continue_block(continue_block),
+              exit_block(exit_block) {}
+
+        std::shared_ptr<ControlLoop>
+        get_loop(std::optional<std::string> label = std::nullopt) override {
+            if (!label || this->label == label) {
+                return std::dynamic_pointer_cast<ControlLoop>(
+                    shared_from_this()
+                );
+            }
+            else if (auto prev_block = prev.value_or(nullptr)) {
+                return prev_block->get_loop(label);
+            }
+            else {
+                return nullptr;
+            }
+        }
+    };
+
     // The name of the function.
     std::string name;
     // The return type of the function.
@@ -370,7 +445,9 @@ class Function : public std::enable_shared_from_this<Function> {
     // The basic blocks in the function aside from the entry block.
     std::vector<std::shared_ptr<BasicBlock>> basic_blocks;
     // The exit block of the function, also stored in basic_blocks.
-    std::weak_ptr<BasicBlock> exit_block;
+    std::shared_ptr<BasicBlock> exit_block;
+
+    std::optional<std::shared_ptr<ControlBlock>> control_stack = std::nullopt;
 
 protected:
     /**
@@ -436,6 +513,29 @@ public:
         return return_variable;
     }
 
+    std::shared_ptr<MIRValue::Variable> get_yield_variable(
+        Expr::Block::Kind kind, std::optional<std::string> label = std::nullopt
+    ) const {
+        if (!control_stack.has_value() && kind != Expr::Block::Kind::Function) {
+            panic(
+                "Function::get_yield_variable: No control stack; cannot get "
+                "yield variable"
+            );
+        }
+        if (kind == Expr::Block::Kind::Function) {
+            return return_variable;
+        }
+        if (auto block = control_stack.value()->get_block(label)) {
+            return block->yield_variable;
+        }
+        else {
+            panic(
+                "Function::get_yield_variable: No matching block found for "
+                "label"
+            );
+        }
+    }
+
     /**
      * @brief Creates a new basic block and adds it to the function.
      *
@@ -443,6 +543,36 @@ public:
      * @return The newly created basic block.
      */
     std::shared_ptr<BasicBlock> create_basic_block(std::string_view bb_name);
+
+    void add_plain_control_block(
+        std::shared_ptr<MIRValue::Variable> yield_variable,
+        const std::optional<std::string> label = std::nullopt
+    ) {
+        control_stack = std::make_shared<ControlBlock>(
+            control_stack,
+            yield_variable,
+            label
+        );
+    }
+
+    void add_loop_control_block(
+        std::weak_ptr<MIRValue::Variable> yield_variable,
+        std::weak_ptr<BasicBlock> continue_block,
+        std::weak_ptr<BasicBlock> exit_block,
+        const std::optional<std::string> label = std::nullopt
+    );
+
+    void pop_control_block() {
+        if (!control_stack.has_value()) {
+            panic(
+                "Function::pop_control_block: No control stack; cannot pop "
+                "block"
+            );
+        }
+        control_stack = control_stack.value()->prev;
+        // Top block is deallocated as it is no longer referenced by the control
+        // stack.
+    }
 
     /**
      * @brief Get the entry basic block of the function.
@@ -453,22 +583,65 @@ public:
      */
     std::shared_ptr<BasicBlock> get_entry_block() { return entry_block; }
 
+    std::shared_ptr<BasicBlock>
+    get_loop_continue_block(std::optional<std::string> label = std::nullopt) {
+        if (!control_stack.has_value()) {
+            panic(
+                "Function::get_loop_continue_block: No control stack; cannot "
+                "get loop continue block"
+            );
+        }
+        if (auto loop_block = control_stack.value()->get_loop(label)) {
+            return loop_block->continue_block.lock();
+        }
+        else {
+            panic(
+                "Function::get_loop_continue_block: No matching loop block "
+                "found"
+            );
+        }
+    }
+
     /**
-     * @brief Get the exit basic block of the function, if it exists.
+     * @brief Get the exit basic block of the specified block kind and label.
      *
      * An exit block is always created when the function is created.
      *
-     * However, after MIR transformations, the exit block may be removed if it
-     * has no predecessors.
+     * @param kind The kind of block for which to get the exit block. Defaults
+     * to `Function`.
+     * @param label An optional label to identify the block.
+     * @return The exit basic block.
      *
-     * @return The exit basic block, or std::nullopt if it does not exist.
+     * @warning This method will panic if the requested block is not found or if
+     * kind is set to Plain.
      */
-    std::optional<std::shared_ptr<BasicBlock>> get_exit_block() {
-        return exit_block.expired()
-                   ? std::nullopt
-                   : std::optional<std::shared_ptr<BasicBlock>>(
-                         exit_block.lock()
-                     );
+    std::shared_ptr<BasicBlock> get_exit_block(
+        Expr::Block::Kind kind = Expr::Block::Kind::Function,
+        std::optional<std::string> label = std::nullopt
+    ) {
+        if (kind == Expr::Block::Kind::Plain) {
+            panic(
+                "Function::get_exit_block: Illegal argument; kind cannot be "
+                "Plain"
+            );
+        }
+        else if (kind == Expr::Block::Kind::Loop) {
+            if (!control_stack.has_value()) {
+                panic(
+                    "Function::get_exit_block: No control stack; cannot get "
+                    "loop exit block"
+                );
+            }
+            if (auto loop_block = control_stack.value()->get_loop(label)) {
+                return loop_block->exit_block.lock();
+            }
+            else {
+                panic("Function::get_exit_block: No matching loop block found");
+            }
+        }
+        else {
+            return exit_block;
+        }
     }
 
     /**

@@ -42,7 +42,7 @@ void MIRBuilder::add_negative_alloc_size_check(
         location
     );
     current_block->add_instruction(panic_instr);
-    current_block->set_successor(function->get_exit_block().value());
+    current_block->set_successor(function->get_exit_block());
 
     // Continue block: Set the current block to continue building.
     current_block = continue_block;
@@ -446,7 +446,7 @@ void MIRBuilder::run_build(std::unique_ptr<FrontendContext>& context) {
         context->stmts[i]->accept(this);
     }
     current_block->set_successor(
-        context->mir_module->get_script_function()->get_exit_block().value()
+        context->mir_module->get_script_function()->get_exit_block()
     );
 }
 
