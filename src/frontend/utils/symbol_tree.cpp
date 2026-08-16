@@ -480,7 +480,10 @@ SymbolTree::add_overloadable_func(const Binding& binding) {
 
     auto func_type = std::dynamic_pointer_cast<Type::Function>(binding.type);
     if (!func_type)
-        panic("Binding added as overloadable function is not a function.");
+        panic(
+            "SymbolTree::add_overloadable_func: Binding added as overloadable "
+            "function is not a function."
+        );
     auto [m_f1, d_f1] = func_type->get_param_sets();
 
     // Check for overload conflicts.
@@ -490,7 +493,10 @@ SymbolTree::add_overloadable_func(const Binding& binding) {
             existing_overload->binding.type
         );
         if (!existing_func_type)
-            panic("Existing overload in overload group is not a function.");
+            panic(
+                "SymbolTree::add_overloadable_func: Existing overload in "
+                "overload group is not a function."
+            );
         auto [m_f2, d_f2] = existing_func_type->get_param_sets();
         auto conflict_found =
             sets::equals(m_f1, m_f2) ||

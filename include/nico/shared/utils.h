@@ -40,6 +40,9 @@ inline constexpr size_t MAX_ALLOWED_IMPLICIT_DEREFERENCES = 16;
  * @return This function never returns; it calls std::abort().
  */
 [[noreturn]] inline void panic(std::string_view message) {
+    // TODO: C++20 provides std::source_location, which can be used to get the
+    // file and line number of the caller. This would be useful to include in
+    // the panic message.
     std::cerr << "Panic: " << message << std::endl;
     std::abort();
 }

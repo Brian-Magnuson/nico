@@ -250,8 +250,8 @@ public:
             return llvm::Type::getDoubleTy(builder->getContext());
         default:
             panic(
-                "Type::Float: Invalid width " + std::to_string(width) +
-                ". Must be 32 or 64."
+                "Type::Float::get_llvm_type: Invalid width " +
+                std::to_string(width) + ". Must be 32 or 64."
             );
         }
     }
@@ -983,7 +983,7 @@ public:
             return node_ptr->symbol;
         }
         else {
-            panic("Type::Struct: Node is expired");
+            panic("Type::Struct::to_string: Node is expired");
         }
     }
 
@@ -1295,17 +1295,19 @@ private:
         }
         if (recursion_level > MAX_RECURSION_DEPTH) {
             panic(
-                "Type::Named: Maximum recursion depth exceeded while "
+                "Type::Named::get_inner_type: Maximum recursion depth exceeded "
+                "while "
                 "resolving inner type."
             );
         }
         auto node_ptr = node.lock();
         if (!node_ptr) {
-            panic("Type::Named: Node has expired.");
+            panic("Type::Named::get_inner_type: Node has expired.");
         }
         if (PTR_INSTANCEOF(node_ptr, Node::UnresolvedType)) {
             panic(
-                "Type::Named: Cannot access inner type of unresolved named "
+                "Type::Named::get_inner_type: Cannot access inner type of "
+                "unresolved named "
                 "type."
             );
         }
@@ -1333,7 +1335,7 @@ public:
         }
         auto node_ptr = node.lock();
         if (!node_ptr) {
-            panic("Type::Named: Node has expired.");
+            panic("Type::Named::is_definitely_sized: Node has expired.");
         }
         if (PTR_INSTANCEOF(node_ptr, Node::UnresolvedType)) {
             // Size is indeterminate until the type is resolved.
