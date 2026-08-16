@@ -407,10 +407,10 @@ We recommend setting your IDE to format code automatically on save in accordance
 
   ```cpp
   if (x) {
-      doSomething();
+      do_something();
   }
   else {
-      doSomethingElse();
+      do_something_else();
   }
   ```
 
@@ -421,10 +421,10 @@ For function parameters, arguments, and list initializations:
 - If they don’t, put each element on its own line, indenting like a block.
 
   ```cpp
-  myFunction(
-      longArgumentName,
-      anotherArgument,
-      moreArguments
+  my_function(
+      long_argument_name,
+      another_argument,
+      more_arguments
   );
   ```
 
@@ -435,15 +435,15 @@ For constructor initializer lists:
 
   ```cpp
   MyClass::MyClass() 
-      : memberA(1), memberB(2) {
+      : member_a(1), member_b(2) {
       // Constructor body
   }
 
   MyClass::MyClass()
-      : memberA(1),
-        memberB(2),
-        memberC(3),
-        memberD(4) {
+      : member_a(1),
+        member_b(2),
+        member_c(3),
+        member_d(4) {
       // Constructor body
   }
   ```
@@ -455,7 +455,7 @@ For constructor initializer lists:
 
   ```cpp
   if (condition)
-      doSomething();
+      do_something();
   ```
 
 ### Short Functions
@@ -466,11 +466,11 @@ For constructor initializer lists:
   ```cpp
   // Allowed inside class
   class Foo {
-      int getValue() { return value; }
+      int get_value() { return value; }
   };
 
   // Required outside class
-  int Foo::getValue() {
+  int Foo::get_value() {
       return value;
   }
   ```
