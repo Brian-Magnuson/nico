@@ -116,10 +116,6 @@ std::string BasicBlock::to_string() const {
     return result;
 }
 
-std::shared_ptr<Type> Function::get_return_type() const {
-    return return_variable->type;
-}
-
 std::shared_ptr<Function>
 Function::create(std::shared_ptr<Stmt::Func> func_stmt) {
     auto func = std::make_shared<Function>(Private());
@@ -159,12 +155,124 @@ std::shared_ptr<Function> Function::create_script_function() {
     return func;
 }
 
+std::shared_ptr<Type> Function::get_return_type() const {
+    return return_variable->type;
+}
+
+std::shared_ptr<MIRValue::Variable> Function::get_yield_variable(
+    Expr::Block::Kind kind, std::optional<std::string> label
+) const {
+    if (!control_stack.has_value() && kind != Expr::Block::Kind::Function) {
+        panic(
+            "Function::get_yield_variable: No control stack; cannot get "
+            "yield variable"
+        );
+    }
+    if (kind == Expr::Block::Kind::Function) {
+        return return_variable;
+    }
+    if (auto block =
+            control_stack.value()->get_block(label).value_or(nullptr)) {
+        return block->yield_variable;
+    }
+    else {
+        panic(
+            "Function::get_yield_variable: No matching block found for "
+            "label"
+        );
+    }
+}
+
 std::shared_ptr<BasicBlock>
 Function::create_basic_block(std::string_view bb_name) {
     auto bb = std::make_shared<BasicBlock>(BasicBlock::Private(), bb_name);
     bb->parent_function = shared_from_this();
     basic_blocks.push_back(bb);
     return bb;
+}
+
+void Function::add_plain_control_block(
+    std::shared_ptr<MIRValue::Variable> yield_variable,
+    const std::optional<std::string> label
+) {
+    control_stack =
+        std::make_shared<ControlBlock>(control_stack, yield_variable, label);
+}
+
+void Function::add_loop_control_block(
+    std::weak_ptr<MIRValue::Variable> yield_variable,
+    std::weak_ptr<BasicBlock> continue_block,
+    std::weak_ptr<BasicBlock> exit_block,
+    const std::optional<std::string> label
+) {
+    control_stack = std::make_shared<ControlLoop>(
+        control_stack,
+        yield_variable.lock(),
+        continue_block,
+        exit_block,
+        label
+    );
+}
+
+void Function::pop_control_block() {
+    if (!control_stack.has_value()) {
+        panic(
+            "Function::pop_control_block: No control stack; cannot pop "
+            "block"
+        );
+    }
+    control_stack = control_stack.value()->prev;
+    // Top block is deallocated as it is no longer referenced by the control
+    // stack.
+}
+
+std::shared_ptr<BasicBlock>
+Function::get_loop_continue_block(std::optional<std::string> label) {
+    if (!control_stack.has_value()) {
+        panic(
+            "Function::get_loop_continue_block: No control stack; cannot "
+            "get loop continue block"
+        );
+    }
+    if (auto loop_block =
+            control_stack.value()->get_loop(label).value_or(nullptr)) {
+        return loop_block->continue_block.lock();
+    }
+    else {
+        panic(
+            "Function::get_loop_continue_block: No matching loop block "
+            "found"
+        );
+    }
+}
+
+std::shared_ptr<BasicBlock> Function::get_exit_block(
+    Expr::Block::Kind kind, std::optional<std::string> label
+) {
+    if (kind == Expr::Block::Kind::Plain) {
+        panic(
+            "Function::get_exit_block: Illegal argument; kind cannot be "
+            "Plain"
+        );
+    }
+    else if (kind == Expr::Block::Kind::Loop) {
+        if (!control_stack.has_value()) {
+            panic(
+                "Function::get_exit_block: No control stack; cannot get "
+                "loop exit block"
+            );
+        }
+        if (auto loop_block =
+                control_stack.value()->get_loop(label).value_or(nullptr)) {
+            return loop_block->exit_block.lock();
+        }
+        else {
+            panic("Function::get_exit_block: No matching loop block found");
+        }
+    }
+    else {
+        return exit_block;
+    }
 }
 
 void Function::purge_unreachable_blocks() {

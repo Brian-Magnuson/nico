@@ -362,9 +362,19 @@ class Function : public std::enable_shared_from_this<Function> {
 
     struct ControlLoop;
 
+    /**
+     * @brief A control block in the function's control stack.
+     *
+     * Control blocks are used to track yield variables and block labels,
+     * allowing yield statements to properly target the correct block and
+     * variable.
+     */
     struct ControlBlock : public std::enable_shared_from_this<ControlBlock> {
+        // A pointer to the previous control block in the stack, if any.
         std::optional<std::shared_ptr<ControlBlock>> prev;
+        // The yield variable associated with this control block.
         std::shared_ptr<MIRValue::Variable> yield_variable;
+        // The label associated with this control block, if any.
         std::optional<std::string> label;
 
         ControlBlock(
@@ -376,7 +386,20 @@ class Function : public std::enable_shared_from_this<Function> {
 
         virtual ~ControlBlock() = default;
 
-        virtual std::shared_ptr<ControlBlock>
+        /**
+         * @brief Get the block object with the specified label, or the top
+         * block if no label is provided.
+         *
+         * This function does not distinguish between plain blocks and loop
+         * blocks. It will return the first block in the control stack that
+         * matches the label, regardless of its type.
+         *
+         * @param label (Optional) The label of the block to find. If not
+         * provided, the top block is returned.
+         * @return std::optional<std::shared_ptr<ControlBlock>> The block object
+         * with the specified label, or std::nullopt if no such block exists.
+         */
+        virtual std::optional<std::shared_ptr<ControlBlock>>
         get_block(std::optional<std::string> label = std::nullopt) {
             if (!label || this->label == label) {
                 return shared_from_this();
@@ -385,24 +408,41 @@ class Function : public std::enable_shared_from_this<Function> {
                 return prev_block->get_block(label);
             }
             else {
-                return nullptr;
+                return std::nullopt;
             }
         }
 
-        virtual std::shared_ptr<ControlLoop>
+        /**
+         * @brief Get the loop object with the specified label, or the top loop
+         * if no label is provided.
+         *
+         * @param label (Optional) The label of the loop to find. If not
+         * provided, the top loop is returned.
+         * @return std::optional<std::shared_ptr<ControlLoop>> The loop object
+         * with the specified label, or std::nullopt if no such loop exists.
+         */
+        virtual std::optional<std::shared_ptr<ControlLoop>>
         get_loop(std::optional<std::string> label = std::nullopt) {
             if (auto prev_block = prev.value_or(nullptr)) {
                 return prev_block->get_loop(label);
             }
             else {
-                return nullptr;
+                return std::nullopt;
             }
         }
     };
 
+    /**
+     * @brief A control loop block in the function's control stack.
+     *
+     * Control loop blocks are used to track the continue and exit points of
+     * loops, allowing `continue` and `break` statements to properly target the
+     * correct loop.
+     */
     struct ControlLoop : public ControlBlock {
-        std::optional<std::shared_ptr<ControlBlock>> prev;
+        // The continue block associated with this loop.
         std::weak_ptr<BasicBlock> continue_block;
+        // The exit block associated with this loop.
         std::weak_ptr<BasicBlock> exit_block;
 
         ControlLoop(
@@ -416,7 +456,7 @@ class Function : public std::enable_shared_from_this<Function> {
               continue_block(continue_block),
               exit_block(exit_block) {}
 
-        std::shared_ptr<ControlLoop>
+        std::optional<std::shared_ptr<ControlLoop>>
         get_loop(std::optional<std::string> label = std::nullopt) override {
             if (!label || this->label == label) {
                 return std::dynamic_pointer_cast<ControlLoop>(
@@ -427,7 +467,7 @@ class Function : public std::enable_shared_from_this<Function> {
                 return prev_block->get_loop(label);
             }
             else {
-                return nullptr;
+                return std::nullopt;
             }
         }
     };
@@ -442,11 +482,12 @@ class Function : public std::enable_shared_from_this<Function> {
     std::shared_ptr<MIRValue::Variable> return_variable;
     // The entry basic block of the function.
     std::shared_ptr<BasicBlock> entry_block;
-    // The basic blocks in the function aside from the entry block.
+    // The basic blocks in the function.
     std::vector<std::shared_ptr<BasicBlock>> basic_blocks;
-    // The exit block of the function, also stored in basic_blocks.
+    // The exit block of the function.
     std::shared_ptr<BasicBlock> exit_block;
-
+    // The control stack of the function, used to track yield variables and
+    // block labels.
     std::optional<std::shared_ptr<ControlBlock>> control_stack = std::nullopt;
 
 protected:
@@ -513,28 +554,28 @@ public:
         return return_variable;
     }
 
+    /**
+     * @brief Get the yield variable of the specified block kind and label.
+     *
+     * The yield variable is the variable targeted by yield, break, and return
+     * statements. Which yield variable is targeted depends on the kind of block
+     * and the label.
+     *
+     * If kind is set to `Function`, the function's return variable is returned,
+     * effectively the same as calling `get_return_variable()`.
+     *
+     * @param kind The kind of block for which to get the yield variable.
+     * @param label (Optional) An optional label to identify the block.
+     * @return std::shared_ptr<MIRValue::Variable> The yield variable of the
+     * specified block kind and label.
+     *
+     * @warning This method will panic if the requested block is not found. The
+     * MIR builder should be designed to ensure that the requested block always
+     * exists when this method is called.
+     */
     std::shared_ptr<MIRValue::Variable> get_yield_variable(
         Expr::Block::Kind kind, std::optional<std::string> label = std::nullopt
-    ) const {
-        if (!control_stack.has_value() && kind != Expr::Block::Kind::Function) {
-            panic(
-                "Function::get_yield_variable: No control stack; cannot get "
-                "yield variable"
-            );
-        }
-        if (kind == Expr::Block::Kind::Function) {
-            return return_variable;
-        }
-        if (auto block = control_stack.value()->get_block(label)) {
-            return block->yield_variable;
-        }
-        else {
-            panic(
-                "Function::get_yield_variable: No matching block found for "
-                "label"
-            );
-        }
-    }
+    ) const;
 
     /**
      * @brief Creates a new basic block and adds it to the function.
@@ -544,17 +585,36 @@ public:
      */
     std::shared_ptr<BasicBlock> create_basic_block(std::string_view bb_name);
 
+    /**
+     * @brief Adds a plain control block to this function's internal control
+     * stack.
+     *
+     * This allows the function to track yield variables and labels for plain
+     * blocks, allowing yield statements to target the correct yield variable.
+     * This should be called when block expressions are created.
+     *
+     * @param yield_variable The yield variable for the block.
+     * @param label (Optional) An optional label to identify the block.
+     */
     void add_plain_control_block(
         std::shared_ptr<MIRValue::Variable> yield_variable,
         const std::optional<std::string> label = std::nullopt
-    ) {
-        control_stack = std::make_shared<ControlBlock>(
-            control_stack,
-            yield_variable,
-            label
-        );
-    }
+    );
 
+    /**
+     * @brief Adds a loop control block to this function's internal control
+     * stack.
+     *
+     * This allows the function to track yield variables, continue blocks, exit
+     * blocks, and labels for loop blocks, allowing yield, break, and continue
+     * statements to target the correct blocks. This should be called when loop
+     * expressions are created.
+     *
+     * @param yield_variable The yield variable for the loop block.
+     * @param continue_block The continue block for the loop block.
+     * @param exit_block The exit block for the loop block.
+     * @param label (Optional) An optional label to identify the loop block.
+     */
     void add_loop_control_block(
         std::weak_ptr<MIRValue::Variable> yield_variable,
         std::weak_ptr<BasicBlock> continue_block,
@@ -562,17 +622,16 @@ public:
         const std::optional<std::string> label = std::nullopt
     );
 
-    void pop_control_block() {
-        if (!control_stack.has_value()) {
-            panic(
-                "Function::pop_control_block: No control stack; cannot pop "
-                "block"
-            );
-        }
-        control_stack = control_stack.value()->prev;
-        // Top block is deallocated as it is no longer referenced by the control
-        // stack.
-    }
+    /**
+     * @brief Removes the top control block from this function's internal
+     * control stack.
+     *
+     * This should be called when reaching the end of a block or loop
+     * expression.
+     *
+     * @warning This method will panic if the control stack is empty.
+     */
+    void pop_control_block();
 
     /**
      * @brief Get the entry basic block of the function.
@@ -583,24 +642,22 @@ public:
      */
     std::shared_ptr<BasicBlock> get_entry_block() { return entry_block; }
 
+    /**
+     * @brief Get the loop continue block object.
+     *
+     * A loop continue block is the block that is jumped to when a `continue`
+     * statement is executed. It is used to skip the rest of the current
+     * iteration of the loop and proceed to the next iteration.
+     *
+     * @param label (Optional) An optional label to identify the loop block to
+     * target.
+     * @return std::shared_ptr<BasicBlock> The continue basic block of the
+     * specified loop block.
+     *
+     * @warning This method will panic if the requested loop block is not found.
+     */
     std::shared_ptr<BasicBlock>
-    get_loop_continue_block(std::optional<std::string> label = std::nullopt) {
-        if (!control_stack.has_value()) {
-            panic(
-                "Function::get_loop_continue_block: No control stack; cannot "
-                "get loop continue block"
-            );
-        }
-        if (auto loop_block = control_stack.value()->get_loop(label)) {
-            return loop_block->continue_block.lock();
-        }
-        else {
-            panic(
-                "Function::get_loop_continue_block: No matching loop block "
-                "found"
-            );
-        }
-    }
+    get_loop_continue_block(std::optional<std::string> label = std::nullopt);
 
     /**
      * @brief Get the exit basic block of the specified block kind and label.
@@ -618,31 +675,7 @@ public:
     std::shared_ptr<BasicBlock> get_exit_block(
         Expr::Block::Kind kind = Expr::Block::Kind::Function,
         std::optional<std::string> label = std::nullopt
-    ) {
-        if (kind == Expr::Block::Kind::Plain) {
-            panic(
-                "Function::get_exit_block: Illegal argument; kind cannot be "
-                "Plain"
-            );
-        }
-        else if (kind == Expr::Block::Kind::Loop) {
-            if (!control_stack.has_value()) {
-                panic(
-                    "Function::get_exit_block: No control stack; cannot get "
-                    "loop exit block"
-                );
-            }
-            if (auto loop_block = control_stack.value()->get_loop(label)) {
-                return loop_block->exit_block.lock();
-            }
-            else {
-                panic("Function::get_exit_block: No matching loop block found");
-            }
-        }
-        else {
-            return exit_block;
-        }
-    }
+    );
 
     /**
      * @brief Removes all basic blocks that are not reachable from the entry
