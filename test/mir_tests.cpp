@@ -284,3 +284,24 @@ func $script( ) -> void {
         );
     }
 }
+
+TEST_CASE("MIR alloc and dealloc", "[mir]") {
+    SECTION("Basic alloc and dealloc") {
+        run_mir_test(
+            R"(
+            let ptr = alloc i32
+            )",
+            MIRTestOptions{.expected_output = R"(module
+func $script( ) -> void {
+  entry#0 <-- [ ]
+    alloca var@i32 (var@var@i32 ::ptr)
+    sizeof i32 -> (u64 #0)
+    heapalloc (u64 #0) -> (anyptr #1)
+    store (anyptr #1) -> (var@var@i32 ::ptr)
+    jump exit#0
+  exit#0 <-- [ entry#0 ]
+    return
+})"}
+        );
+    }
+}
