@@ -390,8 +390,28 @@ std::any MIRBuilder::visit(Expr::Object* expr, bool as_lvalue) {
 }
 
 std::any MIRBuilder::visit(Expr::Block* expr, bool as_lvalue) {
-    // TODO: Implementation for visiting Block expressions goes here.
-    return {};
+    std::shared_ptr<MIRValue> result;
+
+    auto yield_val = MIRValue::Variable::create("$yieldval", expr->type);
+
+    auto alloca_instr = std::make_shared<Instr::Alloca>(yield_val, expr->type);
+    current_block->add_instruction(alloca_instr);
+
+    auto function = current_block->get_parent_function();
+    function->add_plain_control_block(yield_val);
+
+    for (const auto& stmt : expr->statements) {
+        stmt->accept(this);
+    }
+
+    auto load_instr = std::make_shared<Instr::Load>(yield_val, expr->type);
+    current_block->add_instruction(load_instr);
+
+    function->pop_control_block();
+
+    result = load_instr->destination;
+
+    return result;
 }
 
 std::any MIRBuilder::visit(Expr::Conditional* expr, bool as_lvalue) {
