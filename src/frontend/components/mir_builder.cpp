@@ -58,7 +58,7 @@ std::any MIRBuilder::visit(Stmt::Let* stmt) {
     auto mir_var = MIRValue::Variable::create(binding_entry);
 
     auto alloca_instr =
-        std::make_shared<Instr::Alloca>(mir_var, binding_entry->binding.type);
+        std::make_shared<Instr::Local>(mir_var, binding_entry->binding.type);
     current_block->add_instruction(alloca_instr);
 
     if (stmt->expression.has_value()) {
@@ -99,7 +99,7 @@ std::any MIRBuilder::visit(Stmt::Dealloc* stmt) {
     auto mir_val = std::any_cast<std::shared_ptr<MIRValue>>(
         stmt->expression->accept(this, false)
     );
-    auto dealloc_instr = std::make_shared<Instr::HeapFree>(mir_val);
+    auto dealloc_instr = std::make_shared<Instr::Dealloc>(mir_val);
     current_block->add_instruction(dealloc_instr);
 
     return std::any();
@@ -316,7 +316,7 @@ std::any MIRBuilder::visit(Expr::Alloc* expr, bool as_lvalue) {
         alloc_size = sizeof_instr->destination;
     }
 
-    auto alloc_instr = std::make_shared<Instr::HeapAlloc>(alloc_size);
+    auto alloc_instr = std::make_shared<Instr::Alloc>(alloc_size);
     current_block->add_instruction(alloc_instr);
 
     result = alloc_instr->destination;
@@ -394,7 +394,7 @@ std::any MIRBuilder::visit(Expr::Block* expr, bool as_lvalue) {
 
     auto yield_val = MIRValue::Variable::create("$yieldval", expr->type);
 
-    auto alloca_instr = std::make_shared<Instr::Alloca>(yield_val, expr->type);
+    auto alloca_instr = std::make_shared<Instr::Local>(yield_val, expr->type);
     current_block->add_instruction(alloca_instr);
 
     auto function = current_block->get_parent_function();

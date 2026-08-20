@@ -216,35 +216,35 @@ public:
 };
 
 /**
- * @brief An alloca instruction in the MIR.
+ * @brief A local instruction in the MIR.
  *
- * The alloca instruction allocates memory on the stack for a variable of a
+ * The local instruction allocates memory on the stack for a variable of a
  * specified type.
  *
  * The allocated memory is associated with a destination MIR value, which can
  * be used to reference the allocated memory in subsequent instructions.
  */
-class Instr::Alloca : public INonTerm {
+class Instr::Local : public INonTerm {
 public:
     // The destination where the allocated value is stored.
     const std::shared_ptr<MIRValue::Variable> variable;
     // The type of the allocated value.
     std::shared_ptr<Type> allocated_type;
 
-    Alloca(
+    Local(
         std::shared_ptr<MIRValue::Variable> variable,
         std::shared_ptr<Type> allocated_type
     )
         : variable(variable), allocated_type(allocated_type) {}
 
-    virtual ~Alloca() = default;
+    virtual ~Local() = default;
 
     virtual std::any accept(Visitor* visitor) override {
         return visitor->visit(this);
     }
 
     virtual std::string to_string() const override {
-        return "alloca " + allocated_type->to_string() + " " +
+        return "local " + allocated_type->to_string() + " " +
                variable->to_string();
     }
 };
@@ -291,54 +291,57 @@ public:
  *
  * Heap allocation instructions allocate memory on the heap for a specified
  * size in bytes and yields a pointer to the allocated memory.
+ *
+ * Not to be confused with the LLVM `alloca` instruction, which allocates memory
+ * on the stack.
  */
-class Instr::HeapAlloc : public INonTerm {
+class Instr::Alloc : public INonTerm {
 public:
     // The value indicating the amount of memory to allocate in bytes.
     const std::shared_ptr<MIRValue> size_bytes;
     // The destination where the allocated memory pointer is stored.
     const std::shared_ptr<MIRValue::Temporary> destination;
 
-    HeapAlloc(std::shared_ptr<MIRValue> size_bytes)
+    Alloc(std::shared_ptr<MIRValue> size_bytes)
         : size_bytes(size_bytes),
           destination(
               MIRValue::Temporary::create(std::make_shared<Type::Anyptr>())
           ) {}
 
-    virtual ~HeapAlloc() = default;
+    virtual ~Alloc() = default;
 
     virtual std::any accept(Visitor* visitor) override {
         return visitor->visit(this);
     }
 
     virtual std::string to_string() const override {
-        return "heapalloc " + size_bytes->to_string() + " -> " +
+        return "alloc " + size_bytes->to_string() + " -> " +
                destination->to_string();
     }
 };
 
 /**
- * @brief A heap free instruction in the MIR.
+ * @brief A heap dealloc instruction in the MIR.
  *
- * The heap free instruction deallocates memory on the heap that was previously
- * allocated by a heap allocation instruction.
+ * The heap dealloc instruction deallocates memory on the heap that was
+ * previously allocated by a heap allocation instruction.
  */
-class Instr::HeapFree : public INonTerm {
+class Instr::Dealloc : public INonTerm {
 public:
     // The value indicating the pointer to the memory to free.
     const std::shared_ptr<MIRValue> pointer;
 
-    HeapFree(std::shared_ptr<MIRValue> pointer)
+    Dealloc(std::shared_ptr<MIRValue> pointer)
         : pointer(pointer) {}
 
-    virtual ~HeapFree() = default;
+    virtual ~Dealloc() = default;
 
     virtual std::any accept(Visitor* visitor) override {
         return visitor->visit(this);
     }
 
     virtual std::string to_string() const override {
-        return "heapfree " + pointer->to_string();
+        return "dealloc " + pointer->to_string();
     }
 };
 

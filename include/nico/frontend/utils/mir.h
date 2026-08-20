@@ -95,10 +95,10 @@ public:
     class Unary;
     class Cast;
     class Call;
-    class Alloca;
+    class Local;
     class SizeOf;
-    class HeapAlloc;
-    class HeapFree;
+    class Alloc;
+    class Dealloc;
     class Store;
     class Load;
     class Phi;
@@ -124,10 +124,10 @@ public:
         virtual std::any visit(Unary* instr) = 0;
         virtual std::any visit(Cast* instr) = 0;
         virtual std::any visit(Call* instr) = 0;
-        virtual std::any visit(Alloca* instr) = 0;
+        virtual std::any visit(Local* instr) = 0;
         virtual std::any visit(SizeOf* instr) = 0;
-        virtual std::any visit(HeapAlloc* instr) = 0;
-        virtual std::any visit(HeapFree* instr) = 0;
+        virtual std::any visit(Alloc* instr) = 0;
+        virtual std::any visit(Dealloc* instr) = 0;
         virtual std::any visit(Store* instr) = 0;
         virtual std::any visit(Load* instr) = 0;
         virtual std::any visit(Phi* instr) = 0;

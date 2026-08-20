@@ -66,7 +66,7 @@ TEST_CASE("MIR basic generation", "[mir]") {
 
 func $script( ) -> void {
   entry#0 <-- [ ]
-    alloca i32 (var@i32 ::x)
+    local i32 (var@i32 ::x)
     store (i32 5) -> (var@i32 ::x)
     jump exit#0
   exit#0 <-- [ entry#0 ]
@@ -84,9 +84,9 @@ func $script( ) -> void {
             MIRTestOptions{.expected_output = R"(module
 func $script( ) -> void {
   entry#0 <-- [ ]
-    alloca i32 (var@i32 ::x)
+    local i32 (var@i32 ::x)
     store (i32 5) -> (var@i32 ::x)
-    alloca i32 (var@i32 ::y)
+    local i32 (var@i32 ::y)
     load (var@i32 ::x) -> (i32 #0)
     store (i32 #0) -> (var@i32 ::y)
     jump exit#0
@@ -106,7 +106,7 @@ func $script( ) -> void {
             MIRTestOptions{.expected_output = R"(module
 func $script( ) -> void {
   entry#0 <-- [ ]
-    alloca i32 (var@i32 ::x)
+    local i32 (var@i32 ::x)
     store (i32 5) -> (var@i32 ::x)
     load (var@i32 ::x) -> (i32 #0)
     printout (i32 #0)
@@ -146,11 +146,11 @@ func $script( ) -> void {
             MIRTestOptions{.expected_output = R"(module
 func $script( ) -> void {
   entry#0 <-- [ ]
-    alloca i32 (var@i32 ::x)
+    local i32 (var@i32 ::x)
     store (i32 5) -> (var@i32 ::x)
-    alloca i32 (var@i32 ::y)
+    local i32 (var@i32 ::y)
     store (i32 10) -> (var@i32 ::y)
-    alloca i32 (var@i32 ::z)
+    local i32 (var@i32 ::z)
     load (var@i32 ::x) -> (i32 #0)
     load (var@i32 ::y) -> (i32 #1)
     binary intadd (i32 #0) (i32 #1) -> (i32 #2)
@@ -173,7 +173,7 @@ TEST_CASE("MIR arrays", "[mir]") {
             MIRTestOptions{.expected_output = R"(module
 func $script( ) -> void {
   entry#0 <-- [ ]
-    alloca [i32; 5] (var@[i32; 5] ::arr)
+    local [i32; 5] (var@[i32; 5] ::arr)
     array [ (i32 1) (i32 2) (i32 3) (i32 4) (i32 5) ] -> ([i32; 5] #0)
     store ([i32; 5] #0) -> (var@[i32; 5] ::arr)
     jump exit#0
@@ -193,11 +193,11 @@ func $script( ) -> void {
             MIRTestOptions{.expected_output = R"(module
 func $script( ) -> void {
   entry#0 <-- [ ]
-    alloca i32 (var@i32 ::a)
+    local i32 (var@i32 ::a)
     store (i32 1) -> (var@i32 ::a)
-    alloca i32 (var@i32 ::b)
+    local i32 (var@i32 ::b)
     store (i32 2) -> (var@i32 ::b)
-    alloca [i32; 3] (var@[i32; 3] ::arr)
+    local [i32; 3] (var@[i32; 3] ::arr)
     load (var@i32 ::a) -> (i32 #0)
     load (var@i32 ::b) -> (i32 #1)
     array [ (i32 #0) (i32 #1) (i32 3) ] -> ([i32; 3] #2)
@@ -220,9 +220,9 @@ TEST_CASE("MIR casting", "[mir]") {
             MIRTestOptions{.expected_output = R"(module
 func $script( ) -> void {
   entry#0 <-- [ ]
-    alloca i32 (var@i32 ::x)
+    local i32 (var@i32 ::x)
     store (i32 5) -> (var@i32 ::x)
-    alloca f32 (var@f32 ::y)
+    local f32 (var@f32 ::y)
     load (var@i32 ::x) -> (i32 #0)
     cast sinttofp (i32 #0) -> (f32 #1)
     store (f32 #1) -> (var@f32 ::y)
@@ -243,7 +243,7 @@ TEST_CASE("MIR sizeof", "[mir]") {
             MIRTestOptions{.expected_output = R"(module
 func $script( ) -> void {
   entry#0 <-- [ ]
-    alloca u64 (var@u64 ::size)
+    local u64 (var@u64 ::size)
     sizeof i32 -> (u64 #0)
     store (u64 #0) -> (var@u64 ::size)
     jump exit#0
@@ -264,9 +264,9 @@ TEST_CASE("MIR conditional expressions", "[mir]") {
             MIRTestOptions{.expected_output = R"(module
 func $script( ) -> void {
   entry#0 <-- [ ]
-    alloca i32 (var@i32 ::x)
+    local i32 (var@i32 ::x)
     store (i32 5) -> (var@i32 ::x)
-    alloca i32 (var@i32 ::y)
+    local i32 (var@i32 ::y)
     load (var@i32 ::x) -> (i32 #0)
     binary sintgt (i32 #0) (i32 0) -> (bool #1)
     branch (bool #1) ? cond_then#0 : cond_else#0
@@ -294,9 +294,9 @@ TEST_CASE("MIR alloc and dealloc", "[mir]") {
             MIRTestOptions{.expected_output = R"(module
 func $script( ) -> void {
   entry#0 <-- [ ]
-    alloca var@i32 (var@var@i32 ::ptr)
+    local var@i32 (var@var@i32 ::ptr)
     sizeof i32 -> (u64 #0)
-    heapalloc (u64 #0) -> (anyptr #1)
+    alloc (u64 #0) -> (anyptr #1)
     store (anyptr #1) -> (var@var@i32 ::ptr)
     jump exit#0
   exit#0 <-- [ entry#0 ]
