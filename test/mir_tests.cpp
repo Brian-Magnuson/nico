@@ -254,6 +254,28 @@ func $script( ) -> void {
     }
 }
 
+TEST_CASE("MIR block expressions", "[mir]") {
+    SECTION("Simple block expression") {
+        run_mir_test(
+            R"(
+            let x = block { yield 5 }
+            )",
+            MIRTestOptions{.expected_output = R"(module
+func $script( ) -> void {
+  entry#0 <-- [ ]
+    local i32 (var@i32 ::x)
+    local i32 (var@i32 $yieldval#0)
+    store (i32 5) -> (var@i32 $yieldval#0)
+    load (var@i32 $yieldval#0) -> (i32 #0)
+    store (i32 #0) -> (var@i32 ::x)
+    jump exit#0
+  exit#0 <-- [ entry#0 ]
+    return
+})"}
+        );
+    }
+}
+
 TEST_CASE("MIR conditional expressions", "[mir]") {
     SECTION("Simple conditional expression") {
         run_mir_test(

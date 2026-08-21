@@ -111,8 +111,73 @@ std::any MIRBuilder::visit(Stmt::Pass* stmt) {
 }
 
 std::any MIRBuilder::visit(Stmt::Yield* stmt) {
-    // TODO: Implementation for visiting Yield statements goes here.
-    return {};
+    // Evaluate the expression to yield.
+    auto yield_value = std::any_cast<std::shared_ptr<MIRValue>>(
+        stmt->expression->accept(this, false)
+    );
+
+    // Determine if this yield statement requires an unreachable block after it.
+    bool require_unreachable_block = false;
+
+    if (stmt->yield_token->tok_type == Tok::KwYield) {
+        Expr::Block::Kind target_kind = stmt->target_block.lock()->kind;
+        auto yield_allocation =
+            current_block->get_parent_function()->get_yield_variable(
+                target_kind
+            );
+        auto store_instr =
+            std::make_shared<Instr::Store>(yield_value, yield_allocation);
+        current_block->add_instruction(store_instr);
+    }
+    else if (stmt->yield_token->tok_type == Tok::KwBreak) {
+        // For break statements, find the nearest enclosing loop block.
+        auto yield_allocation =
+            current_block->get_parent_function()->get_yield_variable(
+                Expr::Block::Kind::Loop
+            );
+        auto exit_block = current_block->get_parent_function()->get_exit_block(
+            Expr::Block::Kind::Loop
+        );
+        auto store_instr =
+            std::make_shared<Instr::Store>(yield_value, yield_allocation);
+        current_block->add_instruction(store_instr);
+        current_block->set_successor(exit_block);
+        require_unreachable_block = true;
+    }
+    else if (stmt->yield_token->tok_type == Tok::KwReturn) {
+        // For return statements, find the nearest enclosing function block.
+        auto yield_allocation =
+            current_block->get_parent_function()->get_yield_variable(
+                Expr::Block::Kind::Function
+            );
+        auto exit_block = current_block->get_parent_function()->get_exit_block(
+            Expr::Block::Kind::Function
+        );
+        auto store_instr =
+            std::make_shared<Instr::Store>(yield_value, yield_allocation);
+        current_block->add_instruction(store_instr);
+        current_block->set_successor(exit_block);
+        require_unreachable_block = true;
+    }
+    else {
+        panic("CodeGenerator::visit(Stmt::Yield*): Unknown yield type.");
+        return std::any();
+    }
+
+    if (require_unreachable_block) {
+        // After a break or return, we need to create a new block to continue
+        // generating code in.
+        current_block =
+            current_block->get_parent_function()->create_basic_block(
+                "unreachable"
+            );
+        // We allow statements to appear after a break or return, but they will
+        // unreachable.
+        // In the future, we can change prevent code generation after a break or
+        // return.
+    }
+
+    return std::any();
 }
 
 std::any MIRBuilder::visit(Stmt::Continue* stmt) {
