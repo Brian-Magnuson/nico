@@ -312,6 +312,8 @@ TEST_CASE("MIR alloc and dealloc", "[mir]") {
         run_mir_test(
             R"(
             let ptr = alloc i32
+            unsafe:
+              dealloc ptr
             )",
             MIRTestOptions{.expected_output = R"(module
 func $script( ) -> void {
@@ -320,6 +322,10 @@ func $script( ) -> void {
     sizeof i32 -> (u64 #0)
     alloc (u64 #0) -> (anyptr #1)
     store (anyptr #1) -> (var@var@i32 ::ptr)
+    local void (var@void $yieldval#0)
+    load (var@var@i32 ::ptr) -> (var@i32 #2)
+    dealloc (var@i32 #2)
+    load (var@void $yieldval#0) -> (void #3)
     jump exit#0
   exit#0 <-- [ entry#0 ]
     return
