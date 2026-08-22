@@ -100,10 +100,7 @@ std::any GlobalChecker::visit(Stmt::Static* stmt) {
         stmt->binding_entry = binding_entry;
     }
     else {
-        panic(
-            "GlobalChecker::visit(Stmt::Static*): Symbol tree returned a "
-            "non-binding entry for a binding entry."
-        );
+        panic("Symbol tree returned a non-binding entry for a binding entry.");
     }
 
     return std::any();
@@ -436,7 +433,7 @@ void GlobalChecker::check(
     std::unique_ptr<FrontendContext>& context, bool repl_mode
 ) {
     if (IS_VARIANT(context->status, Status::Error)) {
-        panic("GlobalChecker::check: Context is already in an error state.");
+        panic("Context is in an error state.");
     }
 
     GlobalChecker checker(context->symbol_tree, repl_mode);

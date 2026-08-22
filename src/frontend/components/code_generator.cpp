@@ -258,7 +258,10 @@ std::any CodeGenerator::visit(Stmt::Yield* stmt) {
         require_unreachable_block = true;
     }
     else {
-        panic("CodeGenerator::visit(Stmt::Yield*): Unknown yield type.");
+        panic(
+            "Expected yield token; got " +
+            std::string(stmt->yield_token->lexeme) + "."
+        );
         return std::any();
     }
 
@@ -379,7 +382,8 @@ std::any CodeGenerator::visit(Expr::Logical* expr, bool as_lvalue) {
     }
     else {
         panic(
-            "CodeGenerator::visit(Expr::Logical*): Unknown logical operator."
+            "Expected logical operator; got " + std::string(expr->op->lexeme) +
+            "."
         );
         return std::any();
     }
@@ -413,9 +417,8 @@ std::any CodeGenerator::visit(Expr::Binary* expr, bool as_lvalue) {
     switch (expr->operation) {
     case Expr::Binary::Operation::Null:
         panic(
-            "CodeGenerator::visit(Expr::Binary*): Binary operation not set. "
-            "This "
-            "should have been filled in by the type checker."
+            "Binary operation not set; this should have been filled in by the "
+            "type checker."
         );
         break;
     case Expr::Binary::Operation::IntAdd:
@@ -503,7 +506,7 @@ std::any CodeGenerator::visit(Expr::Binary* expr, bool as_lvalue) {
         result = builder->CreateFCmpUGE(left, right);
         break;
     default:
-        panic("CodeGenerator::visit(Expr::Binary*): Unknown binary operation.");
+        panic("Unknown binary operation.");
     }
 
     return result;
@@ -516,8 +519,8 @@ std::any CodeGenerator::visit(Expr::Unary* expr, bool as_lvalue) {
     switch (expr->operation) {
     case Expr::Unary::Operation::Null:
         panic(
-            "CodeGenerator::visit(Expr::Unary*): Unary operation not set. This "
-            "should have been filled in by the type checker."
+            "Unary operation not set; this should have been filled in by the "
+            "type checker."
         );
         break;
     case Expr::Unary::Operation::Neg:
@@ -530,7 +533,7 @@ std::any CodeGenerator::visit(Expr::Unary* expr, bool as_lvalue) {
         result = builder->CreateNot(right);
         break;
     default:
-        panic("CodeGenerator::visit(Expr::Unary*): Unknown unary operation.");
+        panic("Unknown unary operation.");
     }
 
     return result;
@@ -562,8 +565,8 @@ std::any CodeGenerator::visit(Expr::Cast* expr, bool as_lvalue) {
     switch (expr->operation) {
     case Expr::Cast::Operation::Null:
         panic(
-            "CodeGenerator::visit(Expr::Cast*): Cast operation not set. This "
-            "should have been filled in by the type checker."
+            "Cast operation not set; this should have been filled in by the "
+            "type checker."
         );
         break;
     case Expr::Cast::Operation::NoOp:
@@ -674,7 +677,7 @@ std::any CodeGenerator::visit(Expr::Cast* expr, bool as_lvalue) {
         );
         break;
     default:
-        panic("CodeGenerator::visit(Expr::Cast*): Unknown cast operation.");
+        panic("Unknown cast operation.");
     }
 
     return result;
@@ -713,9 +716,8 @@ std::any CodeGenerator::visit(Expr::Access* expr, bool as_lvalue) {
             obj_type->fields.get_index(std::string(expr->right_token->lexeme));
         if (field_index == -1) {
             panic(
-                "CodeGenerator::visit(Expr::Access*): Field '" +
-                std::string(expr->right_token->lexeme) +
-                "' not found in type '" + obj_type->to_string() + "'."
+                "Field `" + std::string(expr->right_token->lexeme) +
+                "` not found in type `" + obj_type->to_string() + "`."
             );
         }
 
@@ -745,9 +747,8 @@ std::any CodeGenerator::visit(Expr::Access* expr, bool as_lvalue) {
         );
         if (field_index == -1) {
             panic(
-                "CodeGenerator::visit(Expr::Access*): Field '" +
-                std::string(expr->right_token->lexeme) +
-                "' not found in type '" + struct_type->to_string() + "'."
+                "Field `" + std::string(expr->right_token->lexeme) +
+                "` not found in type `" + struct_type->to_string() + "`."
             );
         }
 
@@ -770,8 +771,8 @@ std::any CodeGenerator::visit(Expr::Access* expr, bool as_lvalue) {
     }
     else {
         panic(
-            "CodeGenerator::visit(Expr::Access*): Accessing fields of this "
-            "type is not supported yet."
+            "Unexpected type for access expression: `" +
+            expr->left->type->to_string() + "`."
         );
     }
     return result;
@@ -815,10 +816,7 @@ std::any CodeGenerator::visit(Expr::Subscript* expr, bool as_lvalue) {
         }
     }
 
-    panic(
-        "CodeGenerator::visit(Expr::Subscript*): Left expression is not "
-        "an array type."
-    );
+    panic("Left expression is not an array type.");
     return std::any();
 }
 
@@ -830,8 +828,7 @@ std::any CodeGenerator::visit(Expr::Call* expr, bool as_lvalue) {
         Type::as_a<Type::Function>(expr->callee->type).value();
     if (!callee_fn_type) {
         panic(
-            "Codegenerator::visit(Expr::Call*): Callee is not a function type. "
-            "Found: " +
+            "Callee is not a function type. Found: " +
             expr->callee->type->to_string()
         );
     }
@@ -1109,7 +1106,10 @@ std::any CodeGenerator::visit(Expr::Literal* expr, bool as_lvalue) {
         );
         break;
     default:
-        panic("CodeGenerator::visit(Expr::Literal*): Unknown literal type.");
+        panic(
+            "Expected literal token; got " + std::string(expr->token->lexeme) +
+            "."
+        );
     }
 
     // Generate code for the literal expression
@@ -1774,10 +1774,7 @@ bool CodeGenerator::verify_ir() {
     bool failed = llvm::verifyModule(*mod_ctx.ir_module, &error_stream);
     if (failed) {
         error_stream.flush(); // Ensure all output is written to error_str
-        panic(
-            std::string("CodeGenerator::verify_ir: IR verification failed: ") +
-            error_str
-        );
+        panic(std::string("IR verification failed: ") + error_str);
     }
     return !failed;
 }
@@ -1915,7 +1912,7 @@ void CodeGenerator::generate_exe_ir(
     bool require_verification
 ) {
     if (IS_VARIANT(context->status, Status::Error)) {
-        panic("CodeGenerator::generate_exe_ir: Context is in an error state.");
+        panic("Context is in an error state.");
     }
 
     CodeGenerator codegen(
@@ -1928,7 +1925,7 @@ void CodeGenerator::generate_exe_ir(
     codegen.generate_script_func(context);
     codegen.generate_main_func();
     if (require_verification && !codegen.verify_ir()) {
-        panic("CodeGenerator::generate_exe_ir(): IR verification failed.");
+        panic("IR verification failed.");
     }
 
     context->mod_ctx = std::move(
@@ -1943,7 +1940,7 @@ void CodeGenerator::generate_repl_ir(
     bool require_verification
 ) {
     if (IS_VARIANT(context->status, Status::Error)) {
-        panic("CodeGenerator::generate_repl_ir: Context is in an error state.");
+        panic("Context is in an error state.");
     }
 
     auto repl_counter_str = std::to_string(++repl_counter);
@@ -1960,7 +1957,7 @@ void CodeGenerator::generate_repl_ir(
     codegen.generate_script_func(context, script_fn_name);
     codegen.generate_main_func(script_fn_name, main_fn_name);
     if (require_verification && !codegen.verify_ir()) {
-        panic("CodeGenerator::generate_repl_ir(): IR verification failed.");
+        panic("IR verification failed.");
     }
 
     context->mod_ctx = std::move(codegen.mod_ctx);

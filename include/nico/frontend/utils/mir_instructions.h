@@ -365,8 +365,7 @@ public:
         // Assert that the destination is a pointer type.
         if (!Type::is_a<Type::IPointer>(destination->type)) {
             panic(
-                "Instr::Store::Store: Destination must be a pointer type. "
-                "Got `" +
+                "Destination must be a pointer type; got `" +
                 destination->type->to_string() + "`."
             );
         }
@@ -403,7 +402,7 @@ public:
         // Assert that the source is a pointer type.
         if (!Type::is_a<Type::IPointer>(source->type)) {
             panic(
-                "Instr::Load::Load: Source must be a pointer type. Got `" +
+                "Source must be a pointer type. Got `" +
                 source->type->to_string() + "`."
             );
         }

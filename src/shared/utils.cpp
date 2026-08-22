@@ -1,8 +1,19 @@
-#include <cctype>
-
 #include "nico/shared/utils.h"
 
+#include <cctype>
+#include <iostream>
+
 namespace nico {
+
+[[noreturn]] void
+panic(std::string_view message, std::source_location location) {
+    std::cerr << "PANIC: " << message << "\n"
+              << "  at " << location.file_name() << ':' << location.line()
+              << ':' << location.column() << "\n"
+              << "  in `" << location.function_name() << "`\n"
+              << std::endl;
+    std::abort();
+}
 
 std::vector<std::string_view>
 break_message(std::string_view message, size_t max_length) {

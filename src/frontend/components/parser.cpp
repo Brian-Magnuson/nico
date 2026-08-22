@@ -21,7 +21,7 @@ const std::shared_ptr<Token>& Parser::peek() const {
 
 const std::shared_ptr<Token>& Parser::previous() const {
     if (current == 0) {
-        panic("Parser::previous: No previous token.");
+        panic("No previous token.");
     }
     return tokens.at(current - 1);
 }
@@ -126,9 +126,8 @@ Parser::binary_op_from_compound_op(const std::shared_ptr<Token>& compound_op) {
         break;
     default:
         panic(
-            "Parser::binary_op_from_compound_op: Unknown compound "
-            "assignment "
-            "operator."
+            "Expected compound assignment operator; got " +
+            std::string(compound_op->lexeme) + "."
         );
     }
     // Create a new token for the binary operator, adjusting length to
@@ -153,7 +152,7 @@ std::optional<Modifier> Parser::modifier() {
             // the modifier.
             while (!match({Tok::RParen})) {
                 if (is_at_end()) {
-                    panic("Parser::modifier: Unterminated modifier arguments.");
+                    panic("Unterminated modifier arguments.");
                     return std::nullopt;
                 }
                 args.push_back(advance());
@@ -451,7 +450,7 @@ std::optional<std::shared_ptr<Expr>> Parser::loop() {
         }
     }
     else {
-        panic("Parser::loop: Unexpected loop keyword.");
+        panic("Unexpected loop keyword.");
     }
 
     // The body must be a block.
@@ -795,7 +794,7 @@ std::optional<size_t> Parser::array_size() {
         return std::nullopt;
     }
     else if (ec != std::errc()) {
-        panic("Parser::array_size: Number in unexpected format.");
+        panic("Number in unexpected format.");
         return std::nullopt;
     }
     token->literal = any_val;
@@ -807,9 +806,8 @@ std::optional<std::shared_ptr<Name>> Parser::name() {
     std::shared_ptr<Token> identifier = previous();
     if (identifier->tok_type != Tok::Identifier) {
         panic(
-            "Parser::name: Attempted to parse a name, but previous token "
-            "is "
-            "not an identifier."
+            "Attempted to parse a name, but previous token is not an "
+            "identifier."
         );
     }
     auto name = std::make_shared<Name>(identifier);
@@ -906,7 +904,7 @@ std::optional<std::shared_ptr<Expr>> Parser::number_literal() {
         parse_result = parse_number<double>(numeric_string);
         break;
     default:
-        panic("Parser::number_literal: Unexpected token type.");
+        panic("Unexpected token type.");
         return std::nullopt;
     }
 
@@ -920,7 +918,7 @@ std::optional<std::shared_ptr<Expr>> Parser::number_literal() {
         return std::nullopt;
     }
     else if (ec != std::errc()) {
-        panic("Parser::number_literal: Number in unexpected format.");
+        panic("Number in unexpected format.");
         return std::nullopt;
     }
     token->literal = any_val;
@@ -1358,7 +1356,7 @@ std::optional<std::shared_ptr<Stmt>> Parser::variable_statement() {
         return stmt;
     }
     else {
-        panic("Parser::variable_statement: Unexpected starting token.");
+        panic("Unexpected starting token.");
         return std::nullopt;
     }
 }
@@ -2378,7 +2376,7 @@ void Parser::run_parse(std::unique_ptr<FrontendContext>& context) {
 
 void Parser::parse(std::unique_ptr<FrontendContext>& context, bool repl_mode) {
     if (IS_VARIANT(context->status, Status::Error)) {
-        panic("Parser::parse: Context is already in an error state.");
+        panic("Context is in an error state.");
     }
 
     Parser parser(std::move(context->scanned_tokens), repl_mode);

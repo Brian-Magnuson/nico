@@ -152,7 +152,7 @@ bool Lexer::is_digit(char c, int base, bool allow_underscore) const {
         return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') ||
                (c >= 'A' && c <= 'F');
     default:
-        panic("Lexer::is_digit: Invalid base: " + std::to_string(base));
+        panic("Invalid base: " + std::to_string(base));
     }
 }
 
@@ -889,7 +889,7 @@ void Lexer::scan(
     bool repl_mode
 ) {
     if (IS_VARIANT(context->status, Status::Error)) {
-        panic("Lexer::scan: Context is already in an error state.");
+        panic("Context is in an error state.");
     }
 
     Lexer lexer(file, repl_mode);

@@ -160,7 +160,10 @@ std::any MIRBuilder::visit(Stmt::Yield* stmt) {
         require_unreachable_block = true;
     }
     else {
-        panic("CodeGenerator::visit(Stmt::Yield*): Unknown yield type.");
+        panic(
+            "Expected yield token; got " +
+            std::string(stmt->yield_token->lexeme) + "."
+        );
         return std::any();
     }
 
@@ -537,7 +540,7 @@ void MIRBuilder::run_build(std::unique_ptr<FrontendContext>& context) {
 
 void MIRBuilder::build_mir(std::unique_ptr<FrontendContext>& context) {
     if (IS_VARIANT(context->status, Status::Error)) {
-        panic("MIRBuilder::run_build: Context is in an error state.");
+        panic("Context is in an error state.");
     }
 
     MIRBuilder builder(context->mir_module, context->symbol_tree);

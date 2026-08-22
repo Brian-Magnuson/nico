@@ -10,11 +10,7 @@ namespace nico {
 std::optional<std::shared_ptr<Type>>
 ExpressionChecker::implicit_full_dereference(std::shared_ptr<Expr>& expr) {
     if (!expr->type)
-        panic(
-            "ExpressionChecker::implicit_full_dereference: Expression has no "
-            "type. "
-            "Was it type checked?"
-        );
+        panic("Expression has no type. Was it type checked?");
 
     auto initial_type = expr->type;
 
@@ -626,8 +622,7 @@ std::any ExpressionChecker::visit(Expr::Unary* expr, bool as_lvalue) {
         break;
     default:
         panic(
-            "ExpressionChecker::visit(Expr::Unary*): Could not handle case for "
-            "operator of token type " +
+            "Could not handle case for operator of token type " +
             std::to_string(static_cast<int>(expr->op->tok_type))
         );
     }
@@ -663,16 +658,12 @@ std::any ExpressionChecker::visit(Expr::Address* expr, bool as_lvalue) {
 
         // Note: References have a lot of rules that we can't enforce yet, so we
         // disallow them for now.
-        panic(
-            "ExpressionChecker::visit(Expr::Address*): References are not "
-            "supported "
-            "yet."
-        );
+        panic("References are not supported yet.");
     }
     else {
         panic(
-            "ExpressionChecker::visit(Expr::Address*): Unknown address-of "
-            "operator."
+            "Expected address-of operator; got " +
+            std::string(expr->op->lexeme) + "."
         );
     }
 
@@ -1544,8 +1535,7 @@ std::any ExpressionChecker::visit(Expr::Literal* expr, bool as_lvalue) {
         break;
     default:
         panic(
-            "ExpressionChecker::visit(Expr::Literal*): Could not handle case "
-            "for token type " +
+            "Could not handle case for token type " +
             std::to_string(static_cast<int>(expr->token->tok_type))
         );
     }
@@ -1675,9 +1665,7 @@ std::any ExpressionChecker::visit(Expr::Block* expr, bool as_lvalue) {
         std::dynamic_pointer_cast<Expr::Block>(expr->shared_from_this())
     );
     if (!local_scope_opt.has_value()) {
-        panic(
-            "ExpressionChecker::visit(Expr::Block*): Could not add local scope."
-        );
+        panic("Could not add local scope.");
     }
     for (auto& stmt : expr->statements) {
         stmt->accept(stmt_visitor);

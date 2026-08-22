@@ -134,7 +134,7 @@ public:
     uint8_t get_ptr_width() const {
         if (ir_module == nullptr) {
             panic(
-                "IRModuleContext::get_ptr_width: IRModuleContext is not "
+                "IRModuleContext is not "
                 "initialized."
             );
         }

@@ -411,7 +411,7 @@ public:
     Print(std::vector<std::shared_ptr<Expr>>&& expressions)
         : expressions(std::move(expressions)) {
         if (this->expressions.empty()) {
-            panic("Stmt::Print::Print: expressions cannot be empty.");
+            panic("Print expressions cannot be empty.");
         }
         location = this->expressions.at(0)->location;
     }
@@ -743,7 +743,7 @@ public:
         case Operation::FPGE:
             return "fpge";
         default:
-            panic("Expr::Binary: Unknown operation.");
+            panic("Unknown binary operation.");
         }
     }
 
@@ -812,7 +812,7 @@ public:
         case Operation::Not:
             return "not";
         default:
-            panic("Expr::Unary: Unknown operation.");
+            panic("Unknown unary operation.");
         }
     }
 
@@ -963,7 +963,7 @@ public:
         case Operation::ReinterpretBits:
             return "reinterpretbits";
         default:
-            panic("Expr::Cast: Unknown operation.");
+            panic("Unknown cast operation.");
         }
     }
 
@@ -1215,9 +1215,7 @@ public:
         // constant.
         for (const auto& [_, arg] : actual_args) {
             if (arg.expired()) {
-                panic(
-                    "Expr::NewInst::is_constant: actual argument is expired."
-                );
+                panic("Actual argument pointer is expired.");
             }
             if (!arg.lock()->is_constant()) {
                 return false;

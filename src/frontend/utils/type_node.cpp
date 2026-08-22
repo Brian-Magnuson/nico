@@ -52,14 +52,12 @@ std::string Type::Named::to_string() const {
 llvm::Type*
 Type::Named::get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const {
     if (!is_definitely_sized()) {
-        panic(
-            "Type::Named::get_llvm_type: Cannot get LLVM type of unsized type."
-        );
+        panic("Cannot get LLVM type of unsized type.");
     }
     if (auto node_ptr = node.lock()) {
         return node_ptr->type->get_llvm_type(builder);
     }
-    panic("Type::Named: Node is expired; LLVM type cannot be generated.");
+    panic("Node is expired; LLVM type cannot be generated.");
 }
 
 } // namespace nico

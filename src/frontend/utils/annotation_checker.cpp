@@ -164,9 +164,7 @@ std::any AnnotationChecker::visit(Annotation::TypeOf* annotation) {
     }
     annotation->expression->accept(expr_checker.lock().get(), false);
     if (!annotation->expression->type) {
-        panic(
-            "Annotation::TypeOf::visit: expression has no type after checking."
-        );
+        panic("Expression has no type after checking.");
         return std::any();
     }
     return annotation->expression->type;

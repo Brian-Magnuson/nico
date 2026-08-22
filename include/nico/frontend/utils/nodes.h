@@ -765,7 +765,7 @@ public:
           type(type),
           default_expr(default_expr) {
         if (type == nullptr) {
-            panic("Binding::Binding: Type cannot be null.");
+            panic("Binding type cannot be null.");
         }
     }
 

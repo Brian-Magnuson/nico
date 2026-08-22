@@ -2,7 +2,7 @@
 #define NICO_UTILS_H
 
 #include <cstdlib>
-#include <iostream>
+#include <source_location>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -30,22 +30,25 @@ inline constexpr size_t MAX_RECURSION_DEPTH = 255;
 inline constexpr size_t MAX_ALLOWED_IMPLICIT_DEREFERENCES = 16;
 
 /**
- * @brief Prints out a message to stderr, then aborts the program.
+ * @brief Prints out a message to stderr with source location information, then
+ * aborts the program.
  *
- * We try to avoid using exceptions in this project, so we instead use
- * explicit values for recoverable errors and functions like this for
- * unrecoverable errors.
+ * In accordance with our code style, messages should be written using sentence
+ * case and should end with a period.
+ *
+ * We try to avoid using exceptions in this project, so we instead use explicit
+ * values for recoverable errors and functions like this for unrecoverable
+ * errors.
  *
  * @param message The message to print out before aborting.
+ * @param location The source location of the caller. Defaults to the location
+ * of the call site. You probably should not set this parameter manually.
  * @return This function never returns; it calls std::abort().
  */
-[[noreturn]] inline void panic(std::string_view message) {
-    // TODO: C++20 provides std::source_location, which can be used to get the
-    // file and line number of the caller. This would be useful to include in
-    // the panic message.
-    std::cerr << "Panic: " << message << std::endl;
-    std::abort();
-}
+[[noreturn]] void panic(
+    std::string_view message,
+    std::source_location location = std::source_location::current()
+);
 
 /**
  * @brief Checks if the standard output is a terminal.

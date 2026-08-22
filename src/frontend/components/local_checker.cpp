@@ -101,11 +101,7 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
         return std::any();
     }
     else {
-        panic(
-            "LocalChecker::visit(Stmt::Let*): Symbol tree returned a "
-            "non-binding "
-            "entry for a binding entry."
-        );
+        panic("Symbol tree returned a non-binding entry for a binding entry.");
     }
 
     return std::any();
@@ -165,10 +161,7 @@ std::any LocalChecker::visit(Stmt::Func* stmt) {
     auto func_type_opt =
         Type::as_a<Type::Function>(stmt->binding_entry.lock()->binding.type);
     if (!func_type_opt) {
-        panic(
-            "LocalChecker::visit(Stmt::Func*): Binding entry does not have a "
-            "function type."
-        );
+        panic("Binding entry for function does not have a function type.");
     }
     auto func_type = func_type_opt.value();
 
@@ -294,7 +287,7 @@ std::any LocalChecker::visit(Stmt::Yield* stmt) {
         }
     }
     else {
-        panic("LocalChecker::visit(Stmt::Yield*): Invalid yield token.");
+        panic("Invalid yield token.");
     }
     // At this point, target_scope is guaranteed to be a valid local scope.
     auto local_scope = target_scope.value();
@@ -425,10 +418,7 @@ std::any LocalChecker::visit(Stmt::StructDef* stmt) {
     auto struct_type_opt =
         Type::as_a<Type::Struct>(stmt->struct_def_node.lock()->type);
     if (!struct_type_opt) {
-        panic(
-            "LocalChecker::visit(Stmt::StructDef*): Struct definition node "
-            "does not have a struct type."
-        );
+        panic("Struct definition node does not have a struct type.");
     }
     auto struct_type = struct_type_opt.value();
 
@@ -507,7 +497,7 @@ void LocalChecker::check(
     std::unique_ptr<FrontendContext>& context, bool repl_mode
 ) {
     if (IS_VARIANT(context->status, Status::Error)) {
-        panic("LocalChecker::check: Context is already in an error state.");
+        panic("Context is in an error state.");
     }
 
     LocalChecker checker(context->symbol_tree, repl_mode);

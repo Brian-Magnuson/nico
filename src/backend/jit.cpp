@@ -24,15 +24,12 @@ IJIT::run_main_func(int argc, char** argv, std::string_view main_fn_name) {
     }
     auto addr = symbol->getValue();
     if (!addr) {
-        panic("IJIT::run_main_func: 'main' function address is null");
+        panic("Function address of `main` is null.");
     }
     using FuncPtr = int (*)(int, char**);
     auto func = reinterpret_cast<FuncPtr>(addr);
     if (!func) {
-        panic(
-            "IJIT::run_main_func: Failed to cast 'main' function address to a "
-            "function pointer"
-        );
+        panic("Failed to cast `main` function address to a function pointer");
     }
 
     return func(argc, argv);
@@ -46,8 +43,7 @@ SimpleJIT::SimpleJIT() {
     auto jit_or_err = llvm::orc::LLJITBuilder().create();
     if (!jit_or_err) {
         panic(
-            "SimpleJIT::SimpleJIT: Failed to create LLJIT: " +
-            llvm::toString(jit_or_err.takeError())
+            "Failed to create LLJIT: " + llvm::toString(jit_or_err.takeError())
         );
     }
     jit = std::move(jit_or_err.get());
@@ -67,8 +63,7 @@ void SimpleJIT::reset() {
     auto jit_or_err = llvm::orc::LLJITBuilder().create();
     if (!jit_or_err) {
         panic(
-            "SimpleJIT::reset: Failed to create LLJIT: " +
-            llvm::toString(jit_or_err.takeError())
+            "Failed to create LLJIT: " + llvm::toString(jit_or_err.takeError())
         );
     }
     jit = std::move(jit_or_err.get());

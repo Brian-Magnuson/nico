@@ -24,10 +24,7 @@ BasicBlock::BasicBlock(Private, std::string_view name)
 
 void BasicBlock::set_as_function_return() {
     if (terminator)
-        panic(
-            "BasicBlock::set_as_function_return: Basic block already has a "
-            "terminator"
-        );
+        panic("Basic block already has a terminator.");
 
     terminator = std::make_shared<Instr::Return>();
 }
@@ -38,10 +35,7 @@ void BasicBlock::add_instruction(std::shared_ptr<Instr::INonTerm> instruction) {
 
 void BasicBlock::set_successor(std::shared_ptr<BasicBlock> successor) {
     if (terminator)
-        panic(
-            "BasicBlock::set_successor: Basic block already has a "
-            "terminator"
-        );
+        panic("Basic block already has a terminator.");
     terminator = std::make_shared<Instr::Jump>(successor);
     successor->predecessors.push_back(shared_from_this());
 }
@@ -52,10 +46,7 @@ void BasicBlock::set_successors(
     std::shared_ptr<BasicBlock> alt_successor
 ) {
     if (terminator)
-        panic(
-            "BasicBlock::set_successors: Basic block already has a "
-            "terminator"
-        );
+        panic("Basic block already has a terminator.");
 
     terminator = std::make_shared<Instr::Branch>(
         condition,
@@ -163,10 +154,7 @@ std::shared_ptr<MIRValue::Variable> Function::get_yield_variable(
     Expr::Block::Kind kind, std::optional<std::string> label
 ) const {
     if (!control_stack.has_value() && kind != Expr::Block::Kind::Function) {
-        panic(
-            "Function::get_yield_variable: No control stack; cannot get "
-            "yield variable"
-        );
+        panic("No control stack; cannot get yield variable.");
     }
     if (kind == Expr::Block::Kind::Function) {
         return return_variable;
@@ -176,10 +164,7 @@ std::shared_ptr<MIRValue::Variable> Function::get_yield_variable(
         return block->yield_variable;
     }
     else {
-        panic(
-            "Function::get_yield_variable: No matching block found for "
-            "label"
-        );
+        panic("No matching block found for label.");
     }
 }
 
@@ -216,10 +201,7 @@ void Function::add_loop_control_block(
 
 void Function::pop_control_block() {
     if (!control_stack.has_value()) {
-        panic(
-            "Function::pop_control_block: No control stack; cannot pop "
-            "block"
-        );
+        panic("No control stack; cannot pop block.");
     }
     control_stack = control_stack.value()->prev;
     // Top block is deallocated as it is no longer referenced by the control
@@ -229,20 +211,14 @@ void Function::pop_control_block() {
 std::shared_ptr<BasicBlock>
 Function::get_loop_continue_block(std::optional<std::string> label) {
     if (!control_stack.has_value()) {
-        panic(
-            "Function::get_loop_continue_block: No control stack; cannot "
-            "get loop continue block"
-        );
+        panic("No control stack; cannot get loop continue block.");
     }
     if (auto loop_block =
             control_stack.value()->get_loop(label).value_or(nullptr)) {
         return loop_block->continue_block.lock();
     }
     else {
-        panic(
-            "Function::get_loop_continue_block: No matching loop block "
-            "found"
-        );
+        panic("No matching loop block found.");
     }
 }
 
@@ -250,24 +226,18 @@ std::shared_ptr<BasicBlock> Function::get_exit_block(
     Expr::Block::Kind kind, std::optional<std::string> label
 ) {
     if (kind == Expr::Block::Kind::Plain) {
-        panic(
-            "Function::get_exit_block: Illegal argument; kind cannot be "
-            "Plain"
-        );
+        panic("Illegal argument; kind cannot be Plain.");
     }
     else if (kind == Expr::Block::Kind::Loop) {
         if (!control_stack.has_value()) {
-            panic(
-                "Function::get_exit_block: No control stack; cannot get "
-                "loop exit block"
-            );
+            panic("No control stack; cannot get loop exit block.");
         }
         if (auto loop_block =
                 control_stack.value()->get_loop(label).value_or(nullptr)) {
             return loop_block->exit_block.lock();
         }
         else {
-            panic("Function::get_exit_block: No matching loop block found");
+            panic("No matching loop block found.");
         }
     }
     else {

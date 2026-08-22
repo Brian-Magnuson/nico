@@ -120,10 +120,7 @@ bool Node::ExternBlock::add_child(
         return false;
     }
     else if (PTR_INSTANCEOF(child, Node::LocalScope)) {
-        panic(
-            "Node::ExternBlock::add_child: Attempted to add local scope as a "
-            "direct child to an extern block."
-        );
+        panic("Cannot add local scope as a direct child to an extern block.");
         return false;
     }
 
@@ -140,7 +137,7 @@ std::shared_ptr<Node::PrimitiveType> Node::PrimitiveType::create(
     node->short_name = std::string(short_name);
 
     if (type == nullptr) {
-        panic("Node::PrimitiveType: Type cannot be null.");
+        panic("Type cannot be null.");
     }
     node->type = type;
     return node;
@@ -156,7 +153,7 @@ std::shared_ptr<Node::TypeDef> Node::TypeDef::create(
     node->short_name = std::string(token->lexeme);
 
     if (type == nullptr) {
-        panic("Node::TypeDef: Type cannot be null.");
+        panic("Type cannot be null.");
     }
     node->type = type;
     return node;
@@ -199,8 +196,8 @@ bool Node::StructDef::add_child(
     }
     else if (PTR_INSTANCEOF(child, Node::LocalScope)) {
         panic(
-            "Node::StructDef::add_child: Attempted to add local scope as a "
-            "direct child to a struct definition."
+            "Cannot add local scope as a direct child to a struct "
+            "definition."
         );
         return false;
     }
@@ -235,10 +232,7 @@ bool Node::LocalScope::add_child(
     std::optional<std::string> custom_symbol
 ) {
     if (PTR_INSTANCEOF(child, Node::IGlobalScope)) {
-        panic(
-            "Node::LocalScope::add_child: Attempted to add global scope as a "
-            "direct child to a local scope."
-        );
+        panic("Cannot add global scope as a direct child to a local scope.");
         return false;
     }
 
@@ -311,11 +305,7 @@ llvm::Value* Node::BindingEntry::get_llvm_allocation(
     else {
         ptr = llvm_ptr;
         if (ptr == nullptr) {
-            panic(
-                "Node::BindingEntry::get_llvm_allocation: Local variable "
-                "has "
-                "no LLVM allocation."
-            );
+            panic("Local variable has no LLVM allocation.");
         }
     }
     return ptr;

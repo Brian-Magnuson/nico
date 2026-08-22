@@ -128,7 +128,7 @@ void REPL::handle_command(Command cmd) {
         *out << "Exiting REPL..." << std::endl;
         exit(0);
     default:
-        panic("REPL::handle_command: Unknown command");
+        panic("Unknown REPL command.");
         break;
     }
 }

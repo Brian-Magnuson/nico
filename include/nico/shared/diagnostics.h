@@ -121,7 +121,7 @@ public:
     void
     emit_error(Err ec, const Location* location, std::string_view message) {
         if (location == nullptr)
-            panic("Diagnostics::emit_error was given a null Location pointer");
+            panic("Location pointer for diagnostics is null.");
         emit_error(ec, *location, message);
     }
 
@@ -160,7 +160,7 @@ public:
      */
     void emit_note(const Location* location, std::string_view message) {
         if (location == nullptr)
-            panic("Diagnostics::emit_note was given a null Location pointer");
+            panic("Location pointer for diagnostics is null.");
         emit_note(*location, message);
     }
 
