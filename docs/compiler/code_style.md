@@ -271,9 +271,13 @@ Instead of using exceptions, prefer using error codes or other mechanisms to ind
 For example, many functions use `std::optional` and `std::any` to represent values that may or may not be present.
 
 For unrecoverable errors, use the `panic` function to terminate the program and provide an error message.
-- Panic error messages should include the name of the function where the error occurred.
-  - If the function has many overloads (such as the visit functions for the visitor pattern), include the parameter types.
-  - E.g. `Parser::parse: error message here.`, `LocalChecker::visit(Stmt::Expr*): error message here.`
+For panic error messages:
+- Use proper sentence case and end with a period.
+- Avoid abbreviations and acronyms unless they are widely recognized.
+- Consider including relevant context in the error message to aid in debugging.
+  - E.g., if a certain kind of token is expected, include the actual token that was received in the error message.
+
+There is no need to include the file name or line number in the error message, as this information is automatically included in the panic output.
 
 In addition to errors generally perceived as unrecoverable, 
 errors caused by any of the following should also be treated as unrecoverable:
