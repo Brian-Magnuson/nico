@@ -333,3 +333,40 @@ func $script( ) -> void {
         );
     }
 }
+
+TEST_CASE("MIR loops", "[mir]") {
+    SECTION("Simple conditional loop") {
+        run_mir_test(
+            R"(
+            let var x = 0
+            while x < 5 {
+                x = x + 1
+            }
+            )",
+            MIRTestOptions{.expected_output = R"(module
+func $script( ) -> void {
+  entry#0 <-- [ ]
+    local i32 (var@i32 ::x)
+    store (i32 0) -> (var@i32 ::x)
+    local void (var@void $breakval#0)
+    jump loop_cond#0
+  exit#0 <-- [ loop_merge#0 ]
+    return
+  loop_do#0 <-- [ loop_cond#0 ]
+    local void (var@void $yieldval#0)
+    load (var@i32 ::x) -> (i32 #2)
+    binary intadd (i32 #2) (i32 1) -> (i32 #3)
+    store (i32 #3) -> (var@i32 ::x)
+    load (var@void $yieldval#0) -> (void #4)
+    jump loop_cond#0
+  loop_merge#0 <-- [ loop_cond#0 ]
+    load (var@void $breakval#0) -> (void #5)
+    jump exit#0
+  loop_cond#0 <-- [ entry#0 loop_do#0 ]
+    load (var@i32 ::x) -> (i32 #0)
+    binary sintlt (i32 #0) (i32 5) -> (bool #1)
+    branch (bool #1) ? loop_do#0 : loop_merge#0
+})"}
+        );
+    }
+}

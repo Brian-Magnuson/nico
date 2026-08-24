@@ -57,9 +57,9 @@ std::any MIRBuilder::visit(Stmt::Let* stmt) {
     auto binding_entry = stmt->binding_entry.lock();
     auto mir_var = MIRValue::Variable::create(binding_entry);
 
-    auto alloca_instr =
+    auto local_instr =
         std::make_shared<Instr::Local>(mir_var, binding_entry->binding.type);
-    current_block->add_instruction(alloca_instr);
+    current_block->add_instruction(local_instr);
 
     if (stmt->expression.has_value()) {
         auto mir_val = std::any_cast<std::shared_ptr<MIRValue>>(
@@ -219,8 +219,20 @@ std::any MIRBuilder::visit(Stmt::Eof* stmt) {
 }
 
 std::any MIRBuilder::visit(Expr::Assign* expr, bool as_lvalue) {
-    // TODO: Implementation for visiting Assign expressions goes here.
-    return {};
+    std::shared_ptr<MIRValue> result;
+
+    auto left_ptr = std::any_cast<std::shared_ptr<MIRValue>>(
+        expr->left->accept(this, true)
+    );
+    auto right = std::any_cast<std::shared_ptr<MIRValue>>(
+        expr->right->accept(this, false)
+    );
+
+    auto store_instr = std::make_shared<Instr::Store>(right, left_ptr);
+    current_block->add_instruction(store_instr);
+    result = right;
+
+    return result;
 }
 
 std::any MIRBuilder::visit(Expr::Logical* expr, bool as_lvalue) {
@@ -462,8 +474,8 @@ std::any MIRBuilder::visit(Expr::Block* expr, bool as_lvalue) {
 
     auto yield_val = MIRValue::Variable::create("$yieldval", expr->type);
 
-    auto alloca_instr = std::make_shared<Instr::Local>(yield_val, expr->type);
-    current_block->add_instruction(alloca_instr);
+    auto local_instr = std::make_shared<Instr::Local>(yield_val, expr->type);
+    current_block->add_instruction(local_instr);
 
     auto function = current_block->get_parent_function();
     function->add_plain_control_block(yield_val);
@@ -525,8 +537,78 @@ std::any MIRBuilder::visit(Expr::Conditional* expr, bool as_lvalue) {
 }
 
 std::any MIRBuilder::visit(Expr::Loop* expr, bool as_lvalue) {
-    // TODO: Implementation for visiting Loop expressions goes here.
-    return {};
+    std::shared_ptr<MIRValue> result;
+
+    auto break_val = MIRValue::Variable::create("$breakval", expr->type);
+    auto local_instr = std::make_shared<Instr::Local>(break_val, expr->type);
+    current_block->add_instruction(local_instr);
+
+    // Loops are complicated because they allow break statements, which
+    // interrupt the control flow in a block. This potentially causes the yield
+    // value of a plain block to become unreachable. So rather than trying to
+    // salvage the yield value of the inner expression, we create a new yield
+    // allocation for the loop itself. Break statements will have the ability to
+    // set this yield allocation.
+
+    auto current_function = current_block->get_parent_function();
+    auto do_block = current_function->create_basic_block("loop_do");
+    auto merge_block = current_function->create_basic_block("loop_merge");
+
+    if (expr->condition.has_value()) {
+        // Conditional loops have a condition block.
+        auto condition_block =
+            current_function->create_basic_block("loop_cond");
+        current_function
+            ->add_loop_control_block(break_val, condition_block, merge_block);
+
+        // Conditional loops include while loops and do-while loops.
+        // The flow is the same: cond->do->cond->do...
+        // The difference is that, in do-while loops, we enter the do block
+        // first.
+        if (expr->loops_once) {
+            current_block->set_successor(do_block);
+        }
+        else {
+            current_block->set_successor(condition_block);
+        }
+
+        // Condition block
+        current_block = condition_block;
+        auto condition = std::any_cast<std::shared_ptr<MIRValue>>(
+            expr->condition.value()->accept(this, false)
+        );
+        current_block->set_successors(condition, do_block, merge_block);
+
+        // Do block
+        current_block = do_block;
+        // The loop body is always a block expression, but we ignore the value
+        // because it is always `void`.
+        expr->body->accept(this, false);
+        current_block->set_successor(condition_block);
+    }
+    else {
+        // Unconditional loops don't have a condition block.
+        current_function
+            ->add_loop_control_block(break_val, do_block, merge_block);
+        current_block->set_successor(do_block);
+
+        // Do block
+        current_block = do_block;
+        expr->body->accept(this, false);
+        // For non-conditional loops, we also ignore the value of
+        // the loop body because the yield value is set by break statements,
+        // which are the only way to exit the loop.
+        current_block->set_successor(do_block);
+    }
+
+    // Merge block
+    current_block = merge_block;
+    auto load_instr = std::make_shared<Instr::Load>(break_val, expr->type);
+    current_block->add_instruction(load_instr);
+    current_function->pop_control_block();
+    result = load_instr->destination;
+
+    return std::any();
 }
 
 void MIRBuilder::run_build(std::unique_ptr<FrontendContext>& context) {
