@@ -335,7 +335,7 @@ func $script( ) -> void {
 }
 
 TEST_CASE("MIR loops", "[mir]") {
-    SECTION("Simple conditional loop") {
+    SECTION("Simple while loop") {
         run_mir_test(
             R"(
             let var x = 0
@@ -363,6 +363,75 @@ func $script( ) -> void {
     load (var@void $breakval#0) -> (void #5)
     jump exit#0
   loop_cond#0 <-- [ entry#0 loop_do#0 ]
+    load (var@i32 ::x) -> (i32 #0)
+    binary sintlt (i32 #0) (i32 5) -> (bool #1)
+    branch (bool #1) ? loop_do#0 : loop_merge#0
+})"}
+        );
+    }
+
+    SECTION("While loop with break") {
+        run_mir_test(
+            R"(
+          let x = true
+          while x {
+              break void
+          }
+          )",
+            MIRTestOptions{.expected_output = R"(module
+func $script( ) -> void {
+  entry#0 <-- [ ]
+    local bool (var@bool ::x)
+    store (bool true) -> (var@bool ::x)
+    local void (var@void $breakval#0)
+    jump loop_cond#0
+  exit#0 <-- [ loop_merge#0 ]
+    return
+  loop_do#0 <-- [ loop_cond#0 ]
+    local void (var@void $yieldval#0)
+    store (void void) -> (var@void $breakval#0)
+    jump loop_merge#0
+  loop_merge#0 <-- [ loop_cond#0 loop_do#0 ]
+    load (var@void $breakval#0) -> (void #2)
+    jump exit#0
+  loop_cond#0 <-- [ entry#0 unreachable#0 ]
+    load (var@bool ::x) -> (bool #0)
+    branch (bool #0) ? loop_do#0 : loop_merge#0
+  unreachable#0 <-- [ ]
+    load (var@void $yieldval#0) -> (void #1)
+    jump loop_cond#0
+})"}
+        );
+    }
+
+    SECTION("Simple do-while loop") {
+        run_mir_test(
+            R"(
+            let var x = 0
+            do {
+                x = x + 1
+            } while x < 5
+            )",
+            MIRTestOptions{.expected_output = R"(module
+func $script( ) -> void {
+  entry#0 <-- [ ]
+    local i32 (var@i32 ::x)
+    store (i32 0) -> (var@i32 ::x)
+    local void (var@void $breakval#0)
+    jump loop_do#0
+  exit#0 <-- [ loop_merge#0 ]
+    return
+  loop_do#0 <-- [ entry#0 loop_cond#0 ]
+    local void (var@void $yieldval#0)
+    load (var@i32 ::x) -> (i32 #2)
+    binary intadd (i32 #2) (i32 1) -> (i32 #3)
+    store (i32 #3) -> (var@i32 ::x)
+    load (var@void $yieldval#0) -> (void #4)
+    jump loop_cond#0
+  loop_merge#0 <-- [ loop_cond#0 ]
+    load (var@void $breakval#0) -> (void #5)
+    jump exit#0
+  loop_cond#0 <-- [ loop_do#0 ]
     load (var@i32 ::x) -> (i32 #0)
     binary sintlt (i32 #0) (i32 5) -> (bool #1)
     branch (bool #1) ? loop_do#0 : loop_merge#0

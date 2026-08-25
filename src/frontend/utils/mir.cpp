@@ -159,6 +159,15 @@ std::shared_ptr<MIRValue::Variable> Function::get_yield_variable(
     if (kind == Expr::Block::Kind::Function) {
         return return_variable;
     }
+    if (kind == Expr::Block::Kind::Loop) {
+        if (auto loop_block =
+                control_stack.value()->get_loop(label).value_or(nullptr)) {
+            return loop_block->yield_variable;
+        }
+        else {
+            panic("No matching loop block found.");
+        }
+    }
     if (auto block =
             control_stack.value()->get_block(label).value_or(nullptr)) {
         return block->yield_variable;
