@@ -184,8 +184,15 @@ std::any MIRBuilder::visit(Stmt::Yield* stmt) {
 }
 
 std::any MIRBuilder::visit(Stmt::Continue* stmt) {
-    // TODO: Implementation for visiting Continue statements goes here.
-    return {};
+    auto continue_block =
+        current_block->get_parent_function()->get_loop_continue_block();
+    current_block->set_successor(continue_block);
+
+    auto unreachable_block =
+        current_block->get_parent_function()->create_basic_block("unreachable");
+    current_block = unreachable_block;
+
+    return std::any();
 }
 
 std::any MIRBuilder::visit(Stmt::Namespace* stmt) {

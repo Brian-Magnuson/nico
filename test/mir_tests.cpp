@@ -25,6 +25,15 @@ struct MIRTestOptions {
     bool print_mir = false;
 };
 
+/**
+ * @brief Runs a MIR test with the given source code and options.
+ *
+ * @param source The source code to scan, parse, analyze, and run in the MIR
+ * builder.
+ * @param options The options for the test, including expected output and
+ * printing flags. See the MIRTestOptions struct for more details on the
+ * available options and their effects.
+ */
 void run_mir_test(
     std::string_view source, MIRTestOptions options = MIRTestOptions()
 ) {
@@ -56,6 +65,17 @@ void run_mir_test(
     nico::Diagnostics::inst().reset();
 }
 
+/**
+ * @brief Runs a simple MIR test with the given source code and expected output.
+ *
+ * This function is only for checking the expected output of the MIR. For all
+ * other checks, use the overload that accepts MIRTestOptions.
+ *
+ * @param source The source code to scan, parse, analyze, and run in the MIR
+ * builder.
+ * @param expected_output The expected output of the MIR. If the output does not
+ * match, the test will fail.
+ */
 void run_mir_test(std::string_view source, std::string_view expected_output) {
     run_mir_test(source, MIRTestOptions{expected_output});
 }
@@ -395,6 +415,39 @@ func $script( ) -> void {
     load (var@void $breakval#0) -> (void #2)
     jump exit#0
   loop_cond#0 <-- [ entry#0 unreachable#0 ]
+    load (var@bool ::x) -> (bool #0)
+    branch (bool #0) ? loop_do#0 : loop_merge#0
+  unreachable#0 <-- [ ]
+    load (var@void $yieldval#0) -> (void #1)
+    jump loop_cond#0
+})"}
+        );
+    }
+
+    SECTION("While loop with continue") {
+        run_mir_test(
+            R"(
+          let x = true
+          while x {
+              continue
+          }
+          )",
+            MIRTestOptions{.expected_output = R"(module
+func $script( ) -> void {
+  entry#0 <-- [ ]
+    local bool (var@bool ::x)
+    store (bool true) -> (var@bool ::x)
+    local void (var@void $breakval#0)
+    jump loop_cond#0
+  exit#0 <-- [ loop_merge#0 ]
+    return
+  loop_do#0 <-- [ loop_cond#0 ]
+    local void (var@void $yieldval#0)
+    jump loop_cond#0
+  loop_merge#0 <-- [ loop_cond#0 ]
+    load (var@void $breakval#0) -> (void #2)
+    jump exit#0
+  loop_cond#0 <-- [ entry#0 loop_do#0 unreachable#0 ]
     load (var@bool ::x) -> (bool #0)
     branch (bool #0) ? loop_do#0 : loop_merge#0
   unreachable#0 <-- [ ]
