@@ -180,6 +180,52 @@ public:
     }
 };
 
+/**
+ * @brief A global variable value in the MIR.
+ *
+ * An extension of MIRValue::Variable that represents a global variable in the
+ * MIR.
+ */
+class MIRValue::Global : public MIRValue::Variable {
+public:
+    Linkage linkage;
+
+    Global(
+        Private,
+        std::string_view name,
+        std::shared_ptr<Type> type,
+        Linkage linkage
+    )
+        : MIRValue::Variable(Private(), name, type), linkage(linkage) {}
+
+    /**
+     * @brief Creates a new global variable value in the MIR.
+     *
+     * @param name The name of the global variable.
+     * @param type The type of the global variable.
+     * @param linkage The linkage of the global variable.
+     * @return std::shared_ptr<Global> A shared pointer to the newly created
+     * global variable.
+     */
+    static std::shared_ptr<Global>
+    create(std::string_view name, std::shared_ptr<Type> type, Linkage linkage) {
+        return std::make_shared<Global>(Private(), name, type, linkage);
+    }
+
+    /**
+     * @brief Returns a string representation of the global variable.
+     *
+     * @return std::string A string representation of the global variable.
+     */
+    virtual std::string to_string() const override {
+        return "global (" + type->to_string() + " " + name + ")";
+    }
+
+    virtual std::any accept(Visitor* visitor) override {
+        return visitor->visit(this);
+    }
+};
+
 } // namespace nico
 
 #endif // NICO_MIR_VALUES_H

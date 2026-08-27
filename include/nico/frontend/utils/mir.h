@@ -37,6 +37,7 @@ public:
     class Literal;
     class Variable;
     class Temporary;
+    class Global;
 
     virtual ~MIRValue() = default;
 
@@ -48,6 +49,7 @@ public:
         virtual std::any visit(Literal* value) = 0;
         virtual std::any visit(Variable* value) = 0;
         virtual std::any visit(Temporary* value) = 0;
+        virtual std::any visit(Global* value) = 0;
     };
 
     // The type of this value.
