@@ -116,10 +116,6 @@ public:
     static std::shared_ptr<Variable>
     create(std::shared_ptr<Node::BindingEntry> binding_entry) {
         auto variable = std::make_shared<Variable>(Private(), binding_entry);
-        binding_entry->mir_variable =
-            std::dynamic_pointer_cast<MIRValue::Variable>(
-                variable->shared_from_this()
-            );
         return variable;
     }
 
@@ -192,33 +188,26 @@ public:
 
     Global(
         Private,
-        std::string_view name,
-        std::shared_ptr<Type> type,
+        std::shared_ptr<Node::BindingEntry> binding_entry,
         Linkage linkage
     )
-        : MIRValue::Variable(Private(), name, type), linkage(linkage) {}
+        : MIRValue::Variable(Private(), binding_entry), linkage(linkage) {}
 
     /**
      * @brief Creates a new global variable value in the MIR.
      *
-     * @param name The name of the global variable.
-     * @param type The type of the global variable.
-     * @param linkage The linkage of the global variable.
+     * @param binding_entry The binding entry from the AST on which this MIR
+     * value is based.
      * @return std::shared_ptr<Global> A shared pointer to the newly created
      * global variable.
      */
     static std::shared_ptr<Global>
-    create(std::string_view name, std::shared_ptr<Type> type, Linkage linkage) {
-        return std::make_shared<Global>(Private(), name, type, linkage);
-    }
-
-    /**
-     * @brief Returns a string representation of the global variable.
-     *
-     * @return std::string A string representation of the global variable.
-     */
-    virtual std::string to_string() const override {
-        return "global (" + type->to_string() + " " + name + ")";
+    create(std::shared_ptr<Node::BindingEntry> binding_entry) {
+        return std::make_shared<Global>(
+            Private(),
+            binding_entry,
+            binding_entry->linkage
+        );
     }
 
     virtual std::any accept(Visitor* visitor) override {

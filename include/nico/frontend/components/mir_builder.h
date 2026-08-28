@@ -38,6 +38,9 @@ class MIRBuilder : public Stmt::Visitor, public Expr::Visitor {
         std::shared_ptr<MIRValue> size_value, const Location* location
     );
 
+    std::shared_ptr<MIRValue::Variable>
+    get_mir_variable(std::shared_ptr<Node::BindingEntry> binding_entry);
+
     std::any visit(Stmt::Expression* stmt) override;
     std::any visit(Stmt::Let* stmt) override;
     std::any visit(Stmt::Static* stmt) override;

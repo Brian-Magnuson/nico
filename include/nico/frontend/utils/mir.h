@@ -11,6 +11,8 @@
 
 #include "nico/frontend/utils/ast_node.h"
 #include "nico/frontend/utils/nodes.h"
+#include "nico/frontend/utils/symbol_node.h"
+#include "nico/shared/dictionary.h"
 
 namespace nico {
 
@@ -482,6 +484,8 @@ class Function : public std::enable_shared_from_this<Function> {
     std::vector<std::shared_ptr<MIRValue::Variable>> parameters;
     // A special temporary value for the return value.
     std::shared_ptr<MIRValue::Variable> return_variable;
+    // The local variables declared in this function.
+    Dictionary<std::string, std::shared_ptr<MIRValue::Variable>> locals;
     // The entry basic block of the function.
     std::shared_ptr<BasicBlock> entry_block;
     // The basic blocks in the function.
@@ -546,6 +550,12 @@ public:
      * @return The return type of the function.
      */
     std::shared_ptr<Type> get_return_type() const;
+
+    std::shared_ptr<MIRValue::Variable>
+    create_local_variable(std::shared_ptr<Node::BindingEntry> binding_entry);
+
+    std::shared_ptr<MIRValue::Variable>
+    get_local_variable(std::shared_ptr<Node::BindingEntry> binding_entry);
 
     /**
      * @brief Get the return variable of the function.
@@ -712,6 +722,8 @@ class MIRModule {
         explicit Private() = default;
     };
 
+    // The global variables declared in this module.
+    Dictionary<std::string, std::shared_ptr<MIRValue::Global>> globals;
     // The functions in the module.
     std::vector<std::shared_ptr<Function>> functions;
 
@@ -758,6 +770,9 @@ public:
         functions.push_back(func);
         return func;
     }
+
+    std::shared_ptr<MIRValue::Global>
+    get_or_declare_global(std::shared_ptr<Node::BindingEntry> binding_entry);
 
     /**
      * @brief Gets the script function in the module.

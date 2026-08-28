@@ -48,6 +48,19 @@ void MIRBuilder::add_negative_alloc_size_check(
     current_block = continue_block;
 }
 
+std::shared_ptr<MIRValue::Variable> MIRBuilder::get_mir_variable(
+    std::shared_ptr<Node::BindingEntry> binding_entry
+) {
+    if (binding_entry->is_global) {
+        return mir_module->get_or_declare_global(binding_entry);
+    }
+    else {
+        return current_block->get_parent_function()->get_local_variable(
+            binding_entry
+        );
+    }
+}
+
 std::any MIRBuilder::visit(Stmt::Expression* stmt) {
     stmt->expression->accept(this, false);
     return std::any();
@@ -55,11 +68,27 @@ std::any MIRBuilder::visit(Stmt::Expression* stmt) {
 
 std::any MIRBuilder::visit(Stmt::Let* stmt) {
     auto binding_entry = stmt->binding_entry.lock();
-    auto mir_var = MIRValue::Variable::create(binding_entry);
 
-    auto local_instr =
-        std::make_shared<Instr::Local>(mir_var, binding_entry->binding.type);
-    current_block->add_instruction(local_instr);
+    std::shared_ptr<MIRValue::Variable> mir_var;
+
+    if (binding_entry->is_global) {
+        // For global variables, we don't need to create a local variable in the
+        // MIR. Instead, we can directly use the global variable.
+        mir_var = mir_module->get_or_declare_global(binding_entry);
+    }
+    else {
+        // For local variables, create a new MIR variable and add it to the
+        // current function's locals.
+        mir_var = current_block->get_parent_function()->create_local_variable(
+            binding_entry
+        );
+
+        auto local_instr = std::make_shared<Instr::Local>(
+            mir_var,
+            binding_entry->binding.type
+        );
+        current_block->add_instruction(local_instr);
+    }
 
     if (stmt->expression.has_value()) {
         auto mir_val = std::any_cast<std::shared_ptr<MIRValue>>(
@@ -418,7 +447,7 @@ std::any MIRBuilder::visit(Expr::NewInst* expr, bool as_lvalue) {
 std::any MIRBuilder::visit(Expr::NameRef* expr, bool as_lvalue) {
     std::shared_ptr<MIRValue> result;
     std::shared_ptr<MIRValue::Variable> mir_var =
-        expr->binding_entry.lock()->mir_variable;
+        get_mir_variable(expr->binding_entry.lock());
 
     if (as_lvalue) {
         // If we're treating this as an lvalue, return the variable itself.

@@ -150,6 +150,26 @@ std::shared_ptr<Type> Function::get_return_type() const {
     return return_variable->type;
 }
 
+std::shared_ptr<MIRValue::Variable> Function::create_local_variable(
+    std::shared_ptr<Node::BindingEntry> binding_entry
+) {
+    auto var = MIRValue::Variable::create(binding_entry);
+    locals[binding_entry->symbol] = var;
+    return var;
+}
+
+std::shared_ptr<MIRValue::Variable> Function::get_local_variable(
+    std::shared_ptr<Node::BindingEntry> binding_entry
+) {
+    auto it = locals.find(binding_entry->symbol);
+    if (it != locals.end()) {
+        return it->second;
+    }
+    else {
+        panic("No local variable found for binding entry.");
+    }
+}
+
 std::shared_ptr<MIRValue::Variable> Function::get_yield_variable(
     Expr::Block::Kind kind, std::optional<std::string> label
 ) const {
@@ -300,6 +320,23 @@ std::string Function::to_string() const {
 
     result += "}\n";
     return result;
+}
+
+std::shared_ptr<MIRValue::Global> MIRModule::get_or_declare_global(
+    std::shared_ptr<Node::BindingEntry> binding_entry
+) {
+    std::string suffix =
+        Type::is_a<Type::Function>(binding_entry->binding.type) ? "$var" : "";
+    std::string global_name = binding_entry->symbol + suffix;
+
+    if (auto global_opt = globals.at(global_name)) {
+        return *global_opt;
+    }
+    else {
+        auto global = MIRValue::Global::create(binding_entry);
+        globals.insert(global_name, global);
+        return global;
+    }
 }
 
 } // namespace nico
