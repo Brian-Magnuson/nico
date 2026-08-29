@@ -339,4 +339,24 @@ std::shared_ptr<MIRValue::Global> MIRModule::get_or_declare_global(
     }
 }
 
+std::string MIRModule::to_string() const {
+    std::string result = "module\n\n";
+
+    // Print each global variable.
+    for (const auto& [global_name, global_var] : globals) {
+        result +=
+            "global " + global_name + " " + global_var->to_string() + "\n";
+    }
+    result += "\n";
+
+    // Print each function.
+    for (const auto& func : functions) {
+        result += func->to_string() + "\n";
+    }
+
+    result.resize(result.size() - 1); // Remove the last newline
+
+    return result;
+}
+
 } // namespace nico

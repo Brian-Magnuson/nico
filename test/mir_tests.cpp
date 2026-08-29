@@ -83,6 +83,7 @@ void run_mir_test(std::string_view source, std::string_view expected_output) {
 TEST_CASE("MIR basic generation", "[mir]") {
     SECTION("Basic let statement") {
         run_mir_test(R"(let x = 5)", MIRTestOptions{.expected_output = R"(module
+global ::x (var@i32 ::x)
 
 func $script( ) -> void {
   entry#0 <-- [ ]
@@ -101,6 +102,9 @@ func $script( ) -> void {
             let y = x
             )",
             MIRTestOptions{.expected_output = R"(module
+global ::x (var@i32 ::x)
+global ::y (var@i32 ::y)
+
 func $script( ) -> void {
   entry#0 <-- [ ]
     store (i32 5) -> (var@i32 ::x)
@@ -121,6 +125,8 @@ func $script( ) -> void {
             printout x
             )",
             MIRTestOptions{.expected_output = R"(module
+global ::x (var@i32 ::x)
+
 func $script( ) -> void {
   entry#0 <-- [ ]
     store (i32 5) -> (var@i32 ::x)
@@ -160,6 +166,10 @@ func $script( ) -> void {
             let z = x + y
             )",
             MIRTestOptions{.expected_output = R"(module
+global ::x (var@i32 ::x)
+global ::y (var@i32 ::y)
+global ::z (var@i32 ::z)
+
 func $script( ) -> void {
   entry#0 <-- [ ]
     store (i32 5) -> (var@i32 ::x)
@@ -184,6 +194,8 @@ TEST_CASE("MIR arrays", "[mir]") {
             let arr = [1, 2, 3, 4, 5]
             )",
             MIRTestOptions{.expected_output = R"(module
+global ::arr (var@[i32; 5] ::arr)
+
 func $script( ) -> void {
   entry#0 <-- [ ]
     array [ (i32 1) (i32 2) (i32 3) (i32 4) (i32 5) ] -> ([i32; 5] #0)
@@ -203,6 +215,10 @@ func $script( ) -> void {
             let arr = [a, b, 3]
             )",
             MIRTestOptions{.expected_output = R"(module
+global ::a (var@i32 ::a)
+global ::b (var@i32 ::b)
+global ::arr (var@[i32; 3] ::arr)
+
 func $script( ) -> void {
   entry#0 <-- [ ]
     store (i32 1) -> (var@i32 ::a)
@@ -227,6 +243,9 @@ TEST_CASE("MIR casting", "[mir]") {
             let y = x as f32
             )",
             MIRTestOptions{.expected_output = R"(module
+global ::x (var@i32 ::x)
+global ::y (var@f32 ::y)
+
 func $script( ) -> void {
   entry#0 <-- [ ]
     store (i32 5) -> (var@i32 ::x)
@@ -248,6 +267,8 @@ TEST_CASE("MIR sizeof", "[mir]") {
             let size = sizeof i32
             )",
             MIRTestOptions{.expected_output = R"(module
+global ::size (var@u64 ::size)
+
 func $script( ) -> void {
   entry#0 <-- [ ]
     sizeof i32 -> (u64 #0)
@@ -267,6 +288,8 @@ TEST_CASE("MIR block expressions", "[mir]") {
             let x = block { yield 5 }
             )",
             MIRTestOptions{.expected_output = R"(module
+global ::x (var@i32 ::x)
+
 func $script( ) -> void {
   entry#0 <-- [ ]
     local i32 (var@i32 $yieldval#0)
@@ -289,6 +312,9 @@ TEST_CASE("MIR conditional expressions", "[mir]") {
             let y = if x > 0 then 10 else 20
             )",
             MIRTestOptions{.expected_output = R"(module
+global ::x (var@i32 ::x)
+global ::y (var@i32 ::y)
+
 func $script( ) -> void {
   entry#0 <-- [ ]
     store (i32 5) -> (var@i32 ::x)
@@ -319,6 +345,8 @@ TEST_CASE("MIR alloc and dealloc", "[mir]") {
               dealloc ptr
             )",
             MIRTestOptions{.expected_output = R"(module
+global ::ptr (var@var@i32 ::ptr)
+
 func $script( ) -> void {
   entry#0 <-- [ ]
     sizeof i32 -> (u64 #0)
@@ -346,6 +374,8 @@ TEST_CASE("MIR loops", "[mir]") {
             }
             )",
             MIRTestOptions{.expected_output = R"(module
+global ::x (var@i32 ::x)
+
 func $script( ) -> void {
   entry#0 <-- [ ]
     store (i32 0) -> (var@i32 ::x)
@@ -380,6 +410,8 @@ func $script( ) -> void {
           }
           )",
             MIRTestOptions{.expected_output = R"(module
+global ::x (var@bool ::x)
+
 func $script( ) -> void {
   entry#0 <-- [ ]
     store (bool true) -> (var@bool ::x)
@@ -413,6 +445,8 @@ func $script( ) -> void {
           }
           )",
             MIRTestOptions{.expected_output = R"(module
+global ::x (var@bool ::x)
+
 func $script( ) -> void {
   entry#0 <-- [ ]
     store (bool true) -> (var@bool ::x)
@@ -445,6 +479,8 @@ func $script( ) -> void {
             } while x < 5
             )",
             MIRTestOptions{.expected_output = R"(module
+global ::x (var@i32 ::x)
+
 func $script( ) -> void {
   entry#0 <-- [ ]
     store (i32 0) -> (var@i32 ::x)

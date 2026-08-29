@@ -838,18 +838,7 @@ public:
      *
      * @return A string representation of the module.
      */
-    std::string to_string() const {
-        std::string result = "module\n\n";
-
-        // Print each function.
-        for (const auto& func : functions) {
-            result += func->to_string() + "\n";
-        }
-
-        result.resize(result.size() - 1); // Remove the last newline
-
-        return result;
-    }
+    std::string to_string() const;
 };
 
 } // namespace nico
