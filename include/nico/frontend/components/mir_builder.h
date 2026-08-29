@@ -38,6 +38,28 @@ class MIRBuilder : public Stmt::Visitor, public Expr::Visitor {
         std::shared_ptr<MIRValue> size_value, const Location* location
     );
 
+    /**
+     * @brief Helper function to retrieve the MIR variable corresponding to a
+     * given binding entry.
+     *
+     * If the binding entry represents a global variable, it retrieves or
+     * declares the global variable in the MIR module. If it is a local
+     * variable, it retrieves the local variable from the current function's
+     * context.
+     *
+     * If the binding entry is a local variable and does not exist in the
+     * current function's context, this function will panic.
+     *
+     * @param binding_entry The binding entry for which to retrieve the MIR
+     * variable.
+     * @return std::shared_ptr<MIRValue::Variable> The corresponding MIR
+     * variable.
+     *
+     * @warning This function will panic if the provided binding entry is for a
+     * local variable that does not exist in the current function's context.
+     * Ensure that the binding entry is valid and has been declared before
+     * calling this function.
+     */
     std::shared_ptr<MIRValue::Variable>
     get_mir_variable(std::shared_ptr<Node::BindingEntry> binding_entry);
 

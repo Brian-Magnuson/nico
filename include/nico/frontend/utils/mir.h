@@ -551,9 +551,37 @@ public:
      */
     std::shared_ptr<Type> get_return_type() const;
 
+    /**
+     * @brief Create a local variable object from the given binding entry and
+     * add it to the function's locals.
+     *
+     * The produced local variable must still be added in a local instruction in
+     * a basic block.
+     *
+     * @param binding_entry The binding entry for which to create a local
+     * variable.
+     * @return std::shared_ptr<MIRValue::Variable> The newly created local
+     * variable.
+     */
     std::shared_ptr<MIRValue::Variable>
     create_local_variable(std::shared_ptr<Node::BindingEntry> binding_entry);
 
+    /**
+     * @brief Get the local variable object corresponding to the given binding
+     * entry.
+     *
+     * If the local variable does not exist in the function's locals, this
+     * method will panic.
+     *
+     * @param binding_entry The binding entry for which to get the local
+     * variable.
+     * @return std::shared_ptr<MIRValue::Variable> The local variable
+     * corresponding to the binding entry.
+     *
+     * @warning This method will panic if the local variable does not exist in
+     * the function's locals. Ensure that the binding entry is valid and has
+     * been declared before calling this method.
+     */
     std::shared_ptr<MIRValue::Variable>
     get_local_variable(std::shared_ptr<Node::BindingEntry> binding_entry);
 
@@ -771,6 +799,15 @@ public:
         return func;
     }
 
+    /**
+     * @brief Retrieves the global variable corresponding to the given binding
+     * entry, or declares a new one if it does not yet exist.
+     *
+     * @param binding_entry The binding entry for which to get or declare the
+     * global variable.
+     * @return std::shared_ptr<MIRValue::Global> The global variable
+     * corresponding to the binding entry.
+     */
     std::shared_ptr<MIRValue::Global>
     get_or_declare_global(std::shared_ptr<Node::BindingEntry> binding_entry);
 
