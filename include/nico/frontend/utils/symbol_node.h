@@ -544,9 +544,13 @@ public:
 
     virtual llvm::Value*
     get_llvm_allocation(std::unique_ptr<llvm::IRBuilder<>>& builder) override {
-        return llvm::UndefValue::get(
-            llvm::PointerType::get(builder->getContext(), 0)
-        );
+        if (overloads.empty()) {
+            panic(
+                "Node::OverloadGroup::get_llvm_allocation: Overload group `" +
+                symbol + "` has no overloads."
+            );
+        }
+        return overloads.front()->get_llvm_allocation(builder);
         // When the code generator encounters a name reference, it requires
         // the LLVM allocation of the binding entry. Overload groups do not
         // have a meaningful LLVM allocation, but we need to return

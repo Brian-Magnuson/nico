@@ -1555,13 +1555,15 @@ std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
     if (match({Tok::DoubleArrow})) {
         // Single-expression function.
         // For simplicity, wrap it in a block.
+        auto return_token =
+            std::make_shared<Token>(Tok::KwReturn, previous()->location);
+        auto expr_opt = expression();
+
         body_expr = std::make_shared<Expr::Block>(
             previous(),
-            std::vector<std::shared_ptr<Stmt::IExecAllowed>>{std::make_shared<
-                Stmt::Yield>(
-                std::make_shared<Token>(Tok::KwReturn, previous()->location),
-                *expression()
-            )},
+            std::vector<std::shared_ptr<Stmt::IExecAllowed>>{
+                std::make_shared<Stmt::Yield>(return_token, *expr_opt)
+            },
             Expr::Block::Kind::Function,
             false
         );

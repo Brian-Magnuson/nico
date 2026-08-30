@@ -14,7 +14,7 @@ ExpressionChecker::implicit_full_dereference(std::shared_ptr<Expr>& expr) {
 
     auto initial_type = expr->type;
 
-    int i = 0;
+    unsigned i = 0;
     while (auto i_pointer_type =
                Type::as_a<Type::IPointer>(expr->type).value_or(nullptr)) {
         if (!Type::is_a<Type::ITypedPtr>(expr->type)) {
