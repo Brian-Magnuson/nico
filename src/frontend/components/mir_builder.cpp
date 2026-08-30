@@ -16,12 +16,8 @@ void MIRBuilder::add_negative_alloc_size_check(
     auto panic_block = function->create_basic_block("panic");
     auto continue_block = function->create_basic_block("continue");
 
-    auto constint_instr = std::make_shared<Instr::ConstantInt>(
-        0,
-        std::make_shared<Type::Int>(false, 64)
-    );
-    auto zero_value = constint_instr->destination;
-    current_block->add_instruction(constint_instr);
+    auto zero_value =
+        MIRValue::CustomInt::create(std::make_shared<Type::Int>(false, 64), 0);
 
     auto cmp_instr = std::make_shared<Instr::Binary>(
         Expr::Binary::Operation::SIntLT,
@@ -466,10 +462,7 @@ std::any MIRBuilder::visit(Expr::NameRef* expr, bool as_lvalue) {
 std::any MIRBuilder::visit(Expr::Literal* expr, bool as_lvalue) {
     std::shared_ptr<MIRValue> result;
 
-    result = MIRValue::Literal::create(
-        expr->type,
-        std::dynamic_pointer_cast<Expr::Literal>(expr->shared_from_this())
-    );
+    result = MIRValue::Literal::create(expr->type, expr->token);
     return result;
 }
 

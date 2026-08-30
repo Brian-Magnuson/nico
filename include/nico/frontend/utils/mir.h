@@ -36,7 +36,13 @@ protected:
     };
 
 public:
+    class IConstant;
+    class ZeroValue;
+    class CustomInt;
     class Literal;
+    class Array;
+    class Struct;
+
     class Variable;
     class Temporary;
     class Global;
@@ -48,7 +54,11 @@ public:
      */
     class Visitor {
     public:
+        virtual std::any visit(ZeroValue* value) = 0;
+        virtual std::any visit(CustomInt* value) = 0;
         virtual std::any visit(Literal* value) = 0;
+        virtual std::any visit(Array* value) = 0;
+        virtual std::any visit(Struct* value) = 0;
         virtual std::any visit(Variable* value) = 0;
         virtual std::any visit(Temporary* value) = 0;
         virtual std::any visit(Global* value) = 0;
@@ -94,7 +104,6 @@ public:
 class Instr {
 public:
     class INonTerm;
-    class ConstantInt;
     class Binary;
     class Unary;
     class Cast;
@@ -123,7 +132,6 @@ public:
      */
     class Visitor {
     public:
-        virtual std::any visit(ConstantInt* instr) = 0;
         virtual std::any visit(Binary* instr) = 0;
         virtual std::any visit(Unary* instr) = 0;
         virtual std::any visit(Cast* instr) = 0;

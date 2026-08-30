@@ -9,47 +9,212 @@
 #include <string_view>
 #include <unordered_map>
 
-#include "nico/frontend/utils/ast_node.h"
 #include "nico/frontend/utils/symbol_node.h"
 #include "nico/frontend/utils/type_node.h"
+#include "nico/shared/token.h"
 
 namespace nico {
+
+/**
+ * @brief A constant value in the MIR.
+ *
+ * "Constant" in this context, does not mean immutable, but rather that the
+ * value is known at compile time. It is analogous to the concept of a
+ * `constexpr` in C++ and can be used for compile-time optimizations.
+ *
+ * Constant values can be used to initialize global variables.
+ */
+class MIRValue::IConstant : public MIRValue {
+public:
+    IConstant(Private, std::shared_ptr<Type> type)
+        : MIRValue(Private(), type) {}
+};
+
+/**
+ * @brief A zero value in the MIR.
+ *
+ * A zero value is a constant value that represents the zero value of a given
+ * type.
+ */
+class MIRValue::ZeroValue : public MIRValue::IConstant {
+public:
+    ZeroValue(Private, std::shared_ptr<Type> type)
+        : MIRValue::IConstant(Private(), type) {}
+
+    /**
+     * @brief Creates a new zero value in the MIR.
+     *
+     * @param type The type of the zero value.
+     * @return std::shared_ptr<ZeroValue> A shared pointer to the newly created
+     * zero value.
+     */
+    static std::shared_ptr<ZeroValue> create(std::shared_ptr<Type> type) {
+        return std::make_shared<ZeroValue>(Private(), type);
+    }
+
+    virtual std::string to_string() const override {
+        return "(" + type->to_string() + " zerovalue)";
+    }
+
+    virtual std::any accept(Visitor* visitor) override {
+        return visitor->visit(this);
+    }
+};
+
+/**
+ * @brief A custom integer value in the MIR.
+ *
+ * Occasionally, it is useful for the MIR builder to create MIRValues that have
+ * specific constant integer values, like 0 or 1. Since the MIR builder cannot
+ * create the Expr required for an MIRValue::Literal, we can instead use this
+ * class to create a constant integer value.
+ */
+class MIRValue::CustomInt : public MIRValue::IConstant {
+public:
+    // The value of the custom integer.
+    const uint64_t value;
+
+    CustomInt(Private, std::shared_ptr<Type> type, uint64_t value)
+        : MIRValue::IConstant(Private(), type), value(value) {}
+
+    static std::shared_ptr<CustomInt>
+    create(std::shared_ptr<Type> type, uint64_t value) {
+        return std::make_shared<CustomInt>(Private(), type, value);
+    }
+
+    virtual std::string to_string() const override {
+        return "(" + type->to_string() + " " + std::to_string(value) + ")";
+    }
+
+    virtual std::any accept(Visitor* visitor) override {
+        return visitor->visit(this);
+    }
+};
 
 /**
  * @brief A literal value in the MIR.
  *
  * Literal values reference a literal expression from the AST.
  */
-class MIRValue::Literal : public MIRValue {
+class MIRValue::Literal : public MIRValue::IConstant {
 public:
-    // The literal value expression.
-    std::shared_ptr<Expr::Literal> literal_expr;
+    // The token representing the literal value.
+    std::shared_ptr<Token> token;
 
-    Literal(
-        Private,
-        std::shared_ptr<Type> type,
-        std::shared_ptr<Expr::Literal> literal_expr
-    )
-        : MIRValue(Private(), type), literal_expr(literal_expr) {}
+    Literal(Private, std::shared_ptr<Type> type, std::shared_ptr<Token> token)
+        : MIRValue::IConstant(Private(), type), token(token) {}
 
     /**
      * @brief Creates a new literal value in the MIR.
      *
      * @param type The type of the literal value.
-     * @param literal_expr The literal expression from the AST on which this MIR
-     * value is based.
+     * @param token The token representing the literal value.
      * @return std::shared_ptr<Literal> A shared pointer to the newly created
      * literal value.
      */
-    static std::shared_ptr<Literal> create(
-        std::shared_ptr<Type> type, std::shared_ptr<Expr::Literal> literal_expr
-    ) {
-        return std::make_shared<Literal>(Private(), type, literal_expr);
+    static std::shared_ptr<Literal>
+    create(std::shared_ptr<Type> type, std::shared_ptr<Token> token) {
+        return std::make_shared<Literal>(Private(), type, token);
     }
 
     virtual std::string to_string() const override {
-        return "(" + type->to_string() + " " +
-               std::string(literal_expr->token->lexeme) + ")";
+        return "(" + type->to_string() + " " + std::string(token->lexeme) + ")";
+    }
+
+    virtual std::any accept(Visitor* visitor) override {
+        return visitor->visit(this);
+    }
+};
+
+/**
+ * @brief A constant array value in the MIR.
+ *
+ * An array is constant if all of its elements are constant values.
+ * If you mean to create a non-constant array, use the `Instr::Array`
+ * instruction instead.
+ */
+class MIRValue::Array : public MIRValue::IConstant {
+public:
+    // The elements of the array.
+    std::vector<std::shared_ptr<MIRValue::IConstant>> elements;
+
+    Array(
+        Private,
+        std::shared_ptr<Type::Array> type,
+        std::vector<std::shared_ptr<MIRValue::IConstant>> elements
+    )
+        : MIRValue::IConstant(Private(), type), elements(elements) {}
+
+    /**
+     * @brief Creates a new array value in the MIR.
+     *
+     * @param type The type of the array.
+     * @param elements The elements of the array.
+     * @return std::shared_ptr<Array> A shared pointer to the newly created
+     * array value.
+     */
+    static std::shared_ptr<Array> create(
+        std::shared_ptr<Type::Array> type,
+        std::vector<std::shared_ptr<MIRValue::IConstant>> elements
+    ) {
+        return std::make_shared<Array>(Private(), type, elements);
+    }
+
+    virtual std::string to_string() const override {
+        std::string result = "(" + type->to_string();
+        for (const auto& element : elements) {
+            result += " " + element->to_string();
+        }
+        result += ")";
+        return result;
+    }
+
+    virtual std::any accept(Visitor* visitor) override {
+        return visitor->visit(this);
+    }
+};
+
+/**
+ * @brief A constant struct value in the MIR.
+ *
+ * A struct is constant if all of its elements are constant values.
+ * If you mean to create a non-constant struct or tuple, use the `Instr::Struct`
+ * or `Instr::Tuple` instructions instead.
+ */
+class MIRValue::Struct : public MIRValue::IConstant {
+public:
+    // The fields of the struct.
+    std::vector<std::shared_ptr<MIRValue::IConstant>> elements;
+
+    Struct(
+        Private,
+        std::shared_ptr<Type::Struct> type,
+        std::vector<std::shared_ptr<MIRValue::IConstant>> elements
+    )
+        : MIRValue::IConstant(Private(), type), elements(elements) {}
+
+    /**
+     * @brief Creates a new struct value in the MIR.
+     *
+     * @param type The type of the struct.
+     * @param elements The elements of the struct.
+     * @return std::shared_ptr<Struct> A shared pointer to the newly created
+     * struct value.
+     */
+    static std::shared_ptr<Struct> create(
+        std::shared_ptr<Type::Struct> type,
+        std::vector<std::shared_ptr<MIRValue::IConstant>> elements
+    ) {
+        return std::make_shared<Struct>(Private(), type, elements);
+    }
+
+    virtual std::string to_string() const override {
+        std::string result = "(" + type->to_string();
+        for (const auto& element : elements) {
+            result += " " + element->to_string();
+        }
+        result += ")";
+        return result;
     }
 
     virtual std::any accept(Visitor* visitor) override {
