@@ -440,17 +440,13 @@ public:
     const std::shared_ptr<MIRValue::Temporary> destination;
     // The elements of the array.
     const std::vector<std::shared_ptr<MIRValue>> elements;
-    // Whether this array could be created as a constant expression.
-    bool is_constexpr;
 
     Array(
         std::shared_ptr<Type> result_type,
-        std::vector<std::shared_ptr<MIRValue>> elements,
-        bool is_constexpr
+        std::vector<std::shared_ptr<MIRValue>> elements
     )
         : destination(MIRValue::Temporary::create(result_type)),
-          elements(elements),
-          is_constexpr(is_constexpr) {}
+          elements(elements) {}
 
     virtual ~Array() = default;
 
@@ -480,17 +476,13 @@ public:
     const std::shared_ptr<MIRValue::Temporary> destination;
     // The fields of the struct.
     const std::vector<std::shared_ptr<MIRValue>> fields;
-    // Whether this struct could be created as a constant expression.
-    bool is_constexpr;
 
     Struct(
         std::shared_ptr<Type> result_type,
-        std::vector<std::shared_ptr<MIRValue>> fields,
-        bool is_constexpr
+        std::vector<std::shared_ptr<MIRValue>> fields
     )
         : destination(MIRValue::Temporary::create(result_type)),
-          fields(fields),
-          is_constexpr(is_constexpr) {}
+          fields(fields) {}
 
     virtual ~Struct() = default;
 

@@ -198,8 +198,7 @@ global ::arr (var@[i32; 5] ::arr)
 
 func $script( ) -> void {
   entry#0 <-- [ ]
-    array [ (i32 1) (i32 2) (i32 3) (i32 4) (i32 5) ] -> ([i32; 5] #0)
-    store ([i32; 5] #0) -> (var@[i32; 5] ::arr)
+    store ([i32; 5] [ (i32 1) (i32 2) (i32 3) (i32 4) (i32 5) ]) -> (var@[i32; 5] ::arr)
     jump exit#0
   exit#0 <-- [ entry#0 ]
     return

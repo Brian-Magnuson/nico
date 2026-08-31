@@ -161,11 +161,11 @@ public:
     }
 
     virtual std::string to_string() const override {
-        std::string result = "(" + type->to_string();
+        std::string result = "(" + type->to_string() + " [";
         for (const auto& element : elements) {
             result += " " + element->to_string();
         }
-        result += ")";
+        result += " ])";
         return result;
     }
 

@@ -473,22 +473,47 @@ std::any MIRBuilder::visit(Expr::Tuple* expr, bool as_lvalue) {
 
 std::any MIRBuilder::visit(Expr::Array* expr, bool as_lvalue) {
     std::shared_ptr<MIRValue> result;
-
-    std::vector<std::shared_ptr<MIRValue>> element_values;
-    for (const auto& element : expr->elements) {
-        element_values.push_back(
-            std::any_cast<std::shared_ptr<MIRValue>>(
-                element->accept(this, false)
-            )
+    if (!Type::is_a<Type::Array>(expr->type)) {
+        panic(
+            "Expected array type for array expression, but got `" +
+            expr->type->to_string() + "`."
         );
     }
-    auto array_instr = std::make_shared<Instr::Array>(
-        expr->type,
-        element_values,
-        expr->is_constant()
-    );
-    current_block->add_instruction(array_instr);
-    result = array_instr->destination;
+    auto array_type = Type::as_a<Type::Array>(expr->type).value();
+
+    if (expr->is_constant()) {
+        std::vector<std::shared_ptr<MIRValue::IConstant>> element_constants;
+        for (const auto& element : expr->elements) {
+            auto value = std::any_cast<std::shared_ptr<MIRValue>>(
+                element->accept(this, false)
+            );
+            if (auto const_value =
+                    std::dynamic_pointer_cast<MIRValue::IConstant>(value)) {
+                element_constants.push_back(const_value);
+            }
+            else {
+                panic(
+                    "Expected constant value for array element, but got a "
+                    "non-constant value."
+                );
+            }
+        }
+        result = MIRValue::Array::create(array_type, element_constants);
+    }
+    else {
+        std::vector<std::shared_ptr<MIRValue>> element_values;
+        for (const auto& element : expr->elements) {
+            element_values.push_back(
+                std::any_cast<std::shared_ptr<MIRValue>>(
+                    element->accept(this, false)
+                )
+            );
+        }
+        auto array_instr =
+            std::make_shared<Instr::Array>(expr->type, element_values);
+        current_block->add_instruction(array_instr);
+        result = array_instr->destination;
+    }
 
     return result;
 }
