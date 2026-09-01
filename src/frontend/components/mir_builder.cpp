@@ -467,8 +467,42 @@ std::any MIRBuilder::visit(Expr::Literal* expr, bool as_lvalue) {
 }
 
 std::any MIRBuilder::visit(Expr::Tuple* expr, bool as_lvalue) {
-    // TODO: Implementation for visiting Tuple expressions goes here.
-    return {};
+    std::shared_ptr<MIRValue> result;
+    if (expr->is_constant()) {
+        std::vector<std::shared_ptr<MIRValue::IConstant>> element_constants;
+        for (const auto& element : expr->elements) {
+            auto value = std::any_cast<std::shared_ptr<MIRValue>>(
+                element->accept(this, false)
+            );
+            if (auto const_value =
+                    std::dynamic_pointer_cast<MIRValue::IConstant>(value)) {
+                element_constants.push_back(const_value);
+            }
+            else {
+                panic(
+                    "Expected constant value for tuple element, but got a "
+                    "non-constant value."
+                );
+            }
+        }
+        result = MIRValue::Struct::create(expr->type, element_constants);
+    }
+    else {
+        std::vector<std::shared_ptr<MIRValue>> element_values;
+        for (const auto& element : expr->elements) {
+            element_values.push_back(
+                std::any_cast<std::shared_ptr<MIRValue>>(
+                    element->accept(this, false)
+                )
+            );
+        }
+        auto struct_instr =
+            std::make_shared<Instr::Struct>(expr->type, element_values);
+        current_block->add_instruction(struct_instr);
+        result = struct_instr->destination;
+    }
+
+    return result;
 }
 
 std::any MIRBuilder::visit(Expr::Array* expr, bool as_lvalue) {

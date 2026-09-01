@@ -188,7 +188,7 @@ public:
 
     Struct(
         Private,
-        std::shared_ptr<Type::Struct> type,
+        std::shared_ptr<Type> type,
         std::vector<std::shared_ptr<MIRValue::IConstant>> elements
     )
         : MIRValue::IConstant(Private(), type), elements(elements) {}
@@ -202,7 +202,7 @@ public:
      * struct value.
      */
     static std::shared_ptr<Struct> create(
-        std::shared_ptr<Type::Struct> type,
+        std::shared_ptr<Type> type,
         std::vector<std::shared_ptr<MIRValue::IConstant>> elements
     ) {
         return std::make_shared<Struct>(Private(), type, elements);
