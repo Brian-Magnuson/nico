@@ -234,6 +234,53 @@ func $script( ) -> void {
     }
 }
 
+TEST_CASE("MIR tuples", "[mir]") {
+    SECTION("Tuple creation and access") {
+        run_mir_test(
+            R"(
+            let tup = (1, 2, 3)
+            )",
+            MIRTestOptions{.expected_output = R"(module
+global ::tup (var@(i32, i32, i32) ::tup)
+
+func $script( ) -> void {
+  entry#0 <-- [ ]
+    store ((i32, i32, i32) { (i32 1) (i32 2) (i32 3) }) -> (var@(i32, i32, i32) ::tup)
+    jump exit#0
+  exit#0 <-- [ entry#0 ]
+    return
+})"}
+        );
+    }
+
+    SECTION("Tuple creation with variable elements") {
+        run_mir_test(
+            R"(
+            let a = 1
+            let b = 2
+            let tup = (a, b, 3)
+            )",
+            MIRTestOptions{.expected_output = R"(module
+global ::a (var@i32 ::a)
+global ::b (var@i32 ::b)
+global ::tup (var@(i32, i32, i32) ::tup)
+
+func $script( ) -> void {
+  entry#0 <-- [ ]
+    store (i32 1) -> (var@i32 ::a)
+    store (i32 2) -> (var@i32 ::b)
+    load (var@i32 ::a) -> (i32 #0)
+    load (var@i32 ::b) -> (i32 #1)
+    struct { (i32 #0) (i32 #1) (i32 3) } -> ((i32, i32, i32) #2)
+    store ((i32, i32, i32) #2) -> (var@(i32, i32, i32) ::tup)
+    jump exit#0
+  exit#0 <-- [ entry#0 ]
+    return
+})"}
+        );
+    }
+}
+
 TEST_CASE("MIR casting", "[mir]") {
     SECTION("SIntToFP cast") {
         run_mir_test(
