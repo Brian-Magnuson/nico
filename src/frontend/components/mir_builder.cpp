@@ -553,8 +553,43 @@ std::any MIRBuilder::visit(Expr::Array* expr, bool as_lvalue) {
 }
 
 std::any MIRBuilder::visit(Expr::Object* expr, bool as_lvalue) {
-    // TODO: Implementation for visiting Object expressions goes here.
-    return {};
+    std::shared_ptr<MIRValue> result;
+    if (expr->is_constant()) {
+        std::vector<std::shared_ptr<MIRValue::IConstant>> field_constants;
+
+        for (const auto& field : expr->fields) {
+            auto value = std::any_cast<std::shared_ptr<MIRValue>>(
+                field.expression->accept(this, false)
+            );
+            if (auto const_value =
+                    std::dynamic_pointer_cast<MIRValue::IConstant>(value)) {
+                field_constants.push_back(const_value);
+            }
+            else {
+                panic(
+                    "Expected constant value for struct field, but got a "
+                    "non-constant value."
+                );
+            }
+        }
+        result = MIRValue::Struct::create(expr->type, field_constants);
+    }
+    else {
+        std::vector<std::shared_ptr<MIRValue>> field_values;
+        for (const auto& field : expr->fields) {
+            field_values.push_back(
+                std::any_cast<std::shared_ptr<MIRValue>>(
+                    field.expression->accept(this, false)
+                )
+            );
+        }
+        auto struct_instr =
+            std::make_shared<Instr::Struct>(expr->type, field_values);
+        current_block->add_instruction(struct_instr);
+        result = struct_instr->destination;
+    }
+
+    return result;
 }
 
 std::any MIRBuilder::visit(Expr::Block* expr, bool as_lvalue) {
