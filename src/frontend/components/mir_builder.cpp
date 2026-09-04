@@ -11,10 +11,12 @@ namespace nico {
 void MIRBuilder::add_negative_alloc_size_check(
     std::shared_ptr<MIRValue> size_value, const Location* location
 ) {
-    auto function = current_block->get_parent_function();
+    std::shared_ptr<Function> function = current_block->get_parent_function();
 
-    auto panic_block = function->create_basic_block("panic");
-    auto continue_block = function->create_basic_block("continue");
+    std::shared_ptr<BasicBlock> panic_block =
+        function->create_basic_block("panic");
+    std::shared_ptr<BasicBlock> continue_block =
+        function->create_basic_block("continue");
 
     auto zero_value =
         MIRValue::CustomInt::create(std::make_shared<Type::Int>(false, 64), 0);
@@ -63,7 +65,8 @@ std::any MIRBuilder::visit(Stmt::Expression* stmt) {
 }
 
 std::any MIRBuilder::visit(Stmt::Let* stmt) {
-    auto binding_entry = stmt->binding_entry.lock();
+    std::shared_ptr<Node::BindingEntry> binding_entry =
+        stmt->binding_entry.lock();
 
     std::shared_ptr<MIRValue::Variable> mir_var;
 
@@ -146,7 +149,7 @@ std::any MIRBuilder::visit(Stmt::Yield* stmt) {
 
     if (stmt->yield_token->tok_type == Tok::KwYield) {
         Expr::Block::Kind target_kind = stmt->target_block.lock()->kind;
-        auto yield_allocation =
+        std::shared_ptr<MIRValue> yield_allocation =
             current_block->get_parent_function()->get_yield_variable(
                 target_kind
             );
@@ -156,13 +159,14 @@ std::any MIRBuilder::visit(Stmt::Yield* stmt) {
     }
     else if (stmt->yield_token->tok_type == Tok::KwBreak) {
         // For break statements, find the nearest enclosing loop block.
-        auto yield_allocation =
+        std::shared_ptr<MIRValue> yield_allocation =
             current_block->get_parent_function()->get_yield_variable(
                 Expr::Block::Kind::Loop
             );
-        auto exit_block = current_block->get_parent_function()->get_exit_block(
-            Expr::Block::Kind::Loop
-        );
+        std::shared_ptr<BasicBlock> exit_block =
+            current_block->get_parent_function()->get_exit_block(
+                Expr::Block::Kind::Loop
+            );
         auto store_instr =
             std::make_shared<Instr::Store>(yield_value, yield_allocation);
         current_block->add_instruction(store_instr);
@@ -171,13 +175,14 @@ std::any MIRBuilder::visit(Stmt::Yield* stmt) {
     }
     else if (stmt->yield_token->tok_type == Tok::KwReturn) {
         // For return statements, find the nearest enclosing function block.
-        auto yield_allocation =
+        std::shared_ptr<MIRValue> yield_allocation =
             current_block->get_parent_function()->get_yield_variable(
                 Expr::Block::Kind::Function
             );
-        auto exit_block = current_block->get_parent_function()->get_exit_block(
-            Expr::Block::Kind::Function
-        );
+        std::shared_ptr<BasicBlock> exit_block =
+            current_block->get_parent_function()->get_exit_block(
+                Expr::Block::Kind::Function
+            );
         auto store_instr =
             std::make_shared<Instr::Store>(yield_value, yield_allocation);
         current_block->add_instruction(store_instr);
@@ -209,11 +214,11 @@ std::any MIRBuilder::visit(Stmt::Yield* stmt) {
 }
 
 std::any MIRBuilder::visit(Stmt::Continue* stmt) {
-    auto continue_block =
+    std::shared_ptr<BasicBlock> continue_block =
         current_block->get_parent_function()->get_loop_continue_block();
     current_block->set_successor(continue_block);
 
-    auto unreachable_block =
+    std::shared_ptr<BasicBlock> unreachable_block =
         current_block->get_parent_function()->create_basic_block("unreachable");
     current_block = unreachable_block;
 
@@ -600,7 +605,7 @@ std::any MIRBuilder::visit(Expr::Block* expr, bool as_lvalue) {
     auto local_instr = std::make_shared<Instr::Local>(yield_val, expr->type);
     current_block->add_instruction(local_instr);
 
-    auto function = current_block->get_parent_function();
+    std::shared_ptr<Function> function = current_block->get_parent_function();
     function->add_plain_control_block(yield_val);
 
     for (const auto& stmt : expr->statements) {
@@ -620,11 +625,14 @@ std::any MIRBuilder::visit(Expr::Block* expr, bool as_lvalue) {
 std::any MIRBuilder::visit(Expr::Conditional* expr, bool as_lvalue) {
     std::shared_ptr<MIRValue> result;
 
-    auto function = current_block->get_parent_function();
+    std::shared_ptr<Function> function = current_block->get_parent_function();
 
-    auto then_block = function->create_basic_block("cond_then");
-    auto else_block = function->create_basic_block("cond_else");
-    auto merge_block = function->create_basic_block("cond_merge");
+    std::shared_ptr<BasicBlock> then_block =
+        function->create_basic_block("cond_then");
+    std::shared_ptr<BasicBlock> else_block =
+        function->create_basic_block("cond_else");
+    std::shared_ptr<BasicBlock> merge_block =
+        function->create_basic_block("cond_merge");
 
     auto condition = std::any_cast<std::shared_ptr<MIRValue>>(
         expr->condition->accept(this, false)
@@ -673,13 +681,16 @@ std::any MIRBuilder::visit(Expr::Loop* expr, bool as_lvalue) {
     // allocation for the loop itself. Break statements will have the ability to
     // set this yield allocation.
 
-    auto current_function = current_block->get_parent_function();
-    auto do_block = current_function->create_basic_block("loop_do");
-    auto merge_block = current_function->create_basic_block("loop_merge");
+    std::shared_ptr<Function> current_function =
+        current_block->get_parent_function();
+    std::shared_ptr<BasicBlock> do_block =
+        current_function->create_basic_block("loop_do");
+    std::shared_ptr<BasicBlock> merge_block =
+        current_function->create_basic_block("loop_merge");
 
     if (expr->condition.has_value()) {
         // Conditional loops have a condition block.
-        auto condition_block =
+        std::shared_ptr<BasicBlock> condition_block =
             current_function->create_basic_block("loop_cond");
         current_function
             ->add_loop_control_block(break_val, condition_block, merge_block);
