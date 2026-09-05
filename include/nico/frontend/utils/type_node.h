@@ -302,8 +302,8 @@ public:
         // Convert the boolean to an integer for printing.
         auto bool_value = builder->CreateSelect(
             value,
-            builder->CreateGlobalStringPtr("true"),
-            builder->CreateGlobalStringPtr("false")
+            builder->CreateGlobalString("true"),
+            builder->CreateGlobalString("false")
         );
         return {"%s", {bool_value}};
     }

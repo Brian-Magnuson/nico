@@ -189,15 +189,14 @@ std::any CodeGenerator::visit(Stmt::Print* stmt) {
     for (const auto& expr : stmt->expressions) {
         auto value = std::any_cast<llvm::Value*>(expr->accept(this, false));
         auto [fmt, fmt_args] = expr->type->to_print_args(builder, value);
-        auto args =
-            std::vector<llvm::Value*>{builder->CreateGlobalStringPtr(fmt)};
+        auto args = std::vector<llvm::Value*>{builder->CreateGlobalString(fmt)};
         args.insert(args.end(), fmt_args.begin(), fmt_args.end());
         builder->CreateCall(printf_fn, args);
     }
 
     if (repl_mode) {
         // In REPL mode, add an extra newline.
-        format_str = builder->CreateGlobalStringPtr("\n");
+        format_str = builder->CreateGlobalString("\n");
         builder->CreateCall(printf_fn, {format_str});
     }
 
@@ -1092,7 +1091,7 @@ std::any CodeGenerator::visit(Expr::Literal* expr, bool as_lvalue) {
         );
         break;
     case Tok::Str:
-        result = builder->CreateGlobalStringPtr(
+        result = builder->CreateGlobalString(
             std::any_cast<std::string>(expr->token->literal)
         );
         break;
@@ -1719,14 +1718,13 @@ void CodeGenerator::add_panic(
         mod_ctx.ir_module->getGlobalVariable("stderr")
     );
     llvm::Value* format_string =
-        builder->CreateGlobalStringPtr("Panic: %s: %s\n%s:%d:%d\n");
-    llvm::Value* func_name = builder->CreateGlobalStringPtr(
-        control_stack.get_current_function_name()
-    );
-    llvm::Value* msg = builder->CreateGlobalStringPtr(message);
+        builder->CreateGlobalString("Panic: %s: %s\n%s:%d:%d\n");
+    llvm::Value* func_name =
+        builder->CreateGlobalString(control_stack.get_current_function_name());
+    llvm::Value* msg = builder->CreateGlobalString(message);
     auto location_tuple = location->to_tuple();
     llvm::Value* file_name =
-        builder->CreateGlobalStringPtr(std::get<0>(location_tuple));
+        builder->CreateGlobalString(std::get<0>(location_tuple));
     llvm::Value* line_number = llvm::ConstantInt::get(
         llvm::Type::getInt32Ty(*mod_ctx.llvm_context),
         std::get<1>(location_tuple)
