@@ -1,0 +1,24 @@
+{
+    "version": 8,
+    "configurePresets": [
+        {
+            "name": "unix-debug",
+            "displayName": "Unix Debug",
+            "generator": "Unix Makefiles",
+            "binaryDir": "${sourceDir}/build",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "unix-debug",
+            "displayName": "Unix Debug",
+            "configurePreset": "unix-debug",
+            "jobs": 8
+        }
+    ]
+}
