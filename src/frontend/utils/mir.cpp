@@ -107,6 +107,42 @@ std::string BasicBlock::to_string() const {
     return result;
 }
 
+std::optional<std::shared_ptr<Function::ControlBlock>>
+Function::ControlBlock::get_block(std::optional<std::string> label) {
+    if (!label || this->label == label) {
+        return shared_from_this();
+    }
+    else if (auto prev_block = prev.value_or(nullptr)) {
+        return prev_block->get_block(label);
+    }
+    else {
+        return std::nullopt;
+    }
+}
+
+std::optional<std::shared_ptr<Function::ControlLoop>>
+Function::ControlBlock::get_loop(std::optional<std::string> label) {
+    if (auto prev_block = prev.value_or(nullptr)) {
+        return prev_block->get_loop(label);
+    }
+    else {
+        return std::nullopt;
+    }
+}
+
+std::optional<std::shared_ptr<Function::ControlLoop>>
+Function::ControlLoop::get_loop(std::optional<std::string> label) {
+    if (!label || this->label == label) {
+        return std::dynamic_pointer_cast<ControlLoop>(shared_from_this());
+    }
+    else if (auto prev_block = prev.value_or(nullptr)) {
+        return prev_block->get_loop(label);
+    }
+    else {
+        return std::nullopt;
+    }
+}
+
 std::shared_ptr<Function>
 Function::create(std::shared_ptr<Stmt::Func> func_stmt) {
     auto func = std::make_shared<Function>(Private());

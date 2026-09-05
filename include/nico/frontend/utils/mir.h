@@ -369,9 +369,6 @@ class Function : public std::enable_shared_from_this<Function> {
         explicit Private() = default;
     };
 
-    // TODO: Inner classes are good, but putting the whole implementation here
-    // is a bit messy. Consider moving them out.
-
     struct ControlLoop;
 
     /**
@@ -412,17 +409,7 @@ class Function : public std::enable_shared_from_this<Function> {
          * with the specified label, or std::nullopt if no such block exists.
          */
         virtual std::optional<std::shared_ptr<ControlBlock>>
-        get_block(std::optional<std::string> label = std::nullopt) {
-            if (!label || this->label == label) {
-                return shared_from_this();
-            }
-            else if (auto prev_block = prev.value_or(nullptr)) {
-                return prev_block->get_block(label);
-            }
-            else {
-                return std::nullopt;
-            }
-        }
+        get_block(std::optional<std::string> label = std::nullopt);
 
         /**
          * @brief Get the loop object with the specified label, or the top loop
@@ -434,14 +421,7 @@ class Function : public std::enable_shared_from_this<Function> {
          * with the specified label, or std::nullopt if no such loop exists.
          */
         virtual std::optional<std::shared_ptr<ControlLoop>>
-        get_loop(std::optional<std::string> label = std::nullopt) {
-            if (auto prev_block = prev.value_or(nullptr)) {
-                return prev_block->get_loop(label);
-            }
-            else {
-                return std::nullopt;
-            }
-        }
+        get_loop(std::optional<std::string> label = std::nullopt);
     };
 
     /**
@@ -469,19 +449,7 @@ class Function : public std::enable_shared_from_this<Function> {
               exit_block(exit_block) {}
 
         std::optional<std::shared_ptr<ControlLoop>>
-        get_loop(std::optional<std::string> label = std::nullopt) override {
-            if (!label || this->label == label) {
-                return std::dynamic_pointer_cast<ControlLoop>(
-                    shared_from_this()
-                );
-            }
-            else if (auto prev_block = prev.value_or(nullptr)) {
-                return prev_block->get_loop(label);
-            }
-            else {
-                return std::nullopt;
-            }
-        }
+        get_loop(std::optional<std::string> label = std::nullopt) override;
     };
 
     // The name of the function.
