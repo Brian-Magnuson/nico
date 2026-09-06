@@ -377,6 +377,61 @@ Using `std::optional<T>` makes it clear that the value may or may not be present
 - It allows us to clearly distinguish between `nullptr`-bugs and intentional absence of values.
   - When the value is `std::nullopt`, we can be confident that it was intentionally set to be absent.
 
+### Function Default Arguments
+
+Default arguments should be used sparingly. They are appropriate when omitting an argument represents a natural, empty, or initial state of the operation. They should not be used to hide policy decisions or context-dependent choices from the caller.
+
+Default arguments are useful when they:
+
+- Make function calls more concise without hiding meaningful information.
+- Eliminate overloads that would otherwise exist solely to provide a natural default value.
+- Represent values that are unlikely to change as part of the function's contract.
+
+Values such as `0`, `false`, `{}`, `""`, and `std::nullopt` are often appropriate defaults because they commonly represent empty or initial states:
+
+```cpp
+virtual bool is_definitely_sized(size_t recursion_level = 0) const;
+
+virtual std::optional<std::shared_ptr<ControlBlock>>
+        get_block(std::optional<std::string> label = std::nullopt);
+```
+
+The important distinction is not the value itself, but what the value represents. A default argument should generally represent the absence of a meaningful argument, rather than a policy chosen by the library or caller's context.
+
+For example, avoid hiding policy decisions behind default arguments:
+
+```cpp
+void create_function(
+    std::string_view name = "default_function_name"
+); // Avoid this
+```
+
+Similarly, a default timeout is generally inappropriate:
+
+```cpp
+void connect(
+    std::chrono::seconds timeout = 30s
+); // Avoid this
+```
+
+The appropriate timeout may depend on the context, and callers reading `connect()` should not have to know or remember that it implicitly uses `30s`. Such policies should instead be established explicitly through configuration, a named constant, or another appropriate mechanism.
+
+As a general rule, if a caller would reasonably want to know the value being passed to a function, that value should not be hidden behind a default argument.
+
+An exception is a parameter that is technically required by the implementation but should not normally be provided by the caller. In such cases, a default argument can hide an implementation detail while preserving the information needed by the function.
+
+For example:
+
+```cpp
+void panic(
+    std::string_view message,
+    std::source_location location = std::source_location::current()
+);
+```
+
+Here, `location` provides important diagnostic information, but callers should normally not need to provide it. `std::source_location::current()` automatically captures the location of the call, making the default both natural and useful.
+
+
 ### Const Qualifiers
 
 Regarding the use of `const`:
