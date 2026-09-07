@@ -44,6 +44,8 @@ public:
     IRModuleContext mod_ctx;
     // The name of the main function generated in the module.
     std::string main_fn_name;
+    // The name to use for script functions generated in the module.
+    std::string script_fn_name;
 
     FrontendContext() { initialize(); }
 
@@ -61,6 +63,9 @@ public:
         stmts_processed = 0;
         mod_ctx.initialize();
         symbol_tree = std::make_shared<SymbolTree>(mod_ctx);
+
+        main_fn_name = "$main";
+        script_fn_name = "$script";
     }
 
     /**

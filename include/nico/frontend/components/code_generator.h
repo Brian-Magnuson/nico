@@ -199,11 +199,10 @@ class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
      *
      * @param context The front end context containing the AST to generate IR.
      * @param script_fn_name The name of the script function to generate.
-     * Defaults to "$script".
      */
     void generate_script_func(
         const std::unique_ptr<FrontendContext>& context,
-        std::string_view script_fn_name = "$script"
+        std::string_view script_fn_name
     );
 
     /**
@@ -218,12 +217,10 @@ class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
      *
      * @param script_fn_name The name of the script function to call from main.
      * Should be the same as the name used in the call to generate_script.
-     * Defaults to "$script".
-     * @param main_fn_name The name of the main function. Defaults to "main".
+     * @param main_fn_name The name of the main function.
      */
     void generate_main_func(
-        std::string_view script_fn_name = "$script",
-        std::string_view main_fn_name = "main"
+        std::string_view script_fn_name, std::string_view main_fn_name
     );
 
 public:

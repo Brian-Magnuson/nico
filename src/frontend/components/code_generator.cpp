@@ -1920,8 +1920,8 @@ void CodeGenerator::generate_exe_ir(
         false // repl_mode
     );
 
-    codegen.generate_script_func(context);
-    codegen.generate_main_func();
+    codegen.generate_script_func(context, context->script_fn_name);
+    codegen.generate_main_func(context->script_fn_name, context->main_fn_name);
     if (require_verification && !codegen.verify_ir()) {
         panic("IR verification failed.");
     }
@@ -1929,7 +1929,6 @@ void CodeGenerator::generate_exe_ir(
     context->mod_ctx = std::move(
         codegen.mod_ctx
     ); // We give back the mod_ctx object with the generated IR.
-    context->main_fn_name = "main";
 }
 
 void CodeGenerator::generate_repl_ir(

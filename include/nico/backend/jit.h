@@ -78,9 +78,8 @@ public:
      * main function is a function of the form `int main(int argc, char** argv)`
      * and will panic if this is not the case.
      */
-    virtual llvm::Expected<int> run_main_func(
-        int argc, char** argv, std::string_view main_fn_name = "main"
-    );
+    virtual llvm::Expected<int>
+    run_main_func(int argc, char** argv, std::string_view main_fn_name);
 
     /**
      * @brief Resets the JIT to its initial state, clearing all added modules.
