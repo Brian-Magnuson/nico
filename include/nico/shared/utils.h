@@ -10,6 +10,9 @@
 #if defined(_WIN32) || defined(_WIN64)
 #include <io.h>
 #include <windows.h>
+#undef max
+#undef min
+#undef Yield
 #elif defined(__unix__) || defined(__unix) ||                                  \
     (defined(__APPLE__) && defined(__MACH__))
 #include <sys/ioctl.h>
