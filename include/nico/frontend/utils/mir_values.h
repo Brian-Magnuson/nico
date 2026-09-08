@@ -349,7 +349,12 @@ public:
  */
 class MIRValue::Global : public MIRValue::Variable {
 public:
+    // The linkage of the global variable.
     Linkage linkage;
+    // An initializer for the global variable, if it has one.
+    // If this is nullopt, the global variable is uninitialized.
+    // To be set during MIR building.
+    std::optional<std::shared_ptr<MIRValue::IConstant>> initializer;
 
     Global(
         Private,
