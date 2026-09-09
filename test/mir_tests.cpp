@@ -95,7 +95,7 @@ func $script( ) -> void {
 )"});
     }
 
-    SECTION("Local variable read and write") {
+    SECTION("Global let variable read and write") {
         run_mir_test(
             R"(
             let x = 5
@@ -110,6 +110,26 @@ func $script( ) -> void {
     store (i32 5) -> (var@i32 ::x)
     load (var@i32 ::x) -> (i32 #0)
     store (i32 #0) -> (var@i32 ::y)
+    jump exit#0
+  exit#0 <-- [ entry#0 ]
+    return
+}
+)"}
+        );
+    }
+
+    SECTION("Static variable read and write") {
+        run_mir_test(
+            R"(
+            static var x: i32 = 5
+            x = 10
+            )",
+            MIRTestOptions{.expected_output = R"(module
+global ::x (var@i32 ::x) = (i32 5)
+
+func $script( ) -> void {
+  entry#0 <-- [ ]
+    store (i32 10) -> (var@i32 ::x)
     jump exit#0
   exit#0 <-- [ entry#0 ]
     return

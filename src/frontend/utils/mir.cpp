@@ -380,8 +380,11 @@ std::string MIRModule::to_string() const {
 
     // Print each global variable.
     for (const auto& [global_name, global_var] : globals) {
-        result +=
-            "global " + global_name + " " + global_var->to_string() + "\n";
+        result += "global " + global_name + " " + global_var->to_string();
+        if (global_var->initializer.has_value()) {
+            result += " = " + global_var->initializer.value()->to_string();
+        }
+        result += "\n";
     }
     result += "\n";
 

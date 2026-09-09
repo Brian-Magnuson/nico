@@ -100,8 +100,38 @@ std::any MIRBuilder::visit(Stmt::Let* stmt) {
 }
 
 std::any MIRBuilder::visit(Stmt::Static* stmt) {
-    // TODO: Implement static variables. This will likely involve creating a
-    // global variable.
+    std::shared_ptr<Node::BindingEntry> binding_entry =
+        stmt->binding_entry.lock();
+
+    std::shared_ptr<MIRValue::Global> mir_global =
+        mir_module->get_or_declare_global(binding_entry);
+
+    if (stmt->expression.has_value()) {
+        auto mir_val = std::any_cast<std::shared_ptr<MIRValue>>(
+            stmt->expression.value()->accept(this, false)
+        );
+        auto mir_const =
+            std::dynamic_pointer_cast<MIRValue::IConstant>(mir_val);
+        if (!mir_const) {
+            panic(
+                "Static variable initializer was not a constant expression "
+                "value."
+            );
+        }
+        mir_global->initializer = mir_const;
+    }
+    else if (!binding_entry->is_initialized) {
+        // Binding entries without an initializer may still be initialized if
+        // they have external linkage. This is determined when the binding entry
+        // is created in the symbol tree.
+
+        // For other binding entries that don't meet this criteria, we give them
+        // a zero value initializer.
+        auto zero_value =
+            MIRValue::ZeroValue::create(binding_entry->binding.type);
+        mir_global->initializer = zero_value;
+    }
+
     return std::any();
 }
 
