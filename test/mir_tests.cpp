@@ -118,6 +118,23 @@ func $script( ) -> void {
         );
     }
 
+    SECTION("Static variable zero initialization") {
+        run_mir_test(
+            R"(
+            static var x: i32
+            )",
+            MIRTestOptions{.expected_output = R"(module
+global ::x (var@i32 ::x) = (i32 zerovalue)
+
+func $script( ) -> void {
+  entry#0 <-- [ ]
+    jump exit#0
+  exit#0 <-- [ entry#0 ]
+    return
+})"}
+        );
+    }
+
     SECTION("Static variable read and write") {
         run_mir_test(
             R"(
