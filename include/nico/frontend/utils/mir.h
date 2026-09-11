@@ -116,7 +116,9 @@ public:
     class Load;
     class Phi;
     class Array;
+    class ArrayGEP;
     class Struct;
+    class StructGEP;
     class Printout;
     class Panic;
 
@@ -144,7 +146,9 @@ public:
         virtual std::any visit(Load* instr) = 0;
         virtual std::any visit(Phi* instr) = 0;
         virtual std::any visit(Array* instr) = 0;
+        virtual std::any visit(ArrayGEP* instr) = 0;
         virtual std::any visit(Struct* instr) = 0;
+        virtual std::any visit(StructGEP* instr) = 0;
         virtual std::any visit(Printout* instr) = 0;
         virtual std::any visit(Panic* instr) = 0;
         virtual std::any visit(Jump* instr) = 0;

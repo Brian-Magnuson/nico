@@ -465,6 +465,55 @@ public:
 };
 
 /**
+ * @brief Array GEP (Get Element Pointer) instruction in the MIR.
+ *
+ * The Array GEP instruction computes the address of an element in an array
+ * based on the base address of the array and the index of the element.
+ *
+ * The destination value will have a pointer type. If the value at the address
+ * is needed, a load instruction should be used to load the value from the
+ * pointer.
+ */
+class Instr::ArrayGEP : public INonTerm {
+public:
+    // The array value from which to get the element.
+    const std::shared_ptr<MIRValue> array_value;
+    // The index of the element to access within the array.
+    const std::shared_ptr<MIRValue> element_index;
+    // The destination where the result is stored.
+    const std::shared_ptr<MIRValue::Temporary> destination;
+
+    ArrayGEP(
+        std::shared_ptr<MIRValue> array_value,
+        std::shared_ptr<MIRValue> element_index
+    )
+        : array_value(array_value),
+          element_index(element_index),
+          destination(
+              MIRValue::Temporary::create(std::make_shared<Type::Anyptr>())
+          ) {
+        if (!Type::is_a<Type::Array>(array_value->type)) {
+            panic(
+                "Array GEP instruction requires an array type for the "
+                "array value. Got `" +
+                array_value->type->to_string() + "`."
+            );
+        }
+    }
+
+    virtual ~ArrayGEP() = default;
+
+    virtual std::any accept(Visitor* visitor) override {
+        return visitor->visit(this);
+    }
+
+    virtual std::string to_string() const override {
+        return "array_gep " + array_value->to_string() + " " +
+               element_index->to_string() + " -> " + destination->to_string();
+    }
+};
+
+/**
  * @brief An instruction that creates a struct in the MIR.
  *
  * In LLVM, the process for creating a struct is more complex, but here, we
@@ -497,6 +546,46 @@ public:
         }
         result += "} -> " + destination->to_string();
         return result;
+    }
+};
+
+/**
+ * @brief Struct GEP (Get Element Pointer) instruction in the MIR.
+ *
+ * The Struct GEP instruction computes the address of a field in a struct.
+ *
+ * The destination value will have a pointer type. If the value at the address
+ * is needed, a load instruction should be used to load the value from the
+ * pointer.
+ */
+class Instr::StructGEP : public INonTerm {
+public:
+    // The struct value from which to get the field.
+    const std::shared_ptr<MIRValue> struct_value;
+    // The index of the field to access within the struct.
+    const std::shared_ptr<MIRValue> field_index;
+    // The destination where the result is stored.
+    const std::shared_ptr<MIRValue::Temporary> destination;
+
+    StructGEP(
+        std::shared_ptr<MIRValue> struct_value,
+        std::shared_ptr<MIRValue> field_index
+    )
+        : struct_value(struct_value),
+          field_index(field_index),
+          destination(
+              MIRValue::Temporary::create(std::make_shared<Type::Anyptr>())
+          ) {}
+
+    virtual ~StructGEP() = default;
+
+    virtual std::any accept(Visitor* visitor) override {
+        return visitor->visit(this);
+    }
+
+    virtual std::string to_string() const override {
+        return "struct_gep " + struct_value->to_string() + " " +
+               field_index->to_string() + " -> " + destination->to_string();
     }
 };
 

@@ -4,6 +4,7 @@
 #include "nico/frontend/utils/mir.h"
 
 #include <any>
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <string_view>
