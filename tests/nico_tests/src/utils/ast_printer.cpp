@@ -1,0 +1,499 @@
+#include "nico_tests/utils/ast_printer.h"
+
+#include <any>
+#include <cstdint>
+
+namespace nico {
+
+std::any AstPrinter::visit(Stmt::Expression* stmt) {
+    return std::string(
+        "(expr " +
+        std::any_cast<std::string>(stmt->expression->accept(this, false)) + ")"
+    );
+}
+
+std::any AstPrinter::visit(Stmt::Let* stmt) {
+    std::string str = "(stmt:let ";
+    if (stmt->has_var) {
+        str += "var ";
+    }
+    str += std::string(stmt->identifier->lexeme);
+    if (stmt->annotation.has_value()) {
+        str += " " + stmt->annotation.value()->to_string();
+    }
+    if (stmt->expression.has_value()) {
+        str += " " + std::any_cast<std::string>(
+                         stmt->expression.value()->accept(this, false)
+                     );
+    }
+    str += ")";
+    return str;
+}
+
+std::any AstPrinter::visit(Stmt::Static* stmt) {
+    std::string str = "(stmt:static ";
+    if (stmt->linkage_opt.has_value()) {
+        switch (stmt->linkage_opt.value()) {
+        case Linkage::Internal:
+            str += "[linkage:internal] ";
+            break;
+        case Linkage::External:
+            str += "[linkage:external] ";
+            break;
+        default:
+            str += "[unknown_linkage] ";
+            break;
+        }
+    }
+    if (stmt->custom_symbol_opt.has_value()) {
+        str += "[symbol:\"" + stmt->custom_symbol_opt.value() + "\"] ";
+    }
+    if (stmt->has_var) {
+        str += "var ";
+    }
+    str += std::string(stmt->identifier->lexeme);
+    if (stmt->annotation.has_value()) {
+        str += " " + stmt->annotation.value()->to_string();
+    }
+    if (stmt->expression.has_value()) {
+        str += " " + std::any_cast<std::string>(
+                         stmt->expression.value()->accept(this, false)
+                     );
+    }
+    str += ")";
+    return str;
+}
+
+std::any AstPrinter::visit(Stmt::Func* stmt) {
+    /*
+    (stmt:func func_name ret_type (var param1 type1 default1) (param2 type2) =>
+    body_expr)
+    */
+    std::string str = "(stmt:func ";
+
+    if (stmt->linkage_opt.has_value()) {
+        switch (stmt->linkage_opt.value()) {
+        case Linkage::Internal:
+            str += "[linkage:internal] ";
+            break;
+        case Linkage::External:
+            str += "[linkage:external] ";
+            break;
+        default:
+            str += "[unknown_linkage] ";
+            break;
+        }
+    }
+    if (stmt->custom_symbol_opt.has_value()) {
+        str += "[symbol:\"" + stmt->custom_symbol_opt.value() + "\"] ";
+    }
+
+    str += std::string(stmt->identifier->lexeme) + " ";
+    if (stmt->annotation.has_value()) {
+        str += stmt->annotation.value()->to_string() + " ";
+    }
+
+    for (const auto& param : stmt->parameters) {
+        std::string param_str = "(";
+        if (param.has_var) {
+            param_str += "var ";
+        }
+        param_str += std::string(param.identifier->lexeme) + " " +
+                     param.annotation->to_string();
+
+        if (param.expression.has_value()) {
+            param_str += " " + std::any_cast<std::string>(
+                                   param.expression.value()->accept(this, false)
+                               );
+        }
+        param_str += ") ";
+        str += param_str;
+    }
+    if (stmt->is_variadic) {
+        str += "(...) ";
+    }
+    if (stmt->body.has_value()) {
+        str +=
+            "=> " +
+            std::any_cast<std::string>(stmt->body.value()->accept(this, false));
+    }
+    else {
+        str += "no body";
+    }
+    str += ")";
+    return str;
+}
+
+std::any AstPrinter::visit(Stmt::Print* stmt) {
+    std::string str = "(stmt:print";
+    for (const auto& expr : stmt->expressions) {
+        str += " " + std::any_cast<std::string>(expr->accept(this, false));
+    }
+    str += ")";
+    return str;
+}
+
+std::any AstPrinter::visit(Stmt::Dealloc* stmt) {
+    std::string str = "(stmt:dealloc ";
+    str += std::any_cast<std::string>(stmt->expression->accept(this, false));
+    str += ")";
+    return str;
+}
+
+std::any AstPrinter::visit(Stmt::Pass* /*stmt*/) {
+    return std::string("(stmt:pass)");
+}
+
+std::any AstPrinter::visit(Stmt::Yield* stmt) {
+    std::string str = "(stmt:yield ";
+    str += std::string(stmt->yield_token->lexeme) + " ";
+    str += std::any_cast<std::string>(stmt->expression->accept(this, false));
+    str += ")";
+    return str;
+}
+
+std::any AstPrinter::visit(Stmt::Continue* /*stmt*/) {
+    return std::string("(stmt:continue)");
+}
+
+std::any AstPrinter::visit(Stmt::Namespace* stmt) {
+    std::string str =
+        "(stmt:namespace " + std::string(stmt->identifier->lexeme);
+
+    if (stmt->is_file_spanning) {
+        str += " file";
+    }
+    str += " {";
+
+    for (const auto& inner_stmt : stmt->stmts) {
+        str += " " + std::any_cast<std::string>(inner_stmt->accept(this));
+    }
+    str += " })";
+    return str;
+}
+
+std::any AstPrinter::visit(Stmt::ExternBlock* stmt) {
+    std::string str = "(stmt:externblock ";
+    switch (stmt->abi) {
+    case ABI::C:
+        str += "\"C\"";
+        break;
+    default:
+        str += "unknown";
+        break;
+    }
+    str += " " + std::string(stmt->identifier->lexeme) + " {";
+    for (const auto& inner_stmt : stmt->stmts) {
+        str += " " + std::any_cast<std::string>(inner_stmt->accept(this));
+    }
+    str += " })";
+    return str;
+}
+
+std::any AstPrinter::visit(Stmt::TypeDef* stmt) {
+    std::string str = "(stmt:typedef " + std::string(stmt->identifier->lexeme);
+    str += " " + stmt->annotation->to_string();
+    str += ")";
+    return str;
+}
+
+std::any AstPrinter::visit(Stmt::StructDef* stmt) {
+    std::string str =
+        "(stmt:structdef " + std::string(stmt->identifier->lexeme) + " {";
+    for (const auto& inner_stmt : stmt->stmts) {
+        str += " " + std::any_cast<std::string>(inner_stmt->accept(this));
+    }
+    str += " })";
+    return str;
+}
+
+std::any AstPrinter::visit(Stmt::Field* stmt) {
+    std::string str = "(stmt:field ";
+    if (stmt->mutability == Binding::Mutability::Mut) {
+        str += "mut ";
+    }
+    else if (stmt->mutability == Binding::Mutability::Var) {
+        str += "var ";
+    }
+    str += std::string(stmt->identifier->lexeme) + " " +
+           stmt->annotation->to_string();
+    if (stmt->expression.has_value()) {
+        str += " " + std::any_cast<std::string>(
+                         stmt->expression.value()->accept(this, false)
+                     );
+    }
+    str += ")";
+    return str;
+}
+
+std::any AstPrinter::visit(Stmt::Eof* /*stmt*/) {
+    return std::string("(stmt:eof)");
+}
+
+std::any AstPrinter::visit(Expr::Assign* expr, bool as_lvalue) {
+    auto left = std::any_cast<std::string>(expr->left->accept(this, true));
+    auto right = std::any_cast<std::string>(expr->right->accept(this, false));
+    return std::string("(assign " + left + " " + right + ")");
+}
+
+std::any AstPrinter::visit(Expr::Logical* expr, bool as_lvalue) {
+    auto left = std::any_cast<std::string>(expr->left->accept(this, false));
+    auto right = std::any_cast<std::string>(expr->right->accept(this, false));
+    return std::string(
+        "(logical " + std::string(expr->op->lexeme) + " " + left + " " + right +
+        ")"
+    );
+}
+
+std::any AstPrinter::visit(Expr::Binary* expr, bool as_lvalue) {
+    auto left = std::any_cast<std::string>(expr->left->accept(this, false));
+    auto right = std::any_cast<std::string>(expr->right->accept(this, false));
+    return std::string(
+        "(binary " + std::string(expr->op->lexeme) + " " + left + " " + right +
+        ")"
+    );
+}
+
+std::any AstPrinter::visit(Expr::Unary* expr, bool as_lvalue) {
+    return std::string(
+        "(unary " + std::string(expr->op->lexeme) + " " +
+        std::any_cast<std::string>(expr->right->accept(this, false)) + ")"
+    );
+}
+
+std::any AstPrinter::visit(Expr::Address* expr, bool as_lvalue) {
+    return std::string(
+        std::string("(address ") + (expr->has_var ? "var" : "") +
+        std::string(expr->op->lexeme) + " " +
+        std::any_cast<std::string>(expr->right->accept(this, false)) + ")"
+    );
+}
+
+std::any AstPrinter::visit(Expr::Deref* expr, bool as_lvalue) {
+    return std::string(
+        "(deref " +
+        std::any_cast<std::string>(expr->right->accept(this, false)) + ")"
+    );
+}
+
+std::any AstPrinter::visit(Expr::Cast* expr, bool as_lvalue) {
+    auto inner =
+        std::any_cast<std::string>(expr->expression->accept(this, false));
+    return std::string(
+        "(cast " + inner + " as " + expr->annotation->to_string() + ")"
+    );
+}
+
+std::any AstPrinter::visit(Expr::Access* expr, bool as_lvalue) {
+    auto left = std::any_cast<std::string>(expr->left->accept(this, false));
+    return std::string(
+        "(access " + std::string(expr->op->lexeme) + " " + left + " " +
+        std::string(expr->right_token->lexeme) + ")"
+    );
+}
+
+std::any AstPrinter::visit(Expr::Subscript* expr, bool as_lvalue) {
+    auto left = std::any_cast<std::string>(expr->left->accept(this, false));
+    auto index = std::any_cast<std::string>(expr->index->accept(this, false));
+    return std::string("(subscript " + left + " " + index + ")");
+}
+
+std::any AstPrinter::visit(Expr::Call* expr, bool as_lvalue) {
+    std::string str = "(call ";
+    str += std::any_cast<std::string>(expr->callee->accept(this, false));
+    for (const auto& arg : expr->provided_pos_args) {
+        str += " " + std::any_cast<std::string>(arg->accept(this, false));
+    }
+    for (const auto& [name, arg] : expr->provided_named_args) {
+        str += " (" + name + ": " +
+               std::any_cast<std::string>(arg->accept(this, false)) + ")";
+    }
+    str += ")";
+    return str;
+}
+
+std::any AstPrinter::visit(Expr::SizeOf* expr, bool as_lvalue) {
+    return std::string("(sizeof " + expr->annotation->to_string() + ")");
+}
+
+std::any AstPrinter::visit(Expr::Alloc* expr, bool as_lvalue) {
+    std::string str = "(alloc";
+    if (expr->amount_expr.has_value()) {
+        return str + " for " +
+               std::any_cast<std::string>(
+                   expr->amount_expr.value()->accept(this, false)
+               ) +
+               " of " + expr->type_annotation.value()->to_string() + ")";
+    }
+    if (expr->type_annotation.has_value()) {
+        str += " " + expr->type_annotation.value()->to_string();
+    }
+    if (expr->expression.has_value()) {
+        str += " with " + std::any_cast<std::string>(
+                              expr->expression.value()->accept(this, false)
+                          );
+    }
+    str += ")";
+    return str;
+}
+
+std::any AstPrinter::visit(Expr::NewInst* expr, bool as_lvalue) {
+    std::string str = "(newinst " + expr->annotation->to_string();
+    for (const auto& [name, arg] : expr->provided_args) {
+        str += " (" + name + ": " +
+               std::any_cast<std::string>(arg->accept(this, false)) + ")";
+    }
+    str += ")";
+    return str;
+}
+
+std::any AstPrinter::visit(Expr::NameRef* expr, bool as_lvalue) {
+    return std::string("(nameref " + expr->name->to_string() + ")");
+}
+
+std::any AstPrinter::visit(Expr::Literal* expr, bool as_lvalue) {
+    std::string value;
+    switch (expr->token->tok_type) {
+    case Tok::Int8:
+        value =
+            "i8 " + std::to_string(std::any_cast<int8_t>(expr->token->literal));
+        break;
+    case Tok::Int16:
+        value = "i16 " +
+                std::to_string(std::any_cast<int16_t>(expr->token->literal));
+        break;
+    case Tok::Int32:
+        value = "i32 " +
+                std::to_string(std::any_cast<int32_t>(expr->token->literal));
+        break;
+    case Tok::Int64:
+        value = "i64 " +
+                std::to_string(std::any_cast<int64_t>(expr->token->literal));
+        break;
+    case Tok::UInt8:
+        value = "u8 " +
+                std::to_string(std::any_cast<uint8_t>(expr->token->literal));
+        break;
+    case Tok::UInt16:
+        value = "u16 " +
+                std::to_string(std::any_cast<uint16_t>(expr->token->literal));
+        break;
+    case Tok::UInt32:
+        value = "u32 " +
+                std::to_string(std::any_cast<uint32_t>(expr->token->literal));
+        break;
+    case Tok::UInt64:
+        value = "u64 " +
+                std::to_string(std::any_cast<uint64_t>(expr->token->literal));
+        break;
+    case Tok::Float32:
+        value =
+            "f32 " + std::to_string(std::any_cast<float>(expr->token->literal));
+        break;
+    case Tok::Float64:
+        value = "f64 " +
+                std::to_string(std::any_cast<double>(expr->token->literal));
+        break;
+    case Tok::Void:
+        value = "void";
+        break;
+    default:
+        value = std::string(expr->token->lexeme);
+        break;
+    }
+
+    return std::string("(lit " + value + ")");
+}
+
+std::any AstPrinter::visit(Expr::Tuple* expr, bool as_lvalue) {
+    std::string str = "(tuple";
+    for (const auto& element : expr->elements) {
+        str += " " + std::any_cast<std::string>(element->accept(this, false));
+    }
+    str += ")";
+    return str;
+}
+
+std::any AstPrinter::visit(Expr::Array* expr, bool as_lvalue) {
+    std::string str = "(array";
+    for (const auto& element : expr->elements) {
+        str += " " + std::any_cast<std::string>(element->accept(this, false));
+    }
+    str += ")";
+    return str;
+}
+
+std::any AstPrinter::visit(Expr::Object* expr, bool as_lvalue) {
+    std::string str = "(object";
+    for (const auto& field : expr->fields) {
+        str += " (";
+        if (field.mutability == Binding::Mutability::Mut) {
+            str += "mut ";
+        }
+        else if (field.mutability == Binding::Mutability::Var) {
+            str += "var ";
+        }
+
+        str +=
+            std::string(field.identifier->lexeme) + ": " +
+            std::any_cast<std::string>(field.expression->accept(this, false)) +
+            ")";
+    }
+    str += ")";
+    return str;
+}
+
+std::any AstPrinter::visit(Expr::Block* expr, bool as_lvalue) {
+    std::string str = "(block";
+    if (expr->is_unsafe) {
+        str += " unsafe";
+    }
+    for (const auto& stmt : expr->statements) {
+        str += " " + std::any_cast<std::string>(stmt->accept(this));
+    }
+    str += ")";
+    return str;
+}
+
+std::any AstPrinter::visit(Expr::Conditional* expr, bool as_lvalue) {
+    std::string str = "(if ";
+    str += std::any_cast<std::string>(expr->condition->accept(this, false));
+    str += " then ";
+    str += std::any_cast<std::string>(expr->then_branch->accept(this, false));
+    str += " else ";
+    str += std::any_cast<std::string>(expr->else_branch->accept(this, false));
+
+    str += ")";
+    return str;
+}
+
+std::any AstPrinter::visit(Expr::Loop* expr, bool as_lvalue) {
+    std::string str = "(loop ";
+    if (expr->condition.has_value()) {
+        if (expr->loops_once)
+            str += "do ";
+        str += "while ";
+        str += std::any_cast<std::string>(
+            expr->condition.value()->accept(this, false)
+        );
+        str += " ";
+    }
+    str += std::any_cast<std::string>(expr->body->accept(this, false));
+    str += ")";
+    return str;
+}
+
+std::string AstPrinter::stmt_to_string(std::shared_ptr<Stmt> stmt) {
+    return std::any_cast<std::string>(stmt->accept(this));
+}
+
+std::vector<std::string>
+AstPrinter::stmts_to_strings(const std::vector<std::shared_ptr<Stmt>>& ast) {
+    std::vector<std::string> strings;
+    for (const auto& stmt : ast) {
+        strings.push_back(stmt_to_string(stmt));
+    }
+    return strings;
+}
+
+} // namespace nico

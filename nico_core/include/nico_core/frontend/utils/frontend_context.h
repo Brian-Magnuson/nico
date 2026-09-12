@@ -1,0 +1,89 @@
+#ifndef NICO_CORE_FRONTEND_CONTEXT_H
+#define NICO_CORE_FRONTEND_CONTEXT_H
+
+#include <memory>
+#include <string>
+#include <vector>
+
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Module.h>
+
+#include "nico_core/frontend/utils/mir.h"
+#include "nico_core/frontend/utils/nodes.h"
+#include "nico_core/frontend/utils/symbol_tree.h"
+#include "nico_core/shared/ir_module_context.h"
+#include "nico_core/shared/status.h"
+#include "nico_core/shared/token.h"
+
+namespace nico {
+
+/**
+ * @brief A front end context, which contains the current status, AST, and
+ * symbol tree.
+ *
+ * This class is move only. It cannot be copied.
+ *
+ * It is recommended to use a `std::unique_ptr` for this class.
+ */
+class FrontendContext {
+public:
+    // The current status of the front end.
+    VariantStatus status = Status::Ok();
+    // The tokens scanned from the last input.
+    std::vector<std::shared_ptr<Token>> scanned_tokens;
+    // The AST containing all statements processed so far.
+    std::vector<std::shared_ptr<Stmt>> stmts;
+    // The MIR module generated from the AST.
+    std::shared_ptr<MIRModule> mir_module;
+    // The number of statements at the beginning of `stmts` that have been
+    // type-checked and converted to LLVM IR.
+    size_t stmts_processed = 0;
+    // The symbol tree used for type checking.
+    std::shared_ptr<SymbolTree> symbol_tree;
+    // The LLVM module and context used for code generation.
+    IRModuleContext mod_ctx;
+    // The name of the main function generated in the module.
+    std::string main_fn_name;
+    // The name to use for script functions generated in the module.
+    std::string script_fn_name;
+
+    FrontendContext() { initialize(); }
+
+    /**
+     * @brief Initialize the front end context with a new LLVM context and
+     * module.
+     *
+     * Can also be used to reset the context to its initial state.
+     */
+    void initialize() {
+        status = Status::Ok();
+        scanned_tokens.clear();
+        stmts.clear();
+        mir_module = MIRModule::create();
+        stmts_processed = 0;
+        mod_ctx.initialize();
+        symbol_tree = std::make_shared<SymbolTree>(mod_ctx);
+
+        main_fn_name = "$main";
+        script_fn_name = "$script";
+    }
+
+    /**
+     * @brief Marks all statements in the AST as processed.
+     *
+     * A statement is only considered processed if it has been visited by the
+     * code generator.
+     */
+    void commit() { stmts_processed = stmts.size(); }
+
+    /**
+     * @brief Rolls back the context to the last committed state.
+     *
+     * This will discard any unprocessed statements in the AST.
+     */
+    void rollback() { stmts.resize(stmts_processed); }
+};
+
+} // namespace nico
+
+#endif // NICO_CORE_FRONTEND_CONTEXT_H

@@ -1,0 +1,626 @@
+#include "nico_core/frontend/utils/symbol_tree.h"
+
+#include <vector>
+
+#include "nico_core/frontend/utils/type_node.h"
+#include "nico_core/shared/diagnostics.h"
+#include "nico_core/shared/sets.h"
+#include "nico_core/shared/utils.h"
+
+namespace nico {
+
+void SymbolTree::install_primitive_types() {
+    modified = true;
+    std::vector<std::shared_ptr<Node::PrimitiveType>> primitive_types = {
+        Node::PrimitiveType::create(
+            reserved_scope,
+            "i8",
+            std::make_shared<Type::Int>(true, 8)
+        ),
+        Node::PrimitiveType::create(
+            reserved_scope,
+            "i16",
+            std::make_shared<Type::Int>(true, 16)
+        ),
+        Node::PrimitiveType::create(
+            reserved_scope,
+            "i32",
+            std::make_shared<Type::Int>(true, 32)
+        ),
+        Node::PrimitiveType::create(
+            reserved_scope,
+            "i64",
+            std::make_shared<Type::Int>(true, 64)
+        ),
+        Node::PrimitiveType::create(
+            reserved_scope,
+            "u8",
+            std::make_shared<Type::Int>(false, 8)
+        ),
+        Node::PrimitiveType::create(
+            reserved_scope,
+            "u16",
+            std::make_shared<Type::Int>(false, 16)
+        ),
+        Node::PrimitiveType::create(
+            reserved_scope,
+            "u32",
+            std::make_shared<Type::Int>(false, 32)
+        ),
+        Node::PrimitiveType::create(
+            reserved_scope,
+            "u64",
+            std::make_shared<Type::Int>(false, 64)
+        ),
+        Node::PrimitiveType::create(
+            reserved_scope,
+            "f32",
+            std::make_shared<Type::Float>(32)
+        ),
+        Node::PrimitiveType::create(
+            reserved_scope,
+            "f64",
+            std::make_shared<Type::Float>(64)
+        ),
+        Node::PrimitiveType::create(
+            reserved_scope,
+            "bool",
+            std::make_shared<Type::Bool>()
+        ),
+        Node::PrimitiveType::create(
+            reserved_scope,
+            "str",
+            std::make_shared<Type::Str>()
+        ),
+        Node::PrimitiveType::create(
+            reserved_scope,
+            "anyptr",
+            std::make_shared<Type::Anyptr>()
+        )
+    };
+    for (auto& ptype : primitive_types) {
+        reserved_scope->children[ptype->short_name] = ptype;
+        ptype->symbol = reserved_scope->symbol + "::" + ptype->short_name;
+        reserved_symbols.insert(ptype->symbol);
+    }
+
+    modified = true;
+}
+
+void SymbolTree::install_context_dependent_types(IRModuleContext& mod_ctx) {
+    modified = true;
+    std::vector<std::shared_ptr<Node::PrimitiveType>> context_dependent_types =
+        {Node::PrimitiveType::create(
+             reserved_scope,
+             "isized",
+             std::make_shared<Type::Int>(true, mod_ctx.get_ptr_width(), true)
+         ),
+         Node::PrimitiveType::create(
+             reserved_scope,
+             "usized",
+             std::make_shared<Type::Int>(false, mod_ctx.get_ptr_width(), true)
+         )};
+    for (auto& ctype : context_dependent_types) {
+        reserved_scope->children[ctype->short_name] = ctype;
+        ctype->symbol = reserved_scope->symbol + "::" + ctype->short_name;
+        reserved_symbols.insert(ctype->symbol);
+    }
+
+    modified = true;
+}
+
+bool SymbolTree::try_resolve_name_downward_from_scope(
+    std::shared_ptr<Name> name, std::shared_ptr<Node::IScope> searching_scope
+) {
+    // If the NameRef has a base...
+    if (name->base.has_value()) {
+        if (!try_resolve_name_downward_from_scope(
+                name->base.value(),
+                searching_scope
+            )) {
+            // If we could not resolve the base, return false.
+            return false;
+        }
+        // Ensure the base's node is a scope.
+        auto base_scope = std::dynamic_pointer_cast<Node::IScope>(
+            name->base.value()->node.lock()
+        );
+        if (!base_scope) {
+            // This isn't necesarily an error.
+            // It could be we just didn't search high enough.
+            return false;
+        }
+        // Search from the base scope for the identifier.
+        auto it =
+            base_scope->children.find(std::string(name->identifier->lexeme));
+        if (it == base_scope->children.end()) {
+            // This isn't necessarily an error.
+            // It could be we just didn't search high enough.
+            return false;
+        }
+        name->node = it->second;
+        return true;
+    }
+    // If the NameRef does not have a base...
+    else {
+        auto it = searching_scope->children.find(
+            std::string(name->identifier->lexeme)
+        );
+        if (it == searching_scope->children.end()) {
+            // This isn't necessarily an error.
+            // It could be we just didn't search high enough.
+            return false;
+        }
+        name->node = it->second;
+        return true;
+    }
+}
+
+void SymbolTree::initialize(IRModuleContext& mod_ctx) {
+    root_scope = Node::RootScope::create();
+    root_scope->symbol = "";
+    current_scope = root_scope;
+    reserved_scope = Node::RootScope::create(":");
+    reserved_scope->symbol = ":";
+    reserved_symbols = {"", ":", "main", "$script"};
+    modified = false;
+
+    install_primitive_types();
+    install_context_dependent_types(mod_ctx);
+}
+
+bool SymbolTree::is_name_reserved(const std::string& name) const {
+    return reserved_scope->children.contains(name);
+}
+
+bool SymbolTree::register_symbol(
+    std::shared_ptr<Node::ILocatable> node, std::optional<std::string> symbol
+) {
+    auto is_symbol_autogenerated = !symbol.has_value();
+    auto the_symbol =
+        symbol.value_or(node->parent.lock()->symbol + "::" + node->short_name);
+
+    if (reserved_symbols.contains(the_symbol)) {
+        Diagnostics::inst().emit_error(
+            Err::SymbolIsReserved,
+            node->location,
+            "Symbol `" + the_symbol + "` is reserved and cannot be used."
+        );
+        return false;
+    }
+
+    // At this point, the symbol is not reserved.
+
+    auto it = symbol_map.find(the_symbol);
+    if (it != symbol_map.end()) {
+        if (is_symbol_autogenerated) {
+            unsigned long long counter = 1;
+            while (symbol_map.contains(the_symbol)) {
+                // If the symbol was autogenerated, keep generating new symbols
+                // until we find one that is not in use.
+                the_symbol = node->parent.lock()->symbol +
+                             "::" + node->short_name + "$" +
+                             std::to_string(counter++);
+            }
+            // You would need to generate over 18 quintillion symbols to cause
+            // an infinite loop here.
+            // Your system would probably run out of memory long before that.
+
+            node->symbol = the_symbol;
+            symbol_map[the_symbol] = node->location;
+            modified = true;
+            return true;
+        }
+
+        // If the symbol is already in use by another node...
+        Diagnostics::inst().emit_error(
+            Err::SymbolAlreadyExists,
+            node->location,
+            "Symbol `" + the_symbol + "` already exists."
+        );
+        Diagnostics::inst().emit_note(
+            it->second,
+            "Previous declaration of symbol `" + the_symbol + "` found here."
+        );
+
+        // Regardless, we cannot register the symbol.
+        return false;
+    }
+
+    // Register the symbol.
+    node->symbol = the_symbol;
+    symbol_map[the_symbol] = node->location;
+    modified = true;
+    return true;
+}
+
+std::optional<std::shared_ptr<Node::Namespace>>
+SymbolTree::add_namespace(std::shared_ptr<Token> token) {
+    auto new_node = Node::Namespace::create(current_scope, token);
+    auto ok = current_scope->add_child(*this, new_node);
+    if (!ok) {
+        return std::nullopt;
+    }
+    current_scope = new_node;
+
+    return new_node;
+}
+
+std::optional<std::shared_ptr<Node::ExternBlock>>
+SymbolTree::add_extern_block(std::shared_ptr<Token> token) {
+    auto new_node = Node::ExternBlock::create(current_scope, token);
+    auto ok = current_scope->add_child(*this, new_node);
+    if (!ok) {
+        return std::nullopt;
+    }
+    current_scope = new_node;
+
+    return new_node;
+}
+
+std::optional<std::shared_ptr<Node::TypeDef>> SymbolTree::add_type_def(
+    std::shared_ptr<Token> token, std::shared_ptr<Type> type
+) {
+    auto new_node = Node::TypeDef::create(current_scope, token, type);
+    auto ok = current_scope->add_child(*this, new_node);
+    if (!ok) {
+        return std::nullopt;
+    }
+
+    return new_node;
+}
+
+std::optional<std::shared_ptr<Node::StructDef>>
+SymbolTree::add_struct_def(std::shared_ptr<Token> token, bool is_class) {
+    auto new_node = Node::StructDef::create(current_scope, token, is_class);
+    auto ok = current_scope->add_child(*this, new_node);
+    if (!ok) {
+        return std::nullopt;
+    }
+    current_scope = new_node;
+    return new_node;
+}
+
+std::optional<std::shared_ptr<Node::LocalScope>>
+SymbolTree::add_local_scope(std::shared_ptr<Expr::Block> block) {
+    auto new_local_scope = Node::LocalScope::create(current_scope, block);
+    current_scope->local_scopes.push_back(new_local_scope);
+    new_local_scope->symbol =
+        current_scope->symbol + "::" + new_local_scope->short_name;
+
+    current_scope = new_local_scope;
+    modified = true;
+    return new_local_scope;
+}
+
+std::optional<std::shared_ptr<Node::IScope>> SymbolTree::exit_scope() {
+    if (current_scope->parent.expired()) {
+        return std::nullopt; // Cannot exit root scope
+    }
+
+    current_scope = current_scope->parent.lock();
+    modified = true;
+    return current_scope;
+}
+
+bool SymbolTree::try_resolve_name_from_scope(
+    std::shared_ptr<Name> name, std::shared_ptr<Node::IScope> searching_scope
+) {
+    bool found = false;
+
+    // First, search the reserved scope.
+    if (try_resolve_name_downward_from_scope(name, reserved_scope)) {
+        found = true;
+    }
+
+    // If not found, search from the searching scope upward.
+    while (!found && searching_scope) {
+        if (try_resolve_name_downward_from_scope(name, searching_scope)) {
+            found = true;
+        }
+        searching_scope = searching_scope->parent.lock();
+    }
+
+    if (!found) {
+        return false;
+    }
+
+    // If the resolved name is an OverloadGroup with exactly one overload, set
+    // the name's node to the single overload instead.
+    if (auto overload_group =
+            std::dynamic_pointer_cast<Node::OverloadGroup>(name->node.lock())) {
+        if (overload_group->overloads.size() == 1) {
+            name->node = overload_group->overloads.at(0);
+        }
+    }
+    // This actually isn't needed for the code to compile. But it makes it
+    // easier for the user when working with overloadable functions with only
+    // one overload.
+    // It's also an optimization to avoid checking the overload
+    // group later.
+
+    return true;
+}
+
+bool SymbolTree::try_resolve_name(std::shared_ptr<Name> name) {
+    return try_resolve_name_from_scope(name, current_scope);
+}
+
+std::optional<std::shared_ptr<Node::LocalScope>>
+SymbolTree::get_local_scope_of_kind(Expr::Block::Kind kind) const {
+    auto current = current_scope;
+    while (current) {
+        if (auto local_scope =
+                std::dynamic_pointer_cast<Node::LocalScope>(current)) {
+            // If this is a local scope, check if it matches the kind.
+            if (local_scope->block && local_scope->block->kind == kind) {
+                return local_scope;
+            }
+        }
+        else {
+            // If this scope is not a local scope, stop searching.
+            break;
+        }
+        current = current->parent.lock();
+    }
+    return std::nullopt;
+}
+
+std::optional<std::shared_ptr<Node::BindingEntry>>
+SymbolTree::add_binding_entry(
+    const Binding& binding,
+    Linkage linkage,
+    std::optional<std::string> custom_symbol
+) {
+    // Make sure the name is not reserved.
+    if (auto node = reserved_scope->children.at(binding.name)) {
+        Diagnostics::inst().emit_error(
+            Err::NameIsReserved,
+            *binding.location,
+            "Name `" + std::string(binding.name) +
+                "` is reserved and cannot be used."
+        );
+        return std::nullopt;
+    }
+
+    // Make sure the name does not already exist in the current scope.
+    if (auto node = current_scope->children.at(binding.name)) {
+        Diagnostics::inst().emit_error(
+            Err::NameAlreadyExists,
+            *binding.location,
+            "Name `" + binding.name + "` already exists in the current scope."
+        );
+        if (PTR_INSTANCEOF(node.value(), Node::OverloadGroup) &&
+            Type::is_a<Type::Function>(binding.type)) {
+            // The binding being declared is a non-overloadable function, but
+            // there is an overload group with the same name.
+            Diagnostics::inst().emit_note(
+                "This is a non-overloadable function, which cannot share a "
+                "name with an overloadable function."
+            );
+        }
+        if (auto locatable =
+                std::dynamic_pointer_cast<Node::ILocatable>(node.value())) {
+            Diagnostics::inst().emit_note(
+                locatable->location,
+                "Previous declaration here."
+            );
+        }
+        return std::nullopt;
+    }
+
+    auto new_node = Node::BindingEntry::create(current_scope, binding, linkage);
+    current_scope->children[new_node->short_name] = new_node;
+
+    bool ok = register_symbol(new_node, custom_symbol);
+    if (!ok) {
+        return std::nullopt;
+    }
+
+    modified = true;
+
+    return new_node;
+}
+
+std::optional<std::shared_ptr<Node::BindingEntry>>
+SymbolTree::add_overloadable_func(const Binding& binding) {
+    // Make sure the name is not reserved.
+    if (auto node = reserved_scope->children.at(binding.name)) {
+        Diagnostics::inst().emit_error(
+            Err::NameIsReserved,
+            *binding.location,
+            "Name `" + binding.name + "` is reserved and cannot be used."
+        );
+        return std::nullopt;
+    }
+
+    // Check if the name already exists.
+    std::shared_ptr<Node::OverloadGroup> overload_group;
+
+    if (auto node = current_scope->children.at(binding.name)) {
+        if (auto existing_overload_group =
+                std::dynamic_pointer_cast<Node::OverloadGroup>(node.value())) {
+            // If existing name is an overload group, add to it.
+            overload_group = existing_overload_group;
+        }
+        else {
+            // If existing name is not an overload group...
+            Diagnostics::inst().emit_error(
+                Err::NameAlreadyExists,
+                *binding.location,
+                "Name `" + binding.name +
+                    "` already exists in the current scope and is not an "
+                    "overloadable function."
+            );
+            if (auto locatable =
+                    std::dynamic_pointer_cast<Node::ILocatable>(node.value())) {
+                Diagnostics::inst().emit_note(
+                    locatable->location,
+                    "Previous declaration here."
+                );
+            }
+            return std::nullopt;
+        }
+    }
+    else {
+        // If name does not exist, create a new overload group.
+        overload_group = Node::OverloadGroup::create(
+            current_scope,
+            binding.name,
+            binding.location
+        );
+        current_scope->children[overload_group->short_name] = overload_group;
+        modified = true;
+
+        bool ok = register_symbol(overload_group);
+        if (!ok) {
+            return std::nullopt;
+        }
+    }
+
+    auto func_type = std::dynamic_pointer_cast<Type::Function>(binding.type);
+    if (!func_type)
+        panic("Binding added as overloadable function is not a function.");
+    auto [m_f1, d_f1] = func_type->get_param_sets();
+
+    // Check for overload conflicts.
+    std::vector<std::shared_ptr<Node::BindingEntry>> conflicts;
+    for (const auto& existing_overload : overload_group->overloads) {
+        auto existing_func_type = std::dynamic_pointer_cast<Type::Function>(
+            existing_overload->binding.type
+        );
+        if (!existing_func_type)
+            panic("Existing overload in overload group is not a function.");
+        auto [m_f2, d_f2] = existing_func_type->get_param_sets();
+        auto conflict_found =
+            sets::equals(m_f1, m_f2) ||
+            (sets::subset(m_f2, m_f1) &&
+             sets::subseteq(sets::difference(m_f1, m_f2), d_f1)) ||
+            (sets::subset(m_f1, m_f2) &&
+             sets::subseteq(sets::difference(m_f2, m_f1), d_f2));
+
+        if (conflict_found) {
+            conflicts.push_back(existing_overload);
+        }
+    }
+    if (!conflicts.empty()) {
+        Diagnostics::inst().emit_error(
+            Err::FunctionOverloadConflict,
+            *binding.location,
+            "Function overload conflict for function `" + binding.name + "`."
+        );
+        for (const auto& conflict : conflicts) {
+            if (auto locatable =
+                    std::dynamic_pointer_cast<Node::ILocatable>(conflict)) {
+                Diagnostics::inst().emit_note(
+                    locatable->location,
+                    "Conflicting overload declared here."
+                );
+            }
+            Diagnostics::inst().emit_note(
+                "Two function overloads conflict if they have the same "
+                "set of parameters, or if one set of parameters is a "
+                "superset of the other, differing only by optional "
+                "parameters."
+            );
+        }
+        return std::nullopt;
+    }
+
+    auto new_node =
+        Node::BindingEntry::create(current_scope, binding, Linkage::Internal);
+    auto custom_symbol = overload_group->symbol + "$" +
+                         std::to_string(overload_group->overloads.size() + 1);
+    bool ok = register_symbol(new_node, custom_symbol);
+    if (!ok) {
+        return std::nullopt;
+    }
+    overload_group->overloads.push_back(new_node);
+    modified = true;
+
+    return new_node;
+}
+
+std::shared_ptr<Node::UnresolvedType>
+SymbolTree::add_unresolved_type(std::shared_ptr<Name> name) {
+    auto new_node = Node::UnresolvedType::create(name, current_scope);
+    unresolved_type_nodes.push_back(new_node);
+
+    modified = true;
+    return new_node;
+}
+
+bool SymbolTree::is_context_unsafe() const {
+    auto local_scope =
+        std::dynamic_pointer_cast<Node::LocalScope>(current_scope);
+    return local_scope && local_scope->block->is_unsafe;
+}
+
+bool SymbolTree::resolve_unresolved_types() {
+    bool has_error = false;
+
+    std::vector<std::shared_ptr<Type::Named>> pending_validity_check;
+
+    // First, attempt to resolve all unresolved types.
+    for (const auto& node : unresolved_type_nodes) {
+        auto name = node->name.lock();
+        auto name_found = try_resolve_name_from_scope(name, node->scope.lock());
+        if (!name_found) {
+            Diagnostics::inst().emit_error(
+                Err::TypeNameNotFound,
+                name->identifier->location,
+                "Could not resolve type name `" +
+                    std::string(name->identifier->lexeme) + "`."
+            );
+            has_error = true;
+            continue;
+        }
+        auto type_node =
+            std::dynamic_pointer_cast<Node::ITypeNode>(name->node.lock());
+        // Confirm that the resolved name is indeed a type.
+        if (!type_node) {
+            Diagnostics::inst().emit_error(
+                Err::NameNotAType,
+                name->identifier->location,
+                "Name reference `" + std::string(name->identifier->lexeme) +
+                    "` does not refer to a type."
+            );
+            has_error = true;
+            continue;
+        }
+        node->referencing_type_object->node = type_node;
+        pending_validity_check.push_back(node->referencing_type_object);
+    }
+    // Next, check for any unsized named types, which are not allowed.
+    for (const auto& type : pending_validity_check) {
+        if (!type->is_definitely_sized()) {
+            auto node = type->node.lock();
+            // Node should always be locatable; only primitive types are not
+            // locatable, and they are always be resolved.
+            auto locatable = std::dynamic_pointer_cast<Node::ILocatable>(node);
+            Diagnostics::inst().emit_error(
+                Err::UnsizedNamedType,
+                locatable ? locatable->location : nullptr,
+                "Unsized named type `" + type->to_string() + "` is not allowed."
+            );
+            Diagnostics::inst().emit_note(
+                "A named type may be unsized if it is excessively deep due to "
+                "possible infinite recursion or if it contains another unsized "
+                "type."
+            );
+            has_error = true;
+        }
+    }
+    return !has_error;
+}
+
+std::string SymbolTree::to_tree_string() const {
+    std::string result;
+    result += "RESERVED SCOPE:\n";
+    result += reserved_scope->to_tree_string(2);
+    result += "\nMAIN TREE:\n";
+    result += root_scope->to_tree_string(2);
+    return result;
+}
+
+} // namespace nico

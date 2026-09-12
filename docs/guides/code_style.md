@@ -177,7 +177,7 @@ For `#include` directives, include files in the following order.
 
 Example:
 ```cpp
-#include "nico/frontend/code_generator.h"
+#include "nico_core/frontend/code_generator.h"
 
 #include <string_view>
 
@@ -185,8 +185,8 @@ Example:
 #include <llvm/IR/Function.h>
 #include <llvm/IR/Verifier.h>
 
-#include "nico/shared/utils.h"
-#include "nico/shared/diagnostics.h"
+#include "nico_core/shared/utils.h"
+#include "nico_core/shared/diagnostics.h"
 ```
 
 For C standard library headers with a C++ counterpart, prefer using the C++ counterpart.

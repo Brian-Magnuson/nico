@@ -1,0 +1,1357 @@
+#ifndef NICO_CORE_TYPE_NODE_H
+#define NICO_CORE_TYPE_NODE_H
+
+#include <cinttypes>
+#include <cstdint>
+#include <memory>
+#include <string>
+#include <unordered_set>
+#include <utility>
+
+#include <llvm/IR/IRBuilder.h>
+
+#include "nico_core/frontend/utils/nodes.h"
+#include "nico_core/frontend/utils/symbol_node.h"
+#include "nico_core/shared/dictionary.h"
+#include "nico_core/shared/utils.h"
+
+namespace nico {
+
+// MARK: Numeric types
+
+/**
+ * @brief A base class for all numeric types.
+ *
+ * Includes `Type::Int` and `Type::Float`.
+ */
+class Type::INumeric : virtual public Type {
+public:
+    virtual ~INumeric() = default;
+
+    virtual std::string to_string() const = 0;
+};
+
+/**
+ * @brief An integer type.
+ *
+ * Can be signed or unsigned, and can have any width.
+ * To save space, the width is stored as a uint8_t.
+ * Additionally, it is recommended only widths of 8, 16, 32, or 64 are used.
+ */
+class Type::Int : public Type::INumeric {
+public:
+    // Whether the integer is signed or unsigned.
+    const bool is_signed;
+    // The width of the integer in bits. Can be any number, but should be 8, 16,
+    // 32, or 64.
+    const uint8_t width;
+    // Whether this is a pointer-sized integer type (i.e. `intptr` or
+    // `uintptr`).
+    const bool is_ptr_sized;
+
+    virtual ~Int() = default;
+
+    Int(bool is_signed, uint8_t width, bool is_ptr_sized = false)
+        : is_signed(is_signed), width(width), is_ptr_sized(is_ptr_sized) {}
+
+    std::string to_string() const override {
+        if (is_ptr_sized) {
+            return (is_signed ? "isized" : "usized");
+        }
+        return (is_signed ? "i" : "u") + std::to_string(width);
+    }
+
+    bool operator==(const Type& other) const override {
+        if (const auto* other_int = dynamic_cast<const Int*>(&other)) {
+            return is_signed == other_int->is_signed &&
+                   width == other_int->width &&
+                   is_ptr_sized == other_int->is_ptr_sized;
+        }
+        return false;
+    }
+
+    virtual llvm::Type*
+    get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
+        return llvm::IntegerType::get(builder->getContext(), width);
+    }
+
+    virtual std::pair<std::string, std::vector<llvm::Value*>> to_print_args(
+        std::unique_ptr<llvm::IRBuilder<>>& builder,
+        llvm::Value* value,
+        bool include_quotes = false
+    ) const override {
+        const char* format_chars;
+        llvm::Value* print_value = value;
+        auto int_32_type = llvm::Type::getInt32Ty(builder->getContext());
+
+        if (is_signed) {
+            switch (width) {
+            case 8:
+                format_chars = PRId8;
+                print_value = builder->CreateSExt(value, int_32_type);
+                break;
+            case 16:
+                format_chars = PRId16;
+                print_value = builder->CreateSExt(value, int_32_type);
+                break;
+            case 32:
+                format_chars = PRId32;
+                break;
+            case 64:
+                format_chars = PRId64;
+                break;
+            default:
+                print_value = builder->CreateSExt(
+                    value,
+                    llvm::Type::getInt64Ty(builder->getContext())
+                );
+                format_chars =
+                    "lld"; // Default to long long for non-standard widths.
+                break;
+            }
+        }
+        else {
+            switch (width) {
+            case 8:
+                format_chars = PRIu8;
+                print_value = builder->CreateZExt(value, int_32_type);
+                break;
+            case 16:
+                format_chars = PRIu16;
+                print_value = builder->CreateZExt(value, int_32_type);
+            case 32:
+                format_chars = PRIu32;
+                break;
+            case 64:
+                format_chars = PRIu64;
+                break;
+            default:
+                print_value = builder->CreateZExt(
+                    value,
+                    llvm::Type::getInt64Ty(builder->getContext())
+                );
+                format_chars = "llu"; // Default to unsigned long long for
+                                      // non-standard widths.
+                break;
+            }
+        }
+        std::string format_str = "%" + std::string(format_chars);
+        return {format_str, {print_value}};
+    }
+
+    /**
+     * @brief Returns the maximum value for this integer type and stores it in
+     * an unsigned 64-bit integer.
+     *
+     * @return The maximum value for this integer type.
+     *
+     * @warning Will panic if the width is not one of the supported widths (8,
+     * 16, 32, 64).
+     */
+    uint64_t get_max_value() const {
+        if (is_signed) {
+            switch (width) {
+            case 8:
+                return 127;
+            case 16:
+                return 32767;
+            case 32:
+                return 2147483647;
+            case 64:
+                return 9223372036854775807ULL;
+            default:
+                panic("Integer type has unsupported width.");
+            }
+        }
+        else {
+            switch (width) {
+            case 8:
+                return 255;
+            case 16:
+                return 65535;
+            case 32:
+                return 4294967295U;
+            case 64:
+                return 18446744073709551615ULL;
+            default:
+                panic("Integer type has unsupported width.");
+            }
+        }
+    }
+
+    /**
+     * @brief Returns the minimum value for this integer type.
+     *
+     * @return The minimum value for this integer type.
+     *
+     * @warning Will panic if the width is not one of the supported widths (8,
+     * 16, 32, 64).
+     */
+    int64_t get_min_value() const {
+        if (is_signed) {
+            switch (width) {
+            case 8:
+                return -128;
+            case 16:
+                return -32768;
+            case 32:
+                return -2147483648;
+            case 64:
+                return -9223372036854775807LL - 1;
+            default:
+                panic("Integer type has unsupported width.");
+            }
+        }
+        else {
+            return 0;
+        }
+    }
+};
+
+/**
+ * @brief A floating-point type.
+ *
+ * Can be 32 or 64 bits wide.
+ */
+class Type::Float : public Type::INumeric {
+public:
+    // The width of the float in bits. Can be 32 or 64.
+    const uint8_t width;
+
+    virtual ~Float() = default;
+
+    Float(uint8_t width)
+        : width(width) {
+        if (width != 32 && width != 64) {
+            panic(
+                "Invalid width " + std::to_string(width) + ". Must be 32 or 64."
+            );
+        }
+    }
+
+    std::string to_string() const override {
+        return "f" + std::to_string(width);
+    }
+
+    bool operator==(const Type& other) const override {
+        if (const auto* other_float = dynamic_cast<const Float*>(&other)) {
+            return width == other_float->width;
+        }
+        return false;
+    }
+
+    virtual llvm::Type*
+    get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
+        switch (width) {
+        case 32:
+            return llvm::Type::getFloatTy(builder->getContext());
+        case 64:
+            return llvm::Type::getDoubleTy(builder->getContext());
+        default:
+            panic(
+                "Invalid width " + std::to_string(width) + ". Must be 32 or 64."
+            );
+        }
+    }
+
+    virtual std::pair<std::string, std::vector<llvm::Value*>> to_print_args(
+        std::unique_ptr<llvm::IRBuilder<>>& builder,
+        llvm::Value* value,
+        bool include_quotes = false
+    ) const override {
+        llvm::Value* print_value = value;
+        if (width == 32) {
+            print_value = builder->CreateFPExt(
+                value,
+                llvm::Type::getDoubleTy(builder->getContext())
+            );
+        }
+        return {"%g", {print_value}};
+    }
+};
+
+// MARK: Boolean type
+
+/**
+ * @brief A boolean type.
+ *
+ * Boolean types have no additional state as there is no need;
+ * All boolean types are the same.
+ * In LLVM, booleans may be represented as an integer 1 bit wide (`i1`).
+ */
+class Type::Bool : public Type {
+public:
+    virtual ~Bool() = default;
+
+    std::string to_string() const override { return "bool"; }
+
+    bool operator==(const Type& other) const override {
+        return dynamic_cast<const Bool*>(&other) != nullptr;
+    }
+
+    virtual llvm::Type*
+    get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
+        return llvm::Type::getInt1Ty(builder->getContext());
+    }
+
+    virtual std::pair<std::string, std::vector<llvm::Value*>> to_print_args(
+        std::unique_ptr<llvm::IRBuilder<>>& builder,
+        llvm::Value* value,
+        bool include_quotes = false
+    ) const override {
+        // Convert the boolean to an integer for printing.
+        auto bool_value = builder->CreateSelect(
+            value,
+            builder->CreateGlobalString("true"),
+            builder->CreateGlobalString("false")
+        );
+        return {"%s", {bool_value}};
+    }
+};
+
+// MARK: Pointer types
+
+/**
+ * @brief The base class for all pointer types.
+ *
+ * All pointers have a mutability property.
+ */
+class Type::IPointer : public Type {
+public:
+    // Whether object pointed to by this pointer is mutable.
+    bool is_mutable;
+
+    virtual ~IPointer() = default;
+
+    IPointer(bool is_mutable)
+        : is_mutable(is_mutable) {}
+
+    virtual llvm::Type*
+    get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
+        return llvm::PointerType::get(builder->getContext(), 0);
+    }
+};
+
+/**
+ * @brief An interface for raw pointer types.
+ *
+ * This class does not add additional state beyond `IPointer`.
+ * It is used for organizational purposes.
+ *
+ * Raw pointers are meant to have no special semantics. They simply store an
+ * address.
+ */
+class Type::IRawPtr : virtual public IPointer {
+public:
+    virtual ~IRawPtr() = default;
+
+    IRawPtr(bool is_mutable)
+        : IPointer(is_mutable) {}
+};
+
+/**
+ * @brief A null pointer type.
+ *
+ * The type and its only value are both written as `nullptr`.
+ * It is only considered equal to other `Nullptr` types.
+ *
+ * It is a raw pointer type that has no base type.
+ * It may be assigned to any other raw pointer type.
+ *
+ * For type compatibility purposes, a nullptr is considered mutable, even though
+ * it cannot be used to modify any data (it cannot be dereferenced).
+ */
+class Type::Nullptr : public Type::IRawPtr {
+public:
+    virtual ~Nullptr() = default;
+
+    Nullptr()
+        : Type::IPointer(true), Type::IRawPtr(true) {}
+
+    std::string to_string() const override { return "nullptr"; }
+
+    bool operator==(const Type& other) const override {
+        return dynamic_cast<const Nullptr*>(&other) != nullptr;
+    }
+
+    virtual bool is_assignable_to(std::shared_ptr<Type> other) override {
+        // nullptr can be assigned to any instance of IRawPtr.
+        return Type::as_a<Type::IRawPtr>(other).has_value();
+    }
+};
+
+/**
+ * @brief An any-pointer type.
+ *
+ * The type is written as `anyptr`.
+ * It is only considered equal to other `Anyptr` types.
+ *
+ * An any-pointer is a raw pointer type that has no base type.
+ * Any raw pointer type may be assigned to an any-pointer.
+ *
+ * For type compatibility purposes, an any-pointer is considered mutable, even
+ * though it cannot be used to modify any data (it cannot be dereferenced).
+ */
+class Type::Anyptr : public Type::IRawPtr {
+public:
+    virtual ~Anyptr() = default;
+
+    Anyptr()
+        : Type::IPointer(true), Type::IRawPtr(true) {}
+
+    std::string to_string() const override { return "anyptr"; }
+
+    bool operator==(const Type& other) const override {
+        return dynamic_cast<const Anyptr*>(&other) != nullptr;
+    }
+};
+
+/**
+ * @brief An interface for typed pointer types.
+ *
+ * Typed pointers point to a specific base type.
+ * Generally, a pointer can only be dereferenced if it is a typed pointer.
+ */
+class Type::ITypedPtr : virtual public IPointer {
+public:
+    // The type that the pointer points to.
+    const std::shared_ptr<Type> base;
+
+    virtual ~ITypedPtr() = default;
+
+    ITypedPtr(std::shared_ptr<Type> base, bool is_mutable)
+        : IPointer(is_mutable), base(base) {}
+};
+
+/**
+ * @brief A raw typed pointer type.
+ *
+ * Raw typed pointers are raw pointers that also have a base type.
+ * They are usually the most common raw pointer type used.
+ */
+class Type::RawTypedPtr : public Type::IRawPtr, public Type::ITypedPtr {
+public:
+    virtual ~RawTypedPtr() = default;
+
+    RawTypedPtr(std::shared_ptr<Type> base, bool is_mutable)
+        : IPointer(is_mutable),
+          IRawPtr(is_mutable),
+          ITypedPtr(base, is_mutable) {}
+
+    std::string to_string() const override {
+        return std::string(is_mutable ? "var" : "") + "@" + base->to_string();
+    }
+
+    bool operator==(const Type& other) const override {
+        if (const auto* other_pointer =
+                dynamic_cast<const RawTypedPtr*>(&other)) {
+            return *base == *other_pointer->base &&
+                   is_mutable == other_pointer->is_mutable;
+        }
+        return false;
+    }
+
+    virtual std::pair<std::string, std::vector<llvm::Value*>> to_print_args(
+        std::unique_ptr<llvm::IRBuilder<>>& builder,
+        llvm::Value* value,
+        bool include_quotes = false
+    ) const override {
+        return {"%p", {value}};
+    }
+
+    virtual bool is_assignable_to(std::shared_ptr<Type> other) override {
+        if (auto other_pointer =
+                Type::as_a<Type::RawTypedPtr>(other).value_or(nullptr)) {
+            // You can assign to a pointer if the base types are the same and
+            // the mutability is compatible.
+
+            // not (not this->is_mutable and target->is_mutable)
+            // !(!A & B) == A | !B
+            return base->is_assignable_to(other_pointer->base) &&
+                   (is_mutable || !other_pointer->is_mutable);
+            // If this pointer is mutable or the other pointer is not mutable,
+            // we either have an equivalent type or a loss of mutability.
+            // We explicitly allow a loss of mutability.
+        }
+        else if (Type::as_a<Type::Anyptr>(other).has_value()) {
+            // You can assign to `anyptr` if this pointer is mutable.
+            return is_mutable;
+        }
+        return false;
+    }
+};
+
+/**
+ * @brief A reference type.
+ *
+ * References are pointers with special semantics.
+ */
+class Type::Reference : public Type::ITypedPtr {
+public:
+    virtual ~Reference() = default;
+
+    Reference(std::shared_ptr<Type> base, bool is_mutable)
+        : IPointer(is_mutable), ITypedPtr(base, is_mutable) {}
+
+    std::string to_string() const override {
+        return std::string(is_mutable ? "var" : "") + "&" + base->to_string();
+    }
+
+    bool operator==(const Type& other) const override {
+        if (const auto* other_reference =
+                dynamic_cast<const Reference*>(&other)) {
+            return *base == *other_reference->base &&
+                   is_mutable == other_reference->is_mutable;
+        }
+        return false;
+    }
+
+    virtual std::pair<std::string, std::vector<llvm::Value*>> to_print_args(
+        std::unique_ptr<llvm::IRBuilder<>>& builder,
+        llvm::Value* value,
+        bool include_quotes = false
+    ) const override {
+        auto val = builder->CreateLoad(base->get_llvm_type(builder), value);
+        return base->to_print_args(builder, val, include_quotes);
+    }
+
+    virtual bool is_assignable_to(std::shared_ptr<Type> other) override {
+        if (auto other_pointer =
+                Type::as_a<Type::Reference>(other).value_or(nullptr)) {
+            return base->is_assignable_to(other_pointer->base) &&
+                   (is_mutable || !other_pointer->is_mutable);
+        }
+        return false;
+    }
+};
+
+/**
+ * @brief A primitive string type.
+ *
+ * The primitive string type is a pointer to a sequence of characters in static
+ * memory. Primitive strings are immutable and live for as long as the program
+ * runs.
+ *
+ * It is similar to the `char *` type in C, but is kept a separate type for
+ * safety purposes such as to prevent pointer casting.
+ */
+class Type::Str : public Type {
+public:
+    virtual ~Str() = default;
+
+    std::string to_string() const override { return "str"; }
+
+    bool operator==(const Type& other) const override {
+        return dynamic_cast<const Str*>(&other) != nullptr;
+    }
+
+    virtual llvm::Type*
+    get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
+        return llvm::PointerType::get(builder->getContext(), 0);
+    }
+
+    virtual std::pair<std::string, std::vector<llvm::Value*>> to_print_args(
+        std::unique_ptr<llvm::IRBuilder<>>& builder,
+        llvm::Value* value,
+        bool include_quotes = false
+    ) const override {
+        if (include_quotes) {
+            return {"\"%s\"", {value}};
+        }
+        else {
+            return {"%s", {value}};
+        }
+    }
+};
+
+// MARK: Aggregate types
+
+/**
+ * @brief An array type.
+ *
+ * Contains a base type and a size.
+ */
+class Type::Array : public Type {
+public:
+    // The type of the elements in the array.
+    const std::shared_ptr<Type> base;
+    // The number of elements in the array.
+    const std::optional<size_t> size;
+
+    virtual ~Array() = default;
+
+    Array(std::shared_ptr<Type> base)
+        : base(base), size(std::nullopt) {}
+
+    Array(std::shared_ptr<Type> base, size_t size)
+        : base(
+              size == 0 ? std::dynamic_pointer_cast<Type>(
+                              std::make_shared<Type::Unit>()
+                          )
+                        : base
+          ),
+          size(size) {}
+
+    std::string to_string() const override {
+        if (size.has_value() && size.value() == 0) {
+            return "[]";
+        }
+        return "[" + base->to_string() + "; " +
+               (size ? std::to_string(*size) : "?") + "]";
+    }
+
+    bool operator==(const Type& other) const override {
+        if (const auto* other_array = dynamic_cast<const Array*>(&other)) {
+            return *base == *other_array->base && size == other_array->size;
+        }
+        return false;
+    }
+
+    virtual bool is_assignable_to(std::shared_ptr<Type> other) override {
+        if (auto other_array =
+                Type::as_a<Type::Array>(other).value_or(nullptr)) {
+            bool sizes_compatible = false;
+            /*
+            We allow assignment in these cases:
+            1. Both arrays have the same size.
+            2. `other` is an unsized array.
+            */
+            if (size.has_value() && other_array->size.has_value()) {
+                sizes_compatible = size.value() == other_array->size.value();
+            }
+            else if (!other_array->size.has_value()) {
+                sizes_compatible = true;
+            }
+
+            return base->is_assignable_to(other_array->base) &&
+                   sizes_compatible;
+        }
+        return false;
+    }
+
+    virtual bool
+    is_definitely_sized(size_t recursion_level = 0) const override {
+        if (recursion_level > MAX_RECURSION_DEPTH) {
+            return false;
+        }
+        if (!size.has_value()) {
+            return false;
+        }
+        return base->is_definitely_sized(recursion_level + 1);
+    }
+
+    virtual llvm::Type*
+    get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
+        if (size.has_value()) {
+            // Sized array, [T; N]
+            return llvm::ArrayType::get(base->get_llvm_type(builder), *size);
+        }
+        else {
+            // Unsized array, [T, ?]
+            return llvm::ArrayType::get(base->get_llvm_type(builder), 0);
+            // Base is always set for unsized arrays, because the only way to
+            // create an array without a base is to write the literal `[]`,
+            // which is a sized array of size 0.
+        }
+    }
+
+    virtual std::pair<std::string, std::vector<llvm::Value*>> to_print_args(
+        std::unique_ptr<llvm::IRBuilder<>>& builder,
+        llvm::Value* value,
+        bool include_quotes = false
+    ) const override {
+        if (!size.has_value()) {
+            return {"[array]", {}};
+        }
+        std::string format_str = "[";
+        std::vector<llvm::Value*> args;
+        for (size_t i = 0; i < size.value(); ++i) {
+            auto [fmt, vals] = base->to_print_args(
+                builder,
+                builder->CreateExtractValue(value, {static_cast<unsigned>(i)}),
+                true
+            );
+            format_str += fmt;
+            args.insert(args.end(), vals.begin(), vals.end());
+            if (i < size.value() - 1) {
+                format_str += ", ";
+            }
+        }
+        format_str += "]";
+        return {format_str, args};
+    }
+};
+
+/**
+ * @brief An empty array type.
+ *
+ * Represents an array with zero elements and an unspecified base type.
+ * It is written as `[]` and its only value is also `[]`.
+ * It can be assigned to any array type with size 0, regardless of base type.
+ */
+class Type::EmptyArray : public Type::Array {
+public:
+    virtual ~EmptyArray() = default;
+
+    EmptyArray()
+        : Type::Array(nullptr, 0) {}
+
+    std::string to_string() const override { return "[]"; }
+
+    bool operator==(const Type& other) const override {
+        return dynamic_cast<const EmptyArray*>(&other) != nullptr;
+    }
+
+    virtual llvm::Type*
+    get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
+        return llvm::ArrayType::get(
+            llvm::Type::getInt8Ty(builder->getContext()),
+            0
+        );
+    }
+
+    virtual bool is_assignable_to(std::shared_ptr<Type> other) override {
+        if (auto other_array =
+                Type::as_a<Type::Array>(other).value_or(nullptr)) {
+            return other_array->size.has_value() &&
+                   other_array->size.value() == 0;
+        }
+        return false;
+    }
+};
+
+/**
+ * @brief A tuple type.
+ *
+ * Used to represent a fixed-size collection of types.
+ */
+class Type::Tuple : public Type {
+public:
+    // The types of the elements in the tuple.
+    const std::vector<std::shared_ptr<Type>> elements;
+
+    virtual ~Tuple() = default;
+
+    Tuple(std::vector<std::shared_ptr<Type>> elements)
+        : elements(std::move(elements)) {}
+
+    std::string to_string() const override {
+        std::string result = "(";
+        for (const auto& element : elements) {
+            result += element->to_string() + ", ";
+        }
+        if (!elements.empty()) {
+            result.pop_back();
+            result.pop_back();
+        }
+        result += ")";
+        return result;
+    }
+
+    bool is_definitely_sized(size_t recursion_level = 0) const override {
+        if (recursion_level > MAX_RECURSION_DEPTH) {
+            return false;
+        }
+        for (const auto& element : elements) {
+            auto result = element->is_definitely_sized(recursion_level + 1);
+            if (!result) {
+                return result;
+            }
+        }
+        return true;
+    }
+
+    bool operator==(const Type& other) const override {
+        if (const auto* other_tuple = dynamic_cast<const Tuple*>(&other)) {
+            if (elements.size() != other_tuple->elements.size()) {
+                return false;
+            }
+            for (size_t i = 0; i < elements.size(); ++i) {
+                if (*(elements[i]) != *(other_tuple->elements[i])) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    virtual bool is_assignable_to(std::shared_ptr<Type> other) override;
+
+    virtual llvm::Type*
+    get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
+        std::vector<llvm::Type*> element_types;
+        for (const auto& element : elements) {
+            element_types.push_back(element->get_llvm_type(builder));
+        }
+        return llvm::StructType::get(builder->getContext(), element_types);
+    }
+
+    virtual std::pair<std::string, std::vector<llvm::Value*>> to_print_args(
+        std::unique_ptr<llvm::IRBuilder<>>& builder,
+        llvm::Value* value,
+        bool include_quotes = false
+    ) const override {
+        std::string format_str = "(";
+        std::vector<llvm::Value*> args;
+        for (unsigned i = 0; i < elements.size(); ++i) {
+            auto [fmt, vals] = elements[i]->to_print_args(
+                builder,
+                builder->CreateExtractValue(value, {i}),
+                true
+            );
+            format_str += fmt;
+            args.insert(args.end(), vals.begin(), vals.end());
+            if (i < elements.size() - 1) {
+                format_str += ", ";
+            }
+        }
+        format_str += ")";
+        return {format_str, args};
+    }
+};
+
+/**
+ * @brief A unit type.
+ *
+ * A unit type is a special tuple type that has no elements and is equivalent to
+ * a tuple type with no elements. It is written as `()` and named "unit" because
+ * it has only one possible value, which is `()`.
+ *
+ * This class does not override `Type::Tuple::operator==` and, thus, will appear
+ * equal to other instances of `Type::Tuple` that have no elements. That is to
+ * say, `Type::Unit` may be used interchangably with `Type::Tuple` with no
+ * elements.
+ */
+class Type::Unit : public Type::Tuple {
+public:
+    virtual ~Unit() = default;
+
+    Unit()
+        : Tuple({}) {}
+
+    std::string to_string() const override { return "()"; }
+
+    llvm::Type*
+    get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
+        return llvm::StructType::get(builder->getContext());
+    }
+
+    std::pair<std::string, std::vector<llvm::Value*>> to_print_args(
+        std::unique_ptr<llvm::IRBuilder<>>& builder,
+        llvm::Value* value,
+        bool include_quotes = false
+    ) const override {
+        return {"()", {}};
+    }
+};
+
+/**
+ * @brief An object type.
+ *
+ * Used to represent objects with fields.
+ */
+class Type::Object : public Type {
+public:
+    // The fields of the object.
+    Dictionary<std::string, Binding> fields;
+
+    virtual ~Object() = default;
+
+    Object(Dictionary<std::string, Binding>&& fields)
+        : fields(std::move(fields)) {}
+
+    std::string to_string() const override {
+        std::string result = "{";
+        for (const auto& [_, binding] : fields) {
+            result += binding.to_string() + ", ";
+        }
+        if (fields.size() > 0) {
+            result.pop_back();
+            result.pop_back();
+        }
+        result += "}";
+        return result;
+    }
+
+    bool operator==(const Type& other) const override {
+        if (const auto* other_object = dynamic_cast<const Object*>(&other)) {
+            return fields == other_object->fields;
+        }
+        return false;
+    }
+
+    bool is_definitely_sized(size_t recursion_level = 0) const override {
+        if (recursion_level > MAX_RECURSION_DEPTH) {
+            return false;
+        }
+        for (const auto& [key, value] : fields) {
+            auto result = value.type->is_definitely_sized(recursion_level + 1);
+            if (!result) {
+                return result;
+            }
+        }
+        return true;
+    }
+
+    virtual bool is_assignable_to(std::shared_ptr<Type> other) override {
+        if (auto other_object =
+                Type::as_a<Type::Object>(other).value_or(nullptr)) {
+            if (fields.size() != other_object->fields.size()) {
+                return false;
+            }
+            auto this_it = fields.begin();
+            auto other_it = other_object->fields.begin();
+            while (this_it != fields.end()) {
+                // Field names must match and field types must be assignable.
+                if (this_it->first != other_it->first ||
+                    !this_it->second.type->is_assignable_to(
+                        other_it->second.type
+                    )) {
+                    return false;
+                }
+                ++this_it;
+                ++other_it;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    virtual llvm::Type*
+    get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
+        std::vector<llvm::Type*> field_types;
+        for (const auto& [key, value] : fields) {
+            field_types.push_back(value.type->get_llvm_type(builder));
+        }
+        return llvm::StructType::get(builder->getContext(), field_types);
+    }
+
+    virtual std::pair<std::string, std::vector<llvm::Value*>> to_print_args(
+        std::unique_ptr<llvm::IRBuilder<>>& builder,
+        llvm::Value* value,
+        bool include_quotes = false
+    ) const override {
+        std::string format_str = "{";
+        std::vector<llvm::Value*> args;
+        unsigned index = 0;
+        for (const auto& [field_name, binding] : fields) {
+            auto [fmt, vals] = binding.type->to_print_args(
+                builder,
+                builder->CreateExtractValue(value, {index}),
+                true
+            );
+            format_str += field_name + ": " + fmt + ", ";
+            args.insert(args.end(), vals.begin(), vals.end());
+            ++index;
+        }
+        if (!fields.empty()) {
+            format_str.pop_back();
+            format_str.pop_back();
+        }
+        format_str += "}";
+        return {format_str, args};
+    }
+};
+
+/**
+ * @brief A struct object type.
+ *
+ * Used for types that are defined by struct definitions in the source code.
+ */
+class Type::Struct : public Type {
+public:
+    // The node associated with this struct type; uses a weak pointer to avoid
+    // circular references.
+    std::weak_ptr<Node::StructDef> node;
+    // The fields of the struct.
+    Dictionary<std::string, Binding> fields;
+
+    virtual ~Struct() = default;
+
+    Struct(std::weak_ptr<Node::StructDef> node)
+        : node(node) {
+        if (node.expired()) {
+            panic("Node is expired.");
+        }
+    }
+
+    std::string to_string() const override {
+        if (auto node_ptr = node.lock()) {
+            return node_ptr->symbol;
+        }
+        else {
+            panic("Node is expired.");
+        }
+    }
+
+    bool operator==(const Type& other) const override {
+        if (const auto* other_named = dynamic_cast<const Struct*>(&other)) {
+            return node.lock() == other_named->node.lock();
+        }
+        return false;
+    }
+
+    virtual bool is_assignable_to(std::shared_ptr<Type> other) override {
+        if (auto other_named =
+                Type::as_a<Type::Struct>(other).value_or(nullptr)) {
+            return node.lock() == other_named->node.lock();
+        }
+        return false;
+    }
+
+    virtual std::pair<std::string, std::vector<llvm::Value*>> to_print_args(
+        std::unique_ptr<llvm::IRBuilder<>>& builder,
+        llvm::Value* value,
+        bool include_quotes = false
+    ) const override {
+        std::string format_str = to_string() + "{";
+        std::vector<llvm::Value*> args;
+        unsigned index = 0;
+        for (const auto& [field_name, binding] : fields) {
+            auto [fmt, vals] = binding.type->to_print_args(
+                builder,
+                builder->CreateExtractValue(value, {index}),
+                true
+            );
+            format_str += field_name + ": " + fmt + ", ";
+            args.insert(args.end(), vals.begin(), vals.end());
+            ++index;
+        }
+        if (!fields.empty()) {
+            format_str.pop_back();
+            format_str.pop_back();
+        }
+        format_str += "}";
+        return {format_str, args};
+    }
+
+    virtual llvm::Type*
+    get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
+        // Check if the struct was already defined in the LLVM module.
+        auto struct_type = llvm::StructType::getTypeByName(
+            builder->getContext(),
+            node.lock()->symbol
+        );
+        if (!struct_type) {
+            struct_type = llvm::StructType::create(
+                builder->getContext(),
+                node.lock()->symbol
+            );
+            // The struct type declaration and definition must be done as two
+            // separate steps. This ensures that recursive struct types can be
+            // defined correctly.
+            std::vector<llvm::Type*> field_types;
+            for (const auto& [_, binding] : fields) {
+                field_types.push_back(binding.type->get_llvm_type(builder));
+            }
+            struct_type->setBody(field_types);
+        }
+        return struct_type;
+    }
+};
+
+// MARK: Callable types
+
+class Type::ICallable : public Type {
+public:
+    virtual ~ICallable() = default;
+
+    virtual std::pair<std::string, std::vector<llvm::Value*>> to_print_args(
+        std::unique_ptr<llvm::IRBuilder<>>& builder,
+        llvm::Value* value,
+        bool include_quotes = false
+    ) const override {
+        return {"[function]", {}};
+    }
+
+    virtual llvm::Type*
+    get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
+        return llvm::PointerType::get(builder->getContext(), 0);
+    }
+};
+
+/**
+ * @brief A function type.
+ *
+ * Used to represent functions with parameters and return types.
+ *
+ * Note: Functions are special kinds of pointers. They cannot be directly
+ * dereferenced, but they can be passed around and called.
+ */
+class Type::Function : public Type::ICallable {
+    // The set of all parameter strings for this function; used for overload
+    // conflict resolution; lazily initialized.
+    mutable std::optional<std::unordered_set<std::string>> param_strings;
+    // The set of all default parameter strings for this function; used for
+    // overload conflict resolution; lazily initialized.
+    mutable std::optional<std::unordered_set<std::string>>
+        default_param_strings;
+
+public:
+    // The parameters of the function.
+    Dictionary<std::string, Binding> parameters;
+    // The return type of the function.
+    const std::shared_ptr<Type> return_type;
+    // Whether the function is variadic (i.e. accepts a variable number of
+    // arguments).
+    bool is_variadic;
+
+    virtual ~Function() = default;
+
+    Function(
+        Dictionary<std::string, Binding> parameters,
+        std::shared_ptr<Type> return_type,
+        bool is_variadic = false
+    )
+        : parameters(std::move(parameters)),
+          return_type(std::move(return_type)),
+          is_variadic(is_variadic) {}
+
+    std::string to_string() const override {
+        std::string result = "func(";
+        for (const auto& param : parameters) {
+            result += param.second.to_string() + ", ";
+        }
+        if (is_variadic) {
+            result += "...";
+        }
+        else if (!parameters.empty()) {
+            result.pop_back();
+            result.pop_back();
+        }
+        result += ") -> " + return_type->to_string();
+        return result;
+    }
+
+    bool operator==(const Type& other) const override {
+        if (const auto* other_function =
+                dynamic_cast<const Function*>(&other)) {
+            return parameters == other_function->parameters &&
+                   *return_type == *other_function->return_type &&
+                   is_variadic == other_function->is_variadic;
+        }
+        return false;
+    }
+
+    llvm::FunctionType*
+    get_llvm_function_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const;
+
+    /**
+     * @brief Get the sets of parameter strings for this function.
+     *
+     * These sets are used for overload conflict resolution.
+     * The first set is the set of all parameter strings.
+     * The second set is the set of all parameter strings for parameters with
+     * default values.
+     *
+     * These sets are lazily initialized and cached for future use.
+     *
+     * @return The pair of parameter string set references (see description).
+     */
+    std::
+        pair<std::unordered_set<std::string>&, std::unordered_set<std::string>&>
+        get_param_sets() {
+        if (!param_strings.has_value() || !default_param_strings.has_value()) {
+            param_strings.emplace();
+            default_param_strings.emplace();
+            for (const auto& [name, binding] : parameters) {
+                auto param_str = name + ": " + binding.type->to_string();
+                param_strings->insert(param_str);
+                if (binding.default_expr.has_value()) {
+                    default_param_strings->insert(param_str);
+                }
+            }
+        }
+        return {*param_strings, *default_param_strings};
+    }
+};
+
+/**
+ * @brief A special function type representing an overloaded function.
+ *
+ * Used to represent a group of overloaded functions.
+ *
+ * When compared against any type, it is always considered not equal.
+ *
+ * Cannot be converted to an LLVM type, as overloaded functions must be
+ * resolved to a specific function before code generation.
+ */
+class Type::OverloadedFn : public Type::ICallable {
+public:
+    // The overload group this overloaded function belongs to.
+    std::weak_ptr<Node::OverloadGroup> overload_group;
+
+    virtual ~OverloadedFn() = default;
+
+    OverloadedFn() = default;
+
+    std::string to_string() const override { return "overloadedfn"; }
+
+    bool operator==(const Type& other) const override { return false; }
+};
+
+// MARK: Special types
+
+/**
+ * @brief A void type.
+ *
+ * The void type is a special type that has exactly one value, which is also
+ * written as `void`. It is used to represent the absence of a value, such as
+ * the return type of a function that does not return anything.
+ *
+ * It behaves similarly to the unit type (empty tuple), except that it
+ * can be used to generate slightly different instructions when dealing with
+ * function returns to better interop with C code.
+ */
+class Type::Void : public Type {
+public:
+    virtual ~Void() = default;
+
+    std::string to_string() const override { return "void"; }
+
+    virtual llvm::Type*
+    get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override {
+        return llvm::StructType::get(builder->getContext());
+    }
+
+    virtual std::pair<std::string, std::vector<llvm::Value*>> to_print_args(
+        std::unique_ptr<llvm::IRBuilder<>>& builder,
+        llvm::Value* value,
+        bool include_quotes = false
+    ) const override {
+        return {"void", {}};
+    }
+
+    virtual bool operator==(const Type& other) const override {
+        return dynamic_cast<const Void*>(&other) != nullptr;
+    }
+
+    virtual bool is_assignable_to(std::shared_ptr<Type> other) override {
+        // Void can be assigned to void...
+        if (auto other_void = Type::as_a<Type::Void>(other)) {
+            return true;
+        }
+        // Or an empty tuple...
+        else if (
+            auto other_tuple = Type::as_a<Type::Tuple>(other).value_or(nullptr)
+        ) {
+            return other_tuple->elements.empty();
+        }
+
+        return false;
+    }
+};
+
+/**
+ * @brief A named type.
+ *
+ * Used to represent types that have a name, such as complex types and aliased
+ * types.
+ *
+ * Named types must point to a node in the symbol tree that is an instance of
+ * Node::ITypeNode to be considered resolved. When converted to a string, the
+ * unique name of the node is used.
+ */
+class Type::Named : public Type {
+public:
+    // The node associated with this named type; uses a weak pointer to avoid
+    // circular references.
+    std::weak_ptr<Node::ITypeNode> node;
+
+    virtual ~Named() = default;
+
+    Named(std::weak_ptr<Node::ITypeNode> node)
+        : node(node) {
+        if (node.expired()) {
+            panic("Node is expired.");
+        }
+    }
+
+private:
+    // Cache for the inner type of this named type; lazily initialized.
+    mutable std::optional<std::shared_ptr<Type>> cached_inner_type;
+
+    /**
+     * @brief Retrieves the inner type of this named type.
+     *
+     * Should only be called if the named type is resolved and confirmed to not
+     * be infinitely recursive.
+     * In case of deeply nested named types, this function caches the result for
+     * future use.
+     *
+     * @param recursion_level The current recursion level. Should be ignored by
+     * external callers.
+     * @return std::shared_ptr<Type> The inner type of this named type.
+     * @warning This function will panic if the named type is not resolved, if
+     * the node has expired, or if the maximum recursion depth is exceeded (to
+     * prevent infinite recursion in the case of infinitely recursive types).
+     */
+    std::shared_ptr<Type> get_inner_type(size_t recursion_level = 0) const {
+        if (cached_inner_type.has_value()) {
+            return cached_inner_type.value();
+        }
+        if (recursion_level > MAX_RECURSION_DEPTH) {
+            panic(
+                "Maximum recursion depth exceeded while resolving inner type."
+            );
+        }
+        auto node_ptr = node.lock();
+        if (!node_ptr) {
+            panic("Node is expired.");
+        }
+        if (PTR_INSTANCEOF(node_ptr, Node::UnresolvedType)) {
+            panic("Cannot access inner type of unresolved named type.");
+        }
+        if (auto inner_named =
+                std::dynamic_pointer_cast<Type::Named>(node_ptr->type)) {
+            return inner_named->get_inner_type(recursion_level + 1);
+        }
+        cached_inner_type = node_ptr->type;
+        return cached_inner_type.value();
+    }
+
+public:
+    std::string to_string() const override;
+
+    bool operator==(const Type& other) const override {
+        if (const auto* other_named = dynamic_cast<const Named*>(&other)) {
+            return node.lock() == other_named->node.lock();
+        }
+        return false;
+    }
+
+    bool is_definitely_sized(size_t recursion_level = 0) const override {
+        if (recursion_level > MAX_RECURSION_DEPTH) {
+            return false;
+        }
+        auto node_ptr = node.lock();
+        if (!node_ptr) {
+            panic("Node is expired.");
+        }
+        if (PTR_INSTANCEOF(node_ptr, Node::UnresolvedType)) {
+            // Size is indeterminate until the type is resolved.
+            return false;
+        }
+        return node_ptr->type->is_definitely_sized(recursion_level + 1);
+    }
+
+    virtual llvm::Type*
+    get_llvm_type(std::unique_ptr<llvm::IRBuilder<>>& builder) const override;
+
+    virtual std::shared_ptr<Type> get_underlying_type() override {
+        return get_inner_type();
+    }
+
+    virtual std::pair<std::string, std::vector<llvm::Value*>> to_print_args(
+        std::unique_ptr<llvm::IRBuilder<>>& builder,
+        llvm::Value* value,
+        bool include_quotes = false
+    ) const override {
+        return {to_string(), {}};
+    }
+};
+
+} // namespace nico
+
+#endif // NICO_CORE_TYPE_NODE_H

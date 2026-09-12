@@ -1,0 +1,133 @@
+#ifndef NICO_CORE_MIR_BUILDER_H
+#define NICO_CORE_MIR_BUILDER_H
+
+#include <any>
+#include <memory>
+
+#include "nico_core/frontend/utils/ast_node.h"
+#include "nico_core/frontend/utils/frontend_context.h"
+
+namespace nico {
+
+class MIRBuilder : public Stmt::Visitor, public Expr::Visitor {
+    // The MIR module to store the built MIR.
+    const std::shared_ptr<MIRModule> mir_module;
+    // The symbol tree used for type checking.
+    const std::shared_ptr<SymbolTree> symbol_tree;
+    // The current basic block being built.
+    std::shared_ptr<BasicBlock> current_block;
+
+    MIRBuilder(
+        std::shared_ptr<MIRModule> mir_module,
+        std::shared_ptr<SymbolTree> symbol_tree
+    )
+        : mir_module(mir_module),
+          symbol_tree(symbol_tree),
+          current_block(mir_module->get_script_function()->get_entry_block()) {}
+
+    /**
+     * @brief Adds instructions to check for negative allocation sizes at
+     * runtime. If the size is negative, control is transferred to a block with
+     * a panic instruction.
+     *
+     * @param size_value The value representing the allocation size.
+     * @param location The location in the source code where the allocation is
+     * happening.
+     */
+    void add_negative_alloc_size_check(
+        std::shared_ptr<MIRValue> size_value, const Location* location
+    );
+
+    /**
+     * @brief Adds instructions to check for array bounds at runtime. If the
+     * index is out of bounds, control is transferred to a block with a panic
+     * instruction.
+     *
+     * @param index_value The value representing the index being accessed.
+     * @param array_size_value The value representing the size of the array.
+     * @param location The location in the source code where the array access is
+     * happening.
+     */
+    void add_array_bounds_check(
+        std::shared_ptr<MIRValue> index_value,
+        std::shared_ptr<MIRValue> array_size_value,
+        const Location* location
+    );
+
+    /**
+     * @brief Helper function to retrieve the MIR variable corresponding to a
+     * given binding entry.
+     *
+     * If the binding entry represents a global variable, it retrieves or
+     * declares the global variable in the MIR module. If it is a local
+     * variable, it retrieves the local variable from the current function's
+     * context.
+     *
+     * If the binding entry is a local variable and does not exist in the
+     * current function's context, this function will panic.
+     *
+     * @param binding_entry The binding entry for which to retrieve the MIR
+     * variable.
+     * @return std::shared_ptr<MIRValue::Variable> The corresponding MIR
+     * variable.
+     *
+     * @warning This function will panic if the provided binding entry is for a
+     * local variable that does not exist in the current function's context.
+     * Ensure that the binding entry is valid and has been declared before
+     * calling this function.
+     */
+    std::shared_ptr<MIRValue::Variable>
+    get_mir_variable(std::shared_ptr<Node::BindingEntry> binding_entry);
+
+    std::any visit(Stmt::Expression* stmt) override;
+    std::any visit(Stmt::Let* stmt) override;
+    std::any visit(Stmt::Static* stmt) override;
+    std::any visit(Stmt::Func* stmt) override;
+    std::any visit(Stmt::Print* stmt) override;
+    std::any visit(Stmt::Dealloc* stmt) override;
+    std::any visit(Stmt::Pass* stmt) override;
+    std::any visit(Stmt::Yield* stmt) override;
+    std::any visit(Stmt::Continue* stmt) override;
+    std::any visit(Stmt::Namespace* stmt) override;
+    std::any visit(Stmt::ExternBlock* stmt) override;
+    std::any visit(Stmt::TypeDef* stmt) override;
+    std::any visit(Stmt::StructDef* stmt) override;
+    std::any visit(Stmt::Field* stmt) override;
+    std::any visit(Stmt::Eof* stmt) override;
+
+    std::any visit(Expr::Assign* expr, bool as_lvalue) override;
+    std::any visit(Expr::Logical* expr, bool as_lvalue) override;
+    std::any visit(Expr::Binary* expr, bool as_lvalue) override;
+    std::any visit(Expr::Unary* expr, bool as_lvalue) override;
+    std::any visit(Expr::Address* expr, bool as_lvalue) override;
+    std::any visit(Expr::Deref* expr, bool as_lvalue) override;
+    std::any visit(Expr::Cast* expr, bool as_lvalue) override;
+    std::any visit(Expr::Access* expr, bool as_lvalue) override;
+    std::any visit(Expr::Subscript* expr, bool as_lvalue) override;
+    std::any visit(Expr::Call* expr, bool as_lvalue) override;
+    std::any visit(Expr::SizeOf* expr, bool as_lvalue) override;
+    std::any visit(Expr::Alloc* expr, bool as_lvalue) override;
+    std::any visit(Expr::NewInst* expr, bool as_lvalue) override;
+    std::any visit(Expr::NameRef* expr, bool as_lvalue) override;
+    std::any visit(Expr::Literal* expr, bool as_lvalue) override;
+    std::any visit(Expr::Tuple* expr, bool as_lvalue) override;
+    std::any visit(Expr::Array* expr, bool as_lvalue) override;
+    std::any visit(Expr::Object* expr, bool as_lvalue) override;
+    std::any visit(Expr::Block* expr, bool as_lvalue) override;
+    std::any visit(Expr::Conditional* expr, bool as_lvalue) override;
+    std::any visit(Expr::Loop* expr, bool as_lvalue) override;
+
+    void run_build(std::unique_ptr<FrontendContext>& context);
+
+public:
+    /**
+     * @brief Builds the MIR for the given front end context.
+     *
+     * @param context The front end context containing the AST to build MIR for.
+     */
+    static void build_mir(std::unique_ptr<FrontendContext>& context);
+};
+
+} // namespace nico
+
+#endif // NICO_CORE_MIR_BUILDER_H

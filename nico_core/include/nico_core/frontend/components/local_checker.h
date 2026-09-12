@@ -1,0 +1,83 @@
+#ifndef NICO_CORE_LOCAL_CHECKER_H
+#define NICO_CORE_LOCAL_CHECKER_H
+
+#include <any>
+#include <memory>
+
+#include "nico_core/frontend/utils/annotation_checker.h"
+#include "nico_core/frontend/utils/ast_node.h"
+#include "nico_core/frontend/utils/expression_checker.h"
+#include "nico_core/frontend/utils/frontend_context.h"
+#include "nico_core/frontend/utils/symbol_tree.h"
+
+namespace nico {
+
+/**
+ * @brief A local type checker.
+ *
+ * The local type checker checks statements and expressions at the local level,
+ * i.e., within functions, blocks, and the main script.
+ */
+class LocalChecker : public Stmt::Visitor {
+    // The symbol tree used for type checking.
+    const std::shared_ptr<SymbolTree> symbol_tree;
+    // Whether or not the checker is running in REPL mode.
+    const bool repl_mode = false;
+    // The expression checker used for checking expressions.
+    std::shared_ptr<ExpressionChecker> expression_checker;
+
+    std::shared_ptr<AnnotationChecker> annotation_checker;
+
+    LocalChecker(
+        std::shared_ptr<SymbolTree> symbol_tree, bool repl_mode = false
+    )
+        : symbol_tree(symbol_tree), repl_mode(repl_mode) {
+
+        auto [expr_checker, anno_checker] =
+            ExpressionChecker::create(symbol_tree, this, repl_mode);
+        expression_checker = expr_checker;
+        annotation_checker = anno_checker;
+    };
+
+    std::any visit(Stmt::Expression* stmt) override;
+    std::any visit(Stmt::Let* stmt) override;
+    std::any visit(Stmt::Static* stmt) override;
+    std::any visit(Stmt::Func* stmt) override;
+    std::any visit(Stmt::Print* stmt) override;
+    std::any visit(Stmt::Dealloc* stmt) override;
+    std::any visit(Stmt::Pass* stmt) override;
+    std::any visit(Stmt::Yield* stmt) override;
+    std::any visit(Stmt::Continue* stmt) override;
+    std::any visit(Stmt::Namespace* stmt) override;
+    std::any visit(Stmt::ExternBlock* stmt) override;
+    std::any visit(Stmt::TypeDef* stmt) override;
+    std::any visit(Stmt::StructDef* stmt) override;
+    std::any visit(Stmt::Field* stmt) override;
+    std::any visit(Stmt::Eof* stmt) override;
+
+    /**
+     * @brief Type checks the given context at the local level.
+     *
+     * This function will modify the AST to add type information to the nodes.
+     *
+     * @param context The front end context containing the AST to type check.
+     */
+    void run_check(std::unique_ptr<FrontendContext>& context);
+
+public:
+    /**
+     * @brief Type checks the given context at the local level.
+     *
+     * This function will modify the AST to add type information to the nodes.
+     *
+     * @param context The front end context containing the AST to type check.
+     * @param repl_mode Whether or not the checker is running in REPL mode.
+     * Defaults to false.
+     */
+    static void
+    check(std::unique_ptr<FrontendContext>& context, bool repl_mode = false);
+};
+
+} // namespace nico
+
+#endif // NICO_CORE_LOCAL_CHECKER_H
