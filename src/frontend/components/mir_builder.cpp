@@ -13,10 +13,10 @@ void MIRBuilder::add_negative_alloc_size_check(
 ) {
     std::shared_ptr<Function> function = current_block->get_parent_function();
 
-    std::shared_ptr<BasicBlock> panic_block =
-        function->create_basic_block("panic");
-    std::shared_ptr<BasicBlock> continue_block =
-        function->create_basic_block("continue");
+    std::shared_ptr<BasicBlock> negative_size_block =
+        function->create_basic_block("check_negative_size");
+    std::shared_ptr<BasicBlock> ok_block =
+        function->create_basic_block("check_ok");
 
     auto zero_value =
         MIRValue::CustomInt::create(std::make_shared<Type::Int>(false, 64), 0);
@@ -31,10 +31,10 @@ void MIRBuilder::add_negative_alloc_size_check(
 
     // Branch based on the comparison result.
     current_block
-        ->set_successors(cmp_instr->destination, panic_block, continue_block);
+        ->set_successors(cmp_instr->destination, negative_size_block, ok_block);
 
-    // Panic block: Add a panic instruction and terminate the block.
-    current_block = panic_block;
+    // Negative size block: Add a panic instruction and terminate the block.
+    current_block = negative_size_block;
     auto panic_instr = std::make_shared<Instr::Panic>(
         "Allocation amount expression evaluated to a negative value.",
         location
@@ -42,8 +42,45 @@ void MIRBuilder::add_negative_alloc_size_check(
     current_block->add_instruction(panic_instr);
     current_block->set_successor(function->get_exit_block());
 
-    // Continue block: Set the current block to continue building.
-    current_block = continue_block;
+    // OK block: Set the current block to continue building.
+    current_block = ok_block;
+}
+
+void MIRBuilder::add_array_bounds_check(
+    std::shared_ptr<MIRValue> index_value,
+    std::shared_ptr<MIRValue> array_size_value,
+    const Location* location
+) {
+    std::shared_ptr<BasicBlock> out_of_bounds_block =
+        current_block->get_parent_function()->create_basic_block(
+            "check_index_out_of_bounds"
+        );
+    std::shared_ptr<BasicBlock> ok_block =
+        current_block->get_parent_function()->create_basic_block("check_ok");
+
+    auto cmp_instr = std::make_shared<Instr::Binary>(
+        Expr::Binary::Operation::UIntGE,
+        index_value,
+        array_size_value,
+        std::make_shared<Type::Bool>()
+    );
+    current_block->add_instruction(cmp_instr);
+
+    // Branch based on the comparison result.
+    current_block
+        ->set_successors(cmp_instr->destination, out_of_bounds_block, ok_block);
+
+    // Out of bounds block: Add a panic instruction and terminate the block.
+    current_block = out_of_bounds_block;
+    auto panic_instr =
+        std::make_shared<Instr::Panic>("Array index out of bounds.", location);
+    current_block->add_instruction(panic_instr);
+    current_block->set_successor(
+        current_block->get_parent_function()->get_exit_block()
+    );
+
+    // OK block: Set the current block to continue building.
+    current_block = ok_block;
 }
 
 std::shared_ptr<MIRValue::Variable> MIRBuilder::get_mir_variable(

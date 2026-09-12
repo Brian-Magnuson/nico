@@ -39,6 +39,22 @@ class MIRBuilder : public Stmt::Visitor, public Expr::Visitor {
     );
 
     /**
+     * @brief Adds instructions to check for array bounds at runtime. If the
+     * index is out of bounds, control is transferred to a block with a panic
+     * instruction.
+     *
+     * @param index_value The value representing the index being accessed.
+     * @param array_size_value The value representing the size of the array.
+     * @param location The location in the source code where the array access is
+     * happening.
+     */
+    void add_array_bounds_check(
+        std::shared_ptr<MIRValue> index_value,
+        std::shared_ptr<MIRValue> array_size_value,
+        const Location* location
+    );
+
+    /**
      * @brief Helper function to retrieve the MIR variable corresponding to a
      * given binding entry.
      *
