@@ -40,6 +40,7 @@ set(BACK_END_SRC
 set(DRIVER_SRC
     src/driver/repl.cpp
     src/driver/jit_runner.cpp
+    src/driver/aot_runner.cpp
 )
 
 # Shared files

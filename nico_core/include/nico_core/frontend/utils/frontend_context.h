@@ -64,7 +64,7 @@ public:
         mod_ctx.initialize();
         symbol_tree = std::make_shared<SymbolTree>(mod_ctx);
 
-        main_fn_name = "$main";
+        main_fn_name = "main";
         script_fn_name = "$script";
     }
 
