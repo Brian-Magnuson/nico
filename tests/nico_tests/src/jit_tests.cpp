@@ -98,7 +98,12 @@ void run_jit_test(
     auto jit = std::make_unique<nico::SimpleJIT>();
 
     auto jit_err = jit->add_module_and_context(std::move(context->mod_ctx));
-    REQUIRE(!jit_err);
+    if (jit_err) {
+        std::string err_msg = "Failed to add module and context to JIT: " +
+                              llvm::toString(std::move(jit_err));
+        FAIL(err_msg);
+        return;
+    }
 
     if (!options.static_library_paths.empty()) {
         for (const auto& lib_path : options.static_library_paths) {
