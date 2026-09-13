@@ -6,6 +6,7 @@
 #include <string>
 
 #include "nico_core/backend/emitter.h"
+#include "nico_core/backend/optimizer.h"
 #include "nico_core/frontend/frontend.h"
 #include "nico_core/shared/code_file.h"
 #include "nico_core/shared/status.h"
@@ -15,6 +16,8 @@ namespace nico {
 void compile_and_output(
     std::string_view file_name, std::filesystem::path target_destination
 ) {
+    // TODO: Provide a better interface for more configuration options.
+
     // Open the file.
     std::ifstream file(file_name.data());
     if (!file.is_open()) {
@@ -48,6 +51,9 @@ void compile_and_output(
         std::cerr << "Compilation failed; exiting...";
         std::exit(1);
     }
+
+    Optimizer optimizer;
+    optimizer.optimize(context->mod_ctx.ir_module);
 
     Emitter emitter;
     emitter.emit(context->mod_ctx, target_destination.string());

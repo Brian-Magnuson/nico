@@ -16,6 +16,7 @@ namespace nico {
  */
 class Optimizer {
 public:
+    // TODO: Remove the default argument for opt_level and make it required.
     /**
      * @brief Optimizes the given IR module.
      *
