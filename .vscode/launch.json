@@ -6,8 +6,16 @@
             "type": "cppdbg",
             "request": "launch",
             "cwd": "${workspaceFolder}",
-            "program": "${workspaceFolder}/build/tests",
-            "preLaunchTask": "Build tests"
+            "program": "${workspaceFolder}/build/tests/nico_tests/nico_tests",
+            "preLaunchTask": "Build tests",
+            // Workaround due to issue with Ubuntu debuginfod service outage.
+            "setupCommands": [
+                {
+                    "description": "Clear debuginfod URLs",
+                    "text": "set debuginfod urls ",
+                    "ignoreFailures": true
+                }
+            ]
         },
         {
             "name": "Launch tests (CMake Tools)",
