@@ -47,6 +47,13 @@ SimpleJIT::SimpleJIT() {
         );
     }
     jit = std::move(jit_or_err.get());
+
+    auto err = add_static_library(RUNTIME_LIB_PATH);
+    if (err) {
+        panic(
+            "Failed to add static library: " + llvm::toString(std::move(err))
+        );
+    }
 }
 
 llvm::Error SimpleJIT::add_module(llvm::orc::ThreadSafeModule tsm) {

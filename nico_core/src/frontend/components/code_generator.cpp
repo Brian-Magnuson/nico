@@ -183,7 +183,11 @@ std::any CodeGenerator::visit(Stmt::Func* stmt) {
 }
 
 std::any CodeGenerator::visit(Stmt::Print* stmt) {
-    llvm::Function* printf_fn = mod_ctx.ir_module->getFunction("printf");
+    llvm::Function* printf_fn =
+        mod_ctx.ir_module->getFunction("nico_rt_printf");
+    if (!printf_fn) {
+        panic("Failed to find printf function in IR module.");
+    }
 
     llvm::Value* format_str = nullptr;
     for (const auto& expr : stmt->expressions) {
@@ -208,6 +212,9 @@ std::any CodeGenerator::visit(Stmt::Dealloc* stmt) {
     auto expr_value =
         std::any_cast<llvm::Value*>(stmt->expression->accept(this, false));
     llvm::Function* free_fn = mod_ctx.ir_module->getFunction("free");
+    if (!free_fn) {
+        panic("Failed to find free function in IR module.");
+    }
 
     builder->CreateCall(free_fn, {expr_value});
 
@@ -918,6 +925,9 @@ std::any CodeGenerator::visit(Expr::Alloc* expr, bool as_lvalue) {
     }
 
     llvm::Function* malloc_fn = mod_ctx.ir_module->getFunction("malloc");
+    if (!malloc_fn) {
+        panic("Failed to find malloc function in IR module.");
+    }
     result = builder->CreateCall(malloc_fn, {alloc_size}, "alloc_ptr");
     add_alloc_nullptr_check(result, expr->location);
 
@@ -1426,7 +1436,7 @@ void CodeGenerator::add_c_functions() {
         );
     }
     // printf
-    if (!mod_ctx.ir_module->getFunction("printf")) {
+    if (!mod_ctx.ir_module->getFunction("nico_rt_printf")) {
         llvm::FunctionType* printf_type = llvm::FunctionType::get(
             llvm::Type::getInt32Ty(*mod_ctx.llvm_context),
             {llvm::PointerType::get(*mod_ctx.llvm_context, 0)},
@@ -1435,7 +1445,7 @@ void CodeGenerator::add_c_functions() {
         llvm::Function::Create(
             printf_type,
             llvm::Function::ExternalLinkage,
-            "printf",
+            "nico_rt_printf",
             *mod_ctx.ir_module
         );
     }
@@ -1713,6 +1723,9 @@ void CodeGenerator::add_panic(
         );
     }
     auto fprintf_fn = mod_ctx.ir_module->getFunction("fprintf");
+    if (!fprintf_fn) {
+        panic("Failed to find fprintf function in IR module.");
+    }
     llvm::Value* stderr_stream = builder->CreateLoad(
         llvm::PointerType::get(*mod_ctx.llvm_context, 0),
         mod_ctx.ir_module->getGlobalVariable("stderr")
@@ -1746,6 +1759,9 @@ void CodeGenerator::add_panic(
 
     if (panic_recoverable) {
         auto longjmp_fn = mod_ctx.ir_module->getFunction("longjmp");
+        if (!longjmp_fn) {
+            panic("Failed to find longjmp function in IR module.");
+        }
         builder->CreateCall(
             longjmp_fn,
             {jmp_buf_ptr,
@@ -1757,6 +1773,9 @@ void CodeGenerator::add_panic(
     }
     else {
         auto abort_fn = mod_ctx.ir_module->getFunction("abort");
+        if (!abort_fn) {
+            panic("Failed to find abort function in IR module.");
+        }
         builder->CreateCall(abort_fn);
     }
 }
@@ -1820,6 +1839,9 @@ void CodeGenerator::generate_script_func(
 
         // Call setjmp
         llvm::Function* setjmp_fn = mod_ctx.ir_module->getFunction("setjmp");
+        if (!setjmp_fn) {
+            panic("Failed to find setjmp function in IR module.");
+        }
         llvm::Value* setjmp_ret = builder->CreateCall(setjmp_fn, {jmp_buf_ptr});
         llvm::Value* is_setjmp = builder->CreateICmpNE(
             setjmp_ret,
