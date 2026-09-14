@@ -5,6 +5,8 @@
 #include <iostream>
 #include <string>
 
+#include <llvm/Passes/OptimizationLevel.h>
+
 #include "nico_core/backend/emitter.h"
 #include "nico_core/backend/optimizer.h"
 #include "nico_core/frontend/frontend.h"
@@ -53,7 +55,7 @@ void compile_and_output(
     }
 
     Optimizer optimizer;
-    optimizer.optimize(context->mod_ctx.ir_module);
+    optimizer.optimize(context->mod_ctx.ir_module, llvm::OptimizationLevel::O2);
 
     Emitter emitter;
     emitter.emit(context->mod_ctx, target_destination.string());

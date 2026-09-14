@@ -15,6 +15,9 @@ struct CodeFile {
     // The source code from the file.
     const std::string src_code;
 
+    // TODO: Add a constructor that takes a path and reads the file. Could be
+    // named `from_file`.
+
     /**
      * @brief Construct a new CodeFile object.
      *

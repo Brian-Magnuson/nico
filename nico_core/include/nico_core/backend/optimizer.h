@@ -16,18 +16,17 @@ namespace nico {
  */
 class Optimizer {
 public:
-    // TODO: Remove the default argument for opt_level and make it required.
     /**
      * @brief Optimizes the given IR module.
      *
      * This step is optional and may be skipped.
      *
      * @param ir_module The IR module to optimize.
-     * @param opt_level The optimization level to use. Defaults to O2.
+     * @param opt_level The optimization level to use.
      */
     void optimize(
         std::unique_ptr<llvm::Module>& ir_module,
-        llvm::OptimizationLevel opt_level = llvm::OptimizationLevel::O2
+        llvm::OptimizationLevel opt_level
     );
 };
 
