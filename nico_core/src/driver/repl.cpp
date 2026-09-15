@@ -153,7 +153,7 @@ void REPL::run_repl() {
         input += line;
         // Put the input in a CodeFile.
         std::shared_ptr<CodeFile> code_file =
-            std::make_shared<CodeFile>(std::move(input), "<stdin>");
+            CodeFile::from_string(std::move(input), "<stdin>");
         // Compile the CodeFile.
         std::unique_ptr<FrontendContext>& context =
             frontend.compile(code_file, true);

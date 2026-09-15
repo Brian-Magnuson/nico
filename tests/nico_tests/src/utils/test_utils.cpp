@@ -19,7 +19,7 @@
 namespace nico {
 
 std::shared_ptr<CodeFile> make_test_code_file(std::string_view src_code) {
-    auto file = std::make_shared<CodeFile>(
+    auto file = CodeFile::from_string(
         std::string(src_code),
         (std::filesystem::current_path() / "test.nico").string()
     );
