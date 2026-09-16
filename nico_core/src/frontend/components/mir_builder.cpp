@@ -340,8 +340,80 @@ std::any MIRBuilder::visit(Expr::Assign* expr, bool as_lvalue) {
 }
 
 std::any MIRBuilder::visit(Expr::Logical* expr, bool as_lvalue) {
-    // TODO: Implementation for visiting Logical expressions goes here.
-    return {};
+    std::shared_ptr<MIRValue> result;
+
+    std::shared_ptr<Function> function = current_block->get_parent_function();
+
+    std::shared_ptr<BasicBlock> lhs_block = current_block;
+    std::shared_ptr<BasicBlock> rhs_block =
+        function->create_basic_block("logic_rhs");
+    std::shared_ptr<BasicBlock> end_block =
+        function->create_basic_block("logic_end");
+
+    // First, we evaluate the lhs in the current block, the initial block.
+    auto lhs_value = std::any_cast<std::shared_ptr<MIRValue>>(
+        expr->left->accept(this, false)
+    );
+    // We need to re-assign the `lhs_block`, because the current block may have
+    // changed after visiting the lhs expression.
+    lhs_block = current_block;
+
+    // For short-circuiting logic, the "short-circuit value" is the value that
+    // is used if control does not reach the rhs block. For logical AND, the
+    // short-circuit value is false (0), and for logical OR, it is true (1).
+    std::shared_ptr<MIRValue> short_circuit_value;
+
+    if (expr->op->tok_type == Tok::KwAnd) {
+        short_circuit_value =
+            MIRValue::CustomInt::create(std::make_shared<Type::Bool>(), 0);
+        // If lhs value is true, we go to the rhs block; otherwise, we go to the
+        // end block and use the short-circuit value of false (0).
+        current_block->set_successors(lhs_value, rhs_block, end_block);
+    }
+    else if (expr->op->tok_type == Tok::KwOr) {
+        short_circuit_value =
+            MIRValue::CustomInt::create(std::make_shared<Type::Bool>(), 1);
+        // If lhs value is true, we go to the end block and use the
+        // short-circuit value of true (1); otherwise, we go to the rhs block.
+        current_block->set_successors(lhs_value, end_block, rhs_block);
+    }
+    else {
+        panic(
+            "Expected logical operator; got " + std::string(expr->op->lexeme) +
+            "."
+        );
+        return std::any();
+    }
+
+    // Now, we evaluate the rhs in the rhs block.
+    current_block = rhs_block;
+    auto rhs_value = std::any_cast<std::shared_ptr<MIRValue>>(
+        expr->right->accept(this, false)
+    );
+    // We need to re-assign the `rhs_block`, because the current block may have
+    // changed after visiting the rhs expression.
+    rhs_block = current_block;
+
+    // Finally, we create a phi instruction in the end block to select the
+    // correct value based on which block we came from.
+    current_block = end_block;
+
+    // If control came from the lhs block, we use the short-circuit value; if it
+    // came from the rhs block, we use the rhs value.
+    std::vector<
+        std::pair<std::shared_ptr<BasicBlock>, std::shared_ptr<MIRValue>>>
+        incoming_values = {
+            {lhs_block, short_circuit_value},
+            {rhs_block, rhs_value}
+        };
+
+    auto phi_instr =
+        std::make_shared<Instr::Phi>(expr->type, std::move(incoming_values));
+    current_block->add_instruction(phi_instr);
+
+    result = phi_instr->destination;
+
+    return result;
 }
 
 std::any MIRBuilder::visit(Expr::Binary* expr, bool as_lvalue) {
@@ -712,6 +784,9 @@ std::any MIRBuilder::visit(Expr::Conditional* expr, bool as_lvalue) {
     auto then_value = std::any_cast<std::shared_ptr<MIRValue>>(
         expr->then_branch->accept(this, false)
     );
+    // We need to re-assign the `then_block`, because the current block may have
+    // changed after visiting the then branch.
+    then_block = current_block;
     current_block->set_successor(merge_block);
 
     // Else block
@@ -719,6 +794,9 @@ std::any MIRBuilder::visit(Expr::Conditional* expr, bool as_lvalue) {
     auto else_value = std::any_cast<std::shared_ptr<MIRValue>>(
         expr->else_branch->accept(this, false)
     );
+    // We need to re-assign the `else_block`, because the current block may have
+    // changed after visiting the else branch.
+    else_block = current_block;
     current_block->set_successor(merge_block);
 
     // Merge block
