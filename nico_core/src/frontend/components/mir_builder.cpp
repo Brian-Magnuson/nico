@@ -364,15 +364,13 @@ std::any MIRBuilder::visit(Expr::Logical* expr, bool as_lvalue) {
     std::shared_ptr<MIRValue> short_circuit_value;
 
     if (expr->op->tok_type == Tok::KwAnd) {
-        short_circuit_value =
-            MIRValue::CustomInt::create(std::make_shared<Type::Bool>(), 0);
+        short_circuit_value = MIRValue::CustomBool::create(false);
         // If lhs value is true, we go to the rhs block; otherwise, we go to the
         // end block and use the short-circuit value of false (0).
         current_block->set_successors(lhs_value, rhs_block, end_block);
     }
     else if (expr->op->tok_type == Tok::KwOr) {
-        short_circuit_value =
-            MIRValue::CustomInt::create(std::make_shared<Type::Bool>(), 1);
+        short_circuit_value = MIRValue::CustomBool::create(true);
         // If lhs value is true, we go to the end block and use the
         // short-circuit value of true (1); otherwise, we go to the rhs block.
         current_block->set_successors(lhs_value, end_block, rhs_block);
@@ -393,6 +391,7 @@ std::any MIRBuilder::visit(Expr::Logical* expr, bool as_lvalue) {
     // We need to re-assign the `rhs_block`, because the current block may have
     // changed after visiting the rhs expression.
     rhs_block = current_block;
+    rhs_block->set_successor(end_block);
 
     // Finally, we create a phi instruction in the end block to select the
     // correct value based on which block we came from.

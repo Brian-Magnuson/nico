@@ -93,6 +93,36 @@ public:
 };
 
 /**
+ * @brief A custom boolean value in the MIR.
+ *
+ * Occasionally, it is useful for the MIR builder to create MIRValues that have
+ * specific constant boolean values, like true or false. Since the MIR builder
+ * cannot create the Expr required for an MIRValue::Literal, we can instead use
+ * this class to create a constant boolean value.
+ */
+class MIRValue::CustomBool : public MIRValue::IConstant {
+public:
+    // The value of the custom boolean.
+    const bool value;
+
+    CustomBool(Private, bool value)
+        : MIRValue::IConstant(Private(), std::make_shared<Type::Bool>()),
+          value(value) {}
+
+    static std::shared_ptr<CustomBool> create(bool value) {
+        return std::make_shared<CustomBool>(Private(), value);
+    }
+
+    virtual std::string to_string() const override {
+        return "(" + type->to_string() + " " + (value ? "true" : "false") + ")";
+    }
+
+    virtual std::any accept(Visitor* visitor) override {
+        return visitor->visit(this);
+    }
+};
+
+/**
  * @brief A literal value in the MIR.
  *
  * Literal values reference a literal expression from the AST.

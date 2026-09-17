@@ -419,7 +419,71 @@ func $script( ) -> void {
     }
 }
 
+TEST_CASE("MIR logical expressions", "[mir]") {
+    SECTION("Logical AND") {
+        run_mir_test(
+            R"(
+            let a = true
+            let b = false
+            let c = a and b
+            )",
+            MIRTestOptions{.expected_output = R"(module
+global ::a (var@bool ::a)
+global ::b (var@bool ::b)
+global ::c (var@bool ::c)
+func $script( ) -> void {
+  entry#0 <-- [ ]
+    store (bool true) -> (var@bool ::a)
+    store (bool false) -> (var@bool ::b)
+    load (var@bool ::a) -> (bool #0)
+    branch (bool #0) ? logic_rhs#0 : logic_end#0
+  exit#0 <-- [ logic_end#0 ]
+    return
+  logic_rhs#0 <-- [ entry#0 ]
+    load (var@bool ::b) -> (bool #1)
+    jump logic_end#0
+  logic_end#0 <-- [ entry#0 logic_rhs#0 ]
+    phi [entry#0: (bool false)] [logic_rhs#0: (bool #1)] -> (bool #2)
+    store (bool #2) -> (var@bool ::c)
+    jump exit#0
+})"}
+        );
+    }
+
+    SECTION("Logical OR") {
+        run_mir_test(
+            R"(
+            let a = true
+            let b = false
+            let c = a or b
+            )",
+            MIRTestOptions{.expected_output = R"(module
+global ::a (var@bool ::a)
+global ::b (var@bool ::b)
+global ::c (var@bool ::c)
+func $script( ) -> void {
+  entry#0 <-- [ ]
+    store (bool true) -> (var@bool ::a)
+    store (bool false) -> (var@bool ::b)
+    load (var@bool ::a) -> (bool #0)
+    branch (bool #0) ? logic_end#0 : logic_rhs#0
+  exit#0 <-- [ logic_end#0 ]
+    return
+  logic_rhs#0 <-- [ entry#0 ]
+    load (var@bool ::b) -> (bool #1)
+    jump logic_end#0
+  logic_end#0 <-- [ entry#0 logic_rhs#0 ]
+    phi [entry#0: (bool true)] [logic_rhs#0: (bool #1)] -> (bool #2)
+    store (bool #2) -> (var@bool ::c)
+    jump exit#0
+})"}
+        );
+    }
+}
+
 TEST_CASE("MIR alloc and dealloc", "[mir]") {
+    // TODO: Add tests for the different forms of alloc exprs.
+
     SECTION("Basic alloc and dealloc") {
         run_mir_test(
             R"(
