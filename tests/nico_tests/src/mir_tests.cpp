@@ -450,6 +450,32 @@ func $script( ) -> void {
         );
     }
 
+    SECTION("Multiple logical ANDs") {
+        run_mir_test(
+            R"(
+            printout true and true and true
+            )",
+            MIRTestOptions{.expected_output = R"(module
+func $script( ) -> void {
+  entry#0 <-- [ ]
+    branch (bool true) ? logic_rhs#1 : logic_end#1
+  exit#0 <-- [ logic_end#0 ]
+    return
+  logic_rhs#0 <-- [ logic_end#1 ]
+    jump logic_end#0
+  logic_end#0 <-- [ logic_end#1 logic_rhs#0 ]
+    phi [logic_end#1: (bool false)] [logic_rhs#0: (bool true)] -> (bool #1)
+    printout (bool #1)
+    jump exit#0
+  logic_rhs#1 <-- [ entry#0 ]
+    jump logic_end#1
+  logic_end#1 <-- [ entry#0 logic_rhs#1 ]
+    phi [entry#0: (bool false)] [logic_rhs#1: (bool true)] -> (bool #0)
+    branch (bool #0) ? logic_rhs#0 : logic_end#0
+})"}
+        );
+    }
+
     SECTION("Logical OR") {
         run_mir_test(
             R"(

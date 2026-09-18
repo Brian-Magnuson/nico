@@ -783,8 +783,20 @@ TEST_CASE("JIT logical expressions", "[jit]") {
         run_jit_test(R"(let x = false printout true or x)", "true");
     }
 
+    SECTION("Multiple logical ORs") {
+        run_jit_test(R"(printout false or false or false)", "false");
+    }
+
     SECTION("Logical AND") {
         run_jit_test(R"(let x = true printout false and x)", "false");
+    }
+
+    SECTION("Multiple logical ANDs") {
+        run_jit_test(R"(printout true and true and true)", "true");
+    }
+
+    SECTION("Combined logical expressions") {
+        run_jit_test(R"(printout true and (false or true))", "true");
     }
 
     SECTION("Logical expression with blocks") {
