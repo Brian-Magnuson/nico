@@ -574,6 +574,17 @@ std::any MIRBuilder::visit(Expr::Alloc* expr, bool as_lvalue) {
     auto alloc_instr = std::make_shared<Instr::Alloc>(alloc_size);
     current_block->add_instruction(alloc_instr);
 
+    if (expr->expression.has_value()) {
+        auto expr_value = std::any_cast<std::shared_ptr<MIRValue>>(
+            expr->expression.value()->accept(this, false)
+        );
+        auto store_instr = std::make_shared<Instr::Store>(
+            expr_value,
+            alloc_instr->destination
+        );
+        current_block->add_instruction(store_instr);
+    }
+
     result = alloc_instr->destination;
     return result;
 }
