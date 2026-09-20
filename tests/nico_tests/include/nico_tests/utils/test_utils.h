@@ -63,6 +63,16 @@ extract_token_types(const std::vector<std::shared_ptr<Token>>& tokens);
 std::pair<std::string, std::string>
 capture_stdout(std::function<void()> func, int buffer_size = 4096);
 
+/**
+ * @brief Captures output to `std::cout` and `std::cerr` from a function.
+ *
+ * @param func The function from which to execute and capture output. May be a
+ * lambda.
+ * @return std::pair<std::string, std::string> A pair of strings containing the
+ * captured output from `std::cout` and `std::cerr`.
+ */
+std::pair<std::string, std::string> capture_streams(std::function<void()> func);
+
 } // namespace nico
 
 #endif // NICO_TESTS_TEST_UTILS_H

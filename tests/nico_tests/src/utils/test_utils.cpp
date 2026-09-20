@@ -16,6 +16,8 @@
 #include <unistd.h>
 #endif
 
+#include "nico_core/shared/utils.h"
+
 namespace nico {
 
 std::shared_ptr<CodeFile> make_test_code_file(std::string_view src_code) {
@@ -130,6 +132,25 @@ capture_stdout(std::function<void()> func, int buffer_size) {
     func();
     return {"", ""};
 #endif
+}
+
+std::pair<std::string, std::string>
+capture_streams(std::function<void()> func) {
+    std::ostringstream stdout_capture;
+    std::ostringstream stderr_capture;
+
+    std::streambuf* old_cout = std::cout.rdbuf(stdout_capture.rdbuf());
+    std::streambuf* old_cerr = std::cerr.rdbuf(stderr_capture.rdbuf());
+
+    try {
+        func();
+    }
+    catch (...) {
+        std::cout.rdbuf(old_cout);
+        std::cerr.rdbuf(old_cerr);
+        panic("Exception occurred during stream capture.");
+    }
+    return {stdout_capture.str(), stderr_capture.str()};
 }
 
 } // namespace nico
