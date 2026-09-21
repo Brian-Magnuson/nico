@@ -1,6 +1,8 @@
 #ifndef NICO_TESTLIB_EXAMPLE_LIB_H
 #define NICO_TESTLIB_EXAMPLE_LIB_H
 
+extern "C" {
+
 // An example number, 37.
 extern int examplelib_number;
 
@@ -40,5 +42,6 @@ int examplelib_add(int a, int b);
  * @return The sum of the integers.
  */
 int examplelib_sum(int count, ...);
+}
 
 #endif // NICO_TESTLIB_EXAMPLE_LIB_H

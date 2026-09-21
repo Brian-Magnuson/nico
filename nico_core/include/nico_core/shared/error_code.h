@@ -354,6 +354,9 @@ enum class Err {
     JITMissingEntryPoint,
     // The JIT compiler could not add a static library to the JIT.
     JITCannotAddStaticLibrary,
+    // The JIT encountered an error while managing/linking its execution
+    // session.
+    JITSessionError,
     // The emitter cannot open the output file.
     FileIO,
     // The emitter failed to emit the intended file.

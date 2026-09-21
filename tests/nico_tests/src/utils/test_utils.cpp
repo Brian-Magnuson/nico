@@ -150,6 +150,10 @@ capture_streams(std::function<void()> func) {
         std::cerr.rdbuf(old_cerr);
         panic("Exception occurred during stream capture.");
     }
+
+    std::cout.rdbuf(old_cout);
+    std::cerr.rdbuf(old_cerr);
+
     return {stdout_capture.str(), stderr_capture.str()};
 }
 

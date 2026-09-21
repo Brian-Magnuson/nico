@@ -1422,20 +1422,7 @@ std::any CodeGenerator::visit(Expr::Loop* expr, bool as_lvalue) {
 // MARK: Helpers
 
 void CodeGenerator::add_c_functions() {
-    // stderr
-    if (!mod_ctx.ir_module->getGlobalVariable("stderr")) {
-        llvm::PointerType* file_ptr_type =
-            llvm::PointerType::get(*mod_ctx.llvm_context, 0);
-        new llvm::GlobalVariable(
-            *mod_ctx.ir_module,
-            file_ptr_type,
-            true, // isConstant
-            llvm::GlobalValue::ExternalLinkage,
-            nullptr,
-            "stderr"
-        );
-    }
-    // printf
+    // nico_rt_printf
     if (!mod_ctx.ir_module->getFunction("nico_rt_printf")) {
         llvm::FunctionType* printf_type = llvm::FunctionType::get(
             llvm::Type::getInt32Ty(*mod_ctx.llvm_context),
@@ -1449,18 +1436,17 @@ void CodeGenerator::add_c_functions() {
             *mod_ctx.ir_module
         );
     }
-    // fprintf
-    if (!mod_ctx.ir_module->getFunction("fprintf")) {
-        llvm::FunctionType* fprintf_type = llvm::FunctionType::get(
+    // nico_rt_printerrf
+    if (!mod_ctx.ir_module->getFunction("nico_rt_printerrf")) {
+        llvm::FunctionType* printerrf_type = llvm::FunctionType::get(
             llvm::Type::getInt32Ty(*mod_ctx.llvm_context),
-            {llvm::PointerType::get(*mod_ctx.llvm_context, 0),
-             llvm::PointerType::get(*mod_ctx.llvm_context, 0)},
+            {llvm::PointerType::get(*mod_ctx.llvm_context, 0)},
             true // true = variadic
         );
         llvm::Function::Create(
-            fprintf_type,
+            printerrf_type,
             llvm::Function::ExternalLinkage,
-            "fprintf",
+            "nico_rt_printerrf",
             *mod_ctx.ir_module
         );
     }
@@ -1722,14 +1708,11 @@ void CodeGenerator::add_panic(
             llvm::PointerType::get(*mod_ctx.llvm_context, 0)
         );
     }
-    auto fprintf_fn = mod_ctx.ir_module->getFunction("fprintf");
-    if (!fprintf_fn) {
-        panic("Failed to find fprintf function in IR module.");
+    auto printerrf_fn = mod_ctx.ir_module->getFunction("nico_rt_printerrf");
+    if (!printerrf_fn) {
+        panic("Failed to find nico_rt_printerrf function in IR module.");
     }
-    llvm::Value* stderr_stream = builder->CreateLoad(
-        llvm::PointerType::get(*mod_ctx.llvm_context, 0),
-        mod_ctx.ir_module->getGlobalVariable("stderr")
-    );
+
     llvm::Value* format_string =
         builder->CreateGlobalString("Panic: %s: %s\n%s:%d:%d\n");
     llvm::Value* func_name =
@@ -1747,14 +1730,8 @@ void CodeGenerator::add_panic(
         std::get<2>(location_tuple)
     );
     builder->CreateCall(
-        fprintf_fn,
-        {stderr_stream,
-         format_string,
-         func_name,
-         msg,
-         file_name,
-         line_number,
-         column_number}
+        printerrf_fn,
+        {format_string, func_name, msg, file_name, line_number, column_number}
     );
 
     if (panic_recoverable) {

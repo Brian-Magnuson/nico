@@ -1,12 +1,13 @@
 #include "nico_testlib_example/lib.h"
 
-#include <stdarg.h>
-#include <stdio.h>
+#include <cstdarg>
+#include <cstdio>
+#include <iostream>
 
 int examplelib_number = 37;
 
 void examplelib_print_greeting() {
-    printf("Hello from the example library!\n");
+    std::cout << "Hello from the example library!\n";
 }
 
 int examplelib_get_constant() {

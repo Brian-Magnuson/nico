@@ -73,8 +73,8 @@ void run_jit_test(
 
     auto file = nico::make_test_code_file(source);
 
-    // Note: When captured_stdout is used, the error message will appear in the
-    // stderr string.
+    // Note: When captured_streams is used, the error message will appear in the
+    // cerr string.
     nico::Diagnostics::inst().set_printing_enabled(true);
 
     nico::Frontend frontend;
@@ -113,20 +113,17 @@ void run_jit_test(
     }
 
     std::optional<llvm::Expected<int>> return_code;
-    auto [out, err] = nico::capture_stdout(
-        [&]() {
-            return_code = jit->run_main_func(0, nullptr, context->main_fn_name);
-        },
-        4096
-    );
+    auto [out, err] = nico::capture_streams([&]() {
+        return_code = jit->run_main_func(0, nullptr, context->main_fn_name);
+    });
     REQUIRE(return_code.has_value());
 
     if (options.print_stderr_output) {
         if (err.empty()) {
-            std::cerr << "JIT had no stderr output to print.\n";
+            std::cerr << "JIT had no err output to print.\n";
         }
         else {
-            std::cerr << "JIT stderr output:\n" << err;
+            std::cerr << "JIT err output:\n" << err;
         }
     }
 
@@ -1797,7 +1794,7 @@ TEST_CASE("JIT extern block", "[jit]") {
                 func nonexistent_function(x: i32) -> i32
             }
             )",
-            JITTestOptions{.expected_error_code = Err::JITMissingEntryPoint}
+            JITTestOptions{.expected_error_code = Err::JITSessionError}
         );
     }
 

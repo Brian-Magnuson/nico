@@ -40,20 +40,7 @@ SimpleJIT::SimpleJIT() {
     llvm::InitializeNativeTargetAsmParser();
     llvm::InitializeNativeTargetAsmPrinter();
 
-    auto jit_or_err = llvm::orc::LLJITBuilder().create();
-    if (!jit_or_err) {
-        panic(
-            "Failed to create LLJIT: " + llvm::toString(jit_or_err.takeError())
-        );
-    }
-    jit = std::move(jit_or_err.get());
-
-    auto err = add_static_library(RUNTIME_LIB_PATH);
-    if (err) {
-        panic(
-            "Failed to add static library: " + llvm::toString(std::move(err))
-        );
-    }
+    reset();
 }
 
 llvm::Error SimpleJIT::add_module(llvm::orc::ThreadSafeModule tsm) {
@@ -67,6 +54,7 @@ SimpleJIT::lookup(std::string_view name) {
 
 void SimpleJIT::reset() {
     jit.reset(); // Destroys the current LLJIT instance
+
     auto jit_or_err = llvm::orc::LLJITBuilder().create();
     if (!jit_or_err) {
         panic(
@@ -74,6 +62,22 @@ void SimpleJIT::reset() {
         );
     }
     jit = std::move(jit_or_err.get());
+
+    auto& execution_session = jit->getExecutionSession();
+    execution_session.setErrorReporter([](llvm::Error err) {
+        std::string err_msg = llvm::toString(std::move(err));
+        Diagnostics::inst().emit_error(
+            Err::JITSessionError,
+            "JIT execution session reported an error: " + err_msg
+        );
+    });
+
+    auto err = add_static_library(RUNTIME_LIB_PATH);
+    if (err) {
+        panic(
+            "Failed to add static library: " + llvm::toString(std::move(err))
+        );
+    }
 }
 
 llvm::Error SimpleJIT::add_static_library(const std::string& lib_path) {
