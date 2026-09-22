@@ -85,12 +85,3 @@ extern "C" void* nico_rt_malloc(size_t size) {
 extern "C" void nico_rt_free(void* ptr) {
     std::free(ptr);
 }
-
-extern "C" void nico_rt_setjmp() {
-    // setjmp is actually a standard function-like macro.
-    setjmp(nico_rt_jmp_buf);
-}
-
-extern "C" void nico_rt_longjmp() {
-    std::longjmp(nico_rt_jmp_buf, 1);
-}

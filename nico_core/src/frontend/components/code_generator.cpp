@@ -211,7 +211,7 @@ std::any CodeGenerator::visit(Stmt::Print* stmt) {
 std::any CodeGenerator::visit(Stmt::Dealloc* stmt) {
     auto expr_value =
         std::any_cast<llvm::Value*>(stmt->expression->accept(this, false));
-    llvm::Function* free_fn = mod_ctx.ir_module->getFunction("free");
+    llvm::Function* free_fn = mod_ctx.ir_module->getFunction("nico_rt_free");
     if (!free_fn) {
         panic("Failed to find free function in IR module.");
     }
@@ -924,7 +924,8 @@ std::any CodeGenerator::visit(Expr::Alloc* expr, bool as_lvalue) {
         );
     }
 
-    llvm::Function* malloc_fn = mod_ctx.ir_module->getFunction("malloc");
+    llvm::Function* malloc_fn =
+        mod_ctx.ir_module->getFunction("nico_rt_malloc");
     if (!malloc_fn) {
         panic("Failed to find malloc function in IR module.");
     }
@@ -1451,7 +1452,7 @@ void CodeGenerator::add_c_functions() {
         );
     }
     // abort
-    if (!mod_ctx.ir_module->getFunction("abort")) {
+    if (!mod_ctx.ir_module->getFunction("nico_rt_abort")) {
         llvm::FunctionType* abort_type = llvm::FunctionType::get(
             llvm::Type::getVoidTy(*mod_ctx.llvm_context),
             {},
@@ -1460,12 +1461,12 @@ void CodeGenerator::add_c_functions() {
         llvm::Function::Create(
             abort_type,
             llvm::Function::ExternalLinkage,
-            "abort",
+            "nico_rt_abort",
             *mod_ctx.ir_module
         );
     }
     // exit
-    if (!mod_ctx.ir_module->getFunction("exit")) {
+    if (!mod_ctx.ir_module->getFunction("nico_rt_exit")) {
         llvm::FunctionType* exit_type = llvm::FunctionType::get(
             llvm::Type::getVoidTy(*mod_ctx.llvm_context),
             {llvm::Type::getInt32Ty(*mod_ctx.llvm_context)},
@@ -1474,12 +1475,12 @@ void CodeGenerator::add_c_functions() {
         llvm::Function::Create(
             exit_type,
             llvm::Function::ExternalLinkage,
-            "exit",
+            "nico_rt_exit",
             *mod_ctx.ir_module
         );
     }
     // malloc
-    if (!mod_ctx.ir_module->getFunction("malloc")) {
+    if (!mod_ctx.ir_module->getFunction("nico_rt_malloc")) {
         llvm::FunctionType* malloc_type = llvm::FunctionType::get(
             llvm::PointerType::get(*mod_ctx.llvm_context, 0),
             {llvm::Type::getIntNTy(*mod_ctx.llvm_context, sizeof(size_t) * 8)},
@@ -1488,12 +1489,12 @@ void CodeGenerator::add_c_functions() {
         llvm::Function::Create(
             malloc_type,
             llvm::Function::ExternalLinkage,
-            "malloc",
+            "nico_rt_malloc",
             *mod_ctx.ir_module
         );
     }
     // free
-    if (!mod_ctx.ir_module->getFunction("free")) {
+    if (!mod_ctx.ir_module->getFunction("nico_rt_free")) {
         llvm::FunctionType* free_type = llvm::FunctionType::get(
             llvm::Type::getVoidTy(*mod_ctx.llvm_context),
             {llvm::PointerType::get(*mod_ctx.llvm_context, 0)},
@@ -1502,7 +1503,7 @@ void CodeGenerator::add_c_functions() {
         llvm::Function::Create(
             free_type,
             llvm::Function::ExternalLinkage,
-            "free",
+            "nico_rt_free",
             *mod_ctx.ir_module
         );
     }
@@ -1749,7 +1750,7 @@ void CodeGenerator::add_panic(
         );
     }
     else {
-        auto abort_fn = mod_ctx.ir_module->getFunction("abort");
+        auto abort_fn = mod_ctx.ir_module->getFunction("nico_rt_abort");
         if (!abort_fn) {
             panic("Failed to find abort function in IR module.");
         }
