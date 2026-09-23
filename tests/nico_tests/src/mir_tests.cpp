@@ -505,6 +505,32 @@ func $script( ) -> void {
 })"}
         );
     }
+
+    SECTION("Multiple logical ORs") {
+        run_mir_test(
+            R"(
+            printout false or false or true
+            )",
+            MIRTestOptions{.expected_output = R"(module
+func $script( ) -> void {
+  entry#0 <-- [ ]
+    branch (bool false) ? logic_end#1 : logic_rhs#1
+  exit#0 <-- [ logic_end#0 ]
+    return
+  logic_rhs#0 <-- [ logic_end#1 ]
+    jump logic_end#0
+  logic_end#0 <-- [ logic_end#1 logic_rhs#0 ]
+    phi [logic_end#1: (bool true)] [logic_rhs#0: (bool true)] -> (bool #1)
+    printout (bool #1)
+    jump exit#0
+  logic_rhs#1 <-- [ entry#0 ]
+    jump logic_end#1
+  logic_end#1 <-- [ entry#0 logic_rhs#1 ]
+    phi [entry#0: (bool true)] [logic_rhs#1: (bool false)] -> (bool #0)
+    branch (bool #0) ? logic_end#0 : logic_rhs#0
+})"}
+        );
+    }
 }
 
 TEST_CASE("MIR alloc and dealloc", "[mir]") {
