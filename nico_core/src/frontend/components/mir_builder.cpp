@@ -497,8 +497,100 @@ std::any MIRBuilder::visit(Expr::Cast* expr, bool as_lvalue) {
 }
 
 std::any MIRBuilder::visit(Expr::Access* expr, bool as_lvalue) {
-    // TODO: Implementation for visiting Access expressions goes here.
-    return {};
+    std::shared_ptr<MIRValue> result;
+    std::shared_ptr<Instr::StructGEP> struct_gep_instr;
+
+    if (auto tuple_type =
+            Type::as_a<Type::Tuple>(expr->left->type).value_or(nullptr)) {
+        auto field_index = std::any_cast<size_t>(expr->right_token->literal);
+        if (field_index >= tuple_type->elements.size()) {
+            panic(
+                "Field index `" + std::to_string(field_index) +
+                "` out of bounds for tuple type `" + tuple_type->to_string() +
+                "`."
+            );
+        }
+
+        struct_gep_instr = std::make_shared<Instr::StructGEP>(
+            std::any_cast<std::shared_ptr<MIRValue>>(
+                expr->left->accept(this, false)
+            ),
+            MIRValue::CustomInt::create(
+                std::make_shared<Type::Int>(false, 64),
+                field_index
+            )
+        );
+    }
+    else if (
+        auto object_type =
+            Type::as_a<Type::Object>(expr->left->type).value_or(nullptr)
+    ) {
+        auto field_index = object_type->fields.get_index(
+            std::string(expr->right_token->lexeme)
+        );
+        if (field_index == -1) {
+            panic(
+                "Field `" + std::string(expr->right_token->lexeme) +
+                "` not found in type `" + object_type->to_string() + "`."
+            );
+        }
+
+        struct_gep_instr = std::make_shared<Instr::StructGEP>(
+            std::any_cast<std::shared_ptr<MIRValue>>(
+                expr->left->accept(this, false)
+            ),
+            MIRValue::CustomInt::create(
+                std::make_shared<Type::Int>(false, 64),
+                field_index
+            )
+        );
+    }
+    else if (
+        auto struct_type =
+            Type::as_a<Type::Struct>(expr->left->type).value_or(nullptr)
+    ) {
+        auto field_index = struct_type->fields.get_index(
+            std::string(expr->right_token->lexeme)
+        );
+        if (field_index == -1) {
+            panic(
+                "Field `" + std::string(expr->right_token->lexeme) +
+                "` not found in type `" + struct_type->to_string() + "`."
+            );
+        }
+
+        struct_gep_instr = std::make_shared<Instr::StructGEP>(
+            std::any_cast<std::shared_ptr<MIRValue>>(
+                expr->left->accept(this, false)
+            ),
+            MIRValue::CustomInt::create(
+                std::make_shared<Type::Int>(false, 64),
+                field_index
+            )
+        );
+    }
+    else {
+        panic(
+            "Unexpected type for access expression: `" +
+            expr->left->type->to_string() + "`."
+        );
+    }
+
+    current_block->add_instruction(struct_gep_instr);
+
+    if (as_lvalue) {
+        result = struct_gep_instr->destination;
+    }
+    else {
+        auto load_instr = std::make_shared<Instr::Load>(
+            struct_gep_instr->destination,
+            expr->type
+        );
+        current_block->add_instruction(load_instr);
+        result = load_instr->destination;
+    }
+
+    return result;
 }
 
 std::any MIRBuilder::visit(Expr::Subscript* expr, bool as_lvalue) {
