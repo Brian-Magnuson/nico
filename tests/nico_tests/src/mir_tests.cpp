@@ -318,6 +318,63 @@ func $script( ) -> void {
     }
 }
 
+TEST_CASE("MIR access expressions", "[mir]") {
+    SECTION("Tuple access") {
+        run_mir_test(
+            R"(
+            let tup = (1, 2, 3)
+            printout tup.0, tup.1, tup.2
+            )",
+            MIRTestOptions{.expected_output = R"(module
+global ::tup (var@(i32, i32, i32) ::tup)
+
+func $script( ) -> void {
+  entry#0 <-- [ ]
+    store ((i32, i32, i32) { (i32 1) (i32 2) (i32 3) }) -> (var@(i32, i32, i32) ::tup)
+    load (var@(i32, i32, i32) ::tup) -> ((i32, i32, i32) #0)
+    struct_gep ((i32, i32, i32) #0) (u64 0) -> (anyptr #1)
+    load (anyptr #1) -> (i32 #2)
+    load (var@(i32, i32, i32) ::tup) -> ((i32, i32, i32) #3)
+    struct_gep ((i32, i32, i32) #3) (u64 1) -> (anyptr #4)
+    load (anyptr #4) -> (i32 #5)
+    load (var@(i32, i32, i32) ::tup) -> ((i32, i32, i32) #6)
+    struct_gep ((i32, i32, i32) #6) (u64 2) -> (anyptr #7)
+    load (anyptr #7) -> (i32 #8)
+    printout (i32 #2) (i32 #5) (i32 #8)
+    jump exit#0
+  exit#0 <-- [ entry#0 ]
+    return
+})"}
+        );
+    }
+
+    SECTION("Object access") {
+        run_mir_test(
+            R"(
+            let p = { x: 1, y: 2 }
+            printout p.x, p.y
+            )",
+            MIRTestOptions{.expected_output = R"(module
+global ::p (var@{x: i32, y: i32} ::p)
+
+func $script( ) -> void {
+  entry#0 <-- [ ]
+    store ({x: i32, y: i32} { (i32 1) (i32 2) }) -> (var@{x: i32, y: i32} ::p)
+    load (var@{x: i32, y: i32} ::p) -> ({x: i32, y: i32} #0)
+    struct_gep ({x: i32, y: i32} #0) (u64 0) -> (anyptr #1)
+    load (anyptr #1) -> (i32 #2)
+    load (var@{x: i32, y: i32} ::p) -> ({x: i32, y: i32} #3)
+    struct_gep ({x: i32, y: i32} #3) (u64 1) -> (anyptr #4)
+    load (anyptr #4) -> (i32 #5)
+    printout (i32 #2) (i32 #5)
+    jump exit#0
+  exit#0 <-- [ entry#0 ]
+    return
+})"}
+        );
+    }
+}
+
 TEST_CASE("MIR casting", "[mir]") {
     SECTION("SIntToFP cast") {
         run_mir_test(
