@@ -594,8 +594,49 @@ std::any MIRBuilder::visit(Expr::Access* expr, bool as_lvalue) {
 }
 
 std::any MIRBuilder::visit(Expr::Subscript* expr, bool as_lvalue) {
-    // TODO: Implementation for visiting Subscript expressions goes here.
-    return {};
+    std::shared_ptr<MIRValue> result;
+
+    auto array_ptr = std::any_cast<std::shared_ptr<MIRValue>>(
+        expr->left->accept(this, true)
+    );
+    auto index_value = std::any_cast<std::shared_ptr<MIRValue>>(
+        expr->index->accept(this, false)
+    );
+
+    if (auto array_type =
+            Type::as_a<Type::Array>(expr->left->type).value_or(nullptr)) {
+        if (array_type->size.has_value()) {
+            add_array_bounds_check(
+                index_value,
+                MIRValue::CustomInt::create(
+                    std::make_shared<Type::Int>(false, 64),
+                    array_type->size.value()
+                ),
+                expr->index->location
+            );
+        }
+
+        auto gep_instr =
+            std::make_shared<Instr::ArrayGEP>(array_ptr, index_value);
+        current_block->add_instruction(gep_instr);
+
+        if (as_lvalue) {
+            result = gep_instr->destination;
+        }
+        else {
+            auto load_instr = std::make_shared<Instr::Load>(
+                gep_instr->destination,
+                expr->type
+            );
+            current_block->add_instruction(load_instr);
+            result = load_instr->destination;
+        }
+    }
+    else {
+        panic("Left expression is not an array type.");
+    }
+
+    return result;
 }
 
 std::any MIRBuilder::visit(Expr::Call* expr, bool as_lvalue) {
