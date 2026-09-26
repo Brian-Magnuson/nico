@@ -67,6 +67,13 @@ void* nico_rt_malloc(size_t size);
  * operation is performed.
  */
 void nico_rt_free(void* ptr);
+
+/**
+ * @brief Panic function for unrecoverable errors.
+ *
+ * Normal implementations should terminate the program as quickly as possible.
+ */
+[[noreturn]] void nico_rt_panic();
 }
 
 #endif // NICO_RT_FUNCTIONS_H

@@ -6,7 +6,7 @@
 #include <iostream>
 #include <vector>
 
-extern "C" int nico_rt_printf(const char* format, ...) {
+int nico_rt_printf(const char* format, ...) {
     va_list args;
     va_start(args, format);
 
@@ -38,7 +38,7 @@ extern "C" int nico_rt_printf(const char* format, ...) {
     return size;
 }
 
-extern "C" int nico_rt_printerrf(const char* format, ...) {
+int nico_rt_printerrf(const char* format, ...) {
     va_list args;
     va_start(args, format);
 
@@ -70,18 +70,22 @@ extern "C" int nico_rt_printerrf(const char* format, ...) {
     return size;
 }
 
-extern "C" void nico_rt_abort() {
+void nico_rt_abort() {
     std::abort();
 }
 
-extern "C" void nico_rt_exit(int exit_code) {
+void nico_rt_exit(int exit_code) {
     std::exit(exit_code);
 }
 
-extern "C" void* nico_rt_malloc(size_t size) {
+void* nico_rt_malloc(size_t size) {
     return std::malloc(size);
 }
 
-extern "C" void nico_rt_free(void* ptr) {
+void nico_rt_free(void* ptr) {
     std::free(ptr);
+}
+
+void nico_rt_panic() {
+    std::abort();
 }
