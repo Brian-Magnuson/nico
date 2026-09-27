@@ -89,3 +89,7 @@ void nico_rt_free(void* ptr) {
 void nico_rt_panic() {
     std::abort();
 }
+
+void nico_rt_throw() {
+    throw std::runtime_error("nico_rt_throw called");
+}

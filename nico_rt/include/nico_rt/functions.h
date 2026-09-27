@@ -72,8 +72,17 @@ void nico_rt_free(void* ptr);
  * @brief Panic function for unrecoverable errors.
  *
  * Normal implementations should terminate the program as quickly as possible.
+ *
+ * @warning Calling this function will terminate the program.
  */
 [[noreturn]] void nico_rt_panic();
+
+/**
+ * @brief Runtime function that throws an exception.
+ *
+ * @throws std::runtime_error Always throws a runtime error.
+ */
+[[noreturn]] void nico_rt_throw();
 }
 
 #endif // NICO_RT_FUNCTIONS_H
