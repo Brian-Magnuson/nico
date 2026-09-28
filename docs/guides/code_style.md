@@ -75,7 +75,10 @@ For documentation comments:
   - Use `@param` followed by the parameter name and description for each parameter.
   - Use `@return` to describe the return value.
   - Make it clear when a function may not behave as expected for when it needs specific inputs.
-  - Use `@warning` if the function has potential pitfalls or important considerations.
+  - Use `@throws` to describe any exceptions that may be thrown by the function, including uncaught exceptions in the function body.
+    - Note: we generally avoid throwing exceptions in this project; see the Exceptions section below for more information.
+  - Use `@warning` if the function has potentially dangerous side effects or may cause the program to terminate/exit abnormally.
+    - Helper functions that call `panic` should have this warning.
 - Some functions such as the visit functions of the visitor pattern may not require extensive documentation.
 
 Class member variables may not need documentation comments if their purpose can be expressed in 1 or 2 lines.
@@ -259,15 +262,12 @@ For interface-like types:
   - E.g., `ILocatable`, `INumeric`
 - Use this pattern for types that are not designed to be instantiated directly.
 
-### Error Handling and Exceptions
+### Error Handling
 
-General rules regarding exceptions:
-- Do not use exceptions, except when handling exceptions thrown by standard library functions.
-  - The motivation behind this is to avoid unexpected control flow changes and to make error handling more explicit.
-- Avoid rethrowing exceptions thrown by standard library functions
-  - Consider converting to error objects or panicking.
+We avoid using exceptions for error handling in this project. 
+For more details, see the Exceptions section below.
 
-Instead of using exceptions, prefer using error codes or other mechanisms to indicate failure.
+Instead of using exceptions, we prefer using error codes or other mechanisms to indicate failure.
 For example, many functions use `std::optional` and `std::any` to represent values that may or may not be present.
 
 For unrecoverable errors, use the `panic` function to terminate the program and provide an error message.
@@ -295,6 +295,29 @@ For errors in the user's source code:
 - For suggestions or extra guidance, use the diagnostics reporter to add a note.
 - Avoid panicking or otherwise aborting the program immediately.
 - Messages logged should use proper sentence case and end with a period.
+
+
+### Exceptions (Error Handling)
+
+We avoid using exceptions for error handling in this project.
+For details on how to properly handle errors, see the Error Handling section above.
+
+We use exceptions in the following cases:
+- When handling exceptions thrown by standard library functions.
+- When we need to stop the JIT mid-execution and return control to the caller.
+  - This is because there is no other known mechanism to stop the JIT mid-execution without terminating the entire program.
+
+For the rare cases where we do use exceptions, we follow these guidelines:
+
+General rules regarding exceptions:
+- When a function throws an exception, it should be documented in the function's documentation comment using `@throws`.
+- When possible, attempt to convert exceptions into explicit error values or panic calls and avoid propagating exceptions to other parts of the codebase.
+- When a function may throw an exception, the caller should wrap the function in a try-catch block, even when propagting exceptions.
+  - This makes our error handling more explicit and ensures the caller properly takes responsibility for handling the exception or passes that responsibility to its own caller.
+
+In codebases that use exceptions, `noexcept` is commonly used to guarantee that a function does not throw exceptions.
+Although we do use exceptions in some cases, since most of our code does not rely on exceptions for error handling, we do not require the use of `noexcept`.
+The compiler is generally able to optimize code without the use of `noexcept`.
 
 ### Inner Classes
 

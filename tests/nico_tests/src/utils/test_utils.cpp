@@ -16,8 +16,6 @@
 #include <unistd.h>
 #endif
 
-#include "nico_core/shared/utils.h"
-
 namespace nico {
 
 std::shared_ptr<CodeFile> make_test_code_file(std::string_view src_code) {
@@ -148,7 +146,7 @@ capture_streams(std::function<void()> func) {
     catch (...) {
         std::cout.rdbuf(old_cout);
         std::cerr.rdbuf(old_cerr);
-        panic("Exception occurred during stream capture.");
+        throw std::runtime_error("Exception thrown during stream capture.");
     }
 
     std::cout.rdbuf(old_cout);

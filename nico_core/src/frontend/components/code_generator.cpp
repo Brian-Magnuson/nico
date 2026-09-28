@@ -1451,7 +1451,7 @@ void CodeGenerator::add_c_functions() {
             *mod_ctx.ir_module
         );
     }
-    // abort
+    // nico_rt_abort
     if (!mod_ctx.ir_module->getFunction("nico_rt_abort")) {
         llvm::FunctionType* abort_type = llvm::FunctionType::get(
             llvm::Type::getVoidTy(*mod_ctx.llvm_context),
@@ -1465,7 +1465,7 @@ void CodeGenerator::add_c_functions() {
             *mod_ctx.ir_module
         );
     }
-    // exit
+    // nico_rt_exit
     if (!mod_ctx.ir_module->getFunction("nico_rt_exit")) {
         llvm::FunctionType* exit_type = llvm::FunctionType::get(
             llvm::Type::getVoidTy(*mod_ctx.llvm_context),
@@ -1479,7 +1479,7 @@ void CodeGenerator::add_c_functions() {
             *mod_ctx.ir_module
         );
     }
-    // malloc
+    // nico_rt_malloc
     if (!mod_ctx.ir_module->getFunction("nico_rt_malloc")) {
         llvm::FunctionType* malloc_type = llvm::FunctionType::get(
             llvm::PointerType::get(*mod_ctx.llvm_context, 0),
@@ -1493,7 +1493,7 @@ void CodeGenerator::add_c_functions() {
             *mod_ctx.ir_module
         );
     }
-    // free
+    // nico_rt_free
     if (!mod_ctx.ir_module->getFunction("nico_rt_free")) {
         llvm::FunctionType* free_type = llvm::FunctionType::get(
             llvm::Type::getVoidTy(*mod_ctx.llvm_context),
@@ -1507,6 +1507,36 @@ void CodeGenerator::add_c_functions() {
             *mod_ctx.ir_module
         );
     }
+    // nico_rt_panic
+    if (!mod_ctx.ir_module->getFunction("nico_rt_panic")) {
+        llvm::FunctionType* panic_type = llvm::FunctionType::get(
+            llvm::Type::getVoidTy(*mod_ctx.llvm_context),
+            {},
+            false
+        );
+        llvm::Function::Create(
+            panic_type,
+            llvm::Function::ExternalLinkage,
+            "nico_rt_panic",
+            *mod_ctx.ir_module
+        );
+    }
+    // nico_rt_throw
+    if (!mod_ctx.ir_module->getFunction("nico_rt_throw")) {
+        llvm::FunctionType* throw_type = llvm::FunctionType::get(
+            llvm::Type::getVoidTy(*mod_ctx.llvm_context),
+            {},
+            false
+        );
+        llvm::Function::Create(
+            throw_type,
+            llvm::Function::ExternalLinkage,
+            "nico_rt_throw",
+            *mod_ctx.ir_module
+        );
+    }
+
+    // TODO: Remove this section.
     if (panic_recoverable) {
         // jmp_buf
         if (!mod_ctx.ir_module->getGlobalVariable("jmp_buf", true)) {
@@ -1700,15 +1730,16 @@ void CodeGenerator::add_negative_alloc_size_check(
 void CodeGenerator::add_panic(
     std::string_view message, const Location* location
 ) {
-    llvm::Value* jmp_buf_ptr;
-    if (panic_recoverable) {
-        llvm::GlobalVariable* jmp_buf_global =
-            mod_ctx.ir_module->getGlobalVariable("jmp_buf", true);
-        jmp_buf_ptr = builder->CreateBitCast(
-            jmp_buf_global,
-            llvm::PointerType::get(*mod_ctx.llvm_context, 0)
-        );
-    }
+    // TODO: Remove this section; we use exceptions for panic recovery now.
+    // llvm::Value* jmp_buf_ptr;
+    // if (panic_recoverable) {
+    //     llvm::GlobalVariable* jmp_buf_global =
+    //         mod_ctx.ir_module->getGlobalVariable("jmp_buf", true);
+    //     jmp_buf_ptr = builder->CreateBitCast(
+    //         jmp_buf_global,
+    //         llvm::PointerType::get(*mod_ctx.llvm_context, 0)
+    //     );
+    // }
     auto printerrf_fn = mod_ctx.ir_module->getFunction("nico_rt_printerrf");
     if (!printerrf_fn) {
         panic("Failed to find nico_rt_printerrf function in IR module.");
@@ -1736,23 +1767,29 @@ void CodeGenerator::add_panic(
     );
 
     if (panic_recoverable) {
-        auto longjmp_fn = mod_ctx.ir_module->getFunction("longjmp");
-        if (!longjmp_fn) {
-            panic("Failed to find longjmp function in IR module.");
+        // TODO: Remove this section; we use exceptions for panic recovery now.
+        // auto longjmp_fn = mod_ctx.ir_module->getFunction("longjmp");
+        // if (!longjmp_fn) {
+        //     panic("Failed to find longjmp function in IR module.");
+        // }
+        // builder->CreateCall(
+        //     longjmp_fn,
+        //     {jmp_buf_ptr,
+        //      llvm::ConstantInt::get(
+        //          llvm::Type::getInt32Ty(*mod_ctx.llvm_context),
+        //          1
+        //      )}
+        // );
+        auto throw_fn = mod_ctx.ir_module->getFunction("nico_rt_throw");
+        if (!throw_fn) {
+            panic("Failed to find nico_rt_throw function in IR module.");
         }
-        builder->CreateCall(
-            longjmp_fn,
-            {jmp_buf_ptr,
-             llvm::ConstantInt::get(
-                 llvm::Type::getInt32Ty(*mod_ctx.llvm_context),
-                 1
-             )}
-        );
+        builder->CreateCall(throw_fn);
     }
     else {
         auto abort_fn = mod_ctx.ir_module->getFunction("nico_rt_abort");
         if (!abort_fn) {
-            panic("Failed to find abort function in IR module.");
+            panic("Failed to find nico_rt_abort function in IR module.");
         }
         builder->CreateCall(abort_fn);
     }
@@ -1805,48 +1842,50 @@ void CodeGenerator::generate_script_func(
     // Append the exit block to the block list.
     control_stack.add_script_block(ret_val, exit_block);
 
+    // TODO: Remove this section; we use exceptions for panic recovery now.
     // Set panic recoverable code.
     if (panic_recoverable) {
-        // Get jmp_buf
-        llvm::GlobalVariable* jmp_buf_global =
-            mod_ctx.ir_module->getGlobalVariable("jmp_buf", true);
-        llvm::Value* jmp_buf_ptr = builder->CreateBitCast(
-            jmp_buf_global,
-            llvm::PointerType::get(*mod_ctx.llvm_context, 0)
-        );
+        // // Get jmp_buf
+        // llvm::GlobalVariable* jmp_buf_global =
+        //     mod_ctx.ir_module->getGlobalVariable("jmp_buf", true);
+        // llvm::Value* jmp_buf_ptr = builder->CreateBitCast(
+        //     jmp_buf_global,
+        //     llvm::PointerType::get(*mod_ctx.llvm_context, 0)
+        // );
 
-        // Call setjmp
-        llvm::Function* setjmp_fn = mod_ctx.ir_module->getFunction("setjmp");
-        if (!setjmp_fn) {
-            panic("Failed to find setjmp function in IR module.");
-        }
-        llvm::Value* setjmp_ret = builder->CreateCall(setjmp_fn, {jmp_buf_ptr});
-        llvm::Value* is_setjmp = builder->CreateICmpNE(
-            setjmp_ret,
-            llvm::ConstantInt::get(
-                llvm::Type::getInt32Ty(*mod_ctx.llvm_context),
-                0
-            )
-        );
+        // // Call setjmp
+        // llvm::Function* setjmp_fn = mod_ctx.ir_module->getFunction("setjmp");
+        // if (!setjmp_fn) {
+        //     panic("Failed to find setjmp function in IR module.");
+        // }
+        // llvm::Value* setjmp_ret = builder->CreateCall(setjmp_fn,
+        // {jmp_buf_ptr}); llvm::Value* is_setjmp = builder->CreateICmpNE(
+        //     setjmp_ret,
+        //     llvm::ConstantInt::get(
+        //         llvm::Type::getInt32Ty(*mod_ctx.llvm_context),
+        //         0
+        //     )
+        // );
 
-        // Create panic and normal blocks
-        llvm::BasicBlock* panic_block =
-            llvm::BasicBlock::Create(*mod_ctx.llvm_context, "panic", script_fn);
-        llvm::BasicBlock* normal_block = llvm::BasicBlock::Create(
-            *mod_ctx.llvm_context,
-            "normal",
-            script_fn
-        );
+        // // Create panic and normal blocks
+        // llvm::BasicBlock* panic_block =
+        //     llvm::BasicBlock::Create(*mod_ctx.llvm_context, "panic",
+        //     script_fn);
+        // llvm::BasicBlock* normal_block = llvm::BasicBlock::Create(
+        //     *mod_ctx.llvm_context,
+        //     "normal",
+        //     script_fn
+        // );
 
-        builder->CreateCondBr(is_setjmp, panic_block, normal_block);
+        // builder->CreateCondBr(is_setjmp, panic_block, normal_block);
 
-        // When longjmp is called, we jump to here and return 101.
-        builder->SetInsertPoint(panic_block);
-        builder->CreateStore(builder->getInt32(101), ret_val);
-        builder->CreateBr(exit_block);
+        // // When longjmp is called, we jump to here and return 101.
+        // builder->SetInsertPoint(panic_block);
+        // builder->CreateStore(builder->getInt32(101), ret_val);
+        // builder->CreateBr(exit_block);
 
-        // Normal code continues from here.
-        builder->SetInsertPoint(normal_block);
+        // // Normal code continues from here.
+        // builder->SetInsertPoint(normal_block);
     }
 
     // CODE STARTS HERE
