@@ -115,23 +115,10 @@ void run_jit_test(
     // TODO: Reevaluate this function with the new exception throwing behavior.
 
     std::optional<llvm::Expected<int>> return_code;
-    std::pair<std::string, std::string> out_err;
-
-    if (options.expect_panic) {
-        REQUIRE_THROWS(nico::capture_streams([&]() {
-            return_code = jit->run_main_func(0, nullptr, context->main_fn_name);
-        }));
-    }
-    else {
-        REQUIRE_NOTHROW(
-            out_err = nico::capture_streams([&]() {
-                return_code =
-                    jit->run_main_func(0, nullptr, context->main_fn_name);
-            })
-        );
-        REQUIRE(return_code.has_value());
-    }
-    auto [out, err] = out_err;
+    auto [out, err, was_exception_thrown] = nico::capture_streams([&]() {
+        return_code = jit->run_main_func(0, nullptr, context->main_fn_name);
+    });
+    REQUIRE(options.expect_panic == was_exception_thrown);
 
     if (options.print_stderr_output) {
         if (err.empty()) {
@@ -153,11 +140,6 @@ void run_jit_test(
         REQUIRE(return_code.value()); // JIT did not error.
         CHECK(out == *options.expected_output);
     }
-    // // Panic behavior.
-    // else if (options.expect_panic) {
-    //     REQUIRE(return_code.value()); // JIT did not error.
-    //     CHECK(return_code->get() == options.panic_return_code);
-    // }
 
     frontend.reset();
     jit->reset();

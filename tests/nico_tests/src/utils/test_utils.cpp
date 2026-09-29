@@ -132,27 +132,31 @@ capture_stdout(std::function<void()> func, int buffer_size) {
 #endif
 }
 
-std::pair<std::string, std::string>
-capture_streams(std::function<void()> func) {
+CaptureStreamsResult capture_streams(std::function<void()> func) {
     std::ostringstream stdout_capture;
     std::ostringstream stderr_capture;
 
     std::streambuf* old_cout = std::cout.rdbuf(stdout_capture.rdbuf());
     std::streambuf* old_cerr = std::cerr.rdbuf(stderr_capture.rdbuf());
 
+    bool was_exception_thrown = false;
     try {
         func();
     }
     catch (...) {
         std::cout.rdbuf(old_cout);
         std::cerr.rdbuf(old_cerr);
-        throw std::runtime_error("Exception thrown during stream capture.");
+        was_exception_thrown = true;
     }
 
     std::cout.rdbuf(old_cout);
     std::cerr.rdbuf(old_cerr);
 
-    return {stdout_capture.str(), stderr_capture.str()};
+    return CaptureStreamsResult{
+        stdout_capture.str(),
+        stderr_capture.str(),
+        was_exception_thrown
+    };
 }
 
 } // namespace nico

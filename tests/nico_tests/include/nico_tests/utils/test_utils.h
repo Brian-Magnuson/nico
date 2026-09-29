@@ -59,23 +59,41 @@ extract_token_types(const std::vector<std::shared_ptr<Token>>& tokens);
  * @warning This function is not thread-safe and should not be called from
  * multiple threads simultaneously.
  *
+ * @deprecated We are now using C++ streams instead of C functions for printing,
+ * so this function is no longer needed. Use `capture_streams` instead.
  */
 std::pair<std::string, std::string>
 capture_stdout(std::function<void()> func, int buffer_size = 4096);
 
 /**
+ * @brief The result of a stream capture operation, containing the captured
+ * output and a boolean indicating if an exception was thrown during the
+ * execution of the function.
+ *
+ */
+struct CaptureStreamsResult {
+    // The captured output from `std::cout`.
+    std::string cout_output;
+    // The captured output from `std::cerr`.
+    std::string cerr_output;
+    // Whether an exception was thrown during the execution of `func`.
+    bool was_exception_thrown;
+};
+
+/**
  * @brief Captures output to `std::cout` and `std::cerr` from a function.
  *
- * If an exception is thrown during the execution of `func`, the streams will be
- * restored and `std::runtime_error` will be thrown.
+ * If an exception is thrown during the execution of `func`, the function will
+ * restore the original stream buffers and set `was_exception_thrown` to true in
+ * the returned `CaptureStreamsResult`.
  *
  * @param func The function from which to execute and capture output. May be a
  * lambda.
- * @return std::pair<std::string, std::string> A pair of strings containing the
- * captured output from `std::cout` and `std::cerr`.
- * @throws std::runtime_error if an error occurs while capturing the streams.
+ * @return CaptureStreamsResult A struct containing the captured output from
+ * `std::cout` and `std::cerr`, and a boolean indicating if an exception was
+ * thrown.
  */
-std::pair<std::string, std::string> capture_streams(std::function<void()> func);
+CaptureStreamsResult capture_streams(std::function<void()> func);
 
 } // namespace nico
 
