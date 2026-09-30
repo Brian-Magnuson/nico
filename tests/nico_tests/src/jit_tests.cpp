@@ -115,7 +115,7 @@ void run_jit_test(
     // TODO: Reevaluate this function with the new exception throwing behavior.
 
     std::optional<llvm::Expected<int>> return_code;
-    auto [out, err, was_exception_thrown] = nico::capture_streams([&]() {
+    auto [out, err, was_exception_thrown] = nico::StreamCapture::capture([&]() {
         return_code = jit->run_main_func(0, nullptr, context->main_fn_name);
     });
     REQUIRE(options.expect_panic == was_exception_thrown);

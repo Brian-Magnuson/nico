@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -66,34 +67,85 @@ std::pair<std::string, std::string>
 capture_stdout(std::function<void()> func, int buffer_size = 4096);
 
 /**
- * @brief The result of a stream capture operation, containing the captured
- * output and a boolean indicating if an exception was thrown during the
- * execution of the function.
+ * @brief A utility class to capture output from `std::cout` and `std::cerr`.
  *
+ * Use the static `capture` method to execute a function and capture its output.
+ * The captured output can be accessed through the returned `Result` struct.
+ *
+ * This class is used to provide an RAII-style mechanism for capturing output,
+ * ensuring that the original stream buffers are restored even if an exception
+ * is thrown during the execution of the function.
  */
-struct CaptureStreamsResult {
-    // The captured output from `std::cout`.
-    std::string cout_output;
-    // The captured output from `std::cerr`.
-    std::string cerr_output;
-    // Whether an exception was thrown during the execution of `func`.
-    bool was_exception_thrown;
-};
+class StreamCapture {
+    // The string stream to capture output from `std::cout`.
+    std::ostringstream cout_capture;
+    // The string stream to capture output from `std::cerr`.
+    std::ostringstream cerr_capture;
+    // The previous stream buffer for `std::cout` before redirection.
+    std::streambuf* prev_cout_buf;
+    // The previous stream buffer for `std::cerr` before redirection.
+    std::streambuf* prev_cerr_buf;
 
-/**
- * @brief Captures output to `std::cout` and `std::cerr` from a function.
- *
- * If an exception is thrown during the execution of `func`, the function will
- * restore the original stream buffers and set `was_exception_thrown` to true in
- * the returned `CaptureStreamsResult`.
- *
- * @param func The function from which to execute and capture output. May be a
- * lambda.
- * @return CaptureStreamsResult A struct containing the captured output from
- * `std::cout` and `std::cerr`, and a boolean indicating if an exception was
- * thrown.
- */
-CaptureStreamsResult capture_streams(std::function<void()> func);
+    StreamCapture()
+        : prev_cout_buf(std::cout.rdbuf(cout_capture.rdbuf())),
+          prev_cerr_buf(std::cerr.rdbuf(cerr_capture.rdbuf())) {}
+
+    ~StreamCapture() {
+        std::cout.rdbuf(prev_cout_buf);
+        std::cerr.rdbuf(prev_cerr_buf);
+    }
+
+    StreamCapture(const StreamCapture&) = delete;
+    StreamCapture& operator=(const StreamCapture&) = delete;
+
+public:
+    /**
+     * @brief The result of a stream capture operation, containing the captured
+     * output from `std::cout` and `std::cerr`, and a boolean indicating if an
+     * exception was thrown during the execution of the function.
+     */
+    struct Result {
+        // The captured output from `std::cout`.
+        std::string cout_output;
+        // The captured output from `std::cerr`.
+        std::string cerr_output;
+        // Whether an exception was thrown during the execution of `func`.
+        bool was_exception_thrown;
+    };
+
+    /**
+     * @brief Captures output from `std::cout` and `std::cerr` during the
+     * execution of a function.
+     *
+     * The result of the capture is returned in a `Result` struct, which
+     * contains the captured outputs from `std::cout` and `std::cerr`. If an
+     * exception is thrown during the execution of `func`, the original stream
+     * buffers are restored and `was_exception_thrown` is set to true in the
+     * returned `Result`.
+     *
+     * @param func The function from which to execute and capture output. May be
+     * a lambda.
+     * @return Result The result of the stream capture operation (see
+     * description).
+     */
+    static Result capture(std::function<void()> func) {
+        StreamCapture capture;
+        bool was_exception_thrown = false;
+
+        try {
+            func();
+        }
+        catch (...) {
+            was_exception_thrown = true;
+        }
+
+        return Result{
+            capture.cout_capture.str(),
+            capture.cerr_capture.str(),
+            was_exception_thrown
+        };
+    }
+};
 
 } // namespace nico
 
