@@ -239,8 +239,8 @@ public:
      * If ir_printing_enabled is true, the generated IR will be printed to the
      * console just before verification. Useful for debugging.
      *
-     * If panic_recoverable is true, the generated code will include mechanisms
-     * to recover from panics using setjmp and longjmp. Useful for testing.
+     * If panic_recoverable is true, the generated code will use exceptions for
+     * panics.
      *
      * If require_verification is true, the generated IR will be verified for
      * correctness. If verification fails, this function will panic.
@@ -250,7 +250,7 @@ public:
      * @param ir_printing_enabled Whether to print the generated IR before
      * verification. Defaults to false.
      * @param panic_recoverable Whether to make panics recoverable using
-     * setjmp and longjmp. Defaults to false.
+     * exceptions. Defaults to false.
      * @param require_verification Whether to verify the generated IR.
      * Defaults to true.
      */

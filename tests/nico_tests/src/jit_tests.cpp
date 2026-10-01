@@ -37,8 +37,6 @@ struct JITTestOptions {
     // set to panic recoverable mode to avoid a signal termination. Defaults to
     // false.
     bool expect_panic = false;
-    // The panic return code to expect if expect_panic is true. Defaults to 101.
-    int panic_return_code = 101;
     // The static library paths to load into the JIT. Defaults to an empty
     // vector.
     std::vector<std::string> static_library_paths = {};
@@ -111,8 +109,6 @@ void run_jit_test(
             REQUIRE(!err);
         }
     }
-
-    // TODO: Reevaluate this function with the new exception throwing behavior.
 
     std::optional<llvm::Expected<int>> return_code;
     auto [out, err, was_exception_thrown] = nico::StreamCapture::capture([&]() {
