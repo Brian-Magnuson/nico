@@ -357,6 +357,79 @@ public:
 };
 
 /**
+ * @brief MIR function interface.
+ *
+ * Used to represent both function prototypes and function definitions in the
+ * MIR.
+ */
+class IFunction {
+protected:
+    // Empty private struct to restrict access to certain methods.
+    struct Private {
+        explicit Private() = default;
+    };
+
+    // The name of the function.
+    std::string name;
+    // The return type of the function.
+    std::shared_ptr<Type> return_type;
+    // The parameters of the function.
+    std::vector<std::shared_ptr<MIRValue::Variable>> parameters;
+
+public:
+    virtual ~IFunction() = default;
+
+    IFunction(Private) {};
+
+    /**
+     * @brief Get the name of the function.
+     *
+     * @return The name of the function.
+     */
+    virtual std::string get_name() const { return name; };
+
+    /**
+     * @brief Get the return type of the function.
+     *
+     * @return The return type of the function.
+     */
+    virtual std::shared_ptr<Type> get_return_type() const {
+        return return_type;
+    };
+
+    /**
+     * @brief Converts this function to a string.
+     *
+     * If this is a function definition, the string representation includes
+     * multiple lines and ends with a newline. It will contain all the basic
+     * blocks and their instructions.
+     *
+     * For just the name of the function, use `get_name()`.
+     *
+     * @return A string representation of the function.
+     */
+    virtual std::string to_string() const = 0;
+};
+
+/**
+ * @brief A function prototype in the MIR.
+ *
+ * Used to represent function declarations without a body.
+ */
+class Prototype : public IFunction,
+                  public std::enable_shared_from_this<Prototype> {
+    friend class MIRModule;
+
+public:
+    virtual ~Prototype() = default;
+
+    Prototype(Private)
+        : IFunction(Private()) {}
+
+    std::string to_string() const override;
+};
+
+/**
  * @brief Represents a function in the MIR.
  *
  * A function consists of a series of basic blocks forming a control flow graph.
@@ -367,13 +440,9 @@ public:
  * instruction at some point. When returning from the function, control should
  * jump to the exit block, and should not return directly.
  */
-class Function : public std::enable_shared_from_this<Function> {
+class Function : public IFunction,
+                 public std::enable_shared_from_this<Function> {
     friend class MIRModule;
-
-    // Empty private struct to restrict access to certain methods.
-    struct Private {
-        explicit Private() = default;
-    };
 
     struct ControlLoop;
 
@@ -458,12 +527,6 @@ class Function : public std::enable_shared_from_this<Function> {
         get_loop(std::optional<std::string> label = std::nullopt) override;
     };
 
-    // The name of the function.
-    std::string name;
-    // The return type of the function.
-    std::shared_ptr<Type> return_type;
-    // The parameters of the function.
-    std::vector<std::shared_ptr<MIRValue::Variable>> parameters;
     // A special temporary value for the return value.
     std::shared_ptr<MIRValue::Variable> return_variable;
     // The local variables declared in this function.
@@ -517,21 +580,8 @@ public:
      * @param private Unused, but required to verify that you can call this
      * function here.
      */
-    Function(Private) {}
-
-    /**
-     * @brief Get the name of the function.
-     *
-     * @return The name of the function.
-     */
-    std::string get_name() const { return name; }
-
-    /**
-     * @brief Get the return type of the function.
-     *
-     * @return The return type of the function.
-     */
-    std::shared_ptr<Type> get_return_type() const;
+    Function(Private)
+        : IFunction(Private()) {}
 
     /**
      * @brief Create a local variable object from the given binding entry and
@@ -707,20 +757,7 @@ public:
      */
     void purge_unreachable_blocks();
 
-    /**
-     * @brief Converts this function to a string.
-     *
-     * The string representation includes multiple lines and ends with a
-     * newline.
-     *
-     * Note: The string representation includes the entire contents of the
-     * function, including all basic blocks and their instructions.
-     *
-     * For just the name of the function, use `get_name()`.
-     *
-     * @return A string representation of the function.
-     */
-    std::string to_string() const;
+    std::string to_string() const override;
 };
 
 /**
@@ -735,7 +772,10 @@ class MIRModule {
     // The global variables declared in this module.
     Dictionary<std::string, std::shared_ptr<MIRValue::Global>> globals;
     // The functions in the module.
-    std::vector<std::shared_ptr<Function>> functions;
+    std::vector<std::shared_ptr<IFunction>> functions;
+    // The module's script function, also stored as the first function in the
+    // functions vector.
+    std::weak_ptr<Function> script_function;
 
 public:
     /**
@@ -757,6 +797,7 @@ public:
         auto mod = std::make_shared<MIRModule>(Private());
         auto func = Function::create_script_function();
         mod->functions.push_back(func);
+        mod->script_function = func;
         return mod;
     }
 
@@ -806,7 +847,7 @@ public:
      * @return The script function.
      */
     std::shared_ptr<Function> get_script_function() {
-        return functions.front();
+        return script_function.lock();
     }
 
     /**

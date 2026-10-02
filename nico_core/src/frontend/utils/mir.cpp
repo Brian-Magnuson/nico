@@ -107,6 +107,16 @@ std::string BasicBlock::to_string() const {
     return result;
 }
 
+std::string Prototype::to_string() const {
+    std::string result = "prototype " + name + "( ";
+    for (const auto& param : parameters) {
+        result += param->to_string() + " ";
+    }
+    result += ") -> " + return_type->to_string();
+
+    return result;
+}
+
 std::optional<std::shared_ptr<Function::ControlBlock>>
 Function::ControlBlock::get_block(std::optional<std::string> label) {
     if (!label || this->label == label) {
@@ -180,10 +190,6 @@ std::shared_ptr<Function> Function::create_script_function() {
     exit->set_as_function_return();
 
     return func;
-}
-
-std::shared_ptr<Type> Function::get_return_type() const {
-    return return_variable->type;
 }
 
 std::shared_ptr<MIRValue::Variable> Function::create_local_variable(
