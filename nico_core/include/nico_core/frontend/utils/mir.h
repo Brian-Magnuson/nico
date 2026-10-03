@@ -420,6 +420,10 @@ class Prototype : public IFunction,
                   public std::enable_shared_from_this<Prototype> {
     friend class MIRModule;
 
+protected:
+    static std::shared_ptr<Prototype>
+    create(std::shared_ptr<Stmt::Func> func_stmt);
+
 public:
     virtual ~Prototype() = default;
 
@@ -814,12 +818,27 @@ public:
      * @param func_stmt The statement from which this function was
      * created.
      * @return The newly created function.
+     * @warning If the function does not have a body, this method will panic.
+     * Use `create_prototype` instead for function declarations without a body.
      */
     std::shared_ptr<Function>
     create_function(std::shared_ptr<Stmt::Func> func_stmt) {
         auto func = Function::create(func_stmt);
         functions.push_back(func);
         return func;
+    }
+
+    /**
+     * @brief Create a new function prototype and add it to the module.
+     *
+     * @param func_stmt The statement from which this prototype was created.
+     * @return The newly created prototype.
+     */
+    std::shared_ptr<Prototype>
+    create_prototype(std::shared_ptr<Stmt::Func> func_stmt) {
+        auto proto = Prototype::create(func_stmt);
+        functions.push_back(proto);
+        return proto;
     }
 
     /**

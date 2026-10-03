@@ -107,6 +107,21 @@ std::string BasicBlock::to_string() const {
     return result;
 }
 
+std::shared_ptr<Prototype>
+Prototype::create(std::shared_ptr<Stmt::Func> func_stmt) {
+    auto proto = std::make_shared<Prototype>(Private());
+    auto binding_entry = func_stmt->binding_entry.lock();
+
+    proto->name = binding_entry->symbol;
+    proto->return_type = binding_entry->binding.type;
+    for (const auto& param : func_stmt->parameters) {
+        auto param_var = MIRValue::Variable::create(param.binding_entry.lock());
+        proto->parameters.push_back(param_var);
+    }
+
+    return proto;
+}
+
 std::string Prototype::to_string() const {
     std::string result = "prototype " + name + "( ";
     for (const auto& param : parameters) {
@@ -155,6 +170,12 @@ Function::ControlLoop::get_loop(std::optional<std::string> label) {
 
 std::shared_ptr<Function>
 Function::create(std::shared_ptr<Stmt::Func> func_stmt) {
+    if (!func_stmt->body.has_value()) {
+        panic(
+            "Cannot create MIR Function from function statement without a body."
+        );
+    }
+
     auto func = std::make_shared<Function>(Private());
     auto binding_entry = func_stmt->binding_entry.lock();
 
