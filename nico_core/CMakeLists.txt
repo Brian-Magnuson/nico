@@ -59,6 +59,7 @@ set(CORE_SRC
 
 # Library target
 add_library(nico_core STATIC ${CORE_SRC})
+add_dependencies(nico_core nico_rt)
 target_compile_definitions(nico_core
     PUBLIC NICO_RT_LIB_PATH="$<TARGET_FILE:nico_rt>"
 )
