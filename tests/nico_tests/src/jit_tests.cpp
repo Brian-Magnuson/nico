@@ -31,7 +31,7 @@ struct JITTestOptions {
     std::optional<std::string_view> expected_output = std::nullopt;
     // The expected error code to be logged, if any. This is not the same as a
     // panic. If provided, the first error code logged will be checked against
-    // this value. Additionally, no further outputs will be checked.
+    // this value.
     std::optional<Err> expected_error_code = std::nullopt;
     // Whether to expect the JIT to panic. If true, the code generator will be
     // set to panic recoverable mode to avoid a signal termination. Defaults to
@@ -110,11 +110,30 @@ void run_jit_test(
         }
     }
 
-    std::optional<llvm::Expected<int>> return_code;
+    std::optional<llvm::Expected<int>> return_code_or_err;
     auto [out, err, was_exception_thrown] = nico::StreamCapture::capture([&]() {
-        return_code = jit->run_main_func(0, nullptr, context->main_fn_name);
+        return_code_or_err =
+            jit->run_main_func(0, nullptr, context->main_fn_name);
     });
-    REQUIRE(options.expect_panic == was_exception_thrown);
+
+    if (options.expect_panic) {
+        REQUIRE(was_exception_thrown);
+    }
+    else if (options.expected_error_code.has_value()) {
+        REQUIRE(!was_exception_thrown);
+        auto errors_logged = nico::Diagnostics::inst().get_errors();
+        REQUIRE(!errors_logged.empty());
+        CHECK(errors_logged[0] == *options.expected_error_code);
+    }
+    else {
+        REQUIRE(!was_exception_thrown);
+        REQUIRE(return_code_or_err.has_value());
+        if (auto err = return_code_or_err->takeError()) {
+            std::string err_msg =
+                "JIT execution failed: " + llvm::toString(std::move(err));
+            FAIL(err_msg);
+        }
+    }
 
     if (options.print_stderr_output) {
         if (err.empty()) {
@@ -125,15 +144,9 @@ void run_jit_test(
         }
     }
 
-    // Logged errors.
-    if (options.expected_error_code.has_value()) {
-        auto errors_logged = nico::Diagnostics::inst().get_errors();
-        REQUIRE(!errors_logged.empty());
-        CHECK(errors_logged[0] == *options.expected_error_code);
-    }
     // Normal output.
-    else if (options.expected_output) {
-        REQUIRE(return_code.value()); // JIT did not error.
+    if (options.expected_output) {
+        REQUIRE(return_code_or_err.value()); // JIT did not error.
         CHECK(out == *options.expected_output);
     }
 
