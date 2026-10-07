@@ -19,6 +19,9 @@ To reference our coding principles: Keep it simple, but leave things open for fu
 Sometimes, the simplest solution can make things much harder to extend later.
 This document will explore the design of the CLI, including the commands, options, and arguments that will be available to users.
 
+Note that, although we will cover how to invoke the REPL, we will not cover the design of the REPL itself in this document.
+The REPL is a separate component that will have its own design.
+
 ## CLIs for Existing Compilers
 
 First, we will look at the CLIs for existing compilers to see what works well and what doesn't.
@@ -71,3 +74,77 @@ These will do the same thing, but the long form is more descriptive and easier t
 
 That said, we should be careful not to give *every* option a long form, as this can make the CLI more complex and harder to use.
 Explicit is still better than implicit.
+
+
+### Javac (Java)
+
+The Java programming language works a little differently than C and C++.
+Instead of being compiled directly to machine code, Java is compiled to an intermediate form called bytecode, which is then executed by the Java Virtual Machine (JVM).
+
+To compile a Java file, the `javac` command is used:
+```bash
+javac Program.java
+```
+This produces a file called `Program.class`, which contains the bytecode for the program.
+
+To output the compiled bytecode to a directory, the `-d` option can be used:
+```bash
+javac -d out Program.java
+```
+
+The `-cp` option can be used to specify the classpath, which is a list of directories and JAR files that contain classes that the program depends on:
+```bash
+javac -cp lib/* Program.java
+```
+
+Multiple compiled Java bytecode files can be combined into a Java Archive or JAR file using the `jar` command:
+```bash
+jar --create --file Program.jar Program.class
+```
+The `--create` option tells the `jar` command to create a new JAR file, and the `--file` option specifies the name of the JAR file to create.
+
+To run the JVM with a compiled Java bytecode file or JAR file, the `java` command is used:
+```bash
+java Program
+java -jar Program.jar
+```
+
+Since there is no executable, command line arguments are passed to the `java` command after the class name or JAR file name:
+```bash
+java Program arg1 arg2 arg3
+```
+
+Another aspect that makes Java different from C and C++ is that the JVM is more-or-less a Java bytecode interpreter.
+Instead of compiling to machine code and producing an executable file, the JVM interprets the bytecode.
+
+We could take some inspiration here given that Nico compiles to an intermediate representation.
+Our JIT is like the JVM in the sense that the code is executed immediately instead of producing an executable file.
+We could give our users the option to produce `.ll` files, which store the intermediate representation.
+
+However, we also want to provide an AOT compiler, same as with C and C++.
+This may involve having multiple *sub-commands*, which we use to distinguish between the different modes of operation.
+
+
+### Python
+
+The Python language, like Java, also compiles to an intermediate representation.
+However, most users won't work with compiled Python bytecode files.
+Rather, the Python interpreter is used to execute Python scripts straight from the source files.
+
+```bash
+python script.py
+```
+
+Python also lets you specify command line arguments to the script, which are passed to the script as a list of strings:
+```bash
+python script.py arg1 arg2 arg3
+```
+
+This simplicity is one of the reasons why Python is so popular, as it allows users to quickly run scripts without having to worry about compilation or linking.
+
+Another aspect of Python is that it has a REPL, which allows users to interactively execute Python code in a terminal session.
+You can invoke the REPL by simply running the `python` command without any arguments:
+```bash
+python
+```
+
