@@ -177,6 +177,20 @@ There are ways to mitigate these disadvantages:
 - Provide clear documentation and error messages for modifiers, especially for those that are more advanced or dangerous
 - Encourage the use of modifiers when teaching the language, so that users become familiar with them and understand their purpose and potential risks.
 
+## File-Level Modifiers
+
+Some modifiers may be applied to the entire file, rather than to a specific declaration.
+File-level modifiers allow one to apply special properties to the entire file, such as identifying the start file of the project or indicating that the file is a test file.
+
+Since ordinary modifiers are applied to the declarations that follow, file-level modifiers require a special syntax to indicate that they apply to the entire file.
+```
+!#[start_file]
+```
+
+It is visually similar to ordinary modifiers, but it is prepended with an exclamation mark `!`.
+We may require that file-level modifiers be placed at the top of the file, before any other code, to avoid confusion and ensure that they are applied correctly.
+
+
 # List of Modifiers
 
 Here, we describe some of the modifiers that we may support in Nico, along with their syntax and semantics.
@@ -225,6 +239,13 @@ Here, we describe some of the modifiers that we may support in Nico, along with 
 - `suppress_warning` - The statement that follows may emit a warning, and the warning shall be suppressed.
 - `deprecated(MESSAGE)` - The declaration that follows is deprecated and should not be used. The type checker will emit a warning whenever the declaration is used.
   - MESSAGE - A string literal that specifies the deprecation message to include in the warning. This can be any string, but it is recommended to include information about why the declaration is deprecated and what should be used instead.
+
+## File-Level Modifiers
+
+- `start_file` - The file that contains this modifier is the designated start file of the program. The type checker will error if there is more than one start file in the program.
+- `import_only` - The file that contains this modifier cannot be the start file of the program. It can only be imported by other files. The type checker will error if this file is the start file of the program.
+- `declarations_only` - The file that contains this modifier cannot have top-level execution space code. In other words, it has an empty script function. The type checker will error if this file has top-level execution space code.
+- `rerunable` - The file that contains this modifier will have its script function run every time the file is imported. Normally, a file's script function is only run the first time it is imported, and subsequent imports will not re-run the script function.
 
 # Applying Modifiers
 
