@@ -141,6 +141,7 @@ python script.py arg1 arg2 arg3
 ```
 
 This simplicity is one of the reasons why Python is so popular, as it allows users to quickly run scripts without having to worry about compilation or linking.
+You also do not need to specify multiple source files, as Python will automatically import any modules that are needed.
 
 Another aspect of Python is that it has a REPL, which allows users to interactively execute Python code in a terminal session.
 You can invoke the REPL by simply running the `python` command without any arguments:
@@ -148,3 +149,44 @@ You can invoke the REPL by simply running the `python` command without any argum
 python
 ```
 
+Similar to Python, we want Nico be simple to use, allowing users to either specify a single script to run or to enter the REPL for interactive use.
+This is part of the reason why we do not allow users to define a `main` function. Rather, one is defined implicitly based on the designated "start file" of the program.
+
+
+## Rust
+
+The last language we'll look at is Rust, which is a systems programming language that is designed to be safe, concurrent, and fast.
+Rust can be thought of as a modern alternative to C and C++, with a focus on safety and performance.
+
+To compile a Rust file, the `rustc` command is used:
+```bash
+rustc main.rs
+```
+You don't need to specify multiple files as Rust will automatically compile any modules that are needed.
+
+To specify the output file name, the `-o` option can be used:
+```bash
+rustc main.rs -o main
+```
+
+The above commands create executables. To create a library instead, the `--crate-type` option can be used:
+```bash
+rustc main.rs --crate-type lib
+```
+
+Most Rust projects are built using the `cargo` command, which is a build system and package manager for Rust.
+To build a Rust project, the `cargo build` command is used:
+```bash
+cargo build
+```
+
+To build and run a Rust project, the `cargo run` command is used:
+```bash
+cargo run
+```
+
+It is worth noting that Rust, like C and C++, requires users to define a `main` function when creating an executable.
+In Nico, users do not define a `main` function, as one is defined implicitly based on the designated "start file" of the program.
+As such, it may not be obvious which file is the "start file" of the program, especially if there are multiple source files.
+However, Rust shows that it is possible to specify a single file for an AOT compiler, while also allowing for multiple source files to be compiled together.
+We could take inspiration from this and have users write only the start file for the compiler, while also allowing for multiple source files to be compiled together.
