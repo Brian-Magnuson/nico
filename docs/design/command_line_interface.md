@@ -153,7 +153,7 @@ Similar to Python, we want Nico be simple to use, allowing users to either speci
 This is part of the reason why we do not allow users to define a `main` function. Rather, one is defined implicitly based on the designated "start file" of the program.
 
 
-## Rust
+### Rustc and Cargo (Rust)
 
 The last language we'll look at is Rust, which is a systems programming language that is designed to be safe, concurrent, and fast.
 Rust can be thought of as a modern alternative to C and C++, with a focus on safety and performance.
@@ -190,3 +190,55 @@ In Nico, users do not define a `main` function, as one is defined implicitly bas
 As such, it may not be obvious which file is the "start file" of the program, especially if there are multiple source files.
 However, Rust shows that it is possible to specify a single file for an AOT compiler, while also allowing for multiple source files to be compiled together.
 We could take inspiration from this and have users write only the start file for the compiler, while also allowing for multiple source files to be compiled together.
+
+## Design Goals
+
+Now that we've looked at the CLIs for existing compilers, we can start to think about the design goals for Nico's CLI.
+
+First, we want users to be able to choose between the different modes of operation: AOT compilation, JIT compilation, and REPL.
+If we aren't producing multiple executables, we could have a single command with different sub-commands for each mode of operation. For example:
+```bash
+nico compile main.nico
+nico run main.nico
+nico repl
+```
+
+Second, we want users to be able to specify which files to compile.
+This is important, because choosing which files to compile allows users to control the build process and avoid unnecessary compilation.
+However, it also means that, even if file has imports, the imports will not work unless the imported files are also compiled and linked together.
+```bash
+nico compile main.nico utils.nico
+```
+
+On the other hand, we can have a separate command for compiling an entire tree of source files.
+```bash
+nico build
+nico build nico.yaml
+nico build main.nico
+```
+
+Compiling files individually also has another drawback specific to Nico: because the user does not define a `main` function, if we are building an executable, we need to know which file is the "start file" of the program.
+There are multiple ways to let the user specify this:
+- Provide a special option for compilation, such as `--start-file` (like `--start-file=main.nico`)
+- Provide a setting in a configuration file, such as `nico.yaml` (like `start_file: main.nico`)
+- Provide a special syntax in the source file itself, such as a special comment or file-level attribute (like `!#[start_file]`)
+
+In fact, we could even support all three methods:
+- The CLI option and config file strategies won't interfere with each other since the compilation method used ultimately depends on the command used. For example, if the user uses `nico build`, then the config file will be used to determine the start file. If the user uses `nico compile`, then the CLI option will be used to determine the start file.
+- We can have the compiler issue an error if the CLI option/config file conflict with the source file syntax. For example, if the user specifies `--start-file=main.nico` in the CLI, but the source file has `!#[start_file]` on a different file, then the compiler will issue an error.
+
+
+Third, we want users to be able to decide what to produce as output.
+That is, we want users to be able to choose between producing an executable, a library, or an intermediate representation file.
+For our options, we can use the `--emit` option which indicates *what to output* and `--dir` or `-d` which indicates *where to output*.
+And if the emitted file is a single file, we can use the `--output` or `-o` option to specify the output file name.
+```bash
+nico compile main.nico --emit=exe --dir=build --output=main
+nico compile main.nico --emit=lib --dir=build --output=libmain.a
+nico compile main.nico --emit=ll  --dir=build --output=main.ll
+nico compile main.nico --emit=obj --dir=build --output=main.o
+```
+
+We can have `--emit` default to `exe` if not specified.
+If more than one file is to be produced, then we can have `--output` be a usage error.
+
