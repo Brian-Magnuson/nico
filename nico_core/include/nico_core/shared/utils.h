@@ -26,14 +26,6 @@ namespace nico {
 #define PTR_INSTANCEOF(ptr, type)                                              \
     (std::dynamic_pointer_cast<type>(ptr) != nullptr)
 
-// The maximum recursion depth for functions that possibly recurse infinitely.
-inline constexpr size_t MAX_RECURSION_DEPTH = 255;
-// The maximum number of implicit dereferences that we allow to be performed on
-// an expression.
-inline constexpr size_t MAX_ALLOWED_IMPLICIT_DEREFERENCES = 16;
-
-inline const char* RUNTIME_LIB_PATH = NICO_RT_LIB_PATH;
-
 /**
  * @brief Prints out a message to stderr with source location information,
  * then aborts the program.
@@ -120,26 +112,6 @@ inline int get_terminal_width() {
     }
 #endif
     return -1; // Unable to determine
-}
-
-/**
- * @brief Returns the current project version.
- *
- * The version is formatted like this: "X.Y.Z" where X is the major version,
- * Y is the minor version, and Z is the patch version.
- *
- * The project version is defined by the NICO_VERSION macro, which should be set
- * by the build system. If this macro is not defined, the function returns
- * "<unknown version>".
- *
- * @return The project version string.
- */
-inline std::string project_version() {
-#ifdef NICO_VERSION
-    return NICO_VERSION;
-#else
-    return "<unknown version>";
-#endif
 }
 
 /**

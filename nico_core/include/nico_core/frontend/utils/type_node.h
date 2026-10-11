@@ -12,6 +12,7 @@
 
 #include "nico_core/frontend/utils/nodes.h"
 #include "nico_core/frontend/utils/symbol_node.h"
+#include "nico_core/shared/config.h"
 #include "nico_core/shared/dictionary.h"
 #include "nico_core/shared/utils.h"
 
@@ -631,7 +632,7 @@ public:
 
     virtual bool
     is_definitely_sized(size_t recursion_level = 0) const override {
-        if (recursion_level > MAX_RECURSION_DEPTH) {
+        if (recursion_level > nico::config::max_recursion_depth) {
             return false;
         }
         if (!size.has_value()) {
@@ -749,7 +750,7 @@ public:
     }
 
     bool is_definitely_sized(size_t recursion_level = 0) const override {
-        if (recursion_level > MAX_RECURSION_DEPTH) {
+        if (recursion_level > nico::config::max_recursion_depth) {
             return false;
         }
         for (const auto& element : elements) {
@@ -882,7 +883,7 @@ public:
     }
 
     bool is_definitely_sized(size_t recursion_level = 0) const override {
-        if (recursion_level > MAX_RECURSION_DEPTH) {
+        if (recursion_level > nico::config::max_recursion_depth) {
             return false;
         }
         for (const auto& [key, value] : fields) {
@@ -1291,7 +1292,7 @@ private:
         if (cached_inner_type.has_value()) {
             return cached_inner_type.value();
         }
-        if (recursion_level > MAX_RECURSION_DEPTH) {
+        if (recursion_level > nico::config::max_recursion_depth) {
             panic(
                 "Maximum recursion depth exceeded while resolving inner type."
             );
@@ -1322,7 +1323,7 @@ public:
     }
 
     bool is_definitely_sized(size_t recursion_level = 0) const override {
-        if (recursion_level > MAX_RECURSION_DEPTH) {
+        if (recursion_level > nico::config::max_recursion_depth) {
             return false;
         }
         auto node_ptr = node.lock();

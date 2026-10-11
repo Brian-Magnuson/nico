@@ -1,6 +1,7 @@
 #include "nico_core/driver/repl.h"
 
 #include "nico_core/shared/code_file.h"
+#include "nico_core/shared/config.h"
 #include "nico_core/shared/diagnostics.h"
 #include "nico_core/shared/status.h"
 
@@ -40,6 +41,10 @@ void REPL::reset() {
     *out << "REPL state has been reset.\n";
     continue_mode = false;
     use_caution = false;
+}
+
+std::string REPL::project_version() {
+    return nico::config::nico_version;
 }
 
 void REPL::print_version() {

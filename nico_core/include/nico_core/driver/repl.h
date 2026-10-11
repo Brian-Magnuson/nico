@@ -96,6 +96,17 @@ class REPL {
     void reset();
 
     /**
+     * @brief Gets the project version from the Nico configurations.
+     *
+     * This implementation will produce "<unknown version>" if the stored
+     * version is an empty string.
+     *
+     * @return std::string The project version string, or "<unknown version>" if
+     * the version is not set.
+     */
+    static std::string project_version();
+
+    /**
      * @brief Prints the REPL version information.
      */
     void print_version();

@@ -2,6 +2,7 @@
 
 #include "nico_core/frontend/utils/annotation_checker.h"
 #include "nico_core/frontend/utils/type_node.h"
+#include "nico_core/shared/config.h"
 #include "nico_core/shared/diagnostics.h"
 #include "nico_core/shared/error_code.h"
 
@@ -43,13 +44,15 @@ ExpressionChecker::implicit_full_dereference(std::shared_ptr<Expr>& expr) {
             expr
         );
         i++;
-        if (i > MAX_ALLOWED_IMPLICIT_DEREFERENCES) {
+        if (i > nico::config::max_allowed_implicit_dereferences) {
             Diagnostics::inst().emit_error(
                 Err::TooManyImplicitDereferences,
                 expr->location,
                 "Pointer type `" + initial_type->to_string() +
                     "` has too many levels of indirection (more than " +
-                    std::to_string(MAX_ALLOWED_IMPLICIT_DEREFERENCES) +
+                    std::to_string(
+                        nico::config::max_allowed_implicit_dereferences
+                    ) +
                     ") for implicit dereference."
             );
             return std::nullopt;

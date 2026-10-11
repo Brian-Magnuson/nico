@@ -3,6 +3,7 @@
 #include <llvm/Support/InitLLVM.h>
 #include <llvm/Support/TargetSelect.h>
 
+#include "nico_core/shared/config.h"
 #include "nico_core/shared/diagnostics.h"
 #include "nico_core/shared/error_code.h"
 #include "nico_core/shared/utils.h"
@@ -55,7 +56,14 @@ SimpleJIT::lookup(std::string_view name) {
 void SimpleJIT::reset() {
     jit.reset(); // Destroys the current LLJIT instance
 
-    auto jit_or_err = llvm::orc::LLJITBuilder().create();
+    llvm::orc::JITTargetMachineBuilder jit_target_machine_builder(
+        (llvm::Triple(llvm::sys::getDefaultTargetTriple()))
+    );
+
+    auto jit_or_err =
+        llvm::orc::LLJITBuilder()
+            .setJITTargetMachineBuilder(std::move(jit_target_machine_builder))
+            .create();
     if (!jit_or_err) {
         panic(
             "Failed to create LLJIT: " + llvm::toString(jit_or_err.takeError())
@@ -72,7 +80,13 @@ void SimpleJIT::reset() {
         );
     });
 
-    auto err = add_static_library(RUNTIME_LIB_PATH);
+    jit->getMainJITDylib().addGenerator(cantFail(
+        llvm::orc::DynamicLibrarySearchGenerator::GetForCurrentProcess(
+            jit->getDataLayout().getGlobalPrefix()
+        )
+    ));
+
+    auto err = add_static_library(nico::config::nico_rt_lib_path);
     if (err) {
         panic(
             "Failed to add static library: " + llvm::toString(std::move(err))
