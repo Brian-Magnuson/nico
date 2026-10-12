@@ -127,8 +127,10 @@ void SimpleJIT::reset() {
 }
 
 llvm::Error SimpleJIT::add_static_library(std::filesystem::path lib_path) {
-    auto err =
-        jit->linkStaticLibraryInto(jit->getMainJITDylib(), lib_path.c_str());
+    auto err = jit->linkStaticLibraryInto(
+        jit->getMainJITDylib(),
+        lib_path.string().c_str()
+    );
     if (err) {
         std::string err_msg = "Failed to add static library '" +
                               lib_path.string() +
