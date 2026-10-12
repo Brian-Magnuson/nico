@@ -1,6 +1,7 @@
 #ifndef NICO_CORE_JIT_H
 #define NICO_CORE_JIT_H
 
+#include <filesystem>
 #include <memory>
 #include <string_view>
 
@@ -103,6 +104,17 @@ protected:
     llvm::Expected<llvm::orc::ExecutorAddr>
     lookup(std::string_view name) override;
 
+    /**
+     * @brief Helper function to define the nico runtime symbols in the JIT.
+     *
+     * The nico_rt symbols are defined in the nico_rt library and provide the
+     * basic runtime support for the NICO language. This function ensures that
+     * these symbols are available to the JIT-compiled code.
+     *
+     * @warning Panics if the symbols cannot be defined.
+     */
+    void define_nico_rt_symbols();
+
 public:
     virtual ~SimpleJIT() = default;
 
@@ -124,7 +136,7 @@ public:
      * relative to CWD.
      * @return An Error indicating success or failure of the operation.
      */
-    llvm::Error add_static_library(const std::string& lib_path);
+    llvm::Error add_static_library(std::filesystem::path lib_path);
 };
 
 } // namespace nico

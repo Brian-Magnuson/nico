@@ -16,6 +16,7 @@
 #include "nico_core/shared/error_code.h"
 #include "nico_core/shared/status.h"
 
+#include "nico_tests/config.h"
 #include "nico_tests/utils/test_utils.h"
 
 using nico::Err;
@@ -39,7 +40,7 @@ struct JITTestOptions {
     bool expect_panic = false;
     // The static library paths to load into the JIT. Defaults to an empty
     // vector.
-    std::vector<std::string> static_library_paths = {};
+    std::vector<std::string_view> static_library_paths = {};
     // Whether to print the symbol tree before code generation. Defaults to
     // false.
     bool print_symbol_tree = false;
@@ -48,9 +49,6 @@ struct JITTestOptions {
     // Whether to print the stderr output of the JIT. Defaults to false.
     bool print_stderr_output = false;
 };
-
-const char* EXAMPLE_LIB_PATH = NICO_TESTLIB_EXAMPLE_LIB_PATH;
-const char* INTEROP_LIB_PATH = NICO_TESTLIB_INTEROP_LIB_PATH;
 
 /**
  * @brief Runs a JIT test with the given source code and options.
@@ -105,7 +103,7 @@ void run_jit_test(
 
     if (!options.static_library_paths.empty()) {
         for (const auto& lib_path : options.static_library_paths) {
-            auto err = jit->add_static_library(lib_path);
+            auto err = jit->add_static_library(std::filesystem::path(lib_path));
             REQUIRE(!err);
         }
     }
@@ -1814,7 +1812,9 @@ TEST_CASE("JIT extern block", "[jit]") {
             )",
             JITTestOptions{
                 .expected_output = "4",
-                .static_library_paths = {EXAMPLE_LIB_PATH}
+                .static_library_paths = {
+                    nico::test_config::nico_testlib_example_lib_path
+                }
             }
         );
     }
@@ -1829,7 +1829,9 @@ TEST_CASE("JIT extern block", "[jit]") {
             )",
             JITTestOptions{
                 .expected_output = "42",
-                .static_library_paths = {EXAMPLE_LIB_PATH}
+                .static_library_paths = {
+                    nico::test_config::nico_testlib_example_lib_path
+                }
             }
         );
     }
@@ -1844,7 +1846,9 @@ TEST_CASE("JIT extern block", "[jit]") {
             )",
             JITTestOptions{
                 .expected_output = "Hello from the example library!\n",
-                .static_library_paths = {EXAMPLE_LIB_PATH}
+                .static_library_paths = {
+                    nico::test_config::nico_testlib_example_lib_path
+                }
             }
         );
     }
@@ -1859,7 +1863,9 @@ TEST_CASE("JIT extern block", "[jit]") {
             )",
             JITTestOptions{
                 .expected_output = "37",
-                .static_library_paths = {EXAMPLE_LIB_PATH}
+                .static_library_paths = {
+                    nico::test_config::nico_testlib_example_lib_path
+                }
             }
         );
     }
@@ -1874,7 +1880,9 @@ TEST_CASE("JIT extern block", "[jit]") {
             )",
             JITTestOptions{
                 .expected_output = "10",
-                .static_library_paths = {EXAMPLE_LIB_PATH}
+                .static_library_paths = {
+                    nico::test_config::nico_testlib_example_lib_path
+                }
             }
         );
     }
@@ -1891,7 +1899,9 @@ TEST_CASE("JIT extern block", "[jit]") {
             )",
             JITTestOptions{
                 .expected_output = "60 15 0",
-                .static_library_paths = {EXAMPLE_LIB_PATH}
+                .static_library_paths = {
+                    nico::test_config::nico_testlib_example_lib_path
+                }
             }
         );
     }
@@ -1912,7 +1922,9 @@ TEST_CASE("JIT external linkage declarations", "[jit]") {
             )",
             JITTestOptions{
                 .expected_output = "52",
-                .static_library_paths = {INTEROP_LIB_PATH}
+                .static_library_paths = {
+                    nico::test_config::nico_testlib_interop_lib_path
+                }
             }
         );
     }
@@ -1931,7 +1943,9 @@ TEST_CASE("JIT external linkage declarations", "[jit]") {
             )",
             JITTestOptions{
                 .expected_output = "420",
-                .static_library_paths = {INTEROP_LIB_PATH}
+                .static_library_paths = {
+                    nico::test_config::nico_testlib_interop_lib_path
+                }
             }
         );
     }
@@ -1950,7 +1964,9 @@ TEST_CASE("JIT external linkage declarations", "[jit]") {
             )",
             JITTestOptions{
                 .expected_output = "32",
-                .static_library_paths = {INTEROP_LIB_PATH}
+                .static_library_paths = {
+                    nico::test_config::nico_testlib_interop_lib_path
+                }
             }
         );
     }

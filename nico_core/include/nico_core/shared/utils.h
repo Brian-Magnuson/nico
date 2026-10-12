@@ -127,11 +127,11 @@ inline int get_terminal_width() {
  * are set to 10.
  *
  * @param message The message to break.
- * @param max_length The max length of each line. Default is 72.
+ * @param max_length The max length of each line.
  * @return A vector of string views representing the broken lines.
  */
 std::vector<std::string_view>
-break_message(std::string_view message, size_t max_length = 72);
+break_message(std::string_view message, size_t max_length);
 
 /**
  * @brief Takes a string view and returns a new string with all empty lines

@@ -3,7 +3,8 @@
 #include <llvm/Support/InitLLVM.h>
 #include <llvm/Support/TargetSelect.h>
 
-#include "nico_core/shared/config.h"
+#include "nico_rt/functions.h"
+
 #include "nico_core/shared/diagnostics.h"
 #include "nico_core/shared/error_code.h"
 #include "nico_core/shared/utils.h"
@@ -53,13 +54,45 @@ SimpleJIT::lookup(std::string_view name) {
     return jit->lookup(name);
 }
 
-void SimpleJIT::reset() {
-    jit.reset(); // Destroys the current LLJIT instance
+void SimpleJIT::define_nico_rt_symbols() {
+    llvm::orc::SymbolMap external_symbols;
 
+    const auto add_symbol = [&](const char* name, auto* address) {
+        external_symbols[jit->getExecutionSession().intern(name)] =
+            llvm::orc::ExecutorSymbolDef::fromPtr(
+                address,
+                llvm::JITSymbolFlags::Exported
+            );
+    };
+
+    add_symbol("nico_rt_printf", &nico_rt_printf);
+    add_symbol("nico_rt_printerrf", &nico_rt_printerrf);
+    add_symbol("nico_rt_abort", &nico_rt_abort);
+    add_symbol("nico_rt_exit", &nico_rt_exit);
+    add_symbol("nico_rt_malloc", &nico_rt_malloc);
+    add_symbol("nico_rt_free", &nico_rt_free);
+    add_symbol("nico_rt_panic", &nico_rt_panic);
+    add_symbol("nico_rt_throw", &nico_rt_throw);
+
+    if (auto error = jit->getMainJITDylib().define(
+            llvm::orc::absoluteSymbols(external_symbols)
+        )) {
+        llvm::logAllUnhandledErrors(
+            std::move(error),
+            llvm::errs(),
+            "Failed to define external symbols: "
+        );
+        panic("Failed to define external symbols in JIT");
+    }
+}
+
+void SimpleJIT::reset() {
+    jit.reset(); // Destroys the current LLJIT instance.
+
+    // Create a new LLJIT instance using LLVM's default target triple.
     llvm::orc::JITTargetMachineBuilder jit_target_machine_builder(
         (llvm::Triple(llvm::sys::getDefaultTargetTriple()))
     );
-
     auto jit_or_err =
         llvm::orc::LLJITBuilder()
             .setJITTargetMachineBuilder(std::move(jit_target_machine_builder))
@@ -71,6 +104,7 @@ void SimpleJIT::reset() {
     }
     jit = std::move(jit_or_err.get());
 
+    // Set up the error reporter for the execution session.
     auto& execution_session = jit->getExecutionSession();
     execution_session.setErrorReporter([](llvm::Error err) {
         std::string err_msg = llvm::toString(std::move(err));
@@ -80,25 +114,24 @@ void SimpleJIT::reset() {
         );
     });
 
+    // Make this process's symbols available to the JIT, so that it can resolve
+    // calls to most C/C++ standard library functions.
     jit->getMainJITDylib().addGenerator(cantFail(
         llvm::orc::DynamicLibrarySearchGenerator::GetForCurrentProcess(
             jit->getDataLayout().getGlobalPrefix()
         )
     ));
 
-    auto err = add_static_library(nico::config::nico_rt_lib_path);
-    if (err) {
-        panic(
-            "Failed to add static library: " + llvm::toString(std::move(err))
-        );
-    }
+    // Define the nico runtime symbols in the JIT.
+    define_nico_rt_symbols();
 }
 
-llvm::Error SimpleJIT::add_static_library(const std::string& lib_path) {
+llvm::Error SimpleJIT::add_static_library(std::filesystem::path lib_path) {
     auto err =
         jit->linkStaticLibraryInto(jit->getMainJITDylib(), lib_path.c_str());
     if (err) {
-        std::string err_msg = "Failed to add static library '" + lib_path +
+        std::string err_msg = "Failed to add static library '" +
+                              lib_path.string() +
                               "' to JIT: " + llvm::toString(std::move(err));
 
         Diagnostics::inst().emit_error(Err::JITCannotAddStaticLibrary, err_msg);

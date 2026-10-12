@@ -1,0 +1,47 @@
+#ifndef NICO_CORE_PROJECT_CONFIG_H
+#define NICO_CORE_PROJECT_CONFIG_H
+
+#include <optional>
+#include <string_view>
+
+namespace nico::config {
+
+/**
+ * @brief The current project version.
+ *
+ * The version is formatted like this: "X.Y.Z" where X is the major version,
+ * Y is the minor version, and Z is the patch version.
+ *
+ * This should be set in the project's build files.
+ */
+inline constexpr std::string_view nico_version = "@NICO_VERSION@";
+
+#if defined(NICO_CXX_COMPILER_RT_LIB_PATH)
+/**
+ * @brief The path to the C++ compiler runtime library used by the Nico
+ * compiler, if set.
+ *
+ * This is sometimes needed by the JIT when certain platform-specific features
+ * and symbols are not made available to the JIT.
+ *
+ * This should be set in the user's CMakeUserPresets.json file.
+ */
+inline constexpr std::optional<std::string_view> nico_cxx_compiler_rt_lib_path =
+    R"cmake(@NICO_CXX_COMPILER_RT_LIB_PATH@)cmake";
+#else
+/**
+ * @brief The path to the C++ compiler runtime library used by the Nico
+ * compiler, if set.
+ *
+ * This is sometimes needed by the JIT when certain platform-specific features
+ * and symbols are not made available to the JIT.
+ *
+ * This should be set in the user's CMakeUserPresets.json file.
+ */
+inline constexpr std::optional<std::string_view> nico_cxx_compiler_rt_lib_path =
+    std::nullopt;
+#endif
+
+} // namespace nico::config
+
+#endif // NICO_CORE_PROJECT_CONFIG_H

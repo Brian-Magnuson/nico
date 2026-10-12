@@ -28,16 +28,6 @@ inline constexpr std::size_t max_allowed_implicit_dereferences = 16;
  */
 inline constexpr auto nico_rt_lib_path = NICO_RT_LIB_PATH;
 
-/**
- * @brief The current project version.
- *
- * The version is formatted like this: "X.Y.Z" where X is the major version,
- * Y is the minor version, and Z is the patch version.
- *
- * This should be set in the project's build files.
- */
-inline constexpr auto nico_version = NICO_VERSION;
-
 } // namespace nico::config
 
 #endif // NICO_CORE_CONFIG_H

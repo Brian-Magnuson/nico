@@ -1,7 +1,8 @@
 #include "nico_core/driver/repl.h"
 
+#include "project_config.h"
+
 #include "nico_core/shared/code_file.h"
-#include "nico_core/shared/config.h"
 #include "nico_core/shared/diagnostics.h"
 #include "nico_core/shared/status.h"
 
@@ -43,16 +44,12 @@ void REPL::reset() {
     use_caution = false;
 }
 
-std::string REPL::project_version() {
-    return nico::config::nico_version;
-}
-
 void REPL::print_version() {
-    *out << project_version() << "\n";
+    *out << nico::config::nico_version << "\n";
 }
 
 void REPL::print_header() {
-    *out << "Nico " << project_version() << "\n";
+    *out << "Nico " << nico::config::nico_version << "\n";
     *out << "Copyright (c) 2024 Brian Magnuson\n";
     *out << "Use ':help' for help and ':exit' to quit.\n";
 }

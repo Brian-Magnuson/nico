@@ -59,9 +59,9 @@ set(CORE_SRC
 
 # Library target
 add_library(nico_core STATIC ${CORE_SRC})
-add_dependencies(nico_core nico_rt)
 target_compile_definitions(nico_core
     PUBLIC NICO_RT_LIB_PATH="$<TARGET_FILE:nico_rt>"
 )
 target_include_directories(nico_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_link_libraries(nico_core ${llvm_libs})
+target_include_directories(nico_core PRIVATE ${NICO_CONFIG_INCLUDE_DIR})
+target_link_libraries(nico_core nico_rt ${llvm_libs})
