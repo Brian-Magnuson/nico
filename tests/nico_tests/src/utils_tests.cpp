@@ -8,10 +8,12 @@
 #include "nico_core/shared/sets.h"
 #include "nico_core/shared/utils.h"
 
+constexpr size_t default_break_message_length = 72;
+
 TEST_CASE("Utility break message", "[utils]") {
     SECTION("Short sentence") {
         std::string_view message = "This is a short message.";
-        auto lines = nico::break_message(message);
+        auto lines = nico::break_message(message, default_break_message_length);
         REQUIRE(
             lines == std::vector<std::string_view>{"This is a short message."}
         );
@@ -108,7 +110,7 @@ TEST_CASE("Utility break message", "[utils]") {
 
     SECTION("Empty message") {
         std::string_view message = "";
-        auto lines = nico::break_message(message);
+        auto lines = nico::break_message(message, default_break_message_length);
         REQUIRE(lines.empty());
     }
 }
