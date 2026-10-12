@@ -16,7 +16,6 @@ namespace nico::config {
  */
 inline constexpr std::string_view nico_version = "@NICO_VERSION@";
 
-#if defined(NICO_CXX_COMPILER_RT_LIB_PATH)
 /**
  * @brief The path to the C++ compiler runtime library used by the Nico
  * compiler, if set.
@@ -27,20 +26,13 @@ inline constexpr std::string_view nico_version = "@NICO_VERSION@";
  * This should be set in the user's CMakeUserPresets.json file.
  */
 inline constexpr std::optional<std::string_view> nico_cxx_compiler_rt_lib_path =
-    R"cmake(@NICO_CXX_COMPILER_RT_LIB_PATH@)cmake";
-#else
-/**
- * @brief The path to the C++ compiler runtime library used by the Nico
- * compiler, if set.
- *
- * This is sometimes needed by the JIT when certain platform-specific features
- * and symbols are not made available to the JIT.
- *
- * This should be set in the user's CMakeUserPresets.json file.
- */
-inline constexpr std::optional<std::string_view> nico_cxx_compiler_rt_lib_path =
-    std::nullopt;
-#endif
+    [] {
+        constexpr std::string_view path =
+            R"nico_cxx_var(@NICO_CXX_COMPILER_RT_LIB_PATH@)nico_cxx_var";
+
+        return path.empty() ? std::optional<std::string_view>{}
+                            : std::optional<std::string_view>{path};
+    }();
 
 } // namespace nico::config
 
