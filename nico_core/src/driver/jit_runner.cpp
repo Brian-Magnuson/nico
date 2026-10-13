@@ -9,6 +9,7 @@
 #include "nico_core/backend/jit.h"
 #include "nico_core/frontend/frontend.h"
 #include "nico_core/shared/code_file.h"
+#include "nico_core/shared/compile_mode.h"
 #include "nico_core/shared/status.h"
 
 namespace nico {
@@ -22,7 +23,7 @@ void compile_and_run(std::string_view file_name) {
         std::exit(66);
     }
 
-    Frontend frontend;
+    Frontend frontend(CompileMode::JIT);
     std::unique_ptr<FrontendContext>& context =
         frontend.compile(code_file_opt.value(), false);
     if (!IS_VARIANT(context->status, Status::Ok)) {

@@ -8,6 +8,7 @@
 
 #include "nico_core/frontend/utils/frontend_context.h"
 #include "nico_core/shared/code_file.h"
+#include "nico_core/shared/compile_mode.h"
 
 namespace nico {
 
@@ -22,10 +23,13 @@ class Frontend {
     bool panic_recoverable = false;
     // A flag to indicate whether IR should be printed just before verification.
     bool ir_printing_enabled = false;
+    // The compile mode for this front end.
+    CompileMode compile_mode;
 
 public:
-    Frontend()
-        : context(std::make_unique<FrontendContext>()) {}
+    Frontend(CompileMode mode)
+        : context(std::make_unique<FrontendContext>(compile_mode)),
+          compile_mode(mode) {}
 
     /**
      * @brief Compiles the given code file.
@@ -77,7 +81,7 @@ public:
      * symbols.
      * Useful for REPLs to clear the current state.
      */
-    void reset() { context->initialize(); }
+    void reset() { context->initialize(compile_mode); }
 };
 
 } // namespace nico

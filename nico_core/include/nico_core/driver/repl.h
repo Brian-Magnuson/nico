@@ -8,6 +8,7 @@
 
 #include "nico_core/backend/jit.h"
 #include "nico_core/frontend/frontend.h"
+#include "nico_core/shared/compile_mode.h"
 
 namespace nico {
 
@@ -56,7 +57,7 @@ class REPL {
     // The output stream (usually std::cout).
     std::ostream* const out = &std::cout;
     // The frontend instance for compiling code.
-    Frontend frontend;
+    Frontend frontend = Frontend(CompileMode::REPL);
     // The JIT instance for executing compiled code.
     std::unique_ptr<IJIT> jit = std::make_unique<SimpleJIT>();
     // The current input buffer.

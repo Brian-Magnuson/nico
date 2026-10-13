@@ -11,6 +11,8 @@
 #include "nico_core/frontend/utils/mir.h"
 #include "nico_core/frontend/utils/nodes.h"
 #include "nico_core/frontend/utils/symbol_tree.h"
+#include "nico_core/shared/compile_mode.h"
+#include "nico_core/shared/config.h"
 #include "nico_core/shared/ir_module_context.h"
 #include "nico_core/shared/status.h"
 #include "nico_core/shared/token.h"
@@ -47,15 +49,20 @@ public:
     // The name to use for script functions generated in the module.
     std::string script_fn_name;
 
-    FrontendContext() { initialize(); }
+    FrontendContext(CompileMode compile_mode = CompileMode::None) {
+        initialize(compile_mode);
+    }
 
     /**
      * @brief Initialize the front end context with a new LLVM context and
      * module.
      *
      * Can also be used to reset the context to its initial state.
+     *
+     * @param compile_mode The compile mode to use for the context. Default is
+     * `CompileMode::None`.
      */
-    void initialize() {
+    void initialize(CompileMode compile_mode = CompileMode::None) {
         status = Status::Ok();
         scanned_tokens.clear();
         stmts.clear();
@@ -64,8 +71,10 @@ public:
         mod_ctx.initialize();
         symbol_tree = std::make_shared<SymbolTree>(mod_ctx);
 
-        main_fn_name = "main";
-        script_fn_name = "$script";
+        main_fn_name = (compile_modes::uses_jit(compile_mode) ? "$" : "") +
+                       std::string(nico::config::default_main_fn_name);
+
+        script_fn_name = nico::config::default_script_fn_name;
     }
 
     /**

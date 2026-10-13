@@ -12,6 +12,7 @@
 #include "nico_core/backend/jit.h"
 #include "nico_core/frontend/frontend.h"
 #include "nico_core/frontend/utils/frontend_context.h"
+#include "nico_core/shared/compile_mode.h"
 #include "nico_core/shared/diagnostics.h"
 #include "nico_core/shared/error_code.h"
 #include "nico_core/shared/status.h"
@@ -73,7 +74,7 @@ void run_jit_test(
     // cerr string.
     nico::Diagnostics::inst().set_printing_enabled(true);
 
-    nico::Frontend frontend;
+    nico::Frontend frontend(nico::CompileMode::JIT);
     if (options.expect_panic) {
         // If we expect to panic, enable panic recovery to avoid
         // terminating the program.
