@@ -73,6 +73,7 @@ void SimpleJIT::define_nico_rt_symbols() {
     add_symbol("nico_rt_free", &nico_rt_free);
     add_symbol("nico_rt_panic", &nico_rt_panic);
     add_symbol("nico_rt_throw", &nico_rt_throw);
+    add_symbol("nico_rt_longjmp", &nico_rt_longjmp);
 
     if (auto error = jit->getMainJITDylib().define(
             llvm::orc::absoluteSymbols(external_symbols)

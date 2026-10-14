@@ -1535,6 +1535,20 @@ void CodeGenerator::add_c_functions() {
             *mod_ctx.ir_module
         );
     }
+    // nico_rt_longjmp
+    if (!mod_ctx.ir_module->getFunction("nico_rt_longjmp")) {
+        llvm::FunctionType* longjmp_type = llvm::FunctionType::get(
+            llvm::Type::getVoidTy(*mod_ctx.llvm_context),
+            {},
+            false
+        );
+        llvm::Function::Create(
+            longjmp_type,
+            llvm::Function::ExternalLinkage,
+            "nico_rt_longjmp",
+            *mod_ctx.ir_module
+        );
+    }
 }
 
 void CodeGenerator::add_div_zero_check(
@@ -1708,9 +1722,9 @@ void CodeGenerator::add_panic(
     );
 
     if (panic_recoverable) {
-        auto throw_fn = mod_ctx.ir_module->getFunction("nico_rt_throw");
+        auto throw_fn = mod_ctx.ir_module->getFunction("nico_rt_longjmp");
         if (!throw_fn) {
-            panic("Failed to find nico_rt_throw function in IR module.");
+            panic("Failed to find nico_rt_longjmp function in IR module.");
         }
         builder->CreateCall(throw_fn);
     }

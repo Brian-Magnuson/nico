@@ -1,9 +1,12 @@
 #ifndef NICO_RT_FUNCTIONS_H
 #define NICO_RT_FUNCTIONS_H
 
+#include <csetjmp>
 #include <cstddef>
 
 extern "C" {
+
+extern std::jmp_buf nico_rt_jmp_buf;
 
 /**
  * @brief Print a formatted string using C++'s std::cout. This function is
@@ -83,6 +86,8 @@ void nico_rt_free(void* ptr);
  * @throws std::runtime_error Always throws a runtime error.
  */
 [[noreturn]] void nico_rt_throw();
+
+[[noreturn]] void nico_rt_longjmp();
 }
 
 #endif // NICO_RT_FUNCTIONS_H
