@@ -17,19 +17,19 @@ namespace nico {
  * checkers, and code generator.
  */
 class Frontend {
+    // The compile mode for this front end.
+    CompileMode compile_mode;
     // The unique front end context.
     std::unique_ptr<FrontendContext> context;
     // A flag to indicate whether panic is recoverable.
     bool panic_recoverable = false;
     // A flag to indicate whether IR should be printed just before verification.
     bool ir_printing_enabled = false;
-    // The compile mode for this front end.
-    CompileMode compile_mode;
 
 public:
     Frontend(CompileMode mode)
-        : context(std::make_unique<FrontendContext>(compile_mode)),
-          compile_mode(mode) {}
+        : compile_mode(mode),
+          context(std::make_unique<FrontendContext>(mode)) {}
 
     /**
      * @brief Compiles the given code file.

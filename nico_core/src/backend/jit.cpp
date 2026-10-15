@@ -8,6 +8,7 @@
 #include "nico_core/shared/diagnostics.h"
 #include "nico_core/shared/error_code.h"
 #include "nico_core/shared/utils.h"
+#include "project_config.h"
 
 namespace nico {
 
@@ -122,6 +123,18 @@ void SimpleJIT::reset() {
             jit->getDataLayout().getGlobalPrefix()
         )
     ));
+
+    if (nico::config::nico_cxx_compiler_rt_lib_path.has_value()) {
+        auto err =
+            add_static_library(*nico::config::nico_cxx_compiler_rt_lib_path);
+        if (err) {
+            std::string err_msg =
+                "Failed to add static library '" +
+                std::string(*nico::config::nico_cxx_compiler_rt_lib_path) +
+                "' to JIT: " + llvm::toString(std::move(err));
+            panic(err_msg);
+        }
+    }
 
     // Define the nico runtime symbols in the JIT.
     define_nico_rt_symbols();
