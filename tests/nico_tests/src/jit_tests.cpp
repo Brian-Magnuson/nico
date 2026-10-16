@@ -115,10 +115,8 @@ void run_jit_test(
             jit->run_main_func(0, nullptr, context->main_fn_name);
     });
 
-    if (options.expect_panic) {
-        REQUIRE(was_exception_thrown);
-    }
-    else if (options.expected_error_code.has_value()) {
+    if (options.expected_error_code.has_value()) {
+        // TODO: Clean up checks to `was_exception_thrown`.
         REQUIRE(!was_exception_thrown);
         auto errors_logged = nico::Diagnostics::inst().get_errors();
         REQUIRE(!errors_logged.empty());
@@ -131,6 +129,12 @@ void run_jit_test(
             std::string err_msg =
                 "JIT execution failed: " + llvm::toString(std::move(err));
             FAIL(err_msg);
+        }
+        if (options.expect_panic) {
+            CHECK(
+                return_code_or_err.value().get() ==
+                nico::config::nico_panic_exit_code
+            );
         }
     }
 

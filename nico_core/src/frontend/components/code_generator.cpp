@@ -7,6 +7,7 @@
 #include <llvm/IR/Verifier.h>
 
 #include "nico_core/frontend/utils/type_node.h"
+#include "nico_core/shared/config.h"
 #include "nico_core/shared/status.h"
 #include "nico_core/shared/utils.h"
 
@@ -864,6 +865,32 @@ std::any CodeGenerator::visit(Expr::Call* expr, bool as_lvalue) {
         );
     }
 
+    if (panic_recoverable) {
+        // Create a "proceed" block
+        llvm::BasicBlock* proceed_block = llvm::BasicBlock::Create(
+            *mod_ctx.llvm_context,
+            "proceed",
+            builder->GetInsertBlock()->getParent()
+        );
+        // Conditionally branch to exit block if `$panicking` is true.
+        llvm::Value* panicking_var =
+            mod_ctx.ir_module->getGlobalVariable("$panicking", true);
+        if (!panicking_var) {
+            panic("Failed to find `$panicking` global variable in IR module.");
+        }
+        llvm::Value* is_panicking = builder->CreateLoad(
+            llvm::Type::getInt1Ty(*mod_ctx.llvm_context),
+            panicking_var
+        );
+        builder->CreateCondBr(
+            is_panicking,
+            control_stack.get_exit_block(Expr::Block::Kind::Function),
+            proceed_block
+        );
+        // Set the insertion point to the proceed block.
+        builder->SetInsertPoint(proceed_block);
+    }
+
     return result;
 }
 
@@ -1535,6 +1562,7 @@ void CodeGenerator::add_c_functions() {
             *mod_ctx.ir_module
         );
     }
+    // TODO: Remove references to longjmp.
     // nico_rt_longjmp
     if (!mod_ctx.ir_module->getFunction("nico_rt_longjmp")) {
         llvm::FunctionType* longjmp_type = llvm::FunctionType::get(
@@ -1577,7 +1605,6 @@ void CodeGenerator::add_div_zero_check(
     // div_by_zero_block
     builder->SetInsertPoint(div_by_zero_block);
     add_panic("Division by zero.", location);
-    builder->CreateUnreachable();
 
     // div_ok_block
     builder->SetInsertPoint(div_ok_block);
@@ -1613,7 +1640,6 @@ void CodeGenerator::add_array_bounds_check(
             std::to_string(array_size) + ".",
         location
     );
-    builder->CreateUnreachable();
 
     // in_bounds_block
     builder->SetInsertPoint(in_bounds_block);
@@ -1647,7 +1673,6 @@ void CodeGenerator::add_alloc_nullptr_check(
     // null_ptr_block
     builder->SetInsertPoint(null_ptr_block);
     add_panic("Memory allocation failed.", location);
-    builder->CreateUnreachable();
 
     // not_null_block
     builder->SetInsertPoint(not_null_block);
@@ -1686,7 +1711,6 @@ void CodeGenerator::add_negative_alloc_size_check(
         "Allocation amount expression evaluated to a negative value.",
         location
     );
-    builder->CreateUnreachable();
 
     // non_negative_size_block
     builder->SetInsertPoint(non_negative_size_block);
@@ -1695,6 +1719,7 @@ void CodeGenerator::add_negative_alloc_size_check(
 void CodeGenerator::add_panic(
     std::string_view message, const Location* location
 ) {
+    // TODO: Update this function to have more control over basic blocks.
     auto printerrf_fn = mod_ctx.ir_module->getFunction("nico_rt_printerrf");
     if (!printerrf_fn) {
         panic("Failed to find nico_rt_printerrf function in IR module.");
@@ -1722,11 +1747,23 @@ void CodeGenerator::add_panic(
     );
 
     if (panic_recoverable) {
-        auto throw_fn = mod_ctx.ir_module->getFunction("nico_rt_longjmp");
-        if (!throw_fn) {
-            panic("Failed to find nico_rt_longjmp function in IR module.");
+        // Get the $panicking global variable and set it to true.
+        llvm::GlobalVariable* panicking_var =
+            mod_ctx.ir_module->getGlobalVariable("$panicking", true);
+        if (!panicking_var) {
+            panic("Failed to find $panicking global variable in IR module.");
         }
-        builder->CreateCall(throw_fn);
+        builder->CreateStore(
+            llvm::ConstantInt::get(
+                llvm::Type::getInt1Ty(*mod_ctx.llvm_context),
+                1
+            ),
+            panicking_var
+        );
+
+        auto exit_block =
+            control_stack.get_exit_block(Expr::Block::Kind::Function);
+        builder->CreateBr(exit_block);
     }
     else {
         auto abort_fn = mod_ctx.ir_module->getFunction("nico_rt_abort");
@@ -1734,6 +1771,7 @@ void CodeGenerator::add_panic(
             panic("Failed to find nico_rt_abort function in IR module.");
         }
         builder->CreateCall(abort_fn);
+        builder->CreateUnreachable();
     }
 }
 
@@ -1758,6 +1796,21 @@ void CodeGenerator::generate_script_func(
     std::string_view script_fn_name
 ) {
     add_c_functions();
+
+    auto panicking_var = new llvm::GlobalVariable(
+        *mod_ctx.ir_module,
+        llvm::Type::getInt1Ty(builder->getContext()),
+        false, // isConstant
+        llvm::GlobalValue::InternalLinkage,
+        llvm::ConstantInt::get(
+            llvm::Type::getInt1Ty(builder->getContext()),
+            0
+        ), // initializer
+        "$panicking"
+    );
+    // We don't need to store this variable anywhere because LLVM manages
+    // global variables automatically. We can access it later by looking it
+    // up in the module by name when we need to check if we're panicking.
 
     llvm::FunctionType* script_fn_type =
         llvm::FunctionType::get(builder->getInt32Ty(), false);
@@ -1792,14 +1845,34 @@ void CodeGenerator::generate_script_func(
 
     // CODE ENDS HERE
 
-    // Assign to ret_val
-    builder->CreateStore(builder->getInt32(0), ret_val);
-
     // Jump to exit block
     builder->CreateBr(exit_block);
     builder->SetInsertPoint(exit_block);
 
     control_stack.pop_block();
+
+    // Assign to ret_val
+    if (panic_recoverable) {
+        // If we're in a panic-recoverable mode, we need to check if we're
+        // panicking before returning. If we are, we return the panic exit code
+        // instead of the normal return value.
+        llvm::Value* is_panicking = builder->CreateLoad(
+            llvm::Type::getInt1Ty(*mod_ctx.llvm_context),
+            panicking_var
+        );
+        llvm::Value* ret_value = builder->CreateSelect(
+            is_panicking,
+            llvm::ConstantInt::get(
+                llvm::Type::getInt32Ty(*mod_ctx.llvm_context),
+                nico::config::nico_panic_exit_code
+            ),
+            builder->getInt32(0)
+        );
+        builder->CreateStore(ret_value, ret_val);
+    }
+    else {
+        builder->CreateStore(builder->getInt32(0), ret_val);
+    }
 
     // Return the value from ret_val
     builder->CreateRet(builder->CreateLoad(builder->getInt32Ty(), ret_val));
@@ -1831,8 +1904,8 @@ void CodeGenerator::generate_main_func(
     llvm::Function* script_fn = mod_ctx.ir_module->getFunction(script_fn_name);
     llvm::Value* script_ret = builder->CreateCall(script_fn);
 
-    // We discard the args for now; later we can come up with a way to make them
-    // accessible to the user.
+    // We discard the args for now; later we can come up with a way to make
+    // them accessible to the user.
 
     // Return the result
     builder->CreateRet(script_ret);

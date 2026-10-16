@@ -162,7 +162,7 @@ void SymbolTree::initialize(IRModuleContext& mod_ctx) {
     current_scope = root_scope;
     reserved_scope = Node::RootScope::create(":");
     reserved_scope->symbol = ":";
-    reserved_symbols = {"", ":", "main", "$script"};
+    reserved_symbols = {"", ":", "main", "$script", "$panicking"};
     modified = false;
 
     install_primitive_types();

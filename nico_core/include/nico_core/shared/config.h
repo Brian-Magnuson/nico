@@ -23,6 +23,16 @@ inline constexpr std::size_t max_recursion_depth = 255;
 inline constexpr std::size_t max_allowed_implicit_dereferences = 16;
 
 /**
+ * @brief The exit code used when the compiled Nico program panics in
+ * panic-recoverable mode.
+ *
+ * Should not be 0.
+ *
+ * This value can be adjusted in the config header.
+ */
+inline constexpr int nico_panic_exit_code = 101;
+
+/**
  * @brief The default name of the main function generated in the module.
  *
  * This should usually be "main" since "main" is the function called when
