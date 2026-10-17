@@ -42,7 +42,7 @@ set(TEST_SRC
 add_executable(nico_tests ${TEST_SRC})
 add_dependencies(nico_tests nico_testlib_example nico_testlib_interop)
 target_include_directories(nico_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_link_libraries(nico_tests PRIVATE nico_core nico_rt Catch2::Catch2WithMain)
+target_link_libraries(nico_tests PRIVATE nico_core Catch2::Catch2WithMain)
 target_compile_definitions(nico_tests
     PRIVATE NICO_TESTLIB_EXAMPLE_LIB_PATH="$<TARGET_FILE:nico_testlib_example>"
     PRIVATE NICO_TESTLIB_INTEROP_LIB_PATH="$<TARGET_FILE:nico_testlib_interop>"

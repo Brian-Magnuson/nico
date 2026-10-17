@@ -1,15 +1,12 @@
 #ifndef NICO_TESTS_TEST_UTILS_H
 #define NICO_TESTS_TEST_UTILS_H
 
-#include <csetjmp>
 #include <functional>
 #include <memory>
 #include <sstream>
 #include <string>
 #include <string_view>
 #include <vector>
-
-#include "nico_rt/functions.h"
 
 #include "nico_core/shared/code_file.h"
 #include "nico_core/shared/token.h"
@@ -112,7 +109,10 @@ public:
         std::string cout_output;
         // The captured output from `std::cerr`.
         std::string cerr_output;
-        // Whether an exception was thrown during the execution of `func`.
+        // TODO: Remove the below field; it is no longer needed, we don't use
+        // exceptions.
+        // Whether an exception was thrown during the execution of
+        // `func`.
         bool was_exception_thrown;
     };
 
@@ -135,18 +135,11 @@ public:
         StreamCapture capture;
         bool was_exception_thrown = false;
 
-        if (setjmp(nico_rt_jmp_buf) != 0) {
-            // If we longjmp back here, it means a panic occurred.
-            was_exception_thrown = true;
-            // TODO: Clean up this setup.
+        try {
+            func();
         }
-        else {
-            try {
-                func();
-            }
-            catch (...) {
-                was_exception_thrown = true;
-            }
+        catch (...) {
+            was_exception_thrown = true;
         }
 
         return Result{

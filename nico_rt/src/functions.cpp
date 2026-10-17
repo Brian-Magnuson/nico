@@ -6,8 +6,6 @@
 #include <iostream>
 #include <vector>
 
-std::jmp_buf nico_rt_jmp_buf;
-
 int nico_rt_printf(const char* format, ...) {
     va_list args;
     va_start(args, format);
@@ -90,12 +88,4 @@ void nico_rt_free(void* ptr) {
 
 void nico_rt_panic() {
     std::abort();
-}
-
-void nico_rt_throw() {
-    throw std::runtime_error("nico_rt_throw called");
-}
-
-void nico_rt_longjmp() {
-    std::longjmp(nico_rt_jmp_buf, 1);
 }

@@ -1548,35 +1548,6 @@ void CodeGenerator::add_c_functions() {
             *mod_ctx.ir_module
         );
     }
-    // nico_rt_throw
-    if (!mod_ctx.ir_module->getFunction("nico_rt_throw")) {
-        llvm::FunctionType* throw_type = llvm::FunctionType::get(
-            llvm::Type::getVoidTy(*mod_ctx.llvm_context),
-            {},
-            false
-        );
-        llvm::Function::Create(
-            throw_type,
-            llvm::Function::ExternalLinkage,
-            "nico_rt_throw",
-            *mod_ctx.ir_module
-        );
-    }
-    // TODO: Remove references to longjmp.
-    // nico_rt_longjmp
-    if (!mod_ctx.ir_module->getFunction("nico_rt_longjmp")) {
-        llvm::FunctionType* longjmp_type = llvm::FunctionType::get(
-            llvm::Type::getVoidTy(*mod_ctx.llvm_context),
-            {},
-            false
-        );
-        llvm::Function::Create(
-            longjmp_type,
-            llvm::Function::ExternalLinkage,
-            "nico_rt_longjmp",
-            *mod_ctx.ir_module
-        );
-    }
 }
 
 void CodeGenerator::add_div_zero_check(
