@@ -91,19 +91,9 @@ class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
     std::any visit(Expr::Loop* expr, bool as_lvalue) override;
 
     /**
-     * @brief Adds C standard library functions to the module that are useful
-     * for code generation.
+     * @brief Adds Nico runtime functions that are useful for code generation.
      *
-     * Includes the following functions:
-     * `printf`,
-     * `abort`,
-     * `exit`,
-     * `malloc`,
-     * `free`
-     *
-     * If panic recoverable is enabled, the following are also included:
-     * `setjmp`,
-     * `longjmp`
+     * Nico runtime functions are defined in the `nico_rt` library.
      */
     void add_c_functions();
 
@@ -166,10 +156,15 @@ class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
     /**
      * @brief Adds a panic call to the generated code.
      *
-     * During a panic, the program will print the error message and immediately
-     * terminate.
+     * During a panic, the program will print a special error message.
+     * If panic_recoverable is enabled, the `$panicking` variable will be set to
+     * true and the program will jump to all exit blocks. Otherwise, the program
+     * will call `nico_rt_abort` to terminate.
      *
-     * The implementation of this may vary.
+     * Note: this function sets a terminator for the current basic block, but
+     * does not set the insertion point for the next basic block. The caller
+     * should set the insertion point for the next basic block after calling
+     * this function.
      *
      * @param message The error message to pass to the `panic` function.
      * @param location The location in the source code where the panic occurs,

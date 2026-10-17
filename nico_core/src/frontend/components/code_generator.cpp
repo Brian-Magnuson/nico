@@ -1690,14 +1690,20 @@ void CodeGenerator::add_negative_alloc_size_check(
 void CodeGenerator::add_panic(
     std::string_view message, const Location* location
 ) {
-    // TODO: Update this function to have more control over basic blocks.
     auto printerrf_fn = mod_ctx.ir_module->getFunction("nico_rt_printerrf");
     if (!printerrf_fn) {
         panic("Failed to find nico_rt_printerrf function in IR module.");
     }
 
+    /*
+    PANIC: <message>
+      at <file>:<line>:<column>
+      in `<func_name>`
+    */
+
     llvm::Value* format_string =
-        builder->CreateGlobalString("Panic: %s: %s\n%s:%d:%d\n");
+        builder->CreateGlobalString("PANIC: %s\n  at %s:%d:%d\n  in `%s`\n");
+
     llvm::Value* func_name =
         builder->CreateGlobalString(control_stack.get_current_function_name());
     llvm::Value* msg = builder->CreateGlobalString(message);
@@ -1714,7 +1720,7 @@ void CodeGenerator::add_panic(
     );
     builder->CreateCall(
         printerrf_fn,
-        {format_string, func_name, msg, file_name, line_number, column_number}
+        {format_string, msg, file_name, line_number, column_number, func_name}
     );
 
     if (panic_recoverable) {
@@ -1768,20 +1774,22 @@ void CodeGenerator::generate_script_func(
 ) {
     add_c_functions();
 
-    auto panicking_var = new llvm::GlobalVariable(
-        *mod_ctx.ir_module,
-        llvm::Type::getInt1Ty(builder->getContext()),
-        false, // isConstant
-        llvm::GlobalValue::InternalLinkage,
-        llvm::ConstantInt::get(
+    // Add panicking global variable only if it doesn't already exist anywhere.
+    auto panicking_var =
+        mod_ctx.ir_module->getGlobalVariable("$panicking", true);
+    if (!panicking_var) {
+        panicking_var = new llvm::GlobalVariable(
+            *mod_ctx.ir_module,
             llvm::Type::getInt1Ty(builder->getContext()),
-            0
-        ), // initializer
-        "$panicking"
-    );
-    // We don't need to store this variable anywhere because LLVM manages
-    // global variables automatically. We can access it later by looking it
-    // up in the module by name when we need to check if we're panicking.
+            false, // isConstant
+            llvm::GlobalValue::ExternalLinkage,
+            llvm::ConstantInt::get(
+                llvm::Type::getInt1Ty(builder->getContext()),
+                0
+            ), // initializer
+            "$panicking"
+        );
+    }
 
     llvm::FunctionType* script_fn_type =
         llvm::FunctionType::get(builder->getInt32Ty(), false);
