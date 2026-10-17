@@ -109,8 +109,6 @@ public:
         std::string cout_output;
         // The captured output from `std::cerr`.
         std::string cerr_output;
-        // TODO: Remove the below field; it is no longer needed, we don't use
-        // exceptions.
         // Whether an exception was thrown during the execution of
         // `func`.
         bool was_exception_thrown;

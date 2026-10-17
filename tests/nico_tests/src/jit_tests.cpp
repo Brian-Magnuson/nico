@@ -115,15 +115,24 @@ void run_jit_test(
             jit->run_main_func(0, nullptr, context->main_fn_name);
     });
 
+    // The JIT should not throw exceptions.
+    CHECK(!was_exception_thrown);
+
+    if (options.print_stderr_output) {
+        if (err.empty()) {
+            std::cerr << "JIT had no err output to print.\n";
+        }
+        else {
+            std::cerr << "JIT err output:\n" << err;
+        }
+    }
+
     if (options.expected_error_code.has_value()) {
-        // TODO: Clean up checks to `was_exception_thrown`.
-        REQUIRE(!was_exception_thrown);
         auto errors_logged = nico::Diagnostics::inst().get_errors();
         REQUIRE(!errors_logged.empty());
         CHECK(errors_logged[0] == *options.expected_error_code);
     }
     else {
-        REQUIRE(!was_exception_thrown);
         REQUIRE(return_code_or_err.has_value());
         if (auto err = return_code_or_err->takeError()) {
             std::string err_msg =
@@ -135,15 +144,6 @@ void run_jit_test(
                 return_code_or_err.value().get() ==
                 nico::config::nico_panic_exit_code
             );
-        }
-    }
-
-    if (options.print_stderr_output) {
-        if (err.empty()) {
-            std::cerr << "JIT had no err output to print.\n";
-        }
-        else {
-            std::cerr << "JIT err output:\n" << err;
         }
     }
 
