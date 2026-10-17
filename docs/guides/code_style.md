@@ -302,11 +302,6 @@ For errors in the user's source code:
 We avoid using exceptions for error handling in this project.
 For details on how to properly handle errors, see the Error Handling section above.
 
-We use exceptions in the following cases:
-- When handling exceptions thrown by standard library functions.
-- When we need to stop the JIT mid-execution and return control to the caller.
-  - This is because there is no other known mechanism to stop the JIT mid-execution without terminating the entire program.
-
 For the rare cases where we do use exceptions, we follow these guidelines:
 
 General rules regarding exceptions:
