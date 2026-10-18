@@ -253,12 +253,12 @@ For variable names, function names, parameter names, and namespace names:
 - It may be helpful to change your IDE settings to use different colors for class member variables and static/global variables.
 
 For concrete types:
-- Use `CamelCase` with no additional prefixes
+- Use `UpperCamelCase` with no additional prefixes
   - E.g., `MyClass`, `YourStruct`
 - Some interface-like classes such as `Expr` use this style despite not being concrete. This is mainly for base classes that are core to the compiler and have a complex inheritance hierarchy.
 
 For interface-like types:
-- Use `CamelCase` and prefix the type with `I`.
+- Use `UpperCamelCase` and prefix the type with `I`.
   - E.g., `ILocatable`, `INumeric`
 - Use this pattern for types that are not designed to be instantiated directly.
 
@@ -460,6 +460,18 @@ Regarding the use of `const`:
 - Be mindful of `const` correctness when working with pointers and references.
 - For constant pointers, `const T*` is sufficient.
   - `const T const *`, while technically safer, should generally be avoided for simplicity.
+
+
+### Function Ordering
+
+We use the following guidelines for ordering functions within a class or file:
+- For class functions, private implementation functions should generally be declared before public member functions, keeping the public interface near the end of the class.
+- Within an implementation group, functions should generally appear before the functions that call them. This allows readers to understand the building blocks before encountering higher-level operations.
+- Functions that form a cohesive group should generally be kept together, even when doing so means deviating from strict dependency ordering.
+- In an implementation file, function definitions should generally appear in the same order as their corresponding declarations in the header file. This provides consistency between the header and implementation, allowing readers to navigate between the two files without having to mentally reconcile different orderings.
+
+These guidelines are not strict requirements. When a different ordering improves readability or better groups related functionality, that ordering should be preferred. Strict ordering may also be impractical due to dependency relationships or other constraints.
+
 
 ## Code Formatting
 

@@ -52,50 +52,31 @@ class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
         bool repl_mode
     );
 
-    std::any visit(Stmt::Expression* stmt) override;
-    std::any visit(Stmt::Let* stmt) override;
-    std::any visit(Stmt::Static* stmt) override;
-    std::any visit(Stmt::Func* stmt) override;
-    std::any visit(Stmt::Print* stmt) override;
-    std::any visit(Stmt::Dealloc* stmt) override;
-    std::any visit(Stmt::Pass* stmt) override;
-    std::any visit(Stmt::Yield* stmt) override;
-    std::any visit(Stmt::Continue* stmt) override;
-    std::any visit(Stmt::Namespace* stmt) override;
-    std::any visit(Stmt::ExternBlock* stmt) override;
-    std::any visit(Stmt::TypeDef* stmt) override;
-    std::any visit(Stmt::StructDef* stmt) override;
-    std::any visit(Stmt::Field* stmt) override;
-    std::any visit(Stmt::Eof* stmt) override;
-
-    std::any visit(Expr::Assign* expr, bool as_lvalue) override;
-    std::any visit(Expr::Logical* expr, bool as_lvalue) override;
-    std::any visit(Expr::Binary* expr, bool as_lvalue) override;
-    std::any visit(Expr::Unary* expr, bool as_lvalue) override;
-    std::any visit(Expr::Address* expr, bool as_lvalue) override;
-    std::any visit(Expr::Deref* expr, bool as_lvalue) override;
-    std::any visit(Expr::Cast* expr, bool as_lvalue) override;
-    std::any visit(Expr::Access* expr, bool as_lvalue) override;
-    std::any visit(Expr::Subscript* expr, bool as_lvalue) override;
-    std::any visit(Expr::Call* expr, bool as_lvalue) override;
-    std::any visit(Expr::SizeOf* expr, bool as_lvalue) override;
-    std::any visit(Expr::Alloc* expr, bool as_lvalue) override;
-    std::any visit(Expr::NewInst* expr, bool as_lvalue) override;
-    std::any visit(Expr::NameRef* expr, bool as_lvalue) override;
-    std::any visit(Expr::Literal* expr, bool as_lvalue) override;
-    std::any visit(Expr::Tuple* expr, bool as_lvalue) override;
-    std::any visit(Expr::Array* expr, bool as_lvalue) override;
-    std::any visit(Expr::Object* expr, bool as_lvalue) override;
-    std::any visit(Expr::Block* expr, bool as_lvalue) override;
-    std::any visit(Expr::Conditional* expr, bool as_lvalue) override;
-    std::any visit(Expr::Loop* expr, bool as_lvalue) override;
-
     /**
      * @brief Adds Nico runtime functions that are useful for code generation.
      *
      * Nico runtime functions are defined in the `nico_rt` library.
      */
     void add_c_functions();
+
+    /**
+     * @brief Adds a panic call to the generated code.
+     *
+     * During a panic, the program will print a special error message.
+     * If panic_recoverable is enabled, the `$panicking` variable will be set to
+     * true and the program will jump to all exit blocks. Otherwise, the program
+     * will call `nico_rt_abort` to terminate.
+     *
+     * Note: this function sets a terminator for the current basic block, but
+     * does not set the insertion point for the next basic block. The caller
+     * should set the insertion point for the next basic block after calling
+     * this function.
+     *
+     * @param message The error message to pass to the `panic` function.
+     * @param location The location in the source code where the panic occurs,
+     * used for the panic message.
+     */
+    void add_panic(std::string_view message, const Location* location);
 
     /**
      * @brief Adds a runtime check for division by zero.
@@ -153,24 +134,43 @@ class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
     void
     add_negative_alloc_size_check(llvm::Value* size, const Location* location);
 
-    /**
-     * @brief Adds a panic call to the generated code.
-     *
-     * During a panic, the program will print a special error message.
-     * If panic_recoverable is enabled, the `$panicking` variable will be set to
-     * true and the program will jump to all exit blocks. Otherwise, the program
-     * will call `nico_rt_abort` to terminate.
-     *
-     * Note: this function sets a terminator for the current basic block, but
-     * does not set the insertion point for the next basic block. The caller
-     * should set the insertion point for the next basic block after calling
-     * this function.
-     *
-     * @param message The error message to pass to the `panic` function.
-     * @param location The location in the source code where the panic occurs,
-     * used for the panic message.
-     */
-    void add_panic(std::string_view message, const Location* location);
+    std::any visit(Stmt::Expression* stmt) override;
+    std::any visit(Stmt::Let* stmt) override;
+    std::any visit(Stmt::Static* stmt) override;
+    std::any visit(Stmt::Func* stmt) override;
+    std::any visit(Stmt::Print* stmt) override;
+    std::any visit(Stmt::Dealloc* stmt) override;
+    std::any visit(Stmt::Pass* stmt) override;
+    std::any visit(Stmt::Yield* stmt) override;
+    std::any visit(Stmt::Continue* stmt) override;
+    std::any visit(Stmt::Namespace* stmt) override;
+    std::any visit(Stmt::ExternBlock* stmt) override;
+    std::any visit(Stmt::TypeDef* stmt) override;
+    std::any visit(Stmt::StructDef* stmt) override;
+    std::any visit(Stmt::Field* stmt) override;
+    std::any visit(Stmt::Eof* stmt) override;
+
+    std::any visit(Expr::Assign* expr, bool as_lvalue) override;
+    std::any visit(Expr::Logical* expr, bool as_lvalue) override;
+    std::any visit(Expr::Binary* expr, bool as_lvalue) override;
+    std::any visit(Expr::Unary* expr, bool as_lvalue) override;
+    std::any visit(Expr::Address* expr, bool as_lvalue) override;
+    std::any visit(Expr::Deref* expr, bool as_lvalue) override;
+    std::any visit(Expr::Cast* expr, bool as_lvalue) override;
+    std::any visit(Expr::Access* expr, bool as_lvalue) override;
+    std::any visit(Expr::Subscript* expr, bool as_lvalue) override;
+    std::any visit(Expr::Call* expr, bool as_lvalue) override;
+    std::any visit(Expr::SizeOf* expr, bool as_lvalue) override;
+    std::any visit(Expr::Alloc* expr, bool as_lvalue) override;
+    std::any visit(Expr::NewInst* expr, bool as_lvalue) override;
+    std::any visit(Expr::NameRef* expr, bool as_lvalue) override;
+    std::any visit(Expr::Literal* expr, bool as_lvalue) override;
+    std::any visit(Expr::Tuple* expr, bool as_lvalue) override;
+    std::any visit(Expr::Array* expr, bool as_lvalue) override;
+    std::any visit(Expr::Object* expr, bool as_lvalue) override;
+    std::any visit(Expr::Block* expr, bool as_lvalue) override;
+    std::any visit(Expr::Conditional* expr, bool as_lvalue) override;
+    std::any visit(Expr::Loop* expr, bool as_lvalue) override;
 
     /**
      * @brief Verify the generated LLVM IR for correctness.

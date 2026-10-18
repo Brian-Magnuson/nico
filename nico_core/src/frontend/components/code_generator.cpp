@@ -28,6 +28,311 @@ CodeGenerator::CodeGenerator(
     builder = std::make_unique<llvm::IRBuilder<>>(*this->mod_ctx.llvm_context);
 }
 
+// MARK: Helpers
+
+void CodeGenerator::add_c_functions() {
+    // nico_rt_printf
+    if (!mod_ctx.ir_module->getFunction("nico_rt_printf")) {
+        llvm::FunctionType* printf_type = llvm::FunctionType::get(
+            llvm::Type::getInt32Ty(*mod_ctx.llvm_context),
+            {llvm::PointerType::get(*mod_ctx.llvm_context, 0)},
+            true // true = variadic
+        );
+        llvm::Function::Create(
+            printf_type,
+            llvm::Function::ExternalLinkage,
+            "nico_rt_printf",
+            *mod_ctx.ir_module
+        );
+    }
+    // nico_rt_printerrf
+    if (!mod_ctx.ir_module->getFunction("nico_rt_printerrf")) {
+        llvm::FunctionType* printerrf_type = llvm::FunctionType::get(
+            llvm::Type::getInt32Ty(*mod_ctx.llvm_context),
+            {llvm::PointerType::get(*mod_ctx.llvm_context, 0)},
+            true // true = variadic
+        );
+        llvm::Function::Create(
+            printerrf_type,
+            llvm::Function::ExternalLinkage,
+            "nico_rt_printerrf",
+            *mod_ctx.ir_module
+        );
+    }
+    // nico_rt_abort
+    if (!mod_ctx.ir_module->getFunction("nico_rt_abort")) {
+        llvm::FunctionType* abort_type = llvm::FunctionType::get(
+            llvm::Type::getVoidTy(*mod_ctx.llvm_context),
+            {},
+            false
+        );
+        llvm::Function::Create(
+            abort_type,
+            llvm::Function::ExternalLinkage,
+            "nico_rt_abort",
+            *mod_ctx.ir_module
+        );
+    }
+    // nico_rt_exit
+    if (!mod_ctx.ir_module->getFunction("nico_rt_exit")) {
+        llvm::FunctionType* exit_type = llvm::FunctionType::get(
+            llvm::Type::getVoidTy(*mod_ctx.llvm_context),
+            {llvm::Type::getInt32Ty(*mod_ctx.llvm_context)},
+            false
+        );
+        llvm::Function::Create(
+            exit_type,
+            llvm::Function::ExternalLinkage,
+            "nico_rt_exit",
+            *mod_ctx.ir_module
+        );
+    }
+    // nico_rt_malloc
+    if (!mod_ctx.ir_module->getFunction("nico_rt_malloc")) {
+        llvm::FunctionType* malloc_type = llvm::FunctionType::get(
+            llvm::PointerType::get(*mod_ctx.llvm_context, 0),
+            {llvm::Type::getIntNTy(*mod_ctx.llvm_context, sizeof(size_t) * 8)},
+            false
+        );
+        llvm::Function::Create(
+            malloc_type,
+            llvm::Function::ExternalLinkage,
+            "nico_rt_malloc",
+            *mod_ctx.ir_module
+        );
+    }
+    // nico_rt_free
+    if (!mod_ctx.ir_module->getFunction("nico_rt_free")) {
+        llvm::FunctionType* free_type = llvm::FunctionType::get(
+            llvm::Type::getVoidTy(*mod_ctx.llvm_context),
+            {llvm::PointerType::get(*mod_ctx.llvm_context, 0)},
+            false
+        );
+        llvm::Function::Create(
+            free_type,
+            llvm::Function::ExternalLinkage,
+            "nico_rt_free",
+            *mod_ctx.ir_module
+        );
+    }
+    // nico_rt_panic
+    if (!mod_ctx.ir_module->getFunction("nico_rt_panic")) {
+        llvm::FunctionType* panic_type = llvm::FunctionType::get(
+            llvm::Type::getVoidTy(*mod_ctx.llvm_context),
+            {},
+            false
+        );
+        llvm::Function::Create(
+            panic_type,
+            llvm::Function::ExternalLinkage,
+            "nico_rt_panic",
+            *mod_ctx.ir_module
+        );
+    }
+}
+
+void CodeGenerator::add_panic(
+    std::string_view message, const Location* location
+) {
+    auto printerrf_fn = mod_ctx.ir_module->getFunction("nico_rt_printerrf");
+    if (!printerrf_fn) {
+        panic("Failed to find nico_rt_printerrf function in IR module.");
+    }
+
+    /*
+    PANIC: <message>
+      at <file>:<line>:<column>
+      in `<func_name>`
+    */
+
+    llvm::Value* format_string =
+        builder->CreateGlobalString("PANIC: %s\n  at %s:%d:%d\n  in `%s`\n");
+
+    llvm::Value* func_name =
+        builder->CreateGlobalString(control_stack.get_current_function_name());
+    llvm::Value* msg = builder->CreateGlobalString(message);
+    auto location_tuple = location->to_tuple();
+    llvm::Value* file_name =
+        builder->CreateGlobalString(std::get<0>(location_tuple));
+    llvm::Value* line_number = llvm::ConstantInt::get(
+        llvm::Type::getInt32Ty(*mod_ctx.llvm_context),
+        std::get<1>(location_tuple)
+    );
+    llvm::Value* column_number = llvm::ConstantInt::get(
+        llvm::Type::getInt32Ty(*mod_ctx.llvm_context),
+        std::get<2>(location_tuple)
+    );
+    builder->CreateCall(
+        printerrf_fn,
+        {format_string, msg, file_name, line_number, column_number, func_name}
+    );
+
+    if (panic_recoverable) {
+        // Get the $panicking global variable and set it to true.
+        llvm::GlobalVariable* panicking_var =
+            mod_ctx.ir_module->getGlobalVariable("$panicking", true);
+        if (!panicking_var) {
+            panic("Failed to find $panicking global variable in IR module.");
+        }
+        builder->CreateStore(
+            llvm::ConstantInt::get(
+                llvm::Type::getInt1Ty(*mod_ctx.llvm_context),
+                1
+            ),
+            panicking_var
+        );
+
+        auto exit_block =
+            control_stack.get_exit_block(Expr::Block::Kind::Function);
+        builder->CreateBr(exit_block);
+    }
+    else {
+        auto abort_fn = mod_ctx.ir_module->getFunction("nico_rt_abort");
+        if (!abort_fn) {
+            panic("Failed to find nico_rt_abort function in IR module.");
+        }
+        builder->CreateCall(abort_fn);
+        builder->CreateUnreachable();
+    }
+}
+
+void CodeGenerator::add_div_zero_check(
+    llvm::Value* divisor, const Location* location
+) {
+    llvm::BasicBlock* current_block = builder->GetInsertBlock();
+    llvm::Function* current_function = current_block->getParent();
+
+    llvm::BasicBlock* div_by_zero_block = llvm::BasicBlock::Create(
+        *mod_ctx.llvm_context,
+        "div_by_zero",
+        current_function
+    );
+    llvm::BasicBlock* div_ok_block = llvm::BasicBlock::Create(
+        *mod_ctx.llvm_context,
+        "div_ok",
+        current_function
+    );
+
+    llvm::Value* is_zero = builder->CreateICmpEQ(
+        divisor,
+        llvm::ConstantInt::get(divisor->getType(), 0)
+    );
+    builder->CreateCondBr(is_zero, div_by_zero_block, div_ok_block);
+
+    // div_by_zero_block
+    builder->SetInsertPoint(div_by_zero_block);
+    add_panic("Division by zero.", location);
+
+    // div_ok_block
+    builder->SetInsertPoint(div_ok_block);
+}
+
+void CodeGenerator::add_array_bounds_check(
+    llvm::Value* index, size_t array_size, const Location* location
+) {
+    llvm::BasicBlock* current_block = builder->GetInsertBlock();
+    llvm::Function* current_function = current_block->getParent();
+
+    llvm::BasicBlock* out_of_bounds_block = llvm::BasicBlock::Create(
+        *mod_ctx.llvm_context,
+        "array_out_of_bounds",
+        current_function
+    );
+    llvm::BasicBlock* in_bounds_block = llvm::BasicBlock::Create(
+        *mod_ctx.llvm_context,
+        "array_in_bounds",
+        current_function
+    );
+
+    llvm::Value* is_oob = builder->CreateICmpUGE(
+        index,
+        llvm::ConstantInt::get(index->getType(), array_size)
+    );
+    builder->CreateCondBr(is_oob, out_of_bounds_block, in_bounds_block);
+
+    // out_of_bounds_block
+    builder->SetInsertPoint(out_of_bounds_block);
+    add_panic(
+        "Array index out of bounds for array of size " +
+            std::to_string(array_size) + ".",
+        location
+    );
+
+    // in_bounds_block
+    builder->SetInsertPoint(in_bounds_block);
+}
+
+void CodeGenerator::add_alloc_nullptr_check(
+    llvm::Value* ptr, const Location* location
+) {
+    llvm::BasicBlock* current_block = builder->GetInsertBlock();
+    llvm::Function* current_function = current_block->getParent();
+
+    llvm::BasicBlock* null_ptr_block = llvm::BasicBlock::Create(
+        *mod_ctx.llvm_context,
+        "alloc_nullptr",
+        current_function
+    );
+    llvm::BasicBlock* not_null_block = llvm::BasicBlock::Create(
+        *mod_ctx.llvm_context,
+        "not_alloc_nullptr",
+        current_function
+    );
+
+    llvm::Value* is_null = builder->CreateICmpEQ(
+        ptr,
+        llvm::ConstantPointerNull::get(
+            llvm::PointerType::get(*mod_ctx.llvm_context, 0)
+        )
+    );
+    builder->CreateCondBr(is_null, null_ptr_block, not_null_block);
+
+    // null_ptr_block
+    builder->SetInsertPoint(null_ptr_block);
+    add_panic("Memory allocation failed.", location);
+
+    // not_null_block
+    builder->SetInsertPoint(not_null_block);
+}
+
+void CodeGenerator::add_negative_alloc_size_check(
+    llvm::Value* size_value, const Location* location
+) {
+    llvm::BasicBlock* current_block = builder->GetInsertBlock();
+    llvm::Function* current_function = current_block->getParent();
+
+    llvm::BasicBlock* negative_size_block = llvm::BasicBlock::Create(
+        *mod_ctx.llvm_context,
+        "alloc_negative_size",
+        current_function
+    );
+    llvm::BasicBlock* non_negative_size_block = llvm::BasicBlock::Create(
+        *mod_ctx.llvm_context,
+        "alloc_non_negative_size",
+        current_function
+    );
+
+    llvm::Value* is_negative = builder->CreateICmpSLT(
+        size_value,
+        llvm::ConstantInt::get(size_value->getType(), 0)
+    );
+    builder->CreateCondBr(
+        is_negative,
+        negative_size_block,
+        non_negative_size_block
+    );
+
+    // negative_size_block
+    builder->SetInsertPoint(negative_size_block);
+    add_panic(
+        "Allocation amount expression evaluated to a negative value.",
+        location
+    );
+
+    // non_negative_size_block
+    builder->SetInsertPoint(non_negative_size_block);
+}
+
 // MARK: Statements
 
 std::any CodeGenerator::visit(Stmt::Expression* stmt) {
@@ -1445,311 +1750,6 @@ std::any CodeGenerator::visit(Expr::Loop* expr, bool as_lvalue) {
     control_stack.pop_block();
 
     return yield_value;
-}
-
-// MARK: Helpers
-
-void CodeGenerator::add_c_functions() {
-    // nico_rt_printf
-    if (!mod_ctx.ir_module->getFunction("nico_rt_printf")) {
-        llvm::FunctionType* printf_type = llvm::FunctionType::get(
-            llvm::Type::getInt32Ty(*mod_ctx.llvm_context),
-            {llvm::PointerType::get(*mod_ctx.llvm_context, 0)},
-            true // true = variadic
-        );
-        llvm::Function::Create(
-            printf_type,
-            llvm::Function::ExternalLinkage,
-            "nico_rt_printf",
-            *mod_ctx.ir_module
-        );
-    }
-    // nico_rt_printerrf
-    if (!mod_ctx.ir_module->getFunction("nico_rt_printerrf")) {
-        llvm::FunctionType* printerrf_type = llvm::FunctionType::get(
-            llvm::Type::getInt32Ty(*mod_ctx.llvm_context),
-            {llvm::PointerType::get(*mod_ctx.llvm_context, 0)},
-            true // true = variadic
-        );
-        llvm::Function::Create(
-            printerrf_type,
-            llvm::Function::ExternalLinkage,
-            "nico_rt_printerrf",
-            *mod_ctx.ir_module
-        );
-    }
-    // nico_rt_abort
-    if (!mod_ctx.ir_module->getFunction("nico_rt_abort")) {
-        llvm::FunctionType* abort_type = llvm::FunctionType::get(
-            llvm::Type::getVoidTy(*mod_ctx.llvm_context),
-            {},
-            false
-        );
-        llvm::Function::Create(
-            abort_type,
-            llvm::Function::ExternalLinkage,
-            "nico_rt_abort",
-            *mod_ctx.ir_module
-        );
-    }
-    // nico_rt_exit
-    if (!mod_ctx.ir_module->getFunction("nico_rt_exit")) {
-        llvm::FunctionType* exit_type = llvm::FunctionType::get(
-            llvm::Type::getVoidTy(*mod_ctx.llvm_context),
-            {llvm::Type::getInt32Ty(*mod_ctx.llvm_context)},
-            false
-        );
-        llvm::Function::Create(
-            exit_type,
-            llvm::Function::ExternalLinkage,
-            "nico_rt_exit",
-            *mod_ctx.ir_module
-        );
-    }
-    // nico_rt_malloc
-    if (!mod_ctx.ir_module->getFunction("nico_rt_malloc")) {
-        llvm::FunctionType* malloc_type = llvm::FunctionType::get(
-            llvm::PointerType::get(*mod_ctx.llvm_context, 0),
-            {llvm::Type::getIntNTy(*mod_ctx.llvm_context, sizeof(size_t) * 8)},
-            false
-        );
-        llvm::Function::Create(
-            malloc_type,
-            llvm::Function::ExternalLinkage,
-            "nico_rt_malloc",
-            *mod_ctx.ir_module
-        );
-    }
-    // nico_rt_free
-    if (!mod_ctx.ir_module->getFunction("nico_rt_free")) {
-        llvm::FunctionType* free_type = llvm::FunctionType::get(
-            llvm::Type::getVoidTy(*mod_ctx.llvm_context),
-            {llvm::PointerType::get(*mod_ctx.llvm_context, 0)},
-            false
-        );
-        llvm::Function::Create(
-            free_type,
-            llvm::Function::ExternalLinkage,
-            "nico_rt_free",
-            *mod_ctx.ir_module
-        );
-    }
-    // nico_rt_panic
-    if (!mod_ctx.ir_module->getFunction("nico_rt_panic")) {
-        llvm::FunctionType* panic_type = llvm::FunctionType::get(
-            llvm::Type::getVoidTy(*mod_ctx.llvm_context),
-            {},
-            false
-        );
-        llvm::Function::Create(
-            panic_type,
-            llvm::Function::ExternalLinkage,
-            "nico_rt_panic",
-            *mod_ctx.ir_module
-        );
-    }
-}
-
-void CodeGenerator::add_div_zero_check(
-    llvm::Value* divisor, const Location* location
-) {
-    llvm::BasicBlock* current_block = builder->GetInsertBlock();
-    llvm::Function* current_function = current_block->getParent();
-
-    llvm::BasicBlock* div_by_zero_block = llvm::BasicBlock::Create(
-        *mod_ctx.llvm_context,
-        "div_by_zero",
-        current_function
-    );
-    llvm::BasicBlock* div_ok_block = llvm::BasicBlock::Create(
-        *mod_ctx.llvm_context,
-        "div_ok",
-        current_function
-    );
-
-    llvm::Value* is_zero = builder->CreateICmpEQ(
-        divisor,
-        llvm::ConstantInt::get(divisor->getType(), 0)
-    );
-    builder->CreateCondBr(is_zero, div_by_zero_block, div_ok_block);
-
-    // div_by_zero_block
-    builder->SetInsertPoint(div_by_zero_block);
-    add_panic("Division by zero.", location);
-
-    // div_ok_block
-    builder->SetInsertPoint(div_ok_block);
-}
-
-void CodeGenerator::add_array_bounds_check(
-    llvm::Value* index, size_t array_size, const Location* location
-) {
-    llvm::BasicBlock* current_block = builder->GetInsertBlock();
-    llvm::Function* current_function = current_block->getParent();
-
-    llvm::BasicBlock* out_of_bounds_block = llvm::BasicBlock::Create(
-        *mod_ctx.llvm_context,
-        "array_out_of_bounds",
-        current_function
-    );
-    llvm::BasicBlock* in_bounds_block = llvm::BasicBlock::Create(
-        *mod_ctx.llvm_context,
-        "array_in_bounds",
-        current_function
-    );
-
-    llvm::Value* is_oob = builder->CreateICmpUGE(
-        index,
-        llvm::ConstantInt::get(index->getType(), array_size)
-    );
-    builder->CreateCondBr(is_oob, out_of_bounds_block, in_bounds_block);
-
-    // out_of_bounds_block
-    builder->SetInsertPoint(out_of_bounds_block);
-    add_panic(
-        "Array index out of bounds for array of size " +
-            std::to_string(array_size) + ".",
-        location
-    );
-
-    // in_bounds_block
-    builder->SetInsertPoint(in_bounds_block);
-}
-
-void CodeGenerator::add_alloc_nullptr_check(
-    llvm::Value* ptr, const Location* location
-) {
-    llvm::BasicBlock* current_block = builder->GetInsertBlock();
-    llvm::Function* current_function = current_block->getParent();
-
-    llvm::BasicBlock* null_ptr_block = llvm::BasicBlock::Create(
-        *mod_ctx.llvm_context,
-        "alloc_nullptr",
-        current_function
-    );
-    llvm::BasicBlock* not_null_block = llvm::BasicBlock::Create(
-        *mod_ctx.llvm_context,
-        "not_alloc_nullptr",
-        current_function
-    );
-
-    llvm::Value* is_null = builder->CreateICmpEQ(
-        ptr,
-        llvm::ConstantPointerNull::get(
-            llvm::PointerType::get(*mod_ctx.llvm_context, 0)
-        )
-    );
-    builder->CreateCondBr(is_null, null_ptr_block, not_null_block);
-
-    // null_ptr_block
-    builder->SetInsertPoint(null_ptr_block);
-    add_panic("Memory allocation failed.", location);
-
-    // not_null_block
-    builder->SetInsertPoint(not_null_block);
-}
-
-void CodeGenerator::add_negative_alloc_size_check(
-    llvm::Value* size_value, const Location* location
-) {
-    llvm::BasicBlock* current_block = builder->GetInsertBlock();
-    llvm::Function* current_function = current_block->getParent();
-
-    llvm::BasicBlock* negative_size_block = llvm::BasicBlock::Create(
-        *mod_ctx.llvm_context,
-        "alloc_negative_size",
-        current_function
-    );
-    llvm::BasicBlock* non_negative_size_block = llvm::BasicBlock::Create(
-        *mod_ctx.llvm_context,
-        "alloc_non_negative_size",
-        current_function
-    );
-
-    llvm::Value* is_negative = builder->CreateICmpSLT(
-        size_value,
-        llvm::ConstantInt::get(size_value->getType(), 0)
-    );
-    builder->CreateCondBr(
-        is_negative,
-        negative_size_block,
-        non_negative_size_block
-    );
-
-    // negative_size_block
-    builder->SetInsertPoint(negative_size_block);
-    add_panic(
-        "Allocation amount expression evaluated to a negative value.",
-        location
-    );
-
-    // non_negative_size_block
-    builder->SetInsertPoint(non_negative_size_block);
-}
-
-void CodeGenerator::add_panic(
-    std::string_view message, const Location* location
-) {
-    auto printerrf_fn = mod_ctx.ir_module->getFunction("nico_rt_printerrf");
-    if (!printerrf_fn) {
-        panic("Failed to find nico_rt_printerrf function in IR module.");
-    }
-
-    /*
-    PANIC: <message>
-      at <file>:<line>:<column>
-      in `<func_name>`
-    */
-
-    llvm::Value* format_string =
-        builder->CreateGlobalString("PANIC: %s\n  at %s:%d:%d\n  in `%s`\n");
-
-    llvm::Value* func_name =
-        builder->CreateGlobalString(control_stack.get_current_function_name());
-    llvm::Value* msg = builder->CreateGlobalString(message);
-    auto location_tuple = location->to_tuple();
-    llvm::Value* file_name =
-        builder->CreateGlobalString(std::get<0>(location_tuple));
-    llvm::Value* line_number = llvm::ConstantInt::get(
-        llvm::Type::getInt32Ty(*mod_ctx.llvm_context),
-        std::get<1>(location_tuple)
-    );
-    llvm::Value* column_number = llvm::ConstantInt::get(
-        llvm::Type::getInt32Ty(*mod_ctx.llvm_context),
-        std::get<2>(location_tuple)
-    );
-    builder->CreateCall(
-        printerrf_fn,
-        {format_string, msg, file_name, line_number, column_number, func_name}
-    );
-
-    if (panic_recoverable) {
-        // Get the $panicking global variable and set it to true.
-        llvm::GlobalVariable* panicking_var =
-            mod_ctx.ir_module->getGlobalVariable("$panicking", true);
-        if (!panicking_var) {
-            panic("Failed to find $panicking global variable in IR module.");
-        }
-        builder->CreateStore(
-            llvm::ConstantInt::get(
-                llvm::Type::getInt1Ty(*mod_ctx.llvm_context),
-                1
-            ),
-            panicking_var
-        );
-
-        auto exit_block =
-            control_stack.get_exit_block(Expr::Block::Kind::Function);
-        builder->CreateBr(exit_block);
-    }
-    else {
-        auto abort_fn = mod_ctx.ir_module->getFunction("nico_rt_abort");
-        if (!abort_fn) {
-            panic("Failed to find nico_rt_abort function in IR module.");
-        }
-        builder->CreateCall(abort_fn);
-        builder->CreateUnreachable();
-    }
 }
 
 bool CodeGenerator::verify_ir() {
