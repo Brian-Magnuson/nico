@@ -11,6 +11,17 @@
                 "CMAKE_C_COMPILER": "clang",
                 "CMAKE_CXX_COMPILER": "clang++"
             }
+        },
+        {
+            "name": "windows-msys2-debug",
+            "displayName": "Windows MSYS2 Debug",
+            "generator": "MSYS Makefiles",
+            "binaryDir": "${sourceDir}/build",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++"
+            }
         }
     ],
     "buildPresets": [
@@ -18,6 +29,12 @@
             "name": "unix-debug",
             "displayName": "Unix Debug",
             "configurePreset": "unix-debug",
+            "jobs": 8
+        },
+        {
+            "name": "windows-msys2-debug",
+            "displayName": "Windows MSYS2 Debug",
+            "configurePreset": "windows-msys2-debug",
             "jobs": 8
         }
     ]
