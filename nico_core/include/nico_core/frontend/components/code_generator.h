@@ -183,16 +183,29 @@ class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
     bool verify_ir();
 
     /**
+     * @brief Generates the preamble for the LLVM IR module, including runtime
+     * functions.
+     *
+     * The preamble includes declarations that are included for every Nico
+     * program, such as the runtime functions and special global variables.
+     *
+     * @param context The front end context containing the AST to generate IR
+     * for.
+     */
+    void generate_preamble(const std::unique_ptr<FrontendContext>& context);
+
+    /**
      * @brief Generates the LLVM IR for the script function.
      *
      * All of the AST statements in the context are processed here.
      *
-     * In our programming language, code is executed from the top level instead
-     * of an explicit "main" function. Internally, this code is put into a
-     * special function called the script function, which can be called to "run"
-     * the code.
+     * In our programming language, code is executed from the top level
+     * instead of an explicit "main" function. Internally, this code is put
+     * into a special function called the script function, which can be
+     * called to "run" the code.
      *
-     * @param context The front end context containing the AST to generate IR.
+     * @param context The front end context containing the AST to generate
+     * IR.
      * @param script_fn_name The name of the script function to generate.
      */
     void generate_script_func(

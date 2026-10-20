@@ -1768,10 +1768,10 @@ bool CodeGenerator::verify_ir() {
     return !failed;
 }
 
-void CodeGenerator::generate_script_func(
-    const std::unique_ptr<FrontendContext>& context,
-    std::string_view script_fn_name
+void CodeGenerator::generate_preamble(
+    const std::unique_ptr<FrontendContext>& context
 ) {
+    // Add the nico runtime functions to the module.
     add_c_functions();
 
     // Add panicking global variable only if it doesn't already exist anywhere.
@@ -1782,7 +1782,7 @@ void CodeGenerator::generate_script_func(
             *mod_ctx.ir_module,
             llvm::Type::getInt1Ty(builder->getContext()),
             false, // isConstant
-            llvm::GlobalValue::ExternalLinkage,
+            llvm::GlobalValue::InternalLinkage,
             llvm::ConstantInt::get(
                 llvm::Type::getInt1Ty(builder->getContext()),
                 0
@@ -1790,7 +1790,12 @@ void CodeGenerator::generate_script_func(
             "$panicking"
         );
     }
+}
 
+void CodeGenerator::generate_script_func(
+    const std::unique_ptr<FrontendContext>& context,
+    std::string_view script_fn_name
+) {
     llvm::FunctionType* script_fn_type =
         llvm::FunctionType::get(builder->getInt32Ty(), false);
     llvm::Function* script_fn = llvm::Function::Create(
@@ -1835,6 +1840,15 @@ void CodeGenerator::generate_script_func(
         // If we're in a panic-recoverable mode, we need to check if we're
         // panicking before returning. If we are, we return the panic exit code
         // instead of the normal return value.
+        auto panicking_var =
+            mod_ctx.ir_module->getGlobalVariable("$panicking", true);
+        if (!panicking_var) {
+            panic(
+                "Failed to find `$panicking` global variable in IR module. "
+                "Was preamble generated?"
+            );
+        }
+
         llvm::Value* is_panicking = builder->CreateLoad(
             llvm::Type::getInt1Ty(*mod_ctx.llvm_context),
             panicking_var
@@ -1907,6 +1921,7 @@ void CodeGenerator::generate_exe_ir(
         false // repl_mode
     );
 
+    codegen.generate_preamble(context);
     codegen.generate_script_func(context, context->script_fn_name);
     codegen.generate_main_func(context->script_fn_name, context->main_fn_name);
     if (require_verification && !codegen.verify_ir()) {
@@ -1929,7 +1944,7 @@ void CodeGenerator::generate_repl_ir(
 
     auto repl_counter_str = std::to_string(++repl_counter);
     auto script_fn_name = "$script_" + repl_counter_str;
-    auto main_fn_name = "main_" + repl_counter_str;
+    auto main_fn_name = "$main_" + repl_counter_str;
 
     CodeGenerator codegen(
         std::move(context->mod_ctx),
@@ -1938,6 +1953,7 @@ void CodeGenerator::generate_repl_ir(
         true  // repl_mode
     );
 
+    codegen.generate_preamble(context);
     codegen.generate_script_func(context, script_fn_name);
     codegen.generate_main_func(script_fn_name, main_fn_name);
     if (require_verification && !codegen.verify_ir()) {
