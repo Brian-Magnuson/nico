@@ -6,6 +6,8 @@
 #include <iostream>
 #include <vector>
 
+int8_t nico_rt_panicking = 0;
+
 int nico_rt_printf(const char* format, ...) {
     va_list args;
     va_start(args, format);

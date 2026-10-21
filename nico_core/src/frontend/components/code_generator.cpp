@@ -168,15 +168,17 @@ void CodeGenerator::add_panic(
     );
 
     if (panic_recoverable) {
-        // Get the $panicking global variable and set it to true.
+        // Get the nico_rt_panicking global variable and set it to true.
         llvm::GlobalVariable* panicking_var =
-            mod_ctx.ir_module->getGlobalVariable("$panicking", true);
+            mod_ctx.ir_module->getGlobalVariable("nico_rt_panicking", true);
         if (!panicking_var) {
-            panic("Failed to find $panicking global variable in IR module.");
+            panic(
+                "Failed to find nico_rt_panicking global variable in IR module."
+            );
         }
         builder->CreateStore(
             llvm::ConstantInt::get(
-                llvm::Type::getInt1Ty(*mod_ctx.llvm_context),
+                llvm::Type::getInt8Ty(*mod_ctx.llvm_context),
                 1
             ),
             panicking_var
@@ -1177,11 +1179,14 @@ std::any CodeGenerator::visit(Expr::Call* expr, bool as_lvalue) {
             "proceed",
             builder->GetInsertBlock()->getParent()
         );
-        // Conditionally branch to exit block if `$panicking` is true.
+        // Conditionally branch to exit block if `nico_rt_panicking` is true.
         llvm::Value* panicking_var =
-            mod_ctx.ir_module->getGlobalVariable("$panicking", true);
+            mod_ctx.ir_module->getGlobalVariable("nico_rt_panicking", true);
         if (!panicking_var) {
-            panic("Failed to find `$panicking` global variable in IR module.");
+            panic(
+                "Failed to find `nico_rt_panicking` global variable in IR "
+                "module."
+            );
         }
         llvm::Value* is_panicking = builder->CreateLoad(
             llvm::Type::getInt1Ty(*mod_ctx.llvm_context),
@@ -1776,18 +1781,15 @@ void CodeGenerator::generate_preamble(
 
     // Add panicking global variable only if it doesn't already exist anywhere.
     auto panicking_var =
-        mod_ctx.ir_module->getGlobalVariable("$panicking", true);
+        mod_ctx.ir_module->getGlobalVariable("nico_rt_panicking", true);
     if (!panicking_var) {
         panicking_var = new llvm::GlobalVariable(
             *mod_ctx.ir_module,
-            llvm::Type::getInt1Ty(builder->getContext()),
+            llvm::Type::getInt8Ty(builder->getContext()),
             false, // isConstant
-            llvm::GlobalValue::InternalLinkage,
-            llvm::ConstantInt::get(
-                llvm::Type::getInt1Ty(builder->getContext()),
-                0
-            ), // initializer
-            "$panicking"
+            llvm::GlobalValue::ExternalLinkage,
+            nullptr, // No initializer; it is defined in nico_rt
+            "nico_rt_panicking"
         );
     }
 }
@@ -1841,10 +1843,11 @@ void CodeGenerator::generate_script_func(
         // panicking before returning. If we are, we return the panic exit code
         // instead of the normal return value.
         auto panicking_var =
-            mod_ctx.ir_module->getGlobalVariable("$panicking", true);
+            mod_ctx.ir_module->getGlobalVariable("nico_rt_panicking", true);
         if (!panicking_var) {
             panic(
-                "Failed to find `$panicking` global variable in IR module. "
+                "Failed to find `nico_rt_panicking` global variable in IR "
+                "module. "
                 "Was preamble generated?"
             );
         }

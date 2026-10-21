@@ -2,8 +2,17 @@
 #define NICO_RT_FUNCTIONS_H
 
 #include <cstddef>
+#include <cstdint>
 
 extern "C" {
+
+/**
+ * @brief A flag indicating whether the program is panicking.
+ *
+ * We use an int8_t instead of a bool to ensure that the size is exactly 1 byte,
+ * which is important for ABI compatibility.
+ */
+extern int8_t nico_rt_panicking;
 
 /**
  * @brief Print a formatted string using C++'s std::cout. This function is

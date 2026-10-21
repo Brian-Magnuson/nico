@@ -134,9 +134,12 @@ void run_jit_test(
     }
     else {
         REQUIRE(return_code_or_err.has_value());
-        if (auto err = return_code_or_err->takeError()) {
+        if (auto run_err = return_code_or_err->takeError()) {
             std::string err_msg =
-                "JIT execution failed: " + llvm::toString(std::move(err));
+                "JIT execution failed: " + llvm::toString(std::move(run_err));
+            if (!err.empty()) {
+                err_msg += "\nJIT stderr output:\n" + err;
+            }
             FAIL(err_msg);
         }
         if (options.expect_panic) {
