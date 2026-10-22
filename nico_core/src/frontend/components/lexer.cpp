@@ -43,6 +43,7 @@ std::unordered_map<std::string_view, Tok> Lexer::keywords = {
 
     {"dealloc", Tok::KwDealloc},
     {"printout", Tok::KwPrintout},
+    {"panic", Tok::KwPanic},
 
     {"var", Tok::KwVar},
     {"mut", Tok::KwMut},

@@ -147,6 +147,7 @@ enum class Tok {
 
     KwDealloc,
     KwPrintout, // Temporary print keyword for development.
+    KwPanic,    // Temporary panic keyword for development.
     _KwStatementStartersEnd,
 
     KwVar,

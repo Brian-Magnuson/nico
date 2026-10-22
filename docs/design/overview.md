@@ -2252,6 +2252,33 @@ unsafe:
     dealloc p
 ```
 
+
+### Panic statements
+
+A panic statement is a statement that causes the program to panic and terminate execution.
+
+It can be written without any values:
+```
+panic
+```
+
+Or it can be written with values:
+```
+panic with value1, value2, ...
+```
+
+The panic-with form requires at least one value.
+Values can be any printable expression.
+
+Panic statements can be provided multiple values, which will be concatenated together to form the panic message.
+Unlike other list-like constructs, panic statements do not allow trailing commas after the last value.
+
+A panic indicates that the program has encountered an unrecoverable error and cannot continue execution.
+Some operations in Nico will have implicit runtime checks that will cause a panic if the operation is invalid. 
+For example, allocating a negative amount of memory will cause a panic.
+
+Panic statements allow users to create their own panic conditions in their code. The value provided to the panic statement will be used as the panic message, which can be useful for debugging.
+
 # Modifiers
 
 Modifiers allow you to modify declarations and statements, altering their behavior or even transforming their syntax.
