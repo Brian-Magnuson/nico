@@ -200,6 +200,11 @@ std::any MIRBuilder::visit(Stmt::Dealloc* stmt) {
     return std::any();
 }
 
+std::any MIRBuilder::visit(Stmt::Panic* stmt) {
+    // TODO: Implementation for visiting Panic statements goes here.
+    return {};
+}
+
 std::any MIRBuilder::visit(Stmt::Pass* stmt) {
     // TODO: Implementation for visiting Pass statements goes here.
     return {};

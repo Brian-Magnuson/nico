@@ -529,6 +529,12 @@ std::any CodeGenerator::visit(Stmt::Dealloc* stmt) {
     return std::any();
 }
 
+std::any CodeGenerator::visit(Stmt::Panic* stmt) {
+    // TODO: Implementation for visiting Panic statements goes here.
+
+    return std::any();
+}
+
 std::any CodeGenerator::visit(Stmt::Pass* /*stmt*/) {
     // A pass statement does nothing.
     return std::any();

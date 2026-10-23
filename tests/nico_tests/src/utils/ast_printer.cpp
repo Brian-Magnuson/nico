@@ -140,6 +140,15 @@ std::any AstPrinter::visit(Stmt::Dealloc* stmt) {
     return str;
 }
 
+std::any AstPrinter::visit(Stmt::Panic* stmt) {
+    std::string str = "(stmt:panic";
+    for (const auto& expr : stmt->expressions) {
+        str += " " + std::any_cast<std::string>(expr->accept(this, false));
+    }
+    str += ")";
+    return str;
+}
+
 std::any AstPrinter::visit(Stmt::Pass* /*stmt*/) {
     return std::string("(stmt:pass)");
 }

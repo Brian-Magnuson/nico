@@ -337,7 +337,6 @@ std::any LocalChecker::visit(Stmt::Continue* stmt) {
 std::any LocalChecker::visit(Stmt::Print* stmt) {
     // Visit each expression in the print statement.
     for (auto& expr : stmt->expressions) {
-        // expr->accept(this, false);
         expression_checker->expr_check(expr, false);
     }
     return std::any();
@@ -376,6 +375,14 @@ std::any LocalChecker::visit(Stmt::Dealloc* stmt) {
         return std::any();
     }
 
+    return std::any();
+}
+
+std::any LocalChecker::visit(Stmt::Panic* stmt) {
+    // Visit each expression in the panic statement.
+    for (auto& expr : stmt->expressions) {
+        expression_checker->expr_check(expr, false);
+    }
     return std::any();
 }
 

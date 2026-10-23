@@ -264,6 +264,11 @@ std::any GlobalChecker::visit(Stmt::Dealloc*) {
     return std::any();
 }
 
+std::any GlobalChecker::visit(Stmt::Panic*) {
+    // Do nothing.
+    return std::any();
+}
+
 std::any GlobalChecker::visit(Stmt::Pass*) {
     // Do nothing.
     return std::any();

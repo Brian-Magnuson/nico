@@ -437,6 +437,7 @@ public:
 
     class Print;
     class Dealloc;
+    class Panic;
 
     class Pass;
     class Yield;
@@ -457,6 +458,7 @@ public:
         virtual std::any visit(Func* stmt) = 0;
         virtual std::any visit(Print* stmt) = 0;
         virtual std::any visit(Dealloc* stmt) = 0;
+        virtual std::any visit(Panic* stmt) = 0;
         virtual std::any visit(Pass* stmt) = 0;
         virtual std::any visit(Yield* stmt) = 0;
         virtual std::any visit(Continue* stmt) = 0;

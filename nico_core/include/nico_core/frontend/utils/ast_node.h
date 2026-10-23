@@ -440,6 +440,36 @@ public:
 };
 
 /**
+ * @brief A panic statement.
+ *
+ * Panic statements are used to indicate that the program has encountered an
+ * unrecoverable error and should terminate.
+ */
+class Stmt::Panic : public Stmt::IExecAllowed {
+public:
+    // The expressions to panic with.
+    std::vector<std::shared_ptr<Expr>> expressions;
+
+    Panic(
+        std::shared_ptr<Token> start_token,
+        std::vector<std::shared_ptr<Expr>>&& expressions
+    )
+        : expressions(std::move(expressions)) {
+        location = &start_token->location;
+    }
+
+    Panic(std::vector<std::shared_ptr<Expr>>&& expressions)
+        : expressions(std::move(expressions)) {
+        if (this->expressions.empty()) {
+            panic("Panic expressions cannot be empty.");
+        }
+        location = this->expressions.at(0)->location;
+    }
+
+    std::any accept(Visitor* visitor) override { return visitor->visit(this); }
+};
+
+/**
  * @brief A pass statement.
  *
  * Pass statements do nothing and may be used in places where a statement is
