@@ -586,6 +586,19 @@ class Parser {
     std::optional<std::shared_ptr<Stmt>> dealloc_statement();
 
     /**
+     * @brief Parses a panic statement.
+     *
+     * Panic statements cause the program to terminate with an error message.
+     *
+     * Consists of the `panic` keyword and, optionally, the `with` keyword
+     * followed by a list of expressions to be printed as the error message.
+     *
+     * @return A shared pointer to the parsed statement, or nullopt if the
+     * statement could not be parsed.
+     */
+    std::optional<std::shared_ptr<Stmt>> panic_statement();
+
+    /**
      * @brief Parses a yield statement.
      *
      * Yield statements set the value to be yielded by a block expression.

@@ -1941,17 +1941,13 @@ std::optional<std::shared_ptr<Stmt>> Parser::struct_def_statement() {
 std::optional<std::shared_ptr<Stmt>> Parser::print_statement() {
     auto print_token = previous();
     std::vector<std::shared_ptr<Expr>> expressions;
-    auto expr = expression();
-    if (!expr)
-        return std::nullopt;
-    expressions.push_back(*expr);
 
-    while (match({Tok::Comma})) {
-        expr = expression();
+    do {
+        auto expr = expression();
         if (!expr)
             return std::nullopt;
         expressions.push_back(*expr);
-    }
+    } while (match({Tok::Comma}));
 
     return std::make_shared<Stmt::Print>(print_token, std::move(expressions));
 }
@@ -1964,6 +1960,22 @@ std::optional<std::shared_ptr<Stmt>> Parser::dealloc_statement() {
     }
 
     return std::make_shared<Stmt::Dealloc>(dealloc_token, *expr);
+}
+
+std::optional<std::shared_ptr<Stmt>> Parser::panic_statement() {
+    auto panic_token = previous();
+    std::vector<std::shared_ptr<Expr>> expressions;
+
+    if (match({Tok::KwWith})) {
+        do {
+            auto expr = expression();
+            if (!expr)
+                return std::nullopt;
+            expressions.push_back(*expr);
+        } while (match({Tok::Comma}));
+    }
+
+    return std::make_shared<Stmt::Panic>(panic_token, std::move(expressions));
 }
 
 std::optional<std::shared_ptr<Stmt>> Parser::yield_statement() {
@@ -2064,6 +2076,9 @@ std::optional<std::shared_ptr<Stmt>> Parser::statement() {
     }
     else if (match({Tok::KwDealloc})) {
         stmt = dealloc_statement();
+    }
+    else if (match({Tok::KwPanic})) {
+        stmt = panic_statement();
     }
     else {
         stmt = expression_statement();
