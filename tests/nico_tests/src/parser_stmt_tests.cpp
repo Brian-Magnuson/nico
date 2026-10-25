@@ -1069,6 +1069,34 @@ TEST_CASE("Parser dealloc statement", "[parser]") {
     }
 }
 
+TEST_CASE("Parser panic statement", "[parser]") {
+    SECTION("Panic without expression") {
+        run_parser_stmt_test("panic", {"(stmt:panic)", "(stmt:eof)"});
+    }
+
+    SECTION("Panic with expression") {
+        run_parser_stmt_test(
+            "panic with \"Error occurred\"",
+            {"(stmt:panic (lit \"Error occurred\"))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Panic with non-string expression") {
+        run_parser_stmt_test(
+            "panic with 42",
+            {"(stmt:panic (lit i32 42))", "(stmt:eof)"}
+        );
+    }
+
+    SECTION("Panic with multiple expressions") {
+        run_parser_stmt_test(
+            "panic with \"Error\", \"Another error\"",
+            {"(stmt:panic (lit \"Error\") (lit \"Another error\"))",
+             "(stmt:eof)"}
+        );
+    }
+}
+
 TEST_CASE("Parser modifiers linkage and symbol", "[parser]") {
     SECTION("External linkage static variable") {
         run_parser_stmt_test(

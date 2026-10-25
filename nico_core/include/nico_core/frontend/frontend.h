@@ -45,6 +45,8 @@ public:
      */
     std::unique_ptr<FrontendContext>&
     compile(const std::shared_ptr<CodeFile>& file, bool repl_mode = false);
+    // TODO: We don't need to include `repl_mode` as a parameter since the front
+    // end context already has the compile mode.
 
     /**
      * @brief Sets whether the code generator should use panic recovery.
