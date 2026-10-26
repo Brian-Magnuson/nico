@@ -317,6 +317,20 @@ TEST_CASE("Check print statements", "[checker]") {
     }
 }
 
+TEST_CASE("Check panic statements", "[checker]") {
+    SECTION("Valid panic statement") {
+        run_checker_stmt_test("panic \"This is a panic message.\"");
+    }
+
+    SECTION("Panic with expression") {
+        run_checker_stmt_test("panic with 42");
+    }
+
+    SECTION("Panic with multiple expressions") {
+        run_checker_stmt_test("panic with \"Error code:\", 42");
+    }
+}
+
 TEST_CASE("Check function declarations", "[checker]") {
     SECTION("Valid function declaration braced form") {
         run_checker_stmt_test(R"(
