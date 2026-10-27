@@ -25,7 +25,7 @@ void compile_and_run(std::string_view file_name) {
 
     Frontend frontend(CompileMode::JIT);
     std::unique_ptr<FrontendContext>& context =
-        frontend.compile(code_file_opt.value(), false);
+        frontend.compile(code_file_opt.value());
     if (!IS_VARIANT(context->status, Status::Ok)) {
         std::cerr << "Compilation failed; exiting...";
         std::exit(1);

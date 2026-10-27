@@ -44,9 +44,7 @@ public:
      * @return A unique pointer reference to the front end context.
      */
     std::unique_ptr<FrontendContext>&
-    compile(const std::shared_ptr<CodeFile>& file, bool repl_mode = false);
-    // TODO: We don't need to include `repl_mode` as a parameter since the front
-    // end context already has the compile mode.
+    compile(const std::shared_ptr<CodeFile>& file);
 
     /**
      * @brief Sets whether the code generator should use panic recovery.

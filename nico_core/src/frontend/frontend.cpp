@@ -10,8 +10,9 @@
 namespace nico {
 
 std::unique_ptr<FrontendContext>&
-Frontend::compile(const std::shared_ptr<CodeFile>& file, bool repl_mode) {
+Frontend::compile(const std::shared_ptr<CodeFile>& file) {
     context->mod_ctx.initialize();
+    bool repl_mode = compile_mode == CompileMode::REPL;
 
     Lexer::scan(context, file, repl_mode);
     if (!IS_VARIANT(context->status, Status::Ok))

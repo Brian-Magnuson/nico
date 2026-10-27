@@ -83,8 +83,7 @@ void run_jit_test(
 
     frontend.set_ir_printing_enabled(options.print_ir);
 
-    std::unique_ptr<nico::FrontendContext>& context =
-        frontend.compile(file, false);
+    std::unique_ptr<nico::FrontendContext>& context = frontend.compile(file);
     REQUIRE(IS_VARIANT(context->status, nico::Status::Ok));
 
     if (options.print_symbol_tree) {

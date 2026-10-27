@@ -157,8 +157,7 @@ void REPL::run_repl() {
         std::shared_ptr<CodeFile> code_file =
             CodeFile::from_string(std::move(input), "<stdin>");
         // Compile the CodeFile.
-        std::unique_ptr<FrontendContext>& context =
-            frontend.compile(code_file, true);
+        std::unique_ptr<FrontendContext>& context = frontend.compile(code_file);
 
         if (IS_VARIANT(context->status, Status::Ok)) {
             // If the input compiled successfully, add the module to the JIT and
