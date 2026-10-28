@@ -132,25 +132,33 @@ void CodeGenerator::add_c_functions() {
 }
 
 void CodeGenerator::add_panic(
-    std::string_view message, const Location* location
+    std::string_view message_fmt_string,
+    std::vector<llvm::Value*> message_fmt_args,
+    const Location* location
 ) {
     auto printerrf_fn = mod_ctx.ir_module->getFunction("nico_rt_printerrf");
     if (!printerrf_fn) {
         panic("Failed to find nico_rt_printerrf function in IR module.");
     }
 
-    /*
-    PANIC: <message>
-      at <file>:<line>:<column>
-      in `<func_name>`
-    */
+    // Starting string.
+    llvm::Value* starting_string = builder->CreateGlobalString("PANIC: ");
+    builder->CreateCall(printerrf_fn, {starting_string});
 
-    llvm::Value* format_string =
-        builder->CreateGlobalString("PANIC: %s\n  at %s:%d:%d\n  in `%s`\n");
+    // Message string.
+    llvm::Value* message_string =
+        builder->CreateGlobalString(message_fmt_string);
+    std::vector<llvm::Value*> message_args = {message_string};
+    message_args.insert(
+        message_args.end(),
+        message_fmt_args.begin(),
+        message_fmt_args.end()
+    );
+    builder->CreateCall(printerrf_fn, message_args);
 
-    llvm::Value* func_name =
-        builder->CreateGlobalString(control_stack.get_current_function_name());
-    llvm::Value* msg = builder->CreateGlobalString(message);
+    // Location string.
+    llvm::Value* location_string =
+        builder->CreateGlobalString("\n  at %s:%d:%d\n  in `%s`\n");
     auto location_tuple = location->to_tuple();
     llvm::Value* file_name =
         builder->CreateGlobalString(std::get<0>(location_tuple));
@@ -162,11 +170,14 @@ void CodeGenerator::add_panic(
         llvm::Type::getInt32Ty(*mod_ctx.llvm_context),
         std::get<2>(location_tuple)
     );
-    builder->CreateCall(
-        printerrf_fn,
-        {format_string, msg, file_name, line_number, column_number, func_name}
-    );
+    llvm::Value* func_name =
+        builder->CreateGlobalString(control_stack.get_current_function_name());
 
+    std::vector<llvm::Value*> location_string_args =
+        {location_string, file_name, line_number, column_number, func_name};
+    builder->CreateCall(printerrf_fn, location_string_args);
+
+    // Panic behavior.
     if (panic_recoverable) {
         // Get the nico_rt_panicking global variable and set it to true.
         llvm::GlobalVariable* panicking_var =
@@ -196,6 +207,12 @@ void CodeGenerator::add_panic(
         builder->CreateCall(abort_fn);
         builder->CreateUnreachable();
     }
+}
+
+void CodeGenerator::add_panic(
+    std::string_view message, const Location* location
+) {
+    add_panic(message, {}, location);
 }
 
 void CodeGenerator::add_div_zero_check(
