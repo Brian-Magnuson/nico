@@ -198,6 +198,13 @@ void CodeGenerator::add_panic(
         auto exit_block =
             control_stack.get_exit_block(Expr::Block::Kind::Function);
         builder->CreateBr(exit_block);
+
+        auto unreachable_block = llvm::BasicBlock::Create(
+            *mod_ctx.llvm_context,
+            "unreachable",
+            builder->GetInsertBlock()->getParent()
+        );
+        builder->SetInsertPoint(unreachable_block);
     }
     else {
         auto abort_fn = mod_ctx.ir_module->getFunction("nico_rt_abort");
@@ -205,7 +212,6 @@ void CodeGenerator::add_panic(
             panic("Failed to find nico_rt_abort function in IR module.");
         }
         builder->CreateCall(abort_fn);
-        builder->CreateUnreachable();
     }
 }
 
@@ -241,6 +247,7 @@ void CodeGenerator::add_div_zero_check(
     // div_by_zero_block
     builder->SetInsertPoint(div_by_zero_block);
     add_panic("Division by zero.", location);
+    builder->CreateUnreachable();
 
     // div_ok_block
     builder->SetInsertPoint(div_ok_block);
@@ -276,6 +283,7 @@ void CodeGenerator::add_array_bounds_check(
             std::to_string(array_size) + ".",
         location
     );
+    builder->CreateUnreachable();
 
     // in_bounds_block
     builder->SetInsertPoint(in_bounds_block);
@@ -309,6 +317,7 @@ void CodeGenerator::add_alloc_nullptr_check(
     // null_ptr_block
     builder->SetInsertPoint(null_ptr_block);
     add_panic("Memory allocation failed.", location);
+    builder->CreateUnreachable();
 
     // not_null_block
     builder->SetInsertPoint(not_null_block);
@@ -347,6 +356,7 @@ void CodeGenerator::add_negative_alloc_size_check(
         "Allocation amount expression evaluated to a negative value.",
         location
     );
+    builder->CreateUnreachable();
 
     // non_negative_size_block
     builder->SetInsertPoint(non_negative_size_block);
@@ -547,7 +557,16 @@ std::any CodeGenerator::visit(Stmt::Dealloc* stmt) {
 }
 
 std::any CodeGenerator::visit(Stmt::Panic* stmt) {
-    // TODO: Implementation for visiting Panic statements goes here.
+    std::string fmt_string;
+    std::vector<llvm::Value*> fmt_args;
+    for (const auto& expr : stmt->expressions) {
+        auto value = std::any_cast<llvm::Value*>(expr->accept(this, false));
+        auto [fmt, fmt_args] = expr->type->to_print_args(builder, value);
+
+        fmt_string += fmt;
+        fmt_args.insert(fmt_args.end(), fmt_args.begin(), fmt_args.end());
+    }
+    add_panic(fmt_string, fmt_args, stmt->location);
 
     return std::any();
 }

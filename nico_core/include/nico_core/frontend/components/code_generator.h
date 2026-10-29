@@ -67,11 +67,6 @@ class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
      * true and the program will jump to all exit blocks. Otherwise, the program
      * will call `nico_rt_abort` to terminate.
      *
-     * Note: this function sets a terminator for the current basic block, but
-     * does not set the insertion point for the next basic block. The caller
-     * should set the insertion point for the next basic block after calling
-     * this function.
-     *
      * @param message_fmt_string The format string for the error message to pass
      * to the `panic` function.
      * @param message_fmt_args The arguments for the format string.
@@ -94,11 +89,6 @@ class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
      * If panic_recoverable is enabled, the `$panicking` variable will be set to
      * true and the program will jump to all exit blocks. Otherwise, the program
      * will call `nico_rt_abort` to terminate.
-     *
-     * Note: this function sets a terminator for the current basic block, but
-     * does not set the insertion point for the next basic block. The caller
-     * should set the insertion point for the next basic block after calling
-     * this function.
      *
      * @param message The error message to pass to the `panic` function.
      * @param location The location in the source code where the panic occurs,
