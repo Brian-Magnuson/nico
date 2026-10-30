@@ -557,16 +557,17 @@ std::any CodeGenerator::visit(Stmt::Dealloc* stmt) {
 }
 
 std::any CodeGenerator::visit(Stmt::Panic* stmt) {
-    std::string fmt_string;
-    std::vector<llvm::Value*> fmt_args;
+    std::string full_fmt_string;
+    std::vector<llvm::Value*> full_fmt_args;
     for (const auto& expr : stmt->expressions) {
         auto value = std::any_cast<llvm::Value*>(expr->accept(this, false));
         auto [fmt, fmt_args] = expr->type->to_print_args(builder, value);
 
-        fmt_string += fmt;
-        fmt_args.insert(fmt_args.end(), fmt_args.begin(), fmt_args.end());
+        full_fmt_string += fmt;
+        full_fmt_args
+            .insert(full_fmt_args.end(), fmt_args.begin(), fmt_args.end());
     }
-    add_panic(fmt_string, fmt_args, stmt->location);
+    add_panic(full_fmt_string, full_fmt_args, stmt->location);
 
     return std::any();
 }

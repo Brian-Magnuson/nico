@@ -201,6 +201,26 @@ TEST_CASE("JIT print statements", "[jit]") {
     }
 }
 
+TEST_CASE("JIT panic statements", "[jit]") {
+    SECTION("Panic statement 1") {
+        run_jit_test("panic", {.expect_panic = true});
+    }
+
+    SECTION("Panic statement 2") {
+        run_jit_test(
+            R"(panic with "This is a panic message.")",
+            {.expect_panic = true}
+        );
+    }
+
+    SECTION("Panic statement 3") {
+        run_jit_test(
+            R"(panic with "This is a panic message with a number: ", 42)",
+            {.expect_panic = true}
+        );
+    }
+}
+
 TEST_CASE("JIT let statements", "[jit]") {
     SECTION("Basic variable reference") {
         run_jit_test(R"(let x = 5 printout x)", "5");
