@@ -36,7 +36,9 @@ void MIRBuilder::add_negative_alloc_size_check(
     // Negative size block: Add a panic instruction and terminate the block.
     current_block = negative_size_block;
     auto panic_instr = std::make_shared<Instr::Panic>(
-        "Allocation amount expression evaluated to a negative value.",
+        std::vector<std::shared_ptr<MIRValue>>{MIRValue::CustomStr::create(
+            "Allocation amount expression evaluated to a negative value."
+        )},
         location
     );
     current_block->add_instruction(panic_instr);
@@ -72,8 +74,12 @@ void MIRBuilder::add_array_bounds_check(
 
     // Out of bounds block: Add a panic instruction and terminate the block.
     current_block = out_of_bounds_block;
-    auto panic_instr =
-        std::make_shared<Instr::Panic>("Array index out of bounds.", location);
+    auto panic_instr = std::make_shared<Instr::Panic>(
+        std::vector<std::shared_ptr<MIRValue>>{
+            MIRValue::CustomStr::create("Array index out of bounds.")
+        },
+        location
+    );
     current_block->add_instruction(panic_instr);
     current_block->set_successor(
         current_block->get_parent_function()->get_exit_block()
@@ -201,8 +207,17 @@ std::any MIRBuilder::visit(Stmt::Dealloc* stmt) {
 }
 
 std::any MIRBuilder::visit(Stmt::Panic* stmt) {
-    // TODO: Implementation for visiting Panic statements goes here.
-    return {};
+    std::vector<std::shared_ptr<MIRValue>> mir_values;
+    for (const auto& expr : stmt->expressions) {
+        auto mir_val =
+            std::any_cast<std::shared_ptr<MIRValue>>(expr->accept(this, false));
+        mir_values.push_back(mir_val);
+    }
+    auto panic_instr =
+        std::make_shared<Instr::Panic>(mir_values, stmt->location);
+    current_block->add_instruction(panic_instr);
+
+    return std::any();
 }
 
 std::any MIRBuilder::visit(Stmt::Pass* stmt) {

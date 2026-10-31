@@ -224,6 +224,24 @@ func $script( ) -> void {
     }
 }
 
+TEST_CASE("MIR panic", "[mir]") {
+    SECTION("Panic with message") {
+        run_mir_test(
+            R"(
+            panic with "This is a panic message."
+            )",
+            MIRTestOptions{.expected_output = R"(module
+func $script( ) -> void {
+  entry#0 <-- [ ]
+    panic (str "This is a panic message.")
+    jump exit#0
+  exit#0 <-- [ entry#0 ]
+    return
+})"}
+        );
+    }
+}
+
 TEST_CASE("MIR arrays", "[mir]") {
     SECTION("Array creation and access") {
         run_mir_test(

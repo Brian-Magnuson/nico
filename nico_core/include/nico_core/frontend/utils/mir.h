@@ -40,6 +40,7 @@ public:
     class ZeroValue;
     class CustomInt;
     class CustomBool;
+    class CustomStr;
     class Literal;
     class Array;
     class Struct;
@@ -58,6 +59,7 @@ public:
         virtual std::any visit(ZeroValue* value) = 0;
         virtual std::any visit(CustomInt* value) = 0;
         virtual std::any visit(CustomBool* value) = 0;
+        virtual std::any visit(CustomStr* value) = 0;
         virtual std::any visit(Literal* value) = 0;
         virtual std::any visit(Array* value) = 0;
         virtual std::any visit(Struct* value) = 0;

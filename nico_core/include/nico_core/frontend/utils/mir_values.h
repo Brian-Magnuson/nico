@@ -123,6 +123,36 @@ public:
 };
 
 /**
+ * @brief A custom string value in the MIR.
+ *
+ * Occasionally, it is useful for the MIR builder to create MIRValues that have
+ * specific constant string values. Since the MIR builder cannot create the Expr
+ * required for an MIRValue::Literal, we can instead use this class to create a
+ * constant string value.
+ */
+class MIRValue::CustomStr : public MIRValue::IConstant {
+public:
+    // The value of the custom string.
+    const std::string value;
+
+    CustomStr(Private, std::string value)
+        : MIRValue::IConstant(Private(), std::make_shared<Type::Str>()),
+          value(value) {}
+
+    static std::shared_ptr<CustomStr> create(std::string value) {
+        return std::make_shared<CustomStr>(Private(), value);
+    }
+
+    virtual std::string to_string() const override {
+        return "(" + type->to_string() + " \"" + value + "\")";
+    }
+
+    virtual std::any accept(Visitor* visitor) override {
+        return visitor->visit(this);
+    }
+};
+
+/**
  * @brief A literal value in the MIR.
  *
  * Literal values reference a literal expression from the AST.

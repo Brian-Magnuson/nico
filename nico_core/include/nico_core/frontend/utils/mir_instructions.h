@@ -632,13 +632,15 @@ public:
  */
 class Instr::Panic : public INonTerm {
 public:
-    // The panic message to display.
-    std::string panic_message;
+    // The values to print out.
+    const std::vector<std::shared_ptr<MIRValue>> values;
     // The location in the source code where the panic occurred.
     const Location* location;
 
-    Panic(std::string panic_message, const Location* location)
-        : panic_message(panic_message), location(location) {}
+    Panic(
+        std::vector<std::shared_ptr<MIRValue>> values, const Location* location
+    )
+        : values(values), location(location) {}
 
     virtual ~Panic() = default;
 
@@ -647,7 +649,11 @@ public:
     }
 
     virtual std::string to_string() const override {
-        return "panic \"" + panic_message + "\" at " + location->to_string();
+        std::string result = "panic";
+        for (const auto& value : values) {
+            result += " " + value->to_string();
+        }
+        return result;
     }
 };
 
