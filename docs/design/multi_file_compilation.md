@@ -102,3 +102,118 @@ struct Point {
     int y;
 };
 ```
+
+## One Source File is One Compilation Unit
+
+There are a few options we can take when considering how many source files should be in a compilation unit:
+1. All source files in a project are compiled together into a single compilation unit.
+2. Groups of source files are compiled together into their own compilation units.
+3. Each source file is compiled into its own compilation unit.
+
+We should rule out option 1 because it would require the compiler to recompile all source files in a project whenever any file changes, which doesn't scale well for large projects.
+There is a limit to how fast we can make our compiler, and projects can grow to be very large.
+Nico *does* have the option to create external declarations, which allow one to split their code across libraries, but splitting code this way is not always practical.
+
+We should also rule out option 2, because the user would then have to think about how to group their source files into compilation units, which is not a common practice in programming languages.
+It also makes our compiler more complex because we would have to sort files into groups and groups into projects, which is not a trivial task.
+
+This leaves us with option 3, which is the most common approach in programming languages.
+
+## Key Point: Users Should Not Have to Manually Write Declarations
+
+C and C++ require programmers to declare functions and variables before they can be used.
+For example:
+```cpp
+int add(int a, int b); // Declaration
+
+int main() {
+    int result = add(2, 3); // Use of add function
+    return 0;
+}
+
+int add(int a, int b) { // Definition
+    return a + b;
+}
+```
+In this example, the `add` function is declared before it is used in the `main` function, and it is defined later in the code.
+
+Usually, programmers keep declarations in header files, where they can be included in multiple source files using the `#include` directive.
+```cpp
+#include "add.h" // Declaration of add function
+
+int main() {
+    int result = add(2, 3); // Use of add function
+    return 0;
+}
+
+// Definition of add function is in its own implementation file, add.cpp
+```
+
+The `#include` directive is not like `import` statements in other programming languages, which are used to reference other files or modules.
+`#include` is a preprocessor directive that copies the contents of the specified file into the source file before compilation.
+
+This pattern of requiring programmers to manually write declarations is common in C and C++, but virtually all other modern programming languages have moved away from this requirement.
+It's tedious to have to write declarations for every function and variable, and it can lead to errors if the declaration and definition don't match.
+If we chose to require Nico programmers to manually write declarations, it would help simplify the design of our compiler as we wouldn't have to figure out how to automatically generate declarations, but it would make Nico less practical for real-world use and it goes against the expectations of modern programming languages.
+
+Instead, we should create some kind of "import" system that allows Nico programmers to reference other files without having to manually write declarations.
+
+## Key Idea: Imports Produce Declarations
+
+> [!WARNING]
+> The example code used in this section may not reflect the final design.
+
+Suppose we have an import statement that looks like this:
+```
+import math::add
+```
+
+Here, the user knows that they want to use a function called `add` from the `math` namespace. 
+They probably have an idea of what the declaration of the `add` function looks like, but they don't want to have to write it themselves.
+
+If we recall the rules for working with multiple LLVM modules, we know that in order to reference a global value, it must have been declared in the module that is referencing it.
+This means that when the compiler sees the `import` statement, it must generate a declaration for the `add` function in the current module, and that declaration must match the definition of the `add` function in the `math` module.
+
+The key idea here is that imports produce declarations.
+
+Question: How does the compiler know what the declaration of the `add` function looks like?
+
+### Approach 1: Process files as they are imported
+
+When the compiler sees an import statement, it can immediately process the imported file, scanning tokens, parsing them, and generating declarations for all the global values in that file.
+
+This approach might make use of a specialized codegen pass that only generates declarations for global values, without generating any code for the definitions of those values.
+
+**Pros:**
+- We don't need to store any additional information about the imported file, since we can just process it on the spot.
+
+**Cons:**
+- If the imported file has its own imports, we have to process those files as well, which can lead to a lot of work being done at once.
+- If the imported file has already been processed, we may end up processing it again, which is inefficient.
+- Processing the file again means that we have to re-parse it and do at least some of the semantic analysis again. This extra time spent processing the file again is wasted time, and it can add up if the imported file is large or if there are many imports, effectively negating the benefits of multiple file compilation.
+- The added specialized components for processing declarations may make the compiler more complex and harder to maintain.
+
+### Approach 2: Store export information after compiling a file
+
+This idea is somewhat similar to the concept of caching, where we store information about a file after it has been compiled so that we can use that information later without having to recompile the file.
+
+When the compiler compiles a file, it may have a set of exported symbols, which are the global values that are defined in that file and can be referenced by other files.
+These exported symbols are stored separately from the compiled file, and they can be used to generate declarations for the imported file without having to recompile it.
+
+One can think of this approach like generating header files for each source file, where the header file contains the declarations of the exported symbols.
+When a file is imported, the compiler can read the corresponding header file to generate the necessary declarations.
+
+Unlike header files, however, we don't actually have to store this information as text data. We could store it in a binary format that is more efficient to read and write, and we could also include additional information that is useful for the compiler, such as type information and metadata.
+
+If the compiler encounters an import statement for a file that has *not* been compiled yet, it can compile that file and store the export information for future use.
+
+**Pros:**
+- We don't have to recompile files that have already been compiled, which saves time and resources.
+- We can store additional information about the exported symbols, which can be useful for the compiler and for other tools that work with the compiled files.
+- Since export data is generated at the same time as normal compilation, we can reuse the same codegen passes and semantic analysis that we already have instead of creating specialized components for processing declarations, which simplifies the design of the compiler and makes it easier to maintain.
+
+**Cons:**
+- We have to store additional information about the exported symbols, which takes up disk space and may require additional management to ensure that the information is up-to-date and consistent with the source files.
+- If the exported symbols change, we have to recompile the file and update the stored information, which can be a source of complexity and potential errors if not managed properly.
+- We need to design a system for handling potential circular imports, where two or more files import each other, which can lead to complications in the compilation process.
+- If we are using binary export data, we'd need a way to reliably read and write that data, which may require additional tooling or libraries.
