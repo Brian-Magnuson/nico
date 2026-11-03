@@ -225,6 +225,22 @@ func $script( ) -> void {
 }
 
 TEST_CASE("MIR panic", "[mir]") {
+    SECTION("Panic without message") {
+        run_mir_test(
+            R"(
+            panic
+            )",
+            MIRTestOptions{.expected_output = R"(module
+func $script( ) -> void {
+  entry#0 <-- [ ]
+    panic
+    jump exit#0
+  exit#0 <-- [ entry#0 ]
+    return
+})"}
+        );
+    }
+
     SECTION("Panic with message") {
         run_mir_test(
             R"(
@@ -234,6 +250,22 @@ TEST_CASE("MIR panic", "[mir]") {
 func $script( ) -> void {
   entry#0 <-- [ ]
     panic (str "This is a panic message.")
+    jump exit#0
+  exit#0 <-- [ entry#0 ]
+    return
+})"}
+        );
+    }
+
+    SECTION("Panic with multiple messages") {
+        run_mir_test(
+            R"(
+            panic with "This is the first message.", "This is the second message."
+            )",
+            MIRTestOptions{.expected_output = R"(module
+func $script( ) -> void {
+  entry#0 <-- [ ]
+    panic (str "This is the first message.") (str "This is the second message.")
     jump exit#0
   exit#0 <-- [ entry#0 ]
     return

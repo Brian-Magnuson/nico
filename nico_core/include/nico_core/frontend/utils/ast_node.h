@@ -447,6 +447,21 @@ public:
  */
 class Stmt::Panic : public Stmt::IExecAllowed {
 public:
+    // The token representing the panic statement.
+    std::shared_ptr<Token> panic_token;
+    /*
+    FIXME: We include the above field as a workaround for a bug in the compiler:
+    Location objects are only owned by tokens; statements and expressions use
+    raw pointers to location objects. Sometimes, we need the location of a
+    statement/expression, but not the token that created it. This is especially
+    the case for panic statements, where the location is *always* needed for
+    generating the correct error message. If we do not store the token, this
+    statement will outlive the token, and the location pointer will be dangling.
+
+    The proper solution is to have statements and expressions own their own
+    location objects, possibly using shared ownership (i.e., shared pointers).
+    */
+
     // The expressions to panic with.
     std::vector<std::shared_ptr<Expr>> expressions;
 
@@ -454,16 +469,8 @@ public:
         std::shared_ptr<Token> start_token,
         std::vector<std::shared_ptr<Expr>>&& expressions
     )
-        : expressions(std::move(expressions)) {
+        : panic_token(start_token), expressions(std::move(expressions)) {
         location = &start_token->location;
-    }
-
-    Panic(std::vector<std::shared_ptr<Expr>>&& expressions)
-        : expressions(std::move(expressions)) {
-        if (this->expressions.empty()) {
-            panic("Panic expressions cannot be empty.");
-        }
-        location = this->expressions.at(0)->location;
     }
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }

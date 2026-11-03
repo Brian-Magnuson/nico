@@ -219,6 +219,16 @@ TEST_CASE("JIT panic statements", "[jit]") {
             {.expect_panic = true}
         );
     }
+
+    SECTION("Panic within panic") {
+        run_jit_test(
+            R"(
+            let x = [1, 2, 3]
+            panic with x[3]
+            )",
+            {.expect_panic = true}
+        );
+    }
 }
 
 TEST_CASE("JIT let statements", "[jit]") {
