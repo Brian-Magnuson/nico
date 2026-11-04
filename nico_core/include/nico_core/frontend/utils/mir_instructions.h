@@ -635,10 +635,10 @@ public:
     // The values to print out.
     const std::vector<std::shared_ptr<MIRValue>> values;
     // The location in the source code where the panic occurred.
-    const Location* location;
+    const Location location;
 
     Panic(
-        std::vector<std::shared_ptr<MIRValue>> values, const Location* location
+        std::vector<std::shared_ptr<MIRValue>> values, const Location& location
     )
         : values(values), location(location) {}
 

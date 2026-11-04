@@ -1,6 +1,5 @@
 #include "nico_core/shared/diagnostics.h"
 
-#include <cctype>
 #include <iomanip>
 
 #include "nico_core/shared/utils.h"

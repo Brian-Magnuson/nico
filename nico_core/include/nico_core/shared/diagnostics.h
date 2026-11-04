@@ -8,7 +8,6 @@
 #include "nico_core/shared/colorize.h"
 #include "nico_core/shared/error_code.h"
 #include "nico_core/shared/token.h"
-#include "nico_core/shared/utils.h"
 
 namespace nico {
 
@@ -107,25 +106,6 @@ public:
     void emit_error(Err ec, const Location& location, std::string_view message);
 
     /**
-     * @brief Reports an error message with a location pointer.
-     *
-     * If printing is enabled, the error message will be printed to the output
-     * stream. The error code will be added to the stored list of errors.
-     *
-     * @param ec The error code to report.
-     * @param location The location of the error in the source code.
-     * @param message The message to report with the error.
-     *
-     * @warning If `location` is `nullptr`, this function will panic.
-     */
-    void
-    emit_error(Err ec, const Location* location, std::string_view message) {
-        if (location == nullptr)
-            panic("Location pointer for diagnostics is null.");
-        emit_error(ec, *location, message);
-    }
-
-    /**
      * @brief Reports an error message without a location.
      *
      * If printing is enabled, the error message will be printed to the output
@@ -146,23 +126,6 @@ public:
      * @param message The message to report with the note.
      */
     void emit_note(const Location& location, std::string_view message);
-
-    /**
-     * @brief Reports a note message with a location pointer.
-     *
-     * If printing is enabled, the note message will be printed to the output
-     * stream. Otherwise, this function does nothing.
-     *
-     * @param location The location of the note in the source code.
-     * @param message The message to report with the note.
-     *
-     * @warning If `location` is `nullptr`, this function will panic.
-     */
-    void emit_note(const Location* location, std::string_view message) {
-        if (location == nullptr)
-            panic("Location pointer for diagnostics is null.");
-        emit_note(*location, message);
-    }
 
     /**
      * @brief Reports a note message without a location.

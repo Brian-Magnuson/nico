@@ -82,7 +82,7 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
     Binding binding(
         stmt->has_var ? Binding::Mutability::Var : Binding::Mutability::None,
         stmt->identifier->lexeme,
-        &stmt->identifier->location,
+        stmt->identifier->location,
         expr_type
     );
 

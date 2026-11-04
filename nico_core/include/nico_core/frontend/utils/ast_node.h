@@ -94,9 +94,7 @@ public:
     std::shared_ptr<Expr> expression;
 
     Expression(std::shared_ptr<Expr> expression)
-        : expression(expression) {
-        location = expression->location;
-    }
+        : Stmt(expression->location), expression(expression) {}
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };
@@ -124,12 +122,11 @@ public:
         std::optional<std::shared_ptr<Expr>> expression,
         bool has_var,
         std::optional<std::shared_ptr<Annotation>> annotation)
-        : identifier(identifier),
+        : Stmt(start_token->location),
+          identifier(identifier),
           expression(expression),
           has_var(has_var),
-          annotation(annotation) {
-        location = &start_token->location;
-    }
+          annotation(annotation) {}
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };
@@ -158,12 +155,11 @@ public:
         bool has_var,
         std::optional<std::shared_ptr<Annotation>> annotation
     )
-        : identifier(identifier),
+        : Stmt(start_token->location),
+          identifier(identifier),
           expression(expression),
           has_var(has_var),
-          annotation(annotation) {
-        location = &start_token->location;
-    }
+          annotation(annotation) {}
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };
@@ -223,13 +219,12 @@ public:
         bool is_variadic,
         std::optional<std::shared_ptr<Expr::Block>> body
     )
-        : identifier(identifier),
+        : Stmt(start_token->location),
+          identifier(identifier),
           annotation(annotation),
           parameters(std::move(parameters)),
           is_variadic(is_variadic),
-          body(body) {
-        location = &start_token->location;
-    }
+          body(body) {}
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };
@@ -258,11 +253,10 @@ public:
         bool is_file_spanning,
         std::vector<std::shared_ptr<Stmt::IDeclAllowed>>&& stmts
     )
-        : identifier(identifier),
+        : Stmt(start_token->location),
+          identifier(identifier),
           is_file_spanning(is_file_spanning),
-          stmts(std::move(stmts)) {
-        location = &start_token->location;
-    }
+          stmts(std::move(stmts)) {}
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };
@@ -291,9 +285,10 @@ public:
         std::vector<std::shared_ptr<Stmt::IDeclAllowed>>&& stmts,
         ABI abi = ABI::C
     )
-        : identifier(identifier), abi(abi), stmts(std::move(stmts)) {
-        location = &start_token->location;
-    }
+        : Stmt(start_token->location),
+          identifier(identifier),
+          abi(abi),
+          stmts(std::move(stmts)) {}
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };
@@ -320,9 +315,9 @@ public:
         std::shared_ptr<Token> identifier,
         std::shared_ptr<Annotation> annotation
     )
-        : identifier(identifier), annotation(annotation) {
-        location = &start_token->location;
-    }
+        : Stmt(start_token->location),
+          identifier(identifier),
+          annotation(annotation) {}
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };
@@ -348,9 +343,9 @@ public:
         std::shared_ptr<Token> identifier,
         std::vector<std::shared_ptr<Stmt::IStructAllowed>>&& stmts
     )
-        : identifier(identifier), stmts(std::move(stmts)) {
-        location = &start_token->location;
-    }
+        : Stmt(start_token->location),
+          identifier(identifier),
+          stmts(std::move(stmts)) {}
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };
@@ -378,12 +373,11 @@ public:
         std::shared_ptr<Annotation> annotation,
         std::optional<std::shared_ptr<Expr>> expression
     )
-        : mutability(mutability),
+        : Stmt(start_token->location),
+          mutability(mutability),
           identifier(identifier),
           annotation(annotation),
-          expression(expression) {
-        location = &start_token->location;
-    }
+          expression(expression) {}
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };
@@ -403,18 +397,10 @@ public:
         std::shared_ptr<Token> start_token,
         std::vector<std::shared_ptr<Expr>>&& expressions
     )
-        : expressions(std::move(expressions)) {
+        : Stmt(start_token->location), expressions(std::move(expressions)) {}
 
-        location = &start_token->location;
-    }
-
-    Print(std::vector<std::shared_ptr<Expr>>&& expressions)
-        : expressions(std::move(expressions)) {
-        if (this->expressions.empty()) {
-            panic("Print expressions cannot be empty.");
-        }
-        location = this->expressions.at(0)->location;
-    }
+    Print(std::shared_ptr<Expr> expression)
+        : Stmt(expression->location), expressions({expression}) {}
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };
@@ -432,9 +418,7 @@ public:
     Dealloc(
         std::shared_ptr<Token> start_token, std::shared_ptr<Expr> expression
     )
-        : expression(expression) {
-        location = &start_token->location;
-    }
+        : Stmt(start_token->location), expression(expression) {}
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };
@@ -447,21 +431,6 @@ public:
  */
 class Stmt::Panic : public Stmt::IExecAllowed {
 public:
-    // The token representing the panic statement.
-    std::shared_ptr<Token> panic_token;
-    /*
-    FIXME: We include the above field as a workaround for a bug in the compiler:
-    Location objects are only owned by tokens; statements and expressions use
-    raw pointers to location objects. Sometimes, we need the location of a
-    statement/expression, but not the token that created it. This is especially
-    the case for panic statements, where the location is *always* needed for
-    generating the correct error message. If we do not store the token, this
-    statement will outlive the token, and the location pointer will be dangling.
-
-    The proper solution is to have statements and expressions own their own
-    location objects, possibly using shared ownership (i.e., shared pointers).
-    */
-
     // The expressions to panic with.
     std::vector<std::shared_ptr<Expr>> expressions;
 
@@ -469,9 +438,7 @@ public:
         std::shared_ptr<Token> start_token,
         std::vector<std::shared_ptr<Expr>>&& expressions
     )
-        : panic_token(start_token), expressions(std::move(expressions)) {
-        location = &start_token->location;
-    }
+        : Stmt(start_token->location), expressions(std::move(expressions)) {}
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };
@@ -490,9 +457,8 @@ public:
  */
 class Stmt::Pass : public Stmt::IExecAllowed, public Stmt::IDeclAllowed {
 public:
-    Pass(std::shared_ptr<Token> pass_token) {
-        location = &pass_token->location;
-    }
+    Pass(std::shared_ptr<Token> pass_token)
+        : Stmt(pass_token->location) {}
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };
@@ -513,9 +479,9 @@ public:
     std::weak_ptr<Expr::Block> target_block;
 
     Yield(std::shared_ptr<Token> yield_token, std::shared_ptr<Expr> expression)
-        : yield_token(yield_token), expression(expression) {
-        location = &yield_token->location;
-    }
+        : Stmt(yield_token->location),
+          yield_token(yield_token),
+          expression(expression) {}
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };
@@ -532,9 +498,7 @@ public:
     std::shared_ptr<Token> continue_token;
 
     Continue(std::shared_ptr<Token> continue_token)
-        : continue_token(continue_token) {
-        location = &continue_token->location;
-    }
+        : Stmt(continue_token->location), continue_token(continue_token) {}
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };
@@ -548,7 +512,8 @@ public:
  */
 class Stmt::Eof : public Stmt::IDeclAllowed, public Stmt::IExecAllowed {
 public:
-    Eof(std::shared_ptr<Token> eof_token) { location = &eof_token->location; }
+    Eof(std::shared_ptr<Token> eof_token)
+        : Stmt(eof_token->location) {}
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 };
@@ -573,7 +538,10 @@ public:
     // Whether or not this expression is assignable.
     bool assignable = false;
     // The location to report errors at if this is not assignable.
-    const Location* error_location = nullptr;
+    std::optional<Location> error_location;
+
+    IPLValue(const Location& location)
+        : Expr(location) {}
 
     virtual ~IPLValue() = default;
 };
@@ -599,9 +567,7 @@ public:
         std::shared_ptr<Token> op,
         std::shared_ptr<Expr> right
     )
-        : left(left), op(op), right(right) {
-        location = &op->location;
-    }
+        : Expr(op->location), left(left), op(op), right(right) {}
 
     std::any accept(Visitor* visitor, bool as_lvalue) override {
         return visitor->visit(this, as_lvalue);
@@ -632,9 +598,7 @@ public:
         std::shared_ptr<Token> op,
         std::shared_ptr<Expr> right
     )
-        : left(left), op(op), right(right) {
-        location = &op->location;
-    }
+        : Expr(op->location), left(left), op(op), right(right) {}
 
     std::any accept(Visitor* visitor, bool as_lvalue) override {
         return visitor->visit(this, as_lvalue);
@@ -799,9 +763,7 @@ public:
         std::shared_ptr<Token> op,
         std::shared_ptr<Expr> right
     )
-        : left(left), op(op), right(right) {
-        location = &op->location;
-    }
+        : Expr(op->location), left(left), op(op), right(right) {}
 
     std::any accept(Visitor* visitor, bool as_lvalue) override {
         return visitor->visit(this, as_lvalue);
@@ -862,9 +824,7 @@ public:
     Operation operation = Operation::Null;
 
     Unary(std::shared_ptr<Token> op, std::shared_ptr<Expr> right)
-        : op(op), right(right) {
-        location = &op->location;
-    }
+        : Expr(op->location), op(op), right(right) {}
 
     std::any accept(Visitor* visitor, bool as_lvalue) override {
         return visitor->visit(this, as_lvalue);
@@ -892,9 +852,7 @@ public:
     Address(
         std::shared_ptr<Token> op, std::shared_ptr<Expr> right, bool has_var
     )
-        : op(op), right(right), has_var(has_var) {
-        location = &op->location;
-    }
+        : Expr(op->location), op(op), right(right), has_var(has_var) {}
 
     std::any accept(Visitor* visitor, bool as_lvalue) override {
         return visitor->visit(this, as_lvalue);
@@ -915,9 +873,7 @@ public:
     std::shared_ptr<Expr> right;
 
     Deref(std::shared_ptr<Token> op, std::shared_ptr<Expr> right)
-        : op(op), right(right) {
-        location = &op->location;
-    }
+        : IPLValue(op->location), op(op), right(right) {}
 
     std::any accept(Visitor* visitor, bool as_lvalue) override {
         return visitor->visit(this, as_lvalue);
@@ -1022,9 +978,10 @@ public:
         std::shared_ptr<Token> as_token,
         std::shared_ptr<Annotation> annotation
     )
-        : expression(expression), as_token(as_token), annotation(annotation) {
-        location = &as_token->location;
-    }
+        : Expr(as_token->location),
+          expression(expression),
+          as_token(as_token),
+          annotation(annotation) {}
 
     std::any accept(Visitor* visitor, bool as_lvalue) override {
         return visitor->visit(this, as_lvalue);
@@ -1057,9 +1014,10 @@ public:
         std::shared_ptr<Token> op,
         std::shared_ptr<Token> right_token
     )
-        : left(left), op(op), right_token(right_token) {
-        location = &op->location;
-    }
+        : IPLValue(op->location),
+          left(left),
+          op(op),
+          right_token(right_token) {}
 
     std::any accept(Visitor* visitor, bool as_lvalue) override {
         return visitor->visit(this, as_lvalue);
@@ -1089,9 +1047,10 @@ public:
         std::shared_ptr<Token> lbracket,
         std::shared_ptr<Expr> index
     )
-        : left(left), lbracket(lbracket), index(index) {
-        location = &lbracket->location;
-    }
+        : IPLValue(lbracket->location),
+          left(left),
+          lbracket(lbracket),
+          index(index) {}
 
     std::any accept(Visitor* visitor, bool as_lvalue) override {
         return visitor->visit(this, as_lvalue);
@@ -1128,12 +1087,11 @@ public:
         std::vector<std::shared_ptr<Expr>>&& provided_pos_args,
         Dictionary<std::string, std::shared_ptr<Expr>>&& provided_named_args
     )
-        : callee(callee),
+        : Expr(l_paren->location),
+          callee(callee),
           l_paren(l_paren),
           provided_pos_args(std::move(provided_pos_args)),
-          provided_named_args(std::move(provided_named_args)) {
-        location = &l_paren->location;
-    }
+          provided_named_args(std::move(provided_named_args)) {}
 
     std::any accept(Visitor* visitor, bool as_lvalue) override {
         return visitor->visit(this, as_lvalue);
@@ -1162,9 +1120,9 @@ public:
         std::shared_ptr<Token> sizeof_token,
         std::shared_ptr<Annotation> annotation
     )
-        : sizeof_token(sizeof_token), annotation(annotation) {
-        location = &sizeof_token->location;
-    }
+        : Expr(sizeof_token->location),
+          sizeof_token(sizeof_token),
+          annotation(annotation) {}
 
     std::any accept(Visitor* visitor, bool as_lvalue) override {
         return visitor->visit(this, as_lvalue);
@@ -1201,12 +1159,11 @@ public:
         std::optional<std::shared_ptr<Expr>> expression = std::nullopt,
         std::optional<std::shared_ptr<Expr>> amount_expr = std::nullopt
     )
-        : alloc_token(alloc_token),
+        : Expr(alloc_token->location),
+          alloc_token(alloc_token),
           type_annotation(type_annotation),
           expression(expression),
-          amount_expr(amount_expr) {
-        location = &alloc_token->location;
-    }
+          amount_expr(amount_expr) {}
 
     std::any accept(Visitor* visitor, bool as_lvalue) override {
         return visitor->visit(this, as_lvalue);
@@ -1237,11 +1194,10 @@ public:
         std::shared_ptr<Annotation::NameRef> annotation,
         Dictionary<std::string, std::shared_ptr<Expr>>&& provided_args
     )
-        : new_token(new_token),
+        : Expr(new_token->location),
+          new_token(new_token),
           annotation(annotation),
-          provided_args(std::move(provided_args)) {
-        location = &new_token->location;
-    }
+          provided_args(std::move(provided_args)) {}
 
     std::any accept(Visitor* visitor, bool as_lvalue) override {
         return visitor->visit(this, as_lvalue);
@@ -1277,9 +1233,7 @@ public:
     std::weak_ptr<Node::BindingEntry> binding_entry;
 
     NameRef(std::shared_ptr<Name> name)
-        : name(name) {
-        location = &name->identifier->location;
-    }
+        : IPLValue(name->identifier->location), name(name) {}
 
     std::any accept(Visitor* visitor, bool as_lvalue) override {
         return visitor->visit(this, as_lvalue);
@@ -1298,9 +1252,7 @@ public:
     std::shared_ptr<Token> token;
 
     Literal(std::shared_ptr<Token> token)
-        : token(token) {
-        location = &token->location;
-    }
+        : Expr(token->location), token(token) {}
 
     std::any accept(Visitor* visitor, bool as_lvalue) override {
         return visitor->visit(this, as_lvalue);
@@ -1331,9 +1283,9 @@ public:
         std::shared_ptr<Token> lparen,
         std::vector<std::shared_ptr<Expr>>&& elements
     )
-        : lparen(lparen), elements(std::move(elements)) {
-        location = &lparen->location;
-    }
+        : Expr(lparen->location),
+          lparen(lparen),
+          elements(std::move(elements)) {}
 
     std::any accept(Visitor* visitor, bool as_lvalue) override {
         return visitor->visit(this, as_lvalue);
@@ -1386,9 +1338,9 @@ public:
         std::shared_ptr<Token> lsquare,
         std::vector<std::shared_ptr<Expr>>&& elements
     )
-        : lsquare(lsquare), elements(std::move(elements)) {
-        location = &lsquare->location;
-    }
+        : Expr(lsquare->location),
+          lsquare(lsquare),
+          elements(std::move(elements)) {}
 
     std::any accept(Visitor* visitor, bool as_lvalue) override {
         return visitor->visit(this, as_lvalue);
@@ -1436,9 +1388,7 @@ public:
     std::vector<Field> fields;
 
     Object(std::shared_ptr<Token> lbrace, std::vector<Field>&& fields)
-        : fields(std::move(fields)) {
-        location = &lbrace->location;
-    }
+        : Expr(lbrace->location), fields(std::move(fields)) {}
 
     std::any accept(Visitor* visitor, bool as_lvalue) override {
         return visitor->visit(this, as_lvalue);
@@ -1494,12 +1444,11 @@ public:
         Kind kind,
         bool is_unsafe = false
     )
-        : opening_tok(opening_tok),
+        : Expr(opening_tok->location),
+          opening_tok(opening_tok),
           statements(std::move(statements)),
           kind(kind),
-          is_unsafe(is_unsafe) {
-        location = &opening_tok->location;
-    }
+          is_unsafe(is_unsafe) {}
 
     std::any accept(Visitor* visitor, bool as_lvalue) override {
         return visitor->visit(this, as_lvalue);
@@ -1531,13 +1480,12 @@ public:
         std::shared_ptr<Expr> else_branch,
         bool implicit_else
     )
-        : if_kw(if_kw),
+        : Expr(if_kw->location),
+          if_kw(if_kw),
           condition(condition),
           then_branch(then_branch),
           else_branch(else_branch),
-          implicit_else(implicit_else) {
-        location = &if_kw->location;
-    }
+          implicit_else(implicit_else) {}
 
     std::any accept(Visitor* visitor, bool as_lvalue) override {
         return visitor->visit(this, as_lvalue);
@@ -1567,12 +1515,11 @@ public:
         std::optional<std::shared_ptr<Expr>> condition,
         bool loops_once
     )
-        : loop_kw(loop_kw),
+        : Expr(loop_kw->location),
+          loop_kw(loop_kw),
           body(body),
           condition(condition),
-          loops_once(loops_once) {
-        location = &loop_kw->location;
-    }
+          loops_once(loops_once) {}
     std::any accept(Visitor* visitor, bool as_lvalue) override {
         return visitor->visit(this, as_lvalue);
     }
@@ -1592,9 +1539,7 @@ public:
     const std::shared_ptr<Name> name;
 
     NameRef(std::shared_ptr<Name> name)
-        : name(name) {
-        location = &name->get_location();
-    }
+        : Annotation(name->get_location()), name(name) {}
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 
@@ -1619,9 +1564,9 @@ public:
         std::shared_ptr<Token> at_token,
         bool is_mutable = false
     )
-        : base(std::move(base)), is_mutable(is_mutable) {
-        location = &at_token->location;
-    }
+        : Annotation(at_token->location),
+          base(std::move(base)),
+          is_mutable(is_mutable) {}
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 
@@ -1639,9 +1584,8 @@ public:
  */
 class Annotation::Nullptr : public Annotation {
 public:
-    Nullptr(std::shared_ptr<Token> nullptr_token) {
-        location = &nullptr_token->location;
-    }
+    Nullptr(std::shared_ptr<Token> nullptr_token)
+        : Annotation(nullptr_token->location) {}
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 
@@ -1656,9 +1600,8 @@ public:
  */
 class Annotation::Void : public Annotation {
 public:
-    Void(std::shared_ptr<Token> void_token) {
-        location = &void_token->location;
-    }
+    Void(std::shared_ptr<Token> void_token)
+        : Annotation(void_token->location) {}
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 
@@ -1683,9 +1626,9 @@ public:
         std::shared_ptr<Token> amp_token,
         bool is_mutable = false
     )
-        : base(std::move(base)), is_mutable(is_mutable) {
-        location = &amp_token->location;
-    }
+        : Annotation(amp_token->location),
+          base(std::move(base)),
+          is_mutable(is_mutable) {}
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 
@@ -1712,9 +1655,7 @@ public:
         std::optional<std::shared_ptr<Annotation>> base = std::nullopt,
         std::optional<size_t> size = std::nullopt
     )
-        : base(base), size(size) {
-        location = &l_square_token->location;
-    }
+        : Annotation(l_square_token->location), base(base), size(size) {}
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 
@@ -1777,9 +1718,7 @@ public:
     const std::vector<Field> fields;
 
     Object(std::shared_ptr<Token> l_brace_token, std::vector<Field>&& fields)
-        : fields(std::move(fields)) {
-        location = &l_brace_token->location;
-    }
+        : Annotation(l_brace_token->location), fields(std::move(fields)) {}
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 
@@ -1813,9 +1752,7 @@ public:
         std::shared_ptr<Token> l_paren_token,
         std::vector<std::shared_ptr<Annotation>>&& elements
     )
-        : elements(std::move(elements)) {
-        location = &l_paren_token->location;
-    }
+        : Annotation(l_paren_token->location), elements(std::move(elements)) {}
 
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 
@@ -1852,13 +1789,13 @@ public:
     TypeOf(
         std::shared_ptr<Token> typeof_token, std::shared_ptr<Expr> expression
     )
-        : expression(std::move(expression)) {
-        location = &typeof_token->location;
-    }
+        : Annotation(typeof_token->location),
+          expression(std::move(expression)) {}
+
     std::any accept(Visitor* visitor) override { return visitor->visit(this); }
 
     std::string to_string() const override {
-        auto [_, line, col] = expression->location->to_tuple();
+        auto [_, line, col] = expression->location.to_tuple();
         return "typeof(<expr@" + std::to_string(line) + ":" +
                std::to_string(col) + ">)";
     }

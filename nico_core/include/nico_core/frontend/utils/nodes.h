@@ -394,15 +394,15 @@ public:
     // The token arguments for the modifier, if any.
     std::vector<std::shared_ptr<Token>> args;
     // The location of the modifier.
-    const Location* location;
+    const Location location;
 
     Modifier(
         std::shared_ptr<Token> identifier,
         std::vector<std::shared_ptr<Token>>&& args = {}
     )
-        : identifier(std::string(identifier->lexeme)), args(std::move(args)) {
-        location = &identifier->location;
-    }
+        : identifier(std::string(identifier->lexeme)),
+          args(std::move(args)),
+          location(identifier->location) {}
 };
 
 // MARK: Stmt
@@ -445,8 +445,6 @@ public:
 
     class Eof;
 
-    virtual ~Stmt() {}
-
     /**
      * @brief A visitor class for statements.
      */
@@ -471,7 +469,12 @@ public:
     };
 
     // The location of the statement.
-    const Location* location;
+    const Location location;
+
+    virtual ~Stmt() {}
+
+    Stmt(const Location& location)
+        : location(location) {}
 
     /**
      * @brief Accept a visitor.
@@ -530,8 +533,6 @@ public:
     class Conditional;
     class Loop;
 
-    virtual ~Expr() {}
-
     /**
      * @brief A visitor class for expressions.
      */
@@ -563,7 +564,12 @@ public:
     // The type of the expression.
     std::shared_ptr<Type> type;
     // The location of the expression.
-    const Location* location;
+    const Location location;
+
+    virtual ~Expr() {}
+
+    Expr(const Location& location)
+        : location(location) {}
 
     /**
      * @brief Accept a visitor.
@@ -620,8 +626,6 @@ public:
 
     class TypeOf;
 
-    virtual ~Annotation() = default;
-
     /**
      * @brief A visitor class for annotations.
      */
@@ -639,7 +643,12 @@ public:
     };
 
     // The location of the expression.
-    const Location* location;
+    const Location location;
+
+    virtual ~Annotation() = default;
+
+    Annotation(const Location& location)
+        : location(location) {}
 
     /**
      * @brief Accept a visitor.
@@ -747,7 +756,7 @@ public:
     // The name for the binding.
     std::string name;
     // The location where the binding is introduced.
-    const Location* location;
+    Location location;
     // The type of the binding.
     std::shared_ptr<Type> type;
     // The default expression for the binding, if any.
@@ -758,7 +767,7 @@ public:
     Binding(
         Mutability mutability,
         std::string_view name,
-        const Location* location,
+        const Location& location,
         std::shared_ptr<Type> type,
         std::optional<std::weak_ptr<Expr>> default_expr = std::nullopt
     )

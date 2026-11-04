@@ -121,7 +121,7 @@ std::any AnnotationChecker::visit(Annotation::Object* annotation) {
             Binding(
                 field.mutability,
                 field_name,
-                &field.identifier->location,
+                field.identifier->location,
                 field_type_opt.value()
             )
         );

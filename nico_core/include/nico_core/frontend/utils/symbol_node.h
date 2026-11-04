@@ -109,12 +109,12 @@ protected:
 class Node::ILocatable : public virtual Node {
 public:
     // The location in the source code where this node is introduced.
-    const Location* location;
+    std::optional<Location> location;
 
     virtual ~ILocatable() = default;
 
 protected:
-    ILocatable(Private, const Location* location)
+    ILocatable(Private, const Location& location)
         : Node(Private()), location(location) {}
 
     ILocatable(Private)
@@ -284,7 +284,7 @@ class Node::TypeDef : public virtual Node::ITypeNode,
 public:
     virtual ~TypeDef() = default;
 
-    TypeDef(Private, const Location* location)
+    TypeDef(Private, const Location& location)
         : Node(Private()),
           Node::ITypeNode(Private()),
           Node::ILocatable(Private(), location) {}
@@ -521,7 +521,7 @@ public:
     OverloadGroup(
         Private,
         std::string_view overload_name,
-        const Location* first_overload_location
+        const Location& first_overload_location
     );
 
     /**
@@ -539,7 +539,7 @@ public:
     static std::shared_ptr<OverloadGroup> create(
         std::shared_ptr<Node::IScope> parent,
         std::string_view overload_name,
-        const Location* first_overload_location
+        const Location& first_overload_location
     );
 
     virtual llvm::Value*

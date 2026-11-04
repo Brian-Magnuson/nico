@@ -9,7 +9,7 @@
 namespace nico {
 
 void MIRBuilder::add_negative_alloc_size_check(
-    std::shared_ptr<MIRValue> size_value, const Location* location
+    std::shared_ptr<MIRValue> size_value, const Location& location
 ) {
     std::shared_ptr<Function> function = current_block->get_parent_function();
 
@@ -51,7 +51,7 @@ void MIRBuilder::add_negative_alloc_size_check(
 void MIRBuilder::add_array_bounds_check(
     std::shared_ptr<MIRValue> index_value,
     std::shared_ptr<MIRValue> array_size_value,
-    const Location* location
+    const Location& location
 ) {
     std::shared_ptr<BasicBlock> out_of_bounds_block =
         current_block->get_parent_function()->create_basic_block(

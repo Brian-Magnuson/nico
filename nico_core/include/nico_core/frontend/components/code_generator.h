@@ -75,7 +75,7 @@ class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
     void add_panic(
         std::string_view message_fmt_string,
         std::vector<llvm::Value*> message_fmt_args,
-        const Location* location
+        const Location& location
     );
 
     /**
@@ -94,7 +94,7 @@ class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
      * @param location The location in the source code where the panic occurs,
      * used for the panic message.
      */
-    void add_panic(std::string_view message, const Location* location);
+    void add_panic(std::string_view message, const Location& location);
 
     /**
      * @brief Adds a runtime check for division by zero.
@@ -106,7 +106,7 @@ class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
      * @param location The location in the source code where the division
      * occurs, used for the panic message.
      */
-    void add_div_zero_check(llvm::Value* divisor, const Location* location);
+    void add_div_zero_check(llvm::Value* divisor, const Location& location);
 
     /**
      * @brief Adds a runtime check for array bounds.
@@ -121,7 +121,7 @@ class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
      * occurs, used for the panic message.
      */
     void add_array_bounds_check(
-        llvm::Value* index, size_t array_size, const Location* location
+        llvm::Value* index, size_t array_size, const Location& location
     );
 
     /**
@@ -136,7 +136,7 @@ class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
      * @param location The location in the source code where the null pointer
      * may occur.
      */
-    void add_alloc_nullptr_check(llvm::Value* ptr, const Location* location);
+    void add_alloc_nullptr_check(llvm::Value* ptr, const Location& location);
 
     /**
      * @brief Adds a runtime check for negative allocation sizes.
@@ -150,7 +150,7 @@ class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
      * occurs.
      */
     void
-    add_negative_alloc_size_check(llvm::Value* size, const Location* location);
+    add_negative_alloc_size_check(llvm::Value* size, const Location& location);
 
     std::any visit(Stmt::Expression* stmt) override;
     std::any visit(Stmt::Let* stmt) override;

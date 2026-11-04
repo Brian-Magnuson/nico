@@ -81,7 +81,7 @@ std::any GlobalChecker::visit(Stmt::Static* stmt) {
     Binding binding(
         stmt->has_var ? Binding::Mutability::Var : Binding::Mutability::None,
         stmt->identifier->lexeme,
-        &stmt->identifier->location,
+        stmt->identifier->location,
         expr_type
     );
 
@@ -121,7 +121,7 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
                 "Duplicate parameter name `" + param_string + "`."
             );
             Diagnostics::inst().emit_note(
-                *it->second.location,
+                it->second.location,
                 "Previous declaration of parameter `" + param_string + "` here."
             );
             return std::any();
@@ -136,7 +136,7 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
             param.has_var ? Binding::Mutability::Var
                           : Binding::Mutability::None,
             param.identifier->lexeme,
-            &param.identifier->location,
+            param.identifier->location,
             annotation_type_opt.value(),
             param.expression
         );
@@ -222,7 +222,7 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
     Binding binding(
         Binding::Mutability::None, // Functions are always immutable.
         stmt->identifier->lexeme,
-        &stmt->identifier->location,
+        stmt->identifier->location,
         func_type
     );
     // Functions are always immutable.
@@ -363,14 +363,14 @@ std::any GlobalChecker::visit(Stmt::StructDef* stmt) {
             Binding field_binding(
                 field_stmt->mutability,
                 std::string(field_stmt->identifier->lexeme),
-                &field_stmt->identifier->location,
+                field_stmt->identifier->location,
                 type_opt.value(),
                 field_stmt->expression
             );
             if (auto existing_field = struct_fields.at(field_binding.name)) {
                 Diagnostics::inst().emit_error(
                     Err::DuplicateStructFieldName,
-                    *field_binding.location,
+                    field_binding.location,
                     "Duplicate field name `" + field_binding.name +
                         "` in "
                         "struct definition."

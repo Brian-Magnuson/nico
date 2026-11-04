@@ -134,7 +134,7 @@ void CodeGenerator::add_c_functions() {
 void CodeGenerator::add_panic(
     std::string_view message_fmt_string,
     std::vector<llvm::Value*> message_fmt_args,
-    const Location* location
+    const Location& location
 ) {
     auto printerrf_fn = mod_ctx.ir_module->getFunction("nico_rt_printerrf");
     if (!printerrf_fn) {
@@ -159,7 +159,7 @@ void CodeGenerator::add_panic(
     // Location string.
     llvm::Value* location_string =
         builder->CreateGlobalString("\n  at %s:%d:%d\n  in `%s`\n");
-    auto location_tuple = location->to_tuple();
+    auto location_tuple = location.to_tuple();
     llvm::Value* file_name =
         builder->CreateGlobalString(std::get<0>(location_tuple));
     llvm::Value* line_number = llvm::ConstantInt::get(
@@ -216,13 +216,13 @@ void CodeGenerator::add_panic(
 }
 
 void CodeGenerator::add_panic(
-    std::string_view message, const Location* location
+    std::string_view message, const Location& location
 ) {
     add_panic(message, {}, location);
 }
 
 void CodeGenerator::add_div_zero_check(
-    llvm::Value* divisor, const Location* location
+    llvm::Value* divisor, const Location& location
 ) {
     llvm::BasicBlock* current_block = builder->GetInsertBlock();
     llvm::Function* current_function = current_block->getParent();
@@ -254,7 +254,7 @@ void CodeGenerator::add_div_zero_check(
 }
 
 void CodeGenerator::add_array_bounds_check(
-    llvm::Value* index, size_t array_size, const Location* location
+    llvm::Value* index, size_t array_size, const Location& location
 ) {
     llvm::BasicBlock* current_block = builder->GetInsertBlock();
     llvm::Function* current_function = current_block->getParent();
@@ -290,7 +290,7 @@ void CodeGenerator::add_array_bounds_check(
 }
 
 void CodeGenerator::add_alloc_nullptr_check(
-    llvm::Value* ptr, const Location* location
+    llvm::Value* ptr, const Location& location
 ) {
     llvm::BasicBlock* current_block = builder->GetInsertBlock();
     llvm::Function* current_function = current_block->getParent();
@@ -324,7 +324,7 @@ void CodeGenerator::add_alloc_nullptr_check(
 }
 
 void CodeGenerator::add_negative_alloc_size_check(
-    llvm::Value* size_value, const Location* location
+    llvm::Value* size_value, const Location& location
 ) {
     llvm::BasicBlock* current_block = builder->GetInsertBlock();
     llvm::Function* current_function = current_block->getParent();

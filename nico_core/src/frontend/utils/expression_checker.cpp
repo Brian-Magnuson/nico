@@ -40,7 +40,7 @@ ExpressionChecker::implicit_full_dereference(std::shared_ptr<Expr>& expr) {
             }
         }
         expr = std::make_shared<Expr::Deref>(
-            std::make_shared<Token>(Tok::Star, *expr->location),
+            std::make_shared<Token>(Tok::Star, expr->location),
             expr
         );
         i++;
@@ -320,7 +320,7 @@ std::any ExpressionChecker::visit(Expr::Assign* expr, bool as_lvalue) {
             expr->left->location,
             "Left side of assignment is not assignable."
         );
-        if (l_lvalue->error_location) {
+        if (l_lvalue->error_location.has_value()) {
             Diagnostics::inst().emit_note(
                 *l_lvalue->error_location,
                 "This is not mutable."
@@ -676,7 +676,7 @@ std::any ExpressionChecker::visit(Expr::Address* expr, bool as_lvalue) {
             expr->op->location,
             "Cannot create a mutable pointer/reference to an immutable value."
         );
-        if (r_lvalue->error_location) {
+        if (r_lvalue->error_location.has_value()) {
             Diagnostics::inst().emit_note(
                 *r_lvalue->error_location,
                 "This is not mutable."
@@ -960,7 +960,7 @@ std::any ExpressionChecker::visit(Expr::Access* expr, bool as_lvalue) {
         case Binding::Mutability::None:
             // Field is not assignable.
             expr->assignable = false;
-            expr->error_location = &expr->right_token->location;
+            expr->error_location = expr->right_token->location;
             break;
         case Binding::Mutability::Var:
             // Field's assignability is the same as the object's assignability.
@@ -997,7 +997,7 @@ std::any ExpressionChecker::visit(Expr::Access* expr, bool as_lvalue) {
         case Binding::Mutability::None:
             // Field is not assignable.
             expr->assignable = false;
-            expr->error_location = &expr->right_token->location;
+            expr->error_location = expr->right_token->location;
             break;
         case Binding::Mutability::Var:
             // Field's assignability is the same as the struct's assignability.
@@ -1643,7 +1643,7 @@ std::any ExpressionChecker::visit(Expr::Object* expr, bool as_lvalue) {
             Binding(
                 ast_field.mutability,
                 field_name,
-                &ast_field.identifier->location,
+                ast_field.identifier->location,
                 field_type_opt.value()
             )
         );

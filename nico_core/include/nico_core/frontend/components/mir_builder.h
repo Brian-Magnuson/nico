@@ -35,7 +35,7 @@ class MIRBuilder : public Stmt::Visitor, public Expr::Visitor {
      * happening.
      */
     void add_negative_alloc_size_check(
-        std::shared_ptr<MIRValue> size_value, const Location* location
+        std::shared_ptr<MIRValue> size_value, const Location& location
     );
 
     /**
@@ -51,7 +51,7 @@ class MIRBuilder : public Stmt::Visitor, public Expr::Visitor {
     void add_array_bounds_check(
         std::shared_ptr<MIRValue> index_value,
         std::shared_ptr<MIRValue> array_size_value,
-        const Location* location
+        const Location& location
     );
 
     /**

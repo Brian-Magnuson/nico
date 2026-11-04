@@ -75,7 +75,7 @@ public:
     std::shared_ptr<Node::RootScope> reserved_scope;
 
     // A map of user-defined symbols to their corresponding locations.
-    std::unordered_map<std::string, const Location*> symbol_map;
+    std::unordered_map<std::string, std::optional<Location>> symbol_map;
     // A set of reserved symbols that cannot be used by user-defined nodes.
     std::unordered_set<std::string> reserved_symbols;
 

@@ -1995,7 +1995,7 @@ std::optional<std::shared_ptr<Stmt>> Parser::expression_statement() {
 
     if (repl_mode && peek()->tok_type == Tok::Eof) {
         // If this is the last statement in REPL mode, we print the result.
-        return std::make_shared<Stmt::Print>(std::vector{*expr});
+        return std::make_shared<Stmt::Print>(*expr);
     }
 
     return std::make_shared<Stmt::Expression>(*expr);

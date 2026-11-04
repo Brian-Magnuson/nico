@@ -32,7 +32,7 @@ bool Node::IScope::add_child(
     if (symbol_tree.is_name_reserved(child->short_name)) {
         Diagnostics::inst().emit_error(
             Err::NameIsReserved,
-            child->location,
+            child->location.value(),
             "Name `" + child->short_name + "` is reserved and cannot be used."
         );
         return false;
@@ -42,13 +42,13 @@ bool Node::IScope::add_child(
     if (auto existing = children.at(child->short_name)) {
         Diagnostics::inst().emit_error(
             Err::NameAlreadyExists,
-            child->location,
+            child->location.value(),
             "Name `" + child->short_name + "` already exists in this scope."
         );
         if (auto existing_locatable =
                 std::dynamic_pointer_cast<Node::ILocatable>(existing.value())) {
             Diagnostics::inst().emit_note(
-                existing_locatable->location,
+                existing_locatable->location.value(),
                 "Previous declaration of name `" + child->short_name +
                     "` found here."
             );
@@ -72,7 +72,7 @@ std::shared_ptr<Node::Namespace> Node::Namespace::create(
     auto node = std::make_shared<Namespace>(Private());
     node->parent = parent;
     node->short_name = std::string(token->lexeme);
-    node->location = &token->location;
+    node->location = token->location;
     return node;
 }
 
@@ -82,7 +82,7 @@ std::shared_ptr<Node::ExternBlock> Node::ExternBlock::create(
     auto node = std::make_shared<ExternBlock>(Private());
     node->parent = parent;
     node->short_name = std::string(token->lexeme);
-    node->location = &token->location;
+    node->location = token->location;
     return node;
 }
 
@@ -96,7 +96,7 @@ bool Node::ExternBlock::add_child(
             std::dynamic_pointer_cast<Node::ExternBlock>(child)) {
         Diagnostics::inst().emit_error(
             Err::ExternBlockInExternBlock,
-            child->location,
+            child->location.value(),
             "Extern block cannot contain another extern block."
         );
         return false;
@@ -104,7 +104,7 @@ bool Node::ExternBlock::add_child(
     else if (auto ns = std::dynamic_pointer_cast<Node::Namespace>(child)) {
         Diagnostics::inst().emit_error(
             Err::NamespaceInExternBlock,
-            child->location,
+            child->location.value(),
             "Namespace is not allowed in extern block."
         );
         return false;
@@ -114,7 +114,7 @@ bool Node::ExternBlock::add_child(
     ) {
         Diagnostics::inst().emit_error(
             Err::StructDefInExternBlock,
-            child->location,
+            child->location.value(),
             "Struct definition is not allowed in extern block."
         );
         return false;
@@ -148,7 +148,7 @@ std::shared_ptr<Node::TypeDef> Node::TypeDef::create(
     std::shared_ptr<Token> token,
     std::shared_ptr<Type> type
 ) {
-    auto node = std::make_shared<TypeDef>(Private(), &token->location);
+    auto node = std::make_shared<TypeDef>(Private(), token->location);
     node->parent = parent;
     node->short_name = std::string(token->lexeme);
 
@@ -167,7 +167,7 @@ std::shared_ptr<Node::StructDef> Node::StructDef::create(
     auto node = std::make_shared<StructDef>(Private());
     node->parent = parent;
     node->short_name = std::string(token->lexeme);
-    node->location = &token->location;
+    node->location = token->location;
     return node;
 }
 
@@ -179,7 +179,7 @@ bool Node::StructDef::add_child(
     if (auto ns = std::dynamic_pointer_cast<Node::Namespace>(child)) {
         Diagnostics::inst().emit_error(
             Err::NamespaceInStructDef,
-            child->location,
+            child->location.value(),
             "Namespace is not allowed in struct definition."
         );
         return false;
@@ -189,7 +189,7 @@ bool Node::StructDef::add_child(
     ) {
         Diagnostics::inst().emit_error(
             Err::StructDefInStructDef,
-            child->location,
+            child->location.value(),
             "Struct definition is not allowed in struct definition."
         );
         return false;
@@ -206,7 +206,7 @@ bool Node::StructDef::add_child(
     ) {
         Diagnostics::inst().emit_error(
             Err::ExternBlockInStructDef,
-            child->location,
+            child->location.value(),
             "Extern block is not allowed in struct definition."
         );
         return false;
@@ -314,7 +314,7 @@ llvm::Value* Node::BindingEntry::get_llvm_allocation(
 Node::OverloadGroup::OverloadGroup(
     Private,
     std::string_view overload_name,
-    const Location* first_overload_location
+    const Location& first_overload_location
 )
     : Node(Private()),
       Node::ILocatable(Private()),
@@ -334,7 +334,7 @@ Node::OverloadGroup::OverloadGroup(
 std::shared_ptr<Node::OverloadGroup> Node::OverloadGroup::create(
     std::shared_ptr<Node::IScope> parent,
     std::string_view overload_name,
-    const Location* first_overload_location
+    const Location& first_overload_location
 ) {
     auto node = std::make_shared<OverloadGroup>(
         Private(),
