@@ -641,8 +641,6 @@ func $script( ) -> void {
 }
 
 TEST_CASE("MIR alloc and dealloc", "[mir]") {
-    // TODO: Add tests for the different forms of alloc exprs.
-
     SECTION("Basic alloc and dealloc") {
         run_mir_test(
             R"(
@@ -691,6 +689,37 @@ func $script( ) -> void {
     jump exit#0
   exit#0 <-- [ entry#0 ]
     return
+})"}
+        );
+    }
+
+    SECTION("Alloc for size of") {
+        run_mir_test(
+            R"(
+            let size = 4
+            let ptr = alloc for size of i32
+            )",
+            MIRTestOptions{.expected_output = R"(module
+global ::size (var@i32 ::size)
+global ::ptr (var@var@[i32; ?] ::ptr)
+func $script( ) -> void {
+  entry#0 <-- [ ]
+    store (i32 4) -> (var@i32 ::size)
+    sizeof i32 -> (u64 #0)
+    load (var@i32 ::size) -> (i32 #1)
+    cast signext (i32 #1) -> (u64 #2)
+    binary sintlt (u64 #2) (u64 0) -> (bool #3)
+    branch (bool #3) ? check_negative_size#0 : check_ok#0
+  exit#0 <-- [ check_negative_size#0 check_ok#0 ]
+    return
+  check_negative_size#0 <-- [ entry#0 ]
+    panic (str "Allocation amount expression evaluated to a negative value.")
+    jump exit#0
+  check_ok#0 <-- [ entry#0 ]
+    binary intmul (u64 #0) (u64 #2) -> (u64 #4)
+    alloc (u64 #4) -> (anyptr #5)
+    store (anyptr #5) -> (var@var@[i32; ?] ::ptr)
+    jump exit#0
 })"}
         );
     }
