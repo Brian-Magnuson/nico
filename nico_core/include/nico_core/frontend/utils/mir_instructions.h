@@ -491,15 +491,7 @@ public:
           element_index(element_index),
           destination(
               MIRValue::Temporary::create(std::make_shared<Type::Anyptr>())
-          ) {
-        if (!Type::is_a<Type::Array>(array_value->type)) {
-            panic(
-                "Array GEP instruction requires an array type for the "
-                "array value. Got `" +
-                array_value->type->to_string() + "`."
-            );
-        }
-    }
+          ) {}
 
     virtual ~ArrayGEP() = default;
 

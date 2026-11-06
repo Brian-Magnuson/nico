@@ -275,7 +275,7 @@ func $script( ) -> void {
 }
 
 TEST_CASE("MIR arrays", "[mir]") {
-    SECTION("Array creation and access") {
+    SECTION("Array creation") {
         run_mir_test(
             R"(
             let arr = [1, 2, 3, 4, 5]
@@ -316,6 +316,34 @@ func $script( ) -> void {
     jump exit#0
   exit#0 <-- [ entry#0 ]
     return
+})"}
+        );
+    }
+
+    SECTION("Array access") {
+        run_mir_test(
+            R"(
+                let arr = [1, 2, 3]
+                let x = arr[0]
+                )",
+            MIRTestOptions{.expected_output = R"(module
+global ::arr (var@[i32; 3] ::arr)
+global ::x (var@i32 ::x)
+func $script( ) -> void {
+  entry#0 <-- [ ]
+    store ([i32; 3] [ (i32 1) (i32 2) (i32 3) ]) -> (var@[i32; 3] ::arr)
+    binary uintge (i32 0) (u64 3) -> (bool #0)
+    branch (bool #0) ? check_index_out_of_bounds#0 : check_ok#0
+  exit#0 <-- [ check_index_out_of_bounds#0 check_ok#0 ]
+    return
+  check_index_out_of_bounds#0 <-- [ entry#0 ]
+    panic (str "Array index out of bounds.")
+    jump exit#0
+  check_ok#0 <-- [ entry#0 ]
+    array_gep (var@[i32; 3] ::arr) (i32 0) -> (anyptr #1)
+    load (anyptr #1) -> (i32 #2)
+    store (i32 #2) -> (var@i32 ::x)
+    jump exit#0
 })"}
         );
     }
