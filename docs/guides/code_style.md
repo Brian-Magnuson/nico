@@ -450,6 +450,88 @@ void panic(
 Here, `location` provides important diagnostic information, but callers should normally not need to provide it. `std::source_location::current()` automatically captures the location of the call, making the default both natural and useful.
 
 
+### Function Overloading
+
+Function overloading should be used sparingly. 
+It is appropriate when multiple function signatures provide different ways to perform the same conceptual operation. 
+It should not be used to hide meaningful differences in behavior or policy decisions from the caller.
+
+Function overloading is useful when it:
+
+- Allows callers to perform the same operation using different kinds of arguments.
+- Provides a more convenient interface without introducing ambiguity or surprising behavior.
+- Eliminates the need for different function names when the underlying operation is fundamentally the same.
+
+When two functions share the same name, callers should generally expect them to perform the same conceptual operation and return the same type. 
+If functions perform fundamentally different operations or produce different kinds of results, they should be given different names instead.
+
+For example, avoid overloading functions that perform unrelated operations:
+
+```cpp
+std::string get_value(std::string_view key);
+bool get_value(int index); // Avoid this
+```
+
+These functions perform different operations and return different types. 
+Giving them different names makes their purpose clearer:
+
+```cpp
+std::string get_value(std::string_view key);
+bool is_valid_index(int index);
+```
+
+When multiple overloads differ only in the presence of an optional argument, prefer using a default argument instead, provided the default is appropriate. 
+This reduces the number of function declarations and definitions that must be maintained and documented.
+
+For example, prefer:
+
+```cpp
+void log_message(
+    std::string_view message,
+    LogLevel level = LogLevel::Info
+);
+```
+
+over:
+
+```cpp
+void log_message(std::string_view message, LogLevel level);
+void log_message(std::string_view message);
+```
+
+See *Function Default Arguments* for guidance on when default arguments are appropriate.
+
+Overload declarations should be kept together so that callers can easily discover the different ways a function can be used. 
+Give related overloads consistent documentation comments, using them to explain the common purpose of the function and briefly describe any differences between overloads.
+
+Avoid repeating implementation code across function overloads. 
+When possible, designate one overload as the main overload, containing the primary implementation, and have the remaining overloads delegate to it.
+
+For example:
+
+```cpp
+void log_message(std::string_view message, LogLevel level)
+{
+    // Main implementation.
+}
+
+void log_message(std::string_view message)
+{
+    log_message(message, LogLevel::Info);
+}
+```
+
+This keeps the implementation in one place and reduces the likelihood of different overloads behaving inconsistently. 
+The main overload should be whichever provides the most natural implementation; it does not necessarily need to be the overload with the most arguments.
+
+Be mindful of overloads that accept implicitly convertible types, as they can sometimes make overload resolution surprising or ambiguous. 
+Overloading should make an interface easier to use, not make it harder for callers to predict which function will be invoked.
+
+An exception to these guidelines is the visitor pattern, which is used extensively in our project. 
+In this case, function overloading is an integral part of the pattern, allowing different types to be handled through the same function name. 
+Such overloads are appropriate even when they operate on fundamentally different types.
+
+
 ### Const Qualifiers
 
 Regarding the use of `const`:
