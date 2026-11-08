@@ -24,7 +24,7 @@ These strategies have their own advantages and disadvantages.
 They can affect how users are allowed to organize their code, how much control users have over the compilation process, and how much work the compiler has to do to resolve references between files.
 We will be exploring these strategies and their trade-offs in the context of Nico, and we will decide on the best approach for our compiler.
 
-## Compilation Units and LLVM Modules
+## Compilation units and LLVM modules
 
 Before we discuss how to implement multiple file compilation, we need to understand the concepts of compilation units and LLVM modules.
 
@@ -47,7 +47,7 @@ Multiple compilation units have a huge advantage: they allow us to optimize the 
 For example, suppose a project consists of 10 compilation units, and the user makes changes that affect only 1 of those units. 
 By compiling only the changed unit, we can save a lot of time compared to recompiling all 10 units.
 
-## Structure of an LLVM Module
+## Structure of an LLVM module
 
 According to the [LLVM Language Reference Manual](https://llvm.org/docs/LangRef.html#module-structure), an LLVM module consists of functions, global variables, symbol table entries, and metadata.
 Shown here is an example of an LLVM module taken from the LLVM Language Reference Manual:
@@ -103,7 +103,7 @@ struct Point {
 };
 ```
 
-## One Source File is One Compilation Unit
+## One source file is one compilation unit
 
 There are a few options we can take when considering how many source files should be in a compilation unit:
 1. All source files in a project are compiled together into a single compilation unit.
@@ -119,7 +119,7 @@ It also makes our compiler more complex because we would have to sort files into
 
 This leaves us with option 3, which is the most common approach in programming languages.
 
-## Key Point: Users Should Not Have to Manually Write Declarations
+## Key Point: Users should not have to manually write declarations
 
 C and C++ require programmers to declare functions and variables before they can be used.
 For example:
@@ -158,7 +158,7 @@ If we chose to require Nico programmers to manually write declarations, it would
 
 Instead, we should create some kind of "import" system that allows Nico programmers to reference other files without having to manually write declarations.
 
-## Key Idea: Imports Produce Declarations
+## Key Idea: Imports produce declarations
 
 > [!WARNING]
 > The example code used in this section may not reflect the final design.
@@ -193,9 +193,9 @@ This approach might make use of a specialized codegen pass that only generates d
 - Processing the file again means that we have to re-parse it and do at least some of the semantic analysis again. This extra time spent processing the file again is wasted time, and it can add up if the imported file is large or if there are many imports, effectively negating the benefits of multiple file compilation.
 - The added specialized components for processing declarations may make the compiler more complex and harder to maintain.
 
-### Approach 2: Store export information after compiling a file
+### Approach 2: Store export information while compiling a file
 
-This idea is somewhat similar to the concept of caching, where we store information about a file after it has been compiled so that we can use that information later without having to recompile the file.
+This idea is somewhat similar to the concept of caching, where we store information about a file while it is being compiled so that we can use that information later without having to recompile the file.
 
 When the compiler compiles a file, it may have a set of exported symbols, which are the global values that are defined in that file and can be referenced by other files.
 These exported symbols are stored separately from the compiled file, and they can be used to generate declarations for the imported file without having to recompile it.
@@ -217,3 +217,140 @@ If the compiler encounters an import statement for a file that has *not* been co
 - If the exported symbols change, we have to recompile the file and update the stored information, which can be a source of complexity and potential errors if not managed properly.
 - We need to design a system for handling potential circular imports, where two or more files import each other, which can lead to complications in the compilation process.
 - If we are using binary export data, we'd need a way to reliably read and write that data, which may require additional tooling or libraries.
+
+------
+
+**Decision:** We will use Approach 2, where we store export information while compiling a file.
+
+We'll need to come up with a way to store the export information, serialize it, write the data to disk, and read it back in when we need to generate declarations for an imported file.
+
+## Key Point: The global checker is the earliest stage that can generate interface data
+
+Henceforth, we'll define **interface data** as the mimimum information that is required to generate declarations for imported files.
+It is called *interface data* because it reveals the interface of a file to other files, without revealing the implementation details of that file.
+
+The current design of the compiler looks something like this:
+```mermaid
+flowchart TD
+    Lexer --> Parser
+    Parser --> GlobalChecker
+    GlobalChecker --> LocalChecker
+    LocalChecker --> MIRBuilder
+    MIRBuilder --> ControlFlowAnalyzer
+    ControlFlowAnalyzer --> CodeGenerator
+    CodeGenerator --> Emitter
+```
+
+Note that the type checker is split into two stages: the global checker and the local checker.
+The global checker checks what we call *declaration space*.
+
+**Declaration space** is where declarations are processed.
+This includes static variables, function headers, structs, classes, namespaces, external declaration namespaces, and exports.
+Order does not matter in declaration space as long as all dependencies are satisfied by the end of the declaration space.
+
+Once the global checker has finished its pass, all of declaration space will have been processed, and all declarations will be available for use in the local checker.
+Note that interface data that we would use for our LLVM modules relies solely on code written in declaration space.
+This means that the global checker is the earliest stage in the compiler that can generate interface data for imported files.
+
+We still need to be careful, however. 
+Currently, the global checker's check function looks like this:
+```cpp
+void GlobalChecker::run_check(std::unique_ptr<FrontendContext>& context) {
+    symbol_tree->clear_modified();
+
+    for (size_t i = context->stmts_processed; i < context->stmts.size(); ++i) {
+        context->stmts[i]->accept(this);
+    }
+
+    symbol_tree->resolve_unresolved_types();
+
+    if (Diagnostics::inst().get_errors().empty()) {
+        context->status = Status::Ok();
+    }
+    else if (repl_mode) {
+        if (symbol_tree->was_modified()) {
+            context->status = Status::Pause(Request::DiscardWarn);
+        }
+        else {
+            context->status = Status::Pause(Request::Discard);
+        }
+        context->rollback();
+    }
+    else {
+        context->status = Status::Error();
+    }
+}
+```
+
+Note the call to `symbol_tree->resolve_unresolved_types()`.
+We cannot generate interface data before this point, because we need to ensure that all types have been resolved.
+
+Now, we don't actually need to make interface data generation a separate compiler stage. 
+We can implement it as part of the global checker.
+The global checker would then have *two responsibilities*: decorating the AST, and generating interface data for imported files.
+
+## Modules and namespaces
+
+Many programming languages have a feature that allows users to organize their code into groups, which have different names depending on the language.
+
+- In C++, these groups are called *namespaces*, though later versions of C++ also have a *module* system.
+- In Java, these groups are called *packages*.
+- In Rust, these groups are called *modules*.
+
+...
+
+## Imports and exports
+
+Here, we will discuss the syntax and semantics of imports and exports in Nico, and how they relate to generating interface data.
+We'll start with exports.
+
+### Exports
+
+A source file may consist of multiple global values.
+An export statement allows the programmer to specify which global values should be included in the interface data for that file.
+
+This choice of using explicit export statements has a few benefits:
+1. We don't need to expose all global values in a file, which can help with encapsulation and information hiding.
+2. We can avoid potential name collisions between global values in different files, since we can choose which global values to export and which to keep private.
+3. We can avoid generating interface data for global values that are not intended to be used by other files, which can help reduce the size of the interface data and improve compilation times.
+4. The compiler does not have to do any extra work to determine which global values should be included in the interface data, since the programmer has explicitly specified which global values to export.
+
+Explicit exports are also not without precedent. Many programming languages, such as Rust and JavaScript, use explicit exports to control which symbols are visible outside of a module or file.
+```js
+function add(a, b) {
+    return a + b;
+}
+
+export { add };
+```
+
+We can implement something similar in Nico:
+```
+func add(a: i32, b: i32) -> i32 => a + b
+
+func subtract(a: i32, b: i32) -> i32 => a - b
+
+export { add, subtract }
+```
+
+We'll use braces to group exported symbols together, and we'll use commas to separate the names of the exported symbols.
+Although we *could* allow lists without braces (like with print statements), that syntax becomes harder to use and read as the number of exported symbols increases.
+And files can have *many* exported symbols, so we should make it easy to read and write export statements.
+
+The exports of a file can be put into a single group, and the order of names within that group does not matter.
+We do not necessarily have to process the export statement exactly where it appears in the source file.
+Due to how the global checker works, we have to process exports at the very end anyway, we we can just *collect* the names of exported symbols as we process the file, and then generate the interface data at the end of the global checker's pass.
+
+This also means that there is little restriction on where the export statement can appear in a source file, as long as it appears within declaration space.
+
+**Question:** Can an export statement appear within a namespace?
+
+That is, should we allow this?:
+```
+namespace math {
+    func add(a: i32, b: i32) -> i32 => a + b
+    func subtract(a: i32, b: i32) -> i32 => a - b
+    export { add, subtract }
+}
+```
+
