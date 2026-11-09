@@ -297,7 +297,44 @@ Many programming languages have a feature that allows users to organize their co
 - In Java, these groups are called *packages*.
 - In Rust, these groups are called *modules*.
 
-...
+To properly support multiple file compilation, we need to have some kind of grouping mechanism in Nico, since this will affect how users will import names, how users will be able to organize their code, and how code outside of a project can reference code inside of a project.
+
+The following design is based on a combination of JavaScript imports and Python modules.
+
+A **module** is a unit of code defined in a *single* source file.
+That is, a module is one source file, and a source file is one module.
+This neatly aligns with our decision to have one source file per compilation unit/LLVM module.
+
+To import a module, you must specify its file path relative to the current file.
+Because we allow source files to be AOT-compiled independently of each other and prefer to avoid having to scan the entire project for source files, the compiler will need to know where imports are located.
+
+A **namespace** allows users to group related code together *within* a module.
+A namespace can contain functions, variables, structs, classes, and other namespaces.
+They achieve a similar effect to writing static declarations in a struct/class, but without actually creating a struct/class.
+Namespaces can be imported like any other declaration.
+Importantly, you *cannot* reopen a namespace once it has been closed.
+You can define namespaces with the same name, but they are treated as separate namespaces, and they cannot be merged together.
+
+With this design, namespaces are less useful than they are in C++ or C# since they cannot be reopened, but they still fulfill the role of grouping related code together and preventing name collisions.
+
+A programmer may want to put multiple declarations in the same module while also splitting them across multiple files.
+For example, a programmer may want to define a `math` module, even though it is split across multiple files, like this:
+```
+math/
+    arithmetic.nico
+    geometry.nico
+    linear_algebra.nico
+```
+
+In such cases, we allow *re-exporting* of declarations from one module to another.
+**Re-exporting** is the act of exporting an imported declaration, making it appear as if the import was defined in the current module.
+
+For example, the `geometry.nico` file may have a function called `distance`, and the `arithmetic.nico` file may have a function called `add`.
+Each could be referenced through their respective modules: `math::geometry::distance` and `math::arithmetic::add`.
+
+With re-exporting, we can make it so that the `math` module exports both of these functions, allowing them to be referenced as `math::distance` and `math::add`.
+
+This means that a single declaration can be referenced through multiple paths.
 
 ## Imports and exports
 
@@ -347,10 +384,82 @@ This also means that there is little restriction on where the export statement c
 
 That is, should we allow this?:
 ```
-namespace math {
+namespace arithmetic {
     func add(a: i32, b: i32) -> i32 => a + b
     func subtract(a: i32, b: i32) -> i32 => a - b
     export { add, subtract }
 }
 ```
 
+We should not allow this; exports affect the interface of a *module*, and, thus, should appear at the *module* level, which is the top level of a source file.
+
+If the user wants to export a declaration in a namespace, they must make sure the name is properly qualified in the export statement:
+```
+export { arithmetic::add, arithmetic::subtract }
+```
+
+### Imports
+
+Imports come in three forms: import lists, module imports, and wildcard imports.
+
+To demonstrate how these forms work, let's consider a source file called `math.nico` that exports a namespace `arithmetic` containing two functions, `add` and `subtract`.
+```
+// math.nico
+namespace arithmetic {
+    func add(a: i32, b: i32) -> i32 => a + b
+    func subtract(a: i32, b: i32) -> i32 => a - b
+}
+
+export { arithmetic::add, arithmetic::subtract }
+```
+
+**Import lists** allow the programmer to specify a list of names to import from a module.
+```
+import { arithmetic::add, arithmetic::subtract } from "math.nico"
+```
+
+When importing a qualified name, the programmer may henceforth refer to the imported declaration using the last part of the qualified name.
+For example, if the programmer imports `arithmetic::add`, they can refer to it simply as `add` in their code.
+And if the programmer imports `arithmetic`, then references to `add` must be qualified with `arithmetic`: `arithmetic::add`.
+
+
+**Module imports** allow the programmer to import an entire module.
+The import specifies a name for the module, and all imported declarations must be qualified with that name.
+```
+import "math.nico" as math
+
+math::arithmetic::add(2, 3)
+```
+
+**Wildcard imports** are like module imports, importing everything that is exported from a module.
+But unlike module imports, imported declarations do not need to be qualified with the module name.
+```
+import * from "math.nico"
+
+arithmetic::add(2, 3)
+```
+
+We include this feature for convenience, and many programming languages have some feature like this.
+Wildcard imports can be useful when a module exports many declarations, and the programmer wants to use all of them without having to write out a long list of names.
+However, wildcard imports can lead to name collisions and make it harder to understand where a declaration is coming from, so we discourage their use in favor of import lists and module imports.
+
+------
+
+Name collisions may still occur with import lists and module imports, and they are semantic errors.
+```
+import "math.nico" as math
+import { distance } from "geometry.nico"
+
+namespace math {  // Error: name collision with imported module.
+    // ... some code
+}
+
+func distance(a: Point, b: Point) -> f64 {  // Error: name collision with imported declaration.
+    // ... some code
+}
+```
+
+Importing effectively creates an *alias* for the imported declaration.
+When we generate LLVM IR, we always use the *symbol* for the declaration.
+That symbol must remain the same when we generate the declaration for imports, so that the imported declaration can be linked to the definition in the original module.
+Therefore, interface data must be able to preserve *both* the hierarchy of namespaces and the symbols for declarations, so that users can properly reference imported declarations and the compiler can properly generate declarations for those imports.
