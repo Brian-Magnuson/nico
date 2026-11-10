@@ -89,6 +89,45 @@ void MIRBuilder::add_array_bounds_check(
     current_block = ok_block;
 }
 
+void MIRBuilder::add_alloc_nullptr_check(
+    std::shared_ptr<MIRValue> ptr, const Location& location
+) {
+    std::shared_ptr<BasicBlock> null_ptr_block =
+        current_block->get_parent_function()->create_basic_block(
+            "check_alloc_nullptr"
+        );
+    std::shared_ptr<BasicBlock> ok_block =
+        current_block->get_parent_function()->create_basic_block("check_ok");
+
+    auto cmp_instr = std::make_shared<Instr::Binary>(
+        Expr::Binary::Operation::IntEq,
+        ptr,
+        MIRValue::ZeroValue::create(ptr->type),
+        std::make_shared<Type::Bool>()
+    );
+    current_block->add_instruction(cmp_instr);
+
+    // Branch based on the comparison result.
+    current_block
+        ->set_successors(cmp_instr->destination, null_ptr_block, ok_block);
+
+    // Null pointer block: Add a panic instruction and terminate the block.
+    current_block = null_ptr_block;
+    auto panic_instr = std::make_shared<Instr::Panic>(
+        std::vector<std::shared_ptr<MIRValue>>{
+            MIRValue::CustomStr::create("Memory allocation failed.")
+        },
+        location
+    );
+    current_block->add_instruction(panic_instr);
+    current_block->set_successor(
+        current_block->get_parent_function()->get_exit_block()
+    );
+
+    // OK block: Set the current block to continue building.
+    current_block = ok_block;
+}
+
 std::shared_ptr<MIRValue::Variable> MIRBuilder::get_mir_variable(
     std::shared_ptr<Node::BindingEntry> binding_entry
 ) {
@@ -726,6 +765,7 @@ std::any MIRBuilder::visit(Expr::Alloc* expr, bool as_lvalue) {
 
     auto alloc_instr = std::make_shared<Instr::Alloc>(alloc_size);
     current_block->add_instruction(alloc_instr);
+    add_alloc_nullptr_check(alloc_instr->destination, expr->location);
 
     if (expr->expression.has_value()) {
         auto expr_value = std::any_cast<std::shared_ptr<MIRValue>>(

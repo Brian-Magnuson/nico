@@ -55,6 +55,19 @@ class MIRBuilder : public Stmt::Visitor, public Expr::Visitor {
     );
 
     /**
+     * @brief Adds instructions to check for null pointers after a memory
+     * allocation at runtime. If the pointer is null, control is transferred to
+     * a block with a panic instruction.
+     *
+     * @param ptr The value representing the pointer returned by the allocation.
+     * @param location The location in the source code where the allocation is
+     * happening.
+     */
+    void add_alloc_nullptr_check(
+        std::shared_ptr<MIRValue> ptr, const Location& location
+    );
+
+    /**
      * @brief Helper function to retrieve the MIR variable corresponding to a
      * given binding entry.
      *

@@ -683,14 +683,20 @@ func $script( ) -> void {
   entry#0 <-- [ ]
     sizeof i32 -> (u64 #0)
     alloc (u64 #0) -> (anyptr #1)
+    binary inteq (anyptr #1) (anyptr zerovalue) -> (bool #2)
+    branch (bool #2) ? check_alloc_nullptr#0 : check_ok#0
+  exit#0 <-- [ check_alloc_nullptr#0 check_ok#0 ]
+    return
+  check_alloc_nullptr#0 <-- [ entry#0 ]
+    panic (str "Memory allocation failed.")
+    jump exit#0
+  check_ok#0 <-- [ entry#0 ]
     store (anyptr #1) -> (var@var@i32 ::ptr)
     local void (var@void $yieldval#0)
-    load (var@var@i32 ::ptr) -> (var@i32 #2)
-    dealloc (var@i32 #2)
-    load (var@void $yieldval#0) -> (void #3)
+    load (var@var@i32 ::ptr) -> (var@i32 #3)
+    dealloc (var@i32 #3)
+    load (var@void $yieldval#0) -> (void #4)
     jump exit#0
-  exit#0 <-- [ entry#0 ]
-    return
 })"}
         );
     }
@@ -708,15 +714,21 @@ func $script( ) -> void {
   entry#0 <-- [ ]
     sizeof i32 -> (u64 #0)
     alloc (u64 #0) -> (anyptr #1)
+    binary inteq (anyptr #1) (anyptr zerovalue) -> (bool #2)
+    branch (bool #2) ? check_alloc_nullptr#0 : check_ok#0
+  exit#0 <-- [ check_alloc_nullptr#0 check_ok#0 ]
+    return
+  check_alloc_nullptr#0 <-- [ entry#0 ]
+    panic (str "Memory allocation failed.")
+    jump exit#0
+  check_ok#0 <-- [ entry#0 ]
     store (i32 5) -> (anyptr #1)
     store (anyptr #1) -> (var@var@i32 ::ptr)
     local void (var@void $yieldval#0)
-    load (var@var@i32 ::ptr) -> (var@i32 #2)
-    dealloc (var@i32 #2)
-    load (var@void $yieldval#0) -> (void #3)
+    load (var@var@i32 ::ptr) -> (var@i32 #3)
+    dealloc (var@i32 #3)
+    load (var@void $yieldval#0) -> (void #4)
     jump exit#0
-  exit#0 <-- [ entry#0 ]
-    return
 })"}
         );
     }
@@ -738,7 +750,7 @@ func $script( ) -> void {
     cast signext (i32 #1) -> (u64 #2)
     binary sintlt (u64 #2) (u64 0) -> (bool #3)
     branch (bool #3) ? check_negative_size#0 : check_ok#0
-  exit#0 <-- [ check_negative_size#0 check_ok#0 ]
+  exit#0 <-- [ check_negative_size#0 check_alloc_nullptr#0 check_ok#1 ]
     return
   check_negative_size#0 <-- [ entry#0 ]
     panic (str "Allocation amount expression evaluated to a negative value.")
@@ -746,6 +758,12 @@ func $script( ) -> void {
   check_ok#0 <-- [ entry#0 ]
     binary intmul (u64 #0) (u64 #2) -> (u64 #4)
     alloc (u64 #4) -> (anyptr #5)
+    binary inteq (anyptr #5) (anyptr zerovalue) -> (bool #6)
+    branch (bool #6) ? check_alloc_nullptr#0 : check_ok#1
+  check_alloc_nullptr#0 <-- [ check_ok#0 ]
+    panic (str "Memory allocation failed.")
+    jump exit#0
+  check_ok#1 <-- [ check_ok#0 ]
     store (anyptr #5) -> (var@var@[i32; ?] ::ptr)
     jump exit#0
 })"}
