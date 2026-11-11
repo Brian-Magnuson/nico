@@ -3,6 +3,9 @@
 
 #include <any>
 #include <memory>
+#include <string>
+#include <string_view>
+#include <unordered_map>
 
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>
@@ -40,9 +43,11 @@ class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
     // The IR builder used to generate the IR; always set the insertion point
     // before using it.
     std::unique_ptr<llvm::IRBuilder<>> builder;
-    // // A linked list of blocks for tracking control flow.
-    // std::shared_ptr<Block> block_list = nullptr;
+    // A map of global string variables created in the module. This is used to
+    // avoid creating duplicate global string variables.
+    std::unordered_map<std::string, llvm::GlobalVariable*> global_string_map;
 
+    // A linked list of blocks for tracking control flow.
     ControlStack control_stack;
 
     CodeGenerator(
@@ -58,6 +63,21 @@ class CodeGenerator : public Stmt::Visitor, public Expr::Visitor {
      * Nico runtime functions are defined in the `nico_rt` library.
      */
     void add_c_functions();
+
+    /**
+     * @brief Gets a global string variable for the given string.
+     *
+     * If the string does not yet exist in the module, it will be created using
+     * `llvm::IRBuilderBase::CreateGlobalString`.
+     * If the string already exists, the existing global variable will be
+     * returned.
+     * This allows us to reuse global string variables and avoid creating
+     * duplicates.
+     *
+     * @param str The string to get or create a global variable for.
+     * @return llvm::GlobalVariable* The global variable for the string.
+     */
+    llvm::GlobalVariable* get_global_string(std::string_view str);
 
     /**
      * @brief Adds a panic call to the generated code.

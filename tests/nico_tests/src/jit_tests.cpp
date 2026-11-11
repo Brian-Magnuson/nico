@@ -179,7 +179,10 @@ void run_jit_test(
 
 TEST_CASE("JIT print statements", "[jit]") {
     SECTION("Print hello world 1") {
-        run_jit_test(R"(printout "Hello, World!")", "Hello, World!");
+        run_jit_test(
+            R"(printout "Hello, World!")",
+            JITTestOptions{.expected_output = "Hello, World!"}
+        );
     }
 
     SECTION("Print hello world 2") {

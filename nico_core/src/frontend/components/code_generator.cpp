@@ -131,6 +131,16 @@ void CodeGenerator::add_c_functions() {
     }
 }
 
+llvm::GlobalVariable* CodeGenerator::get_global_string(std::string_view str) {
+    auto [it, inserted] = global_string_map.try_emplace(std::string(str));
+    if (!inserted) {
+        return it->second;
+    }
+
+    it->second = builder->CreateGlobalString(str);
+    return it->second;
+}
+
 void CodeGenerator::add_panic(
     std::string_view message_fmt_string,
     std::vector<llvm::Value*> message_fmt_args,
@@ -142,12 +152,11 @@ void CodeGenerator::add_panic(
     }
 
     // Starting string.
-    llvm::Value* starting_string = builder->CreateGlobalString("PANIC: ");
+    llvm::Value* starting_string = get_global_string("PANIC: ");
     builder->CreateCall(printerrf_fn, {starting_string});
 
     // Message string.
-    llvm::Value* message_string =
-        builder->CreateGlobalString(message_fmt_string);
+    llvm::Value* message_string = get_global_string(message_fmt_string);
     std::vector<llvm::Value*> message_args = {message_string};
     message_args.insert(
         message_args.end(),
@@ -158,10 +167,9 @@ void CodeGenerator::add_panic(
 
     // Location string.
     llvm::Value* location_string =
-        builder->CreateGlobalString("\n  at %s:%d:%d\n  in `%s`\n");
+        get_global_string("\n  at %s:%d:%d\n  in `%s`\n");
     auto location_tuple = location.to_tuple();
-    llvm::Value* file_name =
-        builder->CreateGlobalString(std::get<0>(location_tuple));
+    llvm::Value* file_name = get_global_string(std::get<0>(location_tuple));
     llvm::Value* line_number = llvm::ConstantInt::get(
         llvm::Type::getInt32Ty(*mod_ctx.llvm_context),
         std::get<1>(location_tuple)
@@ -171,7 +179,7 @@ void CodeGenerator::add_panic(
         std::get<2>(location_tuple)
     );
     llvm::Value* func_name =
-        builder->CreateGlobalString(control_stack.get_current_function_name());
+        get_global_string(control_stack.get_current_function_name());
 
     std::vector<llvm::Value*> location_string_args =
         {location_string, file_name, line_number, column_number, func_name};
@@ -528,14 +536,14 @@ std::any CodeGenerator::visit(Stmt::Print* stmt) {
     for (const auto& expr : stmt->expressions) {
         auto value = std::any_cast<llvm::Value*>(expr->accept(this, false));
         auto [fmt, fmt_args] = expr->type->to_print_args(builder, value);
-        auto args = std::vector<llvm::Value*>{builder->CreateGlobalString(fmt)};
+        auto args = std::vector<llvm::Value*>{get_global_string(fmt)};
         args.insert(args.end(), fmt_args.begin(), fmt_args.end());
         builder->CreateCall(printf_fn, args);
     }
 
     if (repl_mode) {
         // In REPL mode, add an extra newline.
-        format_str = builder->CreateGlobalString("\n");
+        format_str = get_global_string("\n");
         builder->CreateCall(printf_fn, {format_str});
     }
 
@@ -1482,9 +1490,8 @@ std::any CodeGenerator::visit(Expr::Literal* expr, bool as_lvalue) {
         );
         break;
     case Tok::Str:
-        result = builder->CreateGlobalString(
-            std::any_cast<std::string>(expr->token->literal)
-        );
+        result =
+            get_global_string(std::any_cast<std::string>(expr->token->literal));
         break;
     case Tok::Void:
         result =
