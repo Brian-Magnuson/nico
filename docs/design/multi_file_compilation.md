@@ -47,6 +47,31 @@ Multiple compilation units have a huge advantage: they allow us to optimize the 
 For example, suppose a project consists of 10 compilation units, and the user makes changes that affect only 1 of those units. 
 By compiling only the changed unit, we can save a lot of time compared to recompiling all 10 units.
 
+
+## Managed and unmanaged projects
+
+When designing a build system for a programming language, we should acknowledge that there are certain things a build system can only do if it understands the structure of a project.
+If the build system understands the full scope of a project, it can more effectively manage the compilation process, including determining which files need to be recompiled and how to link the resulting object files together.
+
+Build systems for existing programming languages, such as CMake for C/C++ and Cargo for Rust, are able to manage the compilation process because they understand the structure of a project (with the help of configuration files, such as `CMakeLists.txt` and `Cargo.toml`).
+
+Thus, we distinguish between two types of projects: *managed* and *unmanaged*.
+
+An **unmanaged project** is a project that does not have a recognizable structure, which the build system cannot understand or use to manage the compilation process.
+
+A **managed project** is a project that has a recognizable structure, which the build system can understand and use to manage the compilation process.
+
+A requirement for a project to be considered managed is that it must have a clear and unambiguous *root directory* that defines the boundaries of the project.
+This root directory may be signaled by a configuration or manifest file that describes the project and its dependencies.
+The compiler uses this information to determine which files belong to the project and how they should be compiled and linked together.
+
+Additionally, with managed projects, the compiler has a dedicated space to store build artifacts, such as compiled object files and interface data.
+
+This concept is important because want to start with a simple design for the compiler that can handle unmanaged projects, and then later extend the design to support managed projects.
+Creating a build system for managed projects is a complex task and will likely be discussed in a future design document. 
+We want to avoid making the compiler more complex than it needs to be in the early stages of development.
+
+
 ## Structure of an LLVM module
 
 According to the [LLVM Language Reference Manual](https://llvm.org/docs/LangRef.html#module-structure), an LLVM module consists of functions, global variables, symbol table entries, and metadata.
@@ -220,9 +245,21 @@ If the compiler encounters an import statement for a file that has *not* been co
 
 ------
 
-**Decision:** We will use Approach 2, where we store export information while compiling a file.
+**Decision:** We can use both approaches.
+Although approach 2 is more efficient, we would need a space to store the exported interface data, and we would need to come up with a way to manage that data.
+This works well for managed projects, where the compiler recognizes the structure of a project and can create a space for storing build artifacts,
+but it doesn't work well when there is no project structure or when the compiler is used in REPL mode.
 
-We'll need to come up with a way to store the export information, serialize it, write the data to disk, and read it back in when we need to generate declarations for an imported file.
+For unmanaged projects, we use approach 1.
+For managed projects, we use approach 2.
+
+For approach 1, we need to keep things simple and avoid wasting time processing files that have already been processed.
+If multiple files are being compiled at once, we can retain the interface data in memory and use it to generate declarations for imported files.
+
+For approach 2, we'll need to come up with a way to store the export information, serialize it, write the data to disk, and read it back in when we need to generate declarations for an imported file.
+
+This use of both approaches allows us to support both unmanaged and managed projects, which aligns with our design philosophy of keeping things simple, but also allowing for flexibility.
+
 
 ## Key Point: The global checker is the earliest stage that can generate interface data
 
@@ -463,3 +500,12 @@ Importing effectively creates an *alias* for the imported declaration.
 When we generate LLVM IR, we always use the *symbol* for the declaration.
 That symbol must remain the same when we generate the declaration for imports, so that the imported declaration can be linked to the definition in the original module.
 Therefore, interface data must be able to preserve *both* the hierarchy of namespaces and the symbols for declarations, so that users can properly reference imported declarations and the compiler can properly generate declarations for those imports.
+
+
+## Additional problems related to LLVM modules
+
+There are a few additional problems that we need to consider when working with multiple LLVM modules.
+1. How do we name modules to avoid name collisions?
+2. How do we ensure global values with reserved symbols (e.g. `main`, `$script`, `$panicking`) do not violate the one-definition rule when multiple modules are linked together?
+
+...
