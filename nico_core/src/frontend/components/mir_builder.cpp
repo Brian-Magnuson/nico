@@ -218,8 +218,26 @@ std::any MIRBuilder::visit(Stmt::Static* stmt) {
 }
 
 std::any MIRBuilder::visit(Stmt::Func* stmt) {
-    // TODO: Implementation for visiting Func statements goes here.
-    return {};
+    auto script_block = current_block;
+
+    auto binding_entry = stmt->binding_entry.lock();
+    auto binding_type = binding_entry->binding.type;
+    auto func_type = Type::as_a<Type::Function>(binding_type).value();
+
+    if (stmt->body.has_value()) {
+        auto func = mir_module->create_function(
+            std::dynamic_pointer_cast<Stmt::Func>(stmt->shared_from_this())
+        );
+        current_block = func->get_entry_block();
+        stmt->body.value()->accept(this, false);
+    }
+    else {
+        auto prototype = mir_module->create_prototype(
+            std::dynamic_pointer_cast<Stmt::Func>(stmt->shared_from_this())
+        );
+    }
+
+    return std::any();
 }
 
 std::any MIRBuilder::visit(Stmt::Print* stmt) {
