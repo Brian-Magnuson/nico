@@ -42,6 +42,9 @@ void run_mir_test(
     auto context = std::make_unique<nico::FrontendContext>();
 
     auto file = nico::make_test_code_file(source);
+    // TODO: This ensures local variables have predictable symbols. There should
+    // be a better way to do this.
+    nico::Node::LocalScope::next_scope_id = 0;
     nico::Lexer::scan(context, file);
     nico::Parser::parse(context);
     nico::GlobalChecker::check(context);
@@ -909,6 +912,39 @@ func $script( ) -> void {
     load (var@i32 ::x) -> (i32 #0)
     binary sintlt (i32 #0) (i32 5) -> (bool #1)
     branch (bool #1) ? loop_do#0 : loop_merge#0
+})"}
+        );
+    }
+}
+
+TEST_CASE("MIR functions", "[mir]") {
+    SECTION("Simple function definition") {
+        run_mir_test(
+            R"(
+            func add(a: i32, b: i32) -> i32 {
+                return a + b
+            }
+            )",
+            MIRTestOptions{.expected_output = R"(module
+func $script( ) -> void {
+  entry#0 <-- [ ]
+    jump exit#0
+  exit#0 <-- [ entry#0 ]
+    return
+}
+func ::add$1( (var@i32 ::0::a) (var@i32 ::0::b) ) -> i32 {
+  entry#1 <-- [ ]
+    local i32 (var@i32 $yieldval#0)
+    load (var@i32 ::0::a) -> (i32 #0)
+    load (var@i32 ::0::b) -> (i32 #1)
+    binary intadd (i32 #0) (i32 #1) -> (i32 #2)
+    store (i32 #2) -> (var@i32 $returnval#0)
+    jump exit#1
+  exit#1 <-- [ entry#1 unreachable#0 ]
+    return
+  unreachable#0 <-- [ ]
+    load (var@i32 $yieldval#0) -> (i32 #3)
+    jump exit#1
 })"}
         );
     }

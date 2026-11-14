@@ -116,7 +116,7 @@ Prototype::create(std::shared_ptr<Stmt::Func> func_stmt) {
     proto->return_type = binding_entry->binding.type;
     for (const auto& param : func_stmt->parameters) {
         auto param_var = MIRValue::Variable::create(param.binding_entry.lock());
-        proto->parameters.push_back(param_var);
+        proto->parameters.insert(param.binding_entry.lock()->symbol, param_var);
     }
 
     return proto;
@@ -125,7 +125,7 @@ Prototype::create(std::shared_ptr<Stmt::Func> func_stmt) {
 std::string Prototype::to_string() const {
     std::string result = "prototype " + name + "( ";
     for (const auto& param : parameters) {
-        result += param->to_string() + " ";
+        result += param.second->to_string() + " ";
     }
     result += ") -> " + return_type->to_string();
 
@@ -178,15 +178,22 @@ Function::create(std::shared_ptr<Stmt::Func> func_stmt) {
 
     auto func = std::make_shared<Function>(Private());
     auto binding_entry = func_stmt->binding_entry.lock();
+    auto func_type = Type::as_a<Type::Function>(binding_entry->binding.type);
+    if (!func_type) {
+        panic(
+            "Binding entry for function statement does not have a function "
+            "type."
+        );
+    }
 
     func->name = binding_entry->symbol;
-    func->return_type = binding_entry->binding.type;
+    func->return_type = func_type.value()->return_type;
     for (const auto& param : func_stmt->parameters) {
         auto param_var = MIRValue::Variable::create(param.binding_entry.lock());
-        func->parameters.push_back(param_var);
+        func->parameters.insert(param.binding_entry.lock()->symbol, param_var);
     }
     func->return_variable =
-        MIRValue::Variable::create("$ret_val", func->return_type);
+        MIRValue::Variable::create("$returnval", func->return_type);
 
     func->entry_block = func->create_basic_block("entry");
 
@@ -227,6 +234,9 @@ std::shared_ptr<MIRValue::Variable> Function::get_local_variable(
     auto it = locals.find(binding_entry->symbol);
     if (it != locals.end()) {
         return it->second;
+    }
+    else if (auto mir_var_opt = parameters.at(binding_entry->symbol)) {
+        return mir_var_opt.value();
     }
     else {
         panic("No local variable found for binding entry.");
@@ -371,7 +381,7 @@ void Function::purge_unreachable_blocks() {
 std::string Function::to_string() const {
     std::string result = "func " + name + "( ";
     for (const auto& param : parameters) {
-        result += param->to_string() + " ";
+        result += param.second->to_string() + " ";
     }
     result += ") -> " + return_type->to_string() + " {\n";
 

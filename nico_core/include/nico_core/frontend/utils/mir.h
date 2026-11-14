@@ -376,7 +376,7 @@ protected:
     // The return type of the function.
     std::shared_ptr<Type> return_type;
     // The parameters of the function.
-    std::vector<std::shared_ptr<MIRValue::Variable>> parameters;
+    Dictionary<std::string, std::shared_ptr<MIRValue::Variable>> parameters;
 
 public:
     virtual ~IFunction() = default;

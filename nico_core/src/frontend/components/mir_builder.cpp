@@ -230,12 +230,16 @@ std::any MIRBuilder::visit(Stmt::Func* stmt) {
         );
         current_block = func->get_entry_block();
         stmt->body.value()->accept(this, false);
+
+        current_block->set_successor(func->get_exit_block());
     }
     else {
         auto prototype = mir_module->create_prototype(
             std::dynamic_pointer_cast<Stmt::Func>(stmt->shared_from_this())
         );
     }
+
+    current_block = script_block;
 
     return std::any();
 }
