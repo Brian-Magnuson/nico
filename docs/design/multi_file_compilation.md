@@ -275,7 +275,8 @@ flowchart TD
     LocalChecker --> MIRBuilder
     MIRBuilder --> ControlFlowAnalyzer
     ControlFlowAnalyzer --> CodeGenerator
-    CodeGenerator --> Emitter
+    CodeGenerator --> Optimizer
+    Optimizer --> Emitter
 ```
 
 Note that the type checker is split into two stages: the global checker and the local checker.
@@ -325,6 +326,33 @@ We cannot generate interface data before this point, because we need to ensure t
 Now, we don't actually need to make interface data generation a separate compiler stage. 
 We can implement it as part of the global checker.
 The global checker would then have *two responsibilities*: decorating the AST, and generating interface data for imported files.
+
+
+## Key Point: The frontend class manages all the frontend stages of the compiler
+
+In the previous section, we discussed the different stages of the compiler and how they create a complete flow from source code to machine instructions.
+
+Everything from the lexer to the code generator is considered part of the *frontend* of the compiler.
+The stages that optimize the IR generated from the frontend are considered the *middle-end* of the compiler.
+The stages that emit machine instructions from the optimized IR are considered the *backend* of the compiler.
+
+In the Nico project, we leverage LLVM to handle the middle-end and backend parts of the compiler, meaning most of the work we do is in the frontend.
+
+Key to creating a frontend is managing the flow of the many stages of the frontend.
+While the pipeline design of the compiler is effective, it needs to be managed carefully to ensure that each stage is executed in the correct order and that the output of one stage is properly passed to the next stage.
+This is why we have the `Frontend` class and `FrontendContext` class, which manages the flow of the frontend stages and the data that is passed between them.
+
+If we want to add interface data generation to our compiler, we need to modify the frontend to run only the necessary stages:
+```mermaid
+flowchart TD
+    Lexer --> Parser
+    Parser --> GlobalChecker
+    GlobalChecker --> InterfaceDataGenerator
+```
+
+We could implement this as a special function in the `Frontend` class separate from the `compile` function and runs only the necessary stages to generate interface data.
+The `GlobalChecker` can then use this function to generate interface data for imported files, without having to run the entire compilation process.
+
 
 ## Modules and namespaces
 
@@ -500,6 +528,73 @@ Importing effectively creates an *alias* for the imported declaration.
 When we generate LLVM IR, we always use the *symbol* for the declaration.
 That symbol must remain the same when we generate the declaration for imports, so that the imported declaration can be linked to the definition in the original module.
 Therefore, interface data must be able to preserve *both* the hierarchy of namespaces and the symbols for declarations, so that users can properly reference imported declarations and the compiler can properly generate declarations for those imports.
+
+
+## Key Point: Testing with multiple files demands an abstraction of the file system
+
+When our type checkers process an import statement, they need to be able to find the file that is being imported.
+We can implement this using the IO and filesystem libraries in C++, which allow us to locate and read files from the file system.
+However, this alone would not make an effective design for testing, since we would have to create and manage files on the file system for each test case.
+
+I generally prefer to avoid creating actual files on the disk for testing since it can be slow and difficult to manage.
+Additionally, when tests fail or terminate unexpectedly, it can leave the file system in an inconsistent state, which can make it difficult to run tests again or to debug the issue.
+It would be better to simulate the file system in memory, so that we can create and manage files for testing without having to create actual files on the disk.
+Additionally, when tests fail or terminate unexpectedly, we can simply discard the in-memory file system and start fresh for the next test run.
+We already create fake file objects for testing our JIT compiler, but we need something more robust for testing multiple file compilation.
+
+We need an abstraction of the file system.
+In other words, we need a class that hides the details of how files are stored and accessed and provides a simple interface for the compiler to use when looking up files.
+Then, internally, the class can use the real file system or a fake file system for testing.
+The fake file system works by storing source code in memory, and it can be used to simulate the behavior of the real file system without having to create actual files on disk.
+
+The class could be designed something like this:
+```cpp
+class IFileSystem {
+public:
+    virtual ~IFileSystem() = default;
+
+    virtual std::string read_file(const std::filesystem::path& path) const = 0;
+    virtual bool file_exists(const std::filesystem::path& path) const = 0;
+};
+```
+
+The in-memory file system can be implemented as a concrete subclass of `IFileSystem`, and it can store source code in a map or a vector, where the key is the file path and the value is the source code.
+```cpp
+class InMemoryFileSystem : public IFileSystem {
+    std::unordered_map<std::filesystem::path, std::string> files;
+
+public:
+    InMemoryFileSystem() = default;
+
+    void add_file(const std::filesystem::path& path, const std::string& source_code) {
+        files[path] = source_code;
+    }
+
+    /* additional method implementations */
+};
+```
+
+An unordered map is a good choice for storing files in memory, since it allows for fast lookups and insertions.
+
+Because Nico source files reference each other using relative paths, we may need an additional function to "normalize" paths, which resolves relative paths to "absolute" paths.
+For example, suppose a file `math/math.nico` imports from `../time/time.nico`.
+When we process the import, we can determine that the path of `time.nico` can be represented as the path of the current directory plus the relative path of the imported file:
+`math/../time/time.nico`.
+
+The C++ filesystem library already has functions that can convert a path into a "lexically normal" path, which removes redundant elements such as `.` and `..` from the path.
+`math/../time/time.nico` becomes `time/time.nico`, which is the path we can use to look up the file in our in-memory file system.
+```cpp
+std::string normalize(const std::filesystem::path& path) {
+    return path.lexically_normal().generic_string();
+}
+```
+
+Note that the `InMemoryFileSystem` class will need to be tested separately to ensure that it works correctly, since it is key to the testing of multiple file compilation.
+
+
+## Reserved symbols
+
+...
 
 
 ## Additional problems related to LLVM modules
