@@ -128,6 +128,9 @@ struct Point {
 };
 ```
 
+Note: LLVM modules also have *names*, which are metadata that can be used to identify the module.
+However, the name of a module does *not* need to be unique when linking multiple modules together, and it is not used to reference global values in other modules.
+
 ## One source file is one compilation unit
 
 There are a few options we can take when considering how many source files should be in a compilation unit:
@@ -143,6 +146,7 @@ We should also rule out option 2, because the user would then have to think abou
 It also makes our compiler more complex because we would have to sort files into groups and groups into projects, which is not a trivial task.
 
 This leaves us with option 3, which is the most common approach in programming languages.
+
 
 ## Key Point: Users should not have to manually write declarations
 
@@ -594,13 +598,70 @@ Note that the `InMemoryFileSystem` class will need to be tested separately to en
 
 ## Reserved symbols
 
-...
+In Nico, a **symbol** or **unique symbol** is a globally unique string consisting of one or more parts and used internally by the compiler to refer to a variable/type/function.
+
+Symbols are important in code generation because we can use them to ensure that the same variable/type/function is referred to consistently throughout the generated code.
+Users generally won't see symbols and instead will use names to refer to variables/types/functions. 
+
+Note that a symbol is not the same as a *fully qualified name*, which is a name that includes all of the namespaces and modules that a variable/type/function belongs to.
+Users may use fully qualified names to refer to variables/types/functions, but the compiler will convert those names into symbols for internal use.
+
+A **reserved symbol** is a type of reserved word that cannot be used as a symbol.
+Users generally won't encounter symbol collisions due to how most symbols are constructed.
+Most symbols start with `::`, which represents the root of the symbol tree.
+However, there are a few instances where a user can control what symbol a declaration uses, such as with the `symbol` modifier or with external declarations (for linking to external libraries).
+
+Currently, at the time of writing, the following symbols are reserved:
+- `main` and `$main`: Used for the function that is called when a program starts.
+- `$script`: Used for the function that runs all of a module's top-level execution space code.
+- `$panicking`: Used for the global variable that indicates whether the program is currently panicking.
+
+Reserved symbols are important for multiple file compilation because the compiler is responsible for their definition.
+And as we've mentioned before, a global value can only be defined in one module, and it can only be declared in other modules.
+If we define these reserved symbols in multiple modules, we will violate the one-definition rule and cause a linking error.
 
 
-## Additional problems related to LLVM modules
+## Key point: For unmanaged projects, we require unique module identifiers
 
-There are a few additional problems that we need to consider when working with multiple LLVM modules.
-1. How do we name modules to avoid name collisions?
-2. How do we ensure global values with reserved symbols (e.g. `main`, `$script`, `$panicking`) do not violate the one-definition rule when multiple modules are linked together?
+When a project is unmanaged, the compiler does not have any knowledge of the structure of the project.
+Because of this, the only way to ensure that all symbols are unique is to also require that all module identifiers are unique.
 
-...
+This should be fairly obvious.
+For example, if we have two source files, `a.nico` and `b.nico`, and both of them define a function called `foo`, then we have a problem.
+Under the current design, the symbol for `foo` in `a.nico` would be `::foo`, and the symbol for `foo` in `b.nico` would also be `::foo`.
+When we try to link these two modules together, we will have a symbol collision.
+
+Even if the user does this:
+```
+import "a.nico" as a
+import "b.nico" as b
+a::foo()
+b::foo()
+```
+
+The symbols for `foo` in both modules are still `::foo`, and we will still have a symbol collision when we try to link the two modules together.
+The only way to ensure that the different declarations of `foo` have different symbols is to leverage something that is unique to each module.
+
+There are different ways to derive a unique property for each module, such as
+- Using the file path
+- Using the file name
+- Using a hash of the file contents
+- Using a hash of the file path
+
+The problem with using any one of these is that, when the source code file changes, any object file generated previously will no longer be valid since the module identifier will have changed.
+We can automatically recompile the object file for *managed projects*, but we cannot do this for *unmanaged projects*.
+In *unmanaged projects*, the user is responsible for managing their own object files.
+
+Instead, we must compromise and have the *user* define what makes the module unique: a module identifier.
+
+A module identifier is a string that is used to identify a module and must be unique across all modules in a project.
+If the module identifier changes at any point, then the user must accept that any object files generated previously are no longer valid and must be recompiled.
+This is because all of that object file's symbols will have changed.
+
+This idea is somewhat analogous to the concept of file-level namespaces or Java packages.
+
+Here is a basic idea of how we can implement module identifiers:
+1. By default, the module identifier is the file name of the source file, without the file extension.
+   - For example, the module identifier for `math.nico` would be `math`, and the module identifier for `geometry.nico` would be `geometry`.
+2. The user can override the default module identifier by specifying a module identifier in a file-level modifier.
+   - For example, if the user wants a different module identifier for `math.nico`, they can specify it using `!#[module("math_module")]` at the top of the file.
