@@ -48,27 +48,27 @@ For example, suppose a project consists of 10 compilation units, and the user ma
 By compiling only the changed unit, we can save a lot of time compared to recompiling all 10 units.
 
 
-## Managed and unmanaged projects
+## Structured and unstructured projects
 
 When designing a build system for a programming language, we should acknowledge that there are certain things a build system can only do if it understands the structure of a project.
 If the build system understands the full scope of a project, it can more effectively manage the compilation process, including determining which files need to be recompiled and how to link the resulting object files together.
 
 Build systems for existing programming languages, such as CMake for C/C++ and Cargo for Rust, are able to manage the compilation process because they understand the structure of a project (with the help of configuration files, such as `CMakeLists.txt` and `Cargo.toml`).
 
-Thus, we distinguish between two types of projects: *managed* and *unmanaged*.
+Thus, we distinguish between two types of projects: *structured* and *unstructured*.
 
-An **unmanaged project** is a project that does not have a recognizable structure, which the build system cannot understand or use to manage the compilation process.
+An **unstructured project** is a project that does not have a recognizable structure, which the build system cannot understand or use to manage the compilation process.
 
-A **managed project** is a project that has a recognizable structure, which the build system can understand and use to manage the compilation process.
+A **structured project** is a project that has a recognizable structure, which the build system can understand and use to manage the compilation process.
 
-A requirement for a project to be considered managed is that it must have a clear and unambiguous *root directory* that defines the boundaries of the project.
+A requirement for a project to be considered structured is that it must have a clear and unambiguous *root directory* that defines the boundaries of the project.
 This root directory may be signaled by a configuration or manifest file that describes the project and its dependencies.
 The compiler uses this information to determine which files belong to the project and how they should be compiled and linked together.
 
-Additionally, with managed projects, the compiler has a dedicated space to store build artifacts, such as compiled object files and interface data.
+Additionally, with structured projects, the compiler has a dedicated space to store build artifacts, such as compiled object files and interface data.
 
-This concept is important because want to start with a simple design for the compiler that can handle unmanaged projects, and then later extend the design to support managed projects.
-Creating a build system for managed projects is a complex task and will likely be discussed in a future design document. 
+This concept is important because want to start with a simple design for the compiler that can handle unstructured projects, and then later extend the design to support structured projects.
+Creating a build system for structured projects is a complex task and will likely be discussed in a future design document.
 We want to avoid making the compiler more complex than it needs to be in the early stages of development.
 
 
@@ -251,18 +251,18 @@ If the compiler encounters an import statement for a file that has *not* been co
 
 **Decision:** We can use both approaches.
 Although approach 2 is more efficient, we would need a space to store the exported interface data, and we would need to come up with a way to manage that data.
-This works well for managed projects, where the compiler recognizes the structure of a project and can create a space for storing build artifacts,
+This works well for structured projects, where the compiler recognizes the structure of a project and can create a space for storing build artifacts,
 but it doesn't work well when there is no project structure or when the compiler is used in REPL mode.
 
-For unmanaged projects, we use approach 1.
-For managed projects, we use approach 2.
+For unstructured projects, we use approach 1.
+For structured projects, we use approach 2.
 
 For approach 1, we need to keep things simple and avoid wasting time processing files that have already been processed.
 If multiple files are being compiled at once, we can retain the interface data in memory and use it to generate declarations for imported files.
 
 For approach 2, we'll need to come up with a way to store the export information, serialize it, write the data to disk, and read it back in when we need to generate declarations for an imported file.
 
-This use of both approaches allows us to support both unmanaged and managed projects, which aligns with our design philosophy of keeping things simple, but also allowing for flexibility.
+This use of both approaches allows us to support both unstructured and structured projects, which aligns with our design philosophy of keeping things simple, but also allowing for flexibility.
 
 
 ## Key Point: The global checker is the earliest stage that can generate interface data
@@ -621,9 +621,9 @@ And as we've mentioned before, a global value can only be defined in one module,
 If we define these reserved symbols in multiple modules, we will violate the one-definition rule and cause a linking error.
 
 
-## Key point: For unmanaged projects, we require unique module identifiers
+## Key point: For unstructured projects, we require unique module identifiers
 
-When a project is unmanaged, the compiler does not have any knowledge of the structure of the project.
+When a project is unstructured, the compiler does not have any knowledge of the structure of the project.
 Because of this, the only way to ensure that all symbols are unique is to also require that all module identifiers are unique.
 
 This should be fairly obvious.
@@ -649,8 +649,9 @@ There are different ways to derive a unique property for each module, such as
 - Using a hash of the file path
 
 The problem with using any one of these is that, when the source code file changes, any object file generated previously will no longer be valid since the module identifier will have changed.
-We can automatically recompile the object file for *managed projects*, but we cannot do this for *unmanaged projects*.
-In *unmanaged projects*, the user is responsible for managing their own object files.
+When compiling other files that import the module, they will observe a different module identifier and will not be able to link to the object file generated previously.
+We can automatically recompile the object file for *structured projects*, but we cannot do this for *unstructured projects*.
+In *unstructured projects*, the user is responsible for managing their own object files.
 
 Instead, we must compromise and have the *user* define what makes the module unique: a module identifier.
 
@@ -664,4 +665,32 @@ Here is a basic idea of how we can implement module identifiers:
 1. By default, the module identifier is the file name of the source file, without the file extension.
    - For example, the module identifier for `math.nico` would be `math`, and the module identifier for `geometry.nico` would be `geometry`.
 2. The user can override the default module identifier by specifying a module identifier in a file-level modifier.
-   - For example, if the user wants a different module identifier for `math.nico`, they can specify it using `!#[module("math_module")]` at the top of the file.
+   - For example, if the user wants a different module identifier for `math.nico`, they can specify it using `module math_module` at the top of the file.
+3. The user is responsible for ensuring that all module identifiers are unique across all modules in a project.
+
+We choose the file base name excluding the file extension as the default module identifier because it is a property of a source file that is less likely to change than the file path or the file contents.
+
+
+## Key point: Modules will be a new symbol node type in the symbol tree
+
+Recall our earlier example where we declare a global value in two different source files with the same name:
+```
+// a.nico
+func foo() -> i32 => 42
+
+// b.nico
+func foo() -> i32 => 37
+```
+
+To ensure that the symbols remain unique, we incorporate the module identifier into the symbol for the global value.
+For example, if the module identifier for `a.nico` is `a`, then the symbol for the `foo` function in `a.nico` would be `::a::foo`.
+If the module identifier for `b.nico` is `b`, then the symbol for the `foo` function in `b.nico` would be `::b::foo`.
+
+In this design, a module is essentially the same as a namespace that spans an entire source file, but with two key differences:
+- Modules are always required. Thus, for every symbol, the first part of the symbol after the root `::` is always the module identifier.
+- You can re-export a symbol from one module to another, which allows you to reference a symbol through multiple paths. You cannot do this with regular namespaces.
+
+This design also implies that `$script`, which we had previously defined as a reserved symbol, is now only reserved within the context of a module.
+Instead of reserving just `$script`, we reserve `::module_identifier::$script` for each module, where `module_identifier` is the module identifier for that module.
+
+Question: If script functions now include the module identifier in their symbol, are they still reserved symbols?
