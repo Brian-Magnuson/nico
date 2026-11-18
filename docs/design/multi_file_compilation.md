@@ -621,10 +621,10 @@ And as we've mentioned before, a global value can only be defined in one module,
 If we define these reserved symbols in multiple modules, we will violate the one-definition rule and cause a linking error.
 
 
-## Key point: For unstructured projects, we require unique module identifiers
+## Key point: For unstructured projects, we require unique module names
 
 When a project is unstructured, the compiler does not have any knowledge of the structure of the project.
-Because of this, the only way to ensure that all symbols are unique is to also require that all module identifiers are unique.
+Because of this, the only way to ensure that all symbols are unique is to also require that all module names are unique.
 
 This should be fairly obvious.
 For example, if we have two source files, `a.nico` and `b.nico`, and both of them define a function called `foo`, then we have a problem.
@@ -648,27 +648,27 @@ There are different ways to derive a unique property for each module, such as
 - Using a hash of the file contents
 - Using a hash of the file path
 
-The problem with using any one of these is that, when the source code file changes, any object file generated previously will no longer be valid since the module identifier will have changed.
-When compiling other files that import the module, they will observe a different module identifier and will not be able to link to the object file generated previously.
+The problem with using any one of these is that, when the source code file changes, any object file generated previously will no longer be valid since the module name will have changed.
+When compiling other files that import the module, they will observe a different module name and will not be able to link to the object file generated previously.
 We can automatically recompile the object file for *structured projects*, but we cannot do this for *unstructured projects*.
 In *unstructured projects*, the user is responsible for managing their own object files.
 
-Instead, we must compromise and have the *user* define what makes the module unique: a module identifier.
+Instead, we must compromise and have the *user* define what makes the module unique: a module name.
 
-A module identifier is a string that is used to identify a module and must be unique across all modules in a project.
-If the module identifier changes at any point, then the user must accept that any object files generated previously are no longer valid and must be recompiled.
+A module name is a string that is used to identify a module and must be unique across all modules in a project.
+If the module name changes at any point, then the user must accept that any object files generated previously are no longer valid and must be recompiled.
 This is because all of that object file's symbols will have changed.
 
 This idea is somewhat analogous to the concept of file-level namespaces or Java packages.
 
-Here is a basic idea of how we can implement module identifiers:
-1. By default, the module identifier is the file name of the source file, without the file extension.
-   - For example, the module identifier for `math.nico` would be `math`, and the module identifier for `geometry.nico` would be `geometry`.
-2. The user can override the default module identifier by specifying a module identifier in a file-level modifier.
-   - For example, if the user wants a different module identifier for `math.nico`, they can specify it using `module math_module` at the top of the file.
-3. The user is responsible for ensuring that all module identifiers are unique across all modules in a project.
+Here is a basic idea of how we can implement module names:
+1. By default, the module name is the file name of the source file, without the file extension.
+   - For example, the module name for `math.nico` would be `math`, and the module name for `geometry.nico` would be `geometry`.
+2. The user can override the default module name by specifying a module name in module declaration.
+   - For example, if the user wants a different module name for `math.nico`, they can specify it using `module math_module` at the top of the file.
+3. The user is responsible for ensuring that all module names are unique across all modules in a project.
 
-We choose the file base name excluding the file extension as the default module identifier because it is a property of a source file that is less likely to change than the file path or the file contents.
+We choose the file base name excluding the file extension as the default module name because it is a property of a source file that is less likely to change than the file path or the file contents.
 
 
 ## Key point: Modules will be a new symbol node type in the symbol tree
@@ -682,15 +682,66 @@ func foo() -> i32 => 42
 func foo() -> i32 => 37
 ```
 
-To ensure that the symbols remain unique, we incorporate the module identifier into the symbol for the global value.
-For example, if the module identifier for `a.nico` is `a`, then the symbol for the `foo` function in `a.nico` would be `::a::foo`.
-If the module identifier for `b.nico` is `b`, then the symbol for the `foo` function in `b.nico` would be `::b::foo`.
+To ensure that the symbols remain unique, we incorporate the module name into the symbol for the global value.
+For example, if the module name for `a.nico` is `a`, then the symbol for the `foo` function in `a.nico` would be `::a:::foo`.
+If the module name for `b.nico` is `b`, then the symbol for the `foo` function in `b.nico` would be `::b:::foo`.
+
+We use `:::` to separate the module name from the declaration name in the symbol, since `::` is already used to separate namespaces.
+This only affects the symbol.
+Name references use `::` as usual.
 
 In this design, a module is essentially the same as a namespace that spans an entire source file, but with two key differences:
-- Modules are always required. Thus, for every symbol, the first part of the symbol after the root `::` is always the module identifier.
+- Modules are always required. Thus, for every symbol, the parts of the symbol between the `::` and `:::` are the module name, and the parts of the symbol after the `:::` are the name of the declaration.
 - You can re-export a symbol from one module to another, which allows you to reference a symbol through multiple paths. You cannot do this with regular namespaces.
 
 This design also implies that `$script`, which we had previously defined as a reserved symbol, is now only reserved within the context of a module.
-Instead of reserving just `$script`, we reserve `::module_identifier::$script` for each module, where `module_identifier` is the module identifier for that module.
+Instead of reserving just `$script`, we reserve `::module_name::$script` for each module, where `module_name` is the module name for that module.
 
-Question: If script functions now include the module identifier in their symbol, are they still reserved symbols?
+Question: If script functions now include the module name in their symbol, are they still reserved symbols?
+
+A reserved symbol is something that is generally reserved for the compiler to use, and it is not intended to be referenced by the user.
+There is no reason to create a name reference that can be used to reference a script function.
+Thus, there is no reason to store the script function in the symbol tree.
+Thus, the script function will only have its symbol registered.
+Thus, one could consider the script function to be a reserved symbol.
+
+
+## Module names and declarations
+
+As mentioned previously, modules in an unstructured project will have a default module name that is derived from the file name of the source file.
+For example, the module name for `math.nico` would be `math`, and the module name for `geometry.nico` would be `geometry`.
+
+When using a module import, we can allow users to use the default module name to reference symbols in the imported module:
+```
+import "math.nico" as math
+
+import "math.nico" // same as above, since the default module name is `math`
+```
+
+This comes with a catch: the name of the file must be a valid identifier, i.e., it must match the regex `[a-zA-Z_][a-zA-Z0-9_]*`.
+File names that are not valid identifiers will not immediately result in a compiler error, but their module name will be less predictable.
+We can potentially issue a warning in this case.
+
+When transforming a file name into a module name, we can use the following rules:
+1. Start with the base name of the file, excluding the file extension.
+2. If the base name starts with a character that is not a letter or underscore, prepend an underscore to the base name.
+3. Replace any character that is not a letter, digit, or underscore with an underscore.
+
+Here are some examples:
+- `math.nico` -> `math`
+- `0math.nico` -> `_0math`
+- `math-geometry.nico` -> `math_geometry`
+- `math (1).nico` -> `math__1_`
+
+If the transformed module name collides with an existing module name, we issue a compiler error.
+
+A **module declaration** is a declaration that specifies the module name for a source file.
+It is a top-level declaration that must appear at the very beginning of a source file, before any other declarations, including import statements.
+The syntax for a module declaration is as follows:
+```
+module name1::name2::...::nameN
+```
+
+Declarations usually accept an *identifier* and do not allow names with multiple parts.
+Module declarations are the exception.
+We allow names with multiple parts, separated by `::`, to allow for hierarchical module names.
