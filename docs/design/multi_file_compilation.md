@@ -745,3 +745,52 @@ module name1::name2::...::nameN
 Declarations usually accept an *identifier* and do not allow names with multiple parts.
 Module declarations are the exception.
 We allow names with multiple parts, separated by `::`, to allow for hierarchical module names.
+
+Because module names can have multiple parts, our symbol generation scheme will need to be updated to ensure that module names don't result in collisions with namespaces or other symbols.
+Symbols will now have the a `:::` between the module name and the declaration name.
+This only affects the symbol, and name references will still use `::` as usual.
+
+Here are a few examples:
+```
+// a.nico
+static var x: i32  // Symbol is ::a:::x
+
+// b.nico
+module b::c
+namespace d {
+    static var y: i32  // Symbol is ::b::c:::d::y
+}
+```
+
+Symbols can indded become very long, but this ensures they remain as unique as possible.
+
+
+## The start file
+
+When compiling a project into an executable, the compiler needs to define special code for internal use, such as the entry point of the program and the panic handler.
+It must define this code once and only once to satisfy the one-definition rule.
+To handle this, we introduce the concept of *start files*.
+
+For any project that is to be compiled into an executable, exactly one file must be designated as the *start file*.
+The **start file** is the file that contains the entry point of the program, which is the function that is called when the program starts.
+Because there must be exactly one start file, we can use the corresponding module to put implementation details that require a single definition, such as the panic handler and the main function.
+It is ultimately the user's responsibility to designate the start file.
+
+An alternative design idea is to have the compiler create a separate module for the main function and the panic handler, but this would require the user to perform an extra linking step.
+Additionally, it would not address the ambiguity of which script function to run when the program starts.
+
+For structured projects, we can designate the start file in the project configuration file.
+It may be possible to also have a "default" start file, but this can be saved for later, since it is not a priority at the moment.
+For unstructured projects, we cannot have a default start file because every module can be compiled independently, and there is no way for the compiler to know what other modules are being linked together to form an executable.
+We need to have a way for the user to manually specify the start file when compiling an unstructured project into an executable.
+
+One way to do this is to have use a file-level modifier, such as `start`, to designate the start file.
+```
+!#[start]
+
+printout "Hello, world!"
+```
+
+A modifier makes more sense than a statement, because we aren't really declaring anything nor influencing control flow.
+Rather, we are providing metadata about the file, which is what modifiers are for.
+The frontend can read this metadata and use it to determine what to generate.
