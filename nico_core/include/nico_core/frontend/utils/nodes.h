@@ -42,6 +42,7 @@ public:
     class ILocatable;
 
     class RootScope;
+    class Module;
     class Namespace;
     class ExternBlock;
     class PrimitiveType;

@@ -66,6 +66,15 @@ bool Node::IScope::add_child(
     return true;
 }
 
+std::shared_ptr<Node::Module> Node::Module::create(
+    std::shared_ptr<Node::IScope> parent, std::string_view short_name
+) {
+    auto node = std::make_shared<Module>(Private());
+    node->parent = parent;
+    node->short_name = std::string(short_name);
+    return node;
+}
+
 std::shared_ptr<Node::Namespace> Node::Namespace::create(
     std::shared_ptr<Node::IScope> parent, std::shared_ptr<Token> token
 ) {

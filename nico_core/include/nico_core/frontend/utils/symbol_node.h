@@ -155,6 +155,30 @@ public:
     }
 };
 
+class Node::Module : public virtual Node::IGlobalScope {
+public:
+    virtual ~Module() = default;
+
+    Module(Private)
+        : Node(Private()),
+          Node::IScope(Private()),
+          Node::IGlobalScope(Private()) {}
+
+    /**
+     * @brief Creates a new module node.
+     *
+     * @param short_name The short name of the module. Defaults to an empty
+     * string.
+     * @return A shared pointer to the newly created module node.
+     */
+    static std::shared_ptr<Module>
+    create(std::shared_ptr<Node::IScope> parent, std::string_view short_name);
+
+    virtual std::string to_string() const override {
+        return "MODULE \"" + symbol + "\"";
+    }
+};
+
 /**
  * @brief A namespace scope in the symbol tree.
  *
