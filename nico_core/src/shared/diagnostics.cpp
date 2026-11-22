@@ -87,7 +87,7 @@ void Diagnostics::reset() {
 }
 
 void Diagnostics::emit_error(
-    Err ec, const Location& location, std::string_view message
+    Err ec, std::optional<Location> location, std::string_view message
 ) {
     errors.push_back(ec);
     if (printing_enabled) {
@@ -96,33 +96,30 @@ void Diagnostics::emit_error(
         // 14 to 16 characters before the error message.
         // 80 - 15 = 65 characters per line for code display.
         print_message_with_breaks(message, 15);
-        print_code_at_location(location);
+        if (location) {
+            print_code_at_location(*location);
+        }
     }
 }
 
 void Diagnostics::emit_error(Err ec, std::string_view message) {
-    errors.push_back(ec);
-    if (printing_enabled) {
-        *out << colorize::red << "Error " << errors.size() << ": "
-             << colorize::reset << (int)ec << " " << message << "\n";
-    }
+    emit_error(ec, std::nullopt, message);
 }
 
 void Diagnostics::emit_note(
-    const Location& location, std::string_view message
+    std::optional<Location> location, std::string_view message
 ) {
     if (printing_enabled) {
         *out << colorize::cyan << "⤷ Note: " << colorize::reset;
         print_message_with_breaks(message, 8);
-        print_code_at_location(location, colorize::cyan);
+        if (location) {
+            print_code_at_location(*location, colorize::cyan);
+        }
     }
 }
 
 void Diagnostics::emit_note(std::string_view message) {
-    if (printing_enabled) {
-        *out << colorize::cyan << "⤷ Note: " << colorize::reset;
-        print_message_with_breaks(message, 8);
-    }
+    emit_note(std::nullopt, message);
 }
 
 } // namespace nico

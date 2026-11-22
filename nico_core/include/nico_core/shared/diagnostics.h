@@ -94,16 +94,19 @@ public:
     void reset();
 
     /**
-     * @brief Reports an error message with a location.
+     * @brief Reports an error message for diagnostics.
      *
      * If printing is enabled, the error message will be printed to the output
      * stream. The error code will be added to the stored list of errors.
      *
      * @param ec The error code to report.
-     * @param location The location of the error in the source code.
+     * @param location (Optional) The location of the error in the source code.
      * @param message The message to report with the error.
      */
-    void emit_error(Err ec, const Location& location, std::string_view message);
+    void emit_error(
+        Err ec, std::optional<Location> location, std::string_view message
+    );
+    // TODO: Change this interface to put location at the end.
 
     /**
      * @brief Reports an error message without a location.
@@ -117,15 +120,16 @@ public:
     void emit_error(Err ec, std::string_view message);
 
     /**
-     * @brief Reports a note message with a location.
+     * @brief Reports a note message for diagnostics.
      *
      * If printing is enabled, the note message will be printed to the output
      * stream. Otherwise, this function does nothing.
      *
-     * @param location The location of the note in the source code.
+     * @param location (Optional)The location of the note in the source code.
      * @param message The message to report with the note.
      */
-    void emit_note(const Location& location, std::string_view message);
+    void emit_note(std::optional<Location> location, std::string_view message);
+    // TODO: Change this interface to put location at the end.
 
     /**
      * @brief Reports a note message without a location.
