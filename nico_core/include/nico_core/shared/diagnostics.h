@@ -100,13 +100,12 @@ public:
      * stream. The error code will be added to the stored list of errors.
      *
      * @param ec The error code to report.
-     * @param location (Optional) The location of the error in the source code.
      * @param message The message to report with the error.
+     * @param location (Optional) The location of the error in the source code.
      */
     void emit_error(
-        Err ec, std::optional<Location> location, std::string_view message
+        Err ec, std::string_view message, std::optional<Location> location
     );
-    // TODO: Change this interface to put location at the end.
 
     /**
      * @brief Reports an error message without a location.
@@ -125,11 +124,12 @@ public:
      * If printing is enabled, the note message will be printed to the output
      * stream. Otherwise, this function does nothing.
      *
-     * @param location (Optional)The location of the note in the source code.
      * @param message The message to report with the note.
+     * @param location (Optional) The location of the note in the source code.
      */
-    void emit_note(std::optional<Location> location, std::string_view message);
-    // TODO: Change this interface to put location at the end.
+    void emit_note(
+        std::string_view message, std::optional<Location> location
+    );
 
     /**
      * @brief Reports a note message without a location.

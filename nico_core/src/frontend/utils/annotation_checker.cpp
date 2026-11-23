@@ -14,10 +14,10 @@ std::any AnnotationChecker::visit(Annotation::NameRef* annotation) {
         }
         Diagnostics::inst().emit_error(
             Err::NameNotAType,
-            annotation->name->identifier->location,
             "Name reference `" + annotation->name->to_string() +
                 "` does not "
-                "refer to a type."
+                "refer to a type.",
+            annotation->name->identifier->location
         );
         return std::any();
     }
@@ -28,8 +28,8 @@ std::any AnnotationChecker::visit(Annotation::NameRef* annotation) {
     }
     Diagnostics::inst().emit_error(
         Err::NameNotFound,
-        annotation->name->identifier->location,
-        "Could not resolve name `" + annotation->name->to_string() + "`."
+        "Could not resolve name `" + annotation->name->to_string() + "`.",
+        annotation->name->identifier->location
     );
     return std::any();
 }
@@ -100,14 +100,11 @@ std::any AnnotationChecker::visit(Annotation::Object* annotation) {
         if (auto existing_binding = fields_dict.at(field_name)) {
             Diagnostics::inst().emit_error(
                 Err::DuplicateObjectAnnotationFieldName,
-                field.identifier->location,
                 "Duplicate field name in object annotation: `" + field_name +
-                    "`."
+                    "`.",
+                field.identifier->location
             );
-            Diagnostics::inst().emit_note(
-                existing_binding->location,
-                "Previous field with the same name declared here."
-            );
+            Diagnostics::inst().emit_note("Previous field with the same name declared here.", existing_binding->location);
             has_error = true;
             continue;
         }
@@ -157,8 +154,8 @@ std::any AnnotationChecker::visit(Annotation::TypeOf* annotation) {
     if (expr_checker.expired()) {
         Diagnostics::inst().emit_error(
             Err::UncheckableTypeofAnnotation,
-            annotation->location,
-            "Cannot use `typeof` annotation in declaration space."
+            "Cannot use `typeof` annotation in declaration space.",
+            annotation->location
         );
         return std::any();
     }

@@ -14,17 +14,17 @@ bool Stmt::IBindingDecl::apply_modifier(const Modifier& modifier) {
         if (linkage_opt.has_value()) {
             Diagnostics::inst().emit_error(
                 Err::ModifierAlreadyApplied,
-                modifier.location,
-                "Linkage modifier has already been set by a previous modifier."
+                "Linkage modifier has already been set by a previous modifier.",
+                modifier.location
             );
         }
         if (modifier.args.size() != 1 ||
             modifier.args.at(0)->tok_type != Tok::Str) {
             Diagnostics::inst().emit_error(
                 Err::ModifierInvalidArguments,
-                modifier.location,
                 "Modifier `linkage` requires a string literal argument "
-                "specifying the linkage type (\"internal\" or \"external\")."
+                "specifying the linkage type (\"internal\" or \"external\").",
+                modifier.location
             );
             return false;
         }
@@ -43,10 +43,10 @@ bool Stmt::IBindingDecl::apply_modifier(const Modifier& modifier) {
 
         Diagnostics::inst().emit_error(
             Err::ModifierInvalidArguments,
-            modifier.location,
             "Invalid argument for `linkage` modifier: expected "
             "\"internal\" or \"external\", got " +
-                std::string(modifier.args.at(0)->lexeme)
+                std::string(modifier.args.at(0)->lexeme),
+            modifier.location
         );
         return false;
     }
@@ -56,17 +56,17 @@ bool Stmt::IBindingDecl::apply_modifier(const Modifier& modifier) {
         if (custom_symbol_opt.has_value()) {
             Diagnostics::inst().emit_error(
                 Err::ModifierAlreadyApplied,
-                modifier.location,
-                "Symbol modifier has already been set by a previous modifier."
+                "Symbol modifier has already been set by a previous modifier.",
+                modifier.location
             );
         }
         if (modifier.args.size() != 1 ||
             modifier.args.at(0)->tok_type != Tok::Str) {
             Diagnostics::inst().emit_error(
                 Err::ModifierInvalidArguments,
-                modifier.location,
                 "Modifier `symbol` requires a string literal argument "
-                "specifying the custom symbol for this declaration."
+                "specifying the custom symbol for this declaration.",
+                modifier.location
             );
             return false;
         }

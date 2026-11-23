@@ -221,8 +221,8 @@ void Lexer::consume_whitespace() {
         auto token = make_token(Tok::Unknown);
         Diagnostics::inst().emit_error(
             Err::MixedLeftSpacing,
-            token->location,
-            "Line left spacing contains both tabs and spaces."
+            "Line left spacing contains both tabs and spaces.",
+            token->location
         );
         return;
     }
@@ -230,8 +230,8 @@ void Lexer::consume_whitespace() {
         auto token = make_token(Tok::Unknown);
         Diagnostics::inst().emit_error(
             Err::InconsistentLeftSpacing,
-            token->location,
-            "Left spacing uses spaces when previous lines used tabs."
+            "Left spacing uses spaces when previous lines used tabs.",
+            token->location
         );
         return;
     }
@@ -239,8 +239,8 @@ void Lexer::consume_whitespace() {
         auto token = make_token(Tok::Unknown);
         Diagnostics::inst().emit_error(
             Err::InconsistentLeftSpacing,
-            token->location,
-            "Left spacing uses tabs when previous lines used spaces."
+            "Left spacing uses tabs when previous lines used spaces.",
+            token->location
         );
         return;
     }
@@ -264,17 +264,16 @@ void Lexer::consume_whitespace() {
             // line's spacing, log an error.
             Diagnostics::inst().emit_error(
                 Err::MalformedIndent,
-                tokens.back()->location,
                 "Expected indent with left-spacing greater than " +
-                    std::to_string(prev_line_left_spacing) + "."
-
+                    std::to_string(prev_line_left_spacing) + ".",
+                tokens.back()->location
             );
             Diagnostics::inst().emit_note(
-                make_token(Tok::Unknown)->location,
                 "Next line only has left-spacing of " +
                     std::to_string(curr_line_left_spacing) +
                     ". If this is meant to be an empty block, add a `pass` "
-                    "statement."
+                    "statement.",
+                make_token(Tok::Unknown)->location
             );
         }
         // Change the colon token to an indent token.
@@ -305,9 +304,9 @@ void Lexer::identifier() {
     else if (reserved_words.find(text) != reserved_words.end()) {
         Diagnostics::inst().emit_error(
             Err::WordIsReserved,
-            token->location,
             "'" + std::string(token->lexeme) +
-                "' is a reserved word and cannot be used as an identifier."
+                "' is a reserved word and cannot be used as an identifier.",
+            token->location
         );
     }
 
@@ -331,8 +330,8 @@ void Lexer::tuple_index() {
     if (result.ec == std::errc::result_out_of_range) {
         Diagnostics::inst().emit_error(
             Err::TupleIndexOutOfRange,
-            make_token(Tok::Unknown)->location,
-            "Tuple index is too large."
+            "Tuple index is too large.",
+            make_token(Tok::Unknown)->location
         );
         return;
     }
@@ -380,8 +379,8 @@ void Lexer::numeric_literal() {
                 start = current - 1;
                 Diagnostics::inst().emit_error(
                     Err::UnexpectedDotInNumber,
-                    make_token(Tok::Unknown)->location,
-                    "Unexpected '.' in number."
+                    "Unexpected '.' in number.",
+                    make_token(Tok::Unknown)->location
                 );
                 start = prev_start;
                 return;
@@ -404,8 +403,8 @@ void Lexer::numeric_literal() {
                 start = current - 1;
                 Diagnostics::inst().emit_error(
                     Err::UnexpectedExpInNumber,
-                    make_token(Tok::Unknown)->location,
-                    "Unexpected exponent in number."
+                    "Unexpected exponent in number.",
+                    make_token(Tok::Unknown)->location
                 );
                 start = prev_start;
                 return;
@@ -420,8 +419,8 @@ void Lexer::numeric_literal() {
         start = current;
         Diagnostics::inst().emit_error(
             Err::UnexpectedEndOfNumber,
-            make_token(Tok::Unknown)->location,
-            "Expected base " + std::to_string(base) + " digit."
+            "Expected base " + std::to_string(base) + " digit.",
+            make_token(Tok::Unknown)->location
         );
         start = prev_start;
         return;
@@ -487,8 +486,9 @@ void Lexer::numeric_literal() {
         start = current;
         Diagnostics::inst().emit_error(
             Err::DigitInWrongBase,
-            make_token(Tok::Unknown)->location,
-            "Digit not allowed in numbers of base " + std::to_string(base) + "."
+            "Digit not allowed in numbers of base " + std::to_string(base) +
+                ".",
+            make_token(Tok::Unknown)->location
         );
         start = prev_start;
     }
@@ -497,8 +497,8 @@ void Lexer::numeric_literal() {
         start = current;
         Diagnostics::inst().emit_error(
             Err::InvalidCharAfterNumber,
-            make_token(Tok::Unknown)->location,
-            "Number cannot be followed by an alphabetic character."
+            "Number cannot be followed by an alphabetic character.",
+            make_token(Tok::Unknown)->location
         );
         Diagnostics::inst().emit_note("Consider adding a space here.");
         start = prev_start;
@@ -512,8 +512,8 @@ void Lexer::str_literal() {
         if (peek() == '\n') {
             Diagnostics::inst().emit_error(
                 Err::UnterminatedStr,
-                make_token(Tok::Unknown)->location,
-                "Unterminated string."
+                "Unterminated string.",
+                make_token(Tok::Unknown)->location
             );
             add_token(Tok::Str);
             return;
@@ -561,8 +561,8 @@ void Lexer::str_literal() {
                 start = current - 1;
                 Diagnostics::inst().emit_error(
                     Err::InvalidEscSeq,
-                    make_token(Tok::Unknown)->location,
-                    "Invalid escape sequence."
+                    "Invalid escape sequence.",
+                    make_token(Tok::Unknown)->location
                 );
                 start = prev_start;
             }
@@ -576,8 +576,8 @@ void Lexer::str_literal() {
     if (is_at_end()) {
         Diagnostics::inst().emit_error(
             Err::UnterminatedStr,
-            make_token(Tok::Unknown)->location,
-            "Unterminated string."
+            "Unterminated string.",
+            make_token(Tok::Unknown)->location
         );
         return;
     }
@@ -600,8 +600,8 @@ void Lexer::multi_line_comment() {
 
             Diagnostics::inst().emit_error(
                 Err::UnclosedComment,
-                opening_token->location,
-                "Unclosed multi-line comment."
+                "Unclosed multi-line comment.",
+                opening_token->location
             );
 
             auto prev_start = start;
@@ -611,8 +611,8 @@ void Lexer::multi_line_comment() {
                 msg += "*/";
             msg += "` here.";
             Diagnostics::inst().emit_note(
-                make_token(Tok::Unknown)->location,
-                msg
+                msg,
+                make_token(Tok::Unknown)->location
             );
             start = prev_start;
             return;
@@ -661,16 +661,16 @@ void Lexer::scan_token() {
         if (grouping_token_stack.empty()) {
             Diagnostics::inst().emit_error(
                 Err::ClosingUnopenedGrouping,
-                t->location,
-                "Found ')' without '('."
+                "Found ')' without '('.",
+                t->location
             );
         }
         else if (grouping_token_stack.back() != c) {
             Diagnostics::inst().emit_error(
                 Err::UnclosedGrouping,
-                t->location,
                 "Expected '" + std::string(1, grouping_token_stack.back()) +
-                    "' before ')'."
+                    "' before ')'.",
+                t->location
             );
         }
         else {
@@ -684,16 +684,16 @@ void Lexer::scan_token() {
         if (grouping_token_stack.empty()) {
             Diagnostics::inst().emit_error(
                 Err::ClosingUnopenedGrouping,
-                t->location,
-                "Found '}' without '{'."
+                "Found '}' without '{'.",
+                t->location
             );
         }
         else if (grouping_token_stack.back() != c) {
             Diagnostics::inst().emit_error(
                 Err::UnclosedGrouping,
-                t->location,
                 "Expected '" + std::string(1, grouping_token_stack.back()) +
-                    "' before '}'."
+                    "' before '}'.",
+                t->location
             );
         }
         else {
@@ -707,16 +707,16 @@ void Lexer::scan_token() {
         if (grouping_token_stack.empty()) {
             Diagnostics::inst().emit_error(
                 Err::ClosingUnopenedGrouping,
-                t->location,
-                "Found ']' without '['."
+                "Found ']' without '['.",
+                t->location
             );
         }
         else if (grouping_token_stack.back() != c) {
             Diagnostics::inst().emit_error(
                 Err::UnclosedGrouping,
-                t->location,
                 "Expected '" + std::string(1, grouping_token_stack.back()) +
-                    "' before ']'."
+                    "' before ']'.",
+                t->location
             );
         }
         else {
@@ -760,8 +760,8 @@ void Lexer::scan_token() {
         else if (match('/'))
             Diagnostics::inst().emit_error(
                 Err::ClosingUnopenedComment,
-                make_token(Tok::Unknown)->location,
-                "Found '*/' without '/*'."
+                "Found '*/' without '/*'.",
+                make_token(Tok::Unknown)->location
             );
         else
             add_token(Tok::Star);
@@ -831,8 +831,8 @@ void Lexer::scan_token() {
             auto token = make_token(Tok::Unknown);
             Diagnostics::inst().emit_error(
                 Err::UnexpectedChar,
-                token->location,
-                "Unexpected character."
+                "Unexpected character.",
+                token->location
             );
         }
     }
@@ -859,9 +859,9 @@ void Lexer::run_scan(std::unique_ptr<FrontendContext>& context) {
     if (!grouping_token_stack.empty()) {
         Diagnostics::inst().emit_error(
             Err::UnclosedGrouping,
-            eof_token->location,
             "Expected '" + std::string(1, grouping_token_stack.back()) +
-                "' before end of file."
+                "' before end of file.",
+            eof_token->location
         );
     }
 

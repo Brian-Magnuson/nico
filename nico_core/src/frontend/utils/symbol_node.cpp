@@ -32,8 +32,8 @@ bool Node::IScope::add_child(
     if (symbol_tree.is_name_reserved(child->short_name)) {
         Diagnostics::inst().emit_error(
             Err::NameIsReserved,
-            child->location.value(),
-            "Name `" + child->short_name + "` is reserved and cannot be used."
+            "Name `" + child->short_name + "` is reserved and cannot be used.",
+            child->location.value()
         );
         return false;
     }
@@ -42,16 +42,13 @@ bool Node::IScope::add_child(
     if (auto existing = children.at(child->short_name)) {
         Diagnostics::inst().emit_error(
             Err::NameAlreadyExists,
-            child->location.value(),
-            "Name `" + child->short_name + "` already exists in this scope."
+            "Name `" + child->short_name + "` already exists in this scope.",
+            child->location.value()
         );
         if (auto existing_locatable =
                 std::dynamic_pointer_cast<Node::ILocatable>(existing.value())) {
-            Diagnostics::inst().emit_note(
-                existing_locatable->location.value(),
-                "Previous declaration of name `" + child->short_name +
-                    "` found here."
-            );
+            Diagnostics::inst().emit_note("Previous declaration of name `" + child->short_name +
+                    "` found here.", existing_locatable->location.value());
         }
         return false;
     }
@@ -105,16 +102,16 @@ bool Node::ExternBlock::add_child(
             std::dynamic_pointer_cast<Node::ExternBlock>(child)) {
         Diagnostics::inst().emit_error(
             Err::ExternBlockInExternBlock,
-            child->location.value(),
-            "Extern block cannot contain another extern block."
+            "Extern block cannot contain another extern block.",
+            child->location.value()
         );
         return false;
     }
     else if (auto ns = std::dynamic_pointer_cast<Node::Namespace>(child)) {
         Diagnostics::inst().emit_error(
             Err::NamespaceInExternBlock,
-            child->location.value(),
-            "Namespace is not allowed in extern block."
+            "Namespace is not allowed in extern block.",
+            child->location.value()
         );
         return false;
     }
@@ -123,8 +120,8 @@ bool Node::ExternBlock::add_child(
     ) {
         Diagnostics::inst().emit_error(
             Err::StructDefInExternBlock,
-            child->location.value(),
-            "Struct definition is not allowed in extern block."
+            "Struct definition is not allowed in extern block.",
+            child->location.value()
         );
         return false;
     }
@@ -188,8 +185,8 @@ bool Node::StructDef::add_child(
     if (auto ns = std::dynamic_pointer_cast<Node::Namespace>(child)) {
         Diagnostics::inst().emit_error(
             Err::NamespaceInStructDef,
-            child->location.value(),
-            "Namespace is not allowed in struct definition."
+            "Namespace is not allowed in struct definition.",
+            child->location.value()
         );
         return false;
     }
@@ -198,8 +195,8 @@ bool Node::StructDef::add_child(
     ) {
         Diagnostics::inst().emit_error(
             Err::StructDefInStructDef,
-            child->location.value(),
-            "Struct definition is not allowed in struct definition."
+            "Struct definition is not allowed in struct definition.",
+            child->location.value()
         );
         return false;
     }
@@ -215,8 +212,8 @@ bool Node::StructDef::add_child(
     ) {
         Diagnostics::inst().emit_error(
             Err::ExternBlockInStructDef,
-            child->location.value(),
-            "Extern block is not allowed in struct definition."
+            "Extern block is not allowed in struct definition.",
+            child->location.value()
         );
         return false;
     }

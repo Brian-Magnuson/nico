@@ -43,10 +43,10 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
         if (expr_type != nullptr && !expr_type->is_assignable_to(anno_type)) {
             Diagnostics::inst().emit_error(
                 Err::LetTypeMismatch,
-                stmt->expression.value()->location,
                 "Type of initializer expression `" + expr_type->to_string() +
                     "` is not assignable to type in annotation `" +
-                    anno_type->to_string() + "`."
+                    anno_type->to_string() + "`.",
+                stmt->expression.value()->location
             );
             return std::any();
         }
@@ -61,10 +61,10 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
     if (!expr_type->is_definitely_sized()) {
         Diagnostics::inst().emit_error(
             Err::UnsizedTypeAllocation,
-            stmt->identifier->location,
             "Cannot allocate variable `" +
                 std::string(stmt->identifier->lexeme) + "` of unsized type `" +
-                expr_type->to_string() + "`."
+                expr_type->to_string() + "`.",
+            stmt->identifier->location
         );
         return std::any();
     }
@@ -72,8 +72,8 @@ std::any LocalChecker::visit(Stmt::Let* stmt) {
     if (!stmt->has_var && !stmt->expression.has_value()) {
         Diagnostics::inst().emit_error(
             Err::ImmutableWithoutInitializer,
-            stmt->identifier->location,
-            "Immutable variable declaration must have an initializer."
+            "Immutable variable declaration must have an initializer.",
+            stmt->identifier->location
         );
         return std::any();
     }
@@ -128,21 +128,21 @@ std::any LocalChecker::visit(Stmt::Static* stmt) {
     if (!expr_type->is_assignable_to(binding_type)) {
         Diagnostics::inst().emit_error(
             Err::StaticTypeMismatch,
-            stmt->expression.value()->location,
             std::string("Type of initializer expression `") +
                 expr_type->to_string() +
                 "` is not assignable to type in annotation `" +
-                binding_type->to_string() + "`."
+                binding_type->to_string() + "`.",
+            stmt->expression.value()->location
         );
     }
     // If the type of the initializer expression is not sized...
     else if (!expr_type->is_definitely_sized()) {
         Diagnostics::inst().emit_error(
             Err::UnsizedTypeAllocation,
-            stmt->identifier->location,
             "Cannot allocate variable `" +
                 std::string(stmt->identifier->lexeme) + "` of unsized type `" +
-                expr_type->to_string() + "`."
+                expr_type->to_string() + "`.",
+            stmt->identifier->location
         );
     }
     // Otherwise, the initializer expression is valid.
@@ -191,11 +191,11 @@ std::any LocalChecker::visit(Stmt::Func* stmt) {
                      )) {
                 Diagnostics::inst().emit_error(
                     Err::DefaultArgTypeMismatch,
-                    default_expr_ptr->location,
                     std::string("Type `") +
                         default_expr_type_opt.value()->to_string() +
                         "` is not compatible with parameter type `" +
-                        param_binding.type->to_string() + "`."
+                        param_binding.type->to_string() + "`.",
+                    default_expr_ptr->location
                 );
                 has_error = true;
             }
@@ -226,11 +226,11 @@ std::any LocalChecker::visit(Stmt::Func* stmt) {
     else if (!body_type_opt.value()->is_assignable_to(func_type->return_type)) {
         Diagnostics::inst().emit_error(
             Err::FunctionReturnTypeMismatch,
-            stmt->body.value()->location,
             std::string("Function body type `") +
                 body_type_opt.value()->to_string() +
                 "` is not compatible with declared return type `" +
-                func_type->return_type->to_string() + "`."
+                func_type->return_type->to_string() + "`.",
+            stmt->body.value()->location
         );
         return std::any();
     }
@@ -255,8 +255,8 @@ std::any LocalChecker::visit(Stmt::Yield* stmt) {
         if (!target_scope) {
             Diagnostics::inst().emit_error(
                 Err::BreakOutsideLoop,
-                stmt->yield_token->location,
-                "Cannot break outside of a loop."
+                "Cannot break outside of a loop.",
+                stmt->yield_token->location
             );
             return std::any();
         }
@@ -267,8 +267,8 @@ std::any LocalChecker::visit(Stmt::Yield* stmt) {
         if (!target_scope) {
             Diagnostics::inst().emit_error(
                 Err::ReturnOutsideFunction,
-                stmt->yield_token->location,
-                "Cannot return outside of a function."
+                "Cannot return outside of a function.",
+                stmt->yield_token->location
             );
             return std::any();
         }
@@ -280,8 +280,8 @@ std::any LocalChecker::visit(Stmt::Yield* stmt) {
         if (!target_scope.has_value() || target_scope.value() == nullptr) {
             Diagnostics::inst().emit_error(
                 Err::YieldOutsideLocalScope,
-                stmt->yield_token->location,
-                "Cannot yield outside of a local scope."
+                "Cannot yield outside of a local scope.",
+                stmt->yield_token->location
             );
             return std::any();
         }
@@ -310,10 +310,10 @@ std::any LocalChecker::visit(Stmt::Yield* stmt) {
         // expression is compatible with it.
         Diagnostics::inst().emit_error(
             Err::YieldTypeMismatch,
-            stmt->expression->location,
             std::string("Type `") + stmt->expression->type->to_string() +
                 "` is not compatible with previously yielded type `" +
-                local_scope->yield_type.value()->to_string() + "`."
+                local_scope->yield_type.value()->to_string() + "`.",
+            stmt->expression->location
         );
     }
 
@@ -326,8 +326,8 @@ std::any LocalChecker::visit(Stmt::Continue* stmt) {
     if (!target_scope) {
         Diagnostics::inst().emit_error(
             Err::ContinueOutsideLoop,
-            stmt->continue_token->location,
-            "Cannot use continue outside of a loop."
+            "Cannot use continue outside of a loop.",
+            stmt->continue_token->location
         );
         return std::any();
     }
@@ -352,25 +352,25 @@ std::any LocalChecker::visit(Stmt::Dealloc* stmt) {
     if (Type::is_a<Type::Nullptr>(expr_type)) {
         Diagnostics::inst().emit_error(
             Err::DeallocNullptr,
-            stmt->expression->location,
-            "Cannot deallocate pointer of nullptr type."
+            "Cannot deallocate pointer of nullptr type.",
+            stmt->expression->location
         );
         return std::any();
     }
     else if (!Type::is_a<Type::IRawPtr>(expr_type)) {
         Diagnostics::inst().emit_error(
             Err::DeallocNonRawPointer,
-            stmt->expression->location,
             "Cannot deallocate non-raw pointer type `" +
-                expr_type->to_string() + "`."
+                expr_type->to_string() + "`.",
+            stmt->expression->location
         );
         return std::any();
     }
     else if (!symbol_tree->is_context_unsafe()) {
         Diagnostics::inst().emit_error(
             Err::DeallocOutsideUnsafeBlock,
-            stmt->expression->location,
-            "Cannot deallocate outside of unsafe context."
+            "Cannot deallocate outside of unsafe context.",
+            stmt->expression->location
         );
         return std::any();
     }
@@ -448,11 +448,11 @@ std::any LocalChecker::visit(Stmt::StructDef* stmt) {
                     )) {
                     Diagnostics::inst().emit_error(
                         Err::DefaultFieldTypeMismatch,
-                        default_expr_ptr->location,
                         std::string("Type `") +
                             default_expr_type_opt.value()->to_string() +
                             "` is not compatible with field type `" +
-                            field_binding.type->to_string() + "`."
+                            field_binding.type->to_string() + "`.",
+                        default_expr_ptr->location
                     );
                 }
             }

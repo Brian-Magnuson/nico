@@ -163,8 +163,8 @@ std::optional<Modifier> Parser::modifier() {
     else {
         Diagnostics::inst().emit_error(
             Err::NotAModifier,
-            peek()->location,
-            "Expected an identifier-like token here."
+            "Expected an identifier-like token here.",
+            peek()->location
         );
         return std::nullopt;
     }
@@ -186,8 +186,8 @@ std::optional<std::vector<Modifier>> Parser::modifier_list() {
     if (!match({Tok::RSquare})) {
         Diagnostics::inst().emit_error(
             Err::UnexpectedToken,
-            peek()->location,
-            "Expected ']' after modifier list."
+            "Expected ']' after modifier list.",
+            peek()->location
         );
         return std::nullopt;
     }
@@ -209,8 +209,8 @@ std::optional<std::shared_ptr<Expr>> Parser::block(Expr::Block::Kind kind) {
     else if (peek()->tok_type == Tok::Colon) {
         Diagnostics::inst().emit_error(
             Err::ColonInsteadOfIndent,
-            peek()->location,
-            "Unexpected `:` after `block` keyword."
+            "Unexpected `:` after `block` keyword.",
+            peek()->location
         );
         Diagnostics::inst().emit_note(
             "Indentation is possibly ignored here. Consider using `{` for "
@@ -222,8 +222,8 @@ std::optional<std::shared_ptr<Expr>> Parser::block(Expr::Block::Kind kind) {
     else {
         Diagnostics::inst().emit_error(
             Err::NotABlock,
-            peek()->location,
-            "Expected '{' or an indent to start a block expression."
+            "Expected '{' or an indent to start a block expression.",
+            peek()->location
         );
         return std::nullopt;
     }
@@ -241,8 +241,8 @@ std::optional<std::shared_ptr<Expr>> Parser::block(Expr::Block::Kind kind) {
         if (!exec_allowed_stmt) {
             Diagnostics::inst().emit_error(
                 Err::NonExecAllowedStmt,
-                stmt.value()->location,
-                "Block expression does not allow this kind of statement."
+                "Block expression does not allow this kind of statement.",
+                stmt.value()->location
             );
             Diagnostics::inst().emit_note(
                 "Only execution-space statements are allowed in block "
@@ -282,8 +282,8 @@ std::optional<std::shared_ptr<Expr>> Parser::conditional() {
     else if (peek()->tok_type == Tok::Colon) {
         Diagnostics::inst().emit_error(
             Err::ColonInsteadOfIndent,
-            peek()->location,
-            "Unexpected `:` after condition clause."
+            "Unexpected `:` after condition clause.",
+            peek()->location
         );
         Diagnostics::inst().emit_note(
             "Indentation is possibly ignored here. Consider using `{` for "
@@ -295,8 +295,8 @@ std::optional<std::shared_ptr<Expr>> Parser::conditional() {
     else {
         Diagnostics::inst().emit_error(
             Err::ConditionalWithoutThenOrBlock,
-            peek()->location,
-            "Conditional expression requires `then` keyword or a block."
+            "Conditional expression requires `then` keyword or a block.",
+            peek()->location
         );
         return std::nullopt;
     }
@@ -368,8 +368,8 @@ std::optional<std::shared_ptr<Expr>> Parser::loop() {
         else if (peek()->tok_type == Tok::Colon) {
             Diagnostics::inst().emit_error(
                 Err::ColonInsteadOfIndent,
-                peek()->location,
-                "Unexpected `:` after while loop condition."
+                "Unexpected `:` after while loop condition.",
+                peek()->location
             );
             Diagnostics::inst().emit_note(
                 "Indentation is possibly ignored here. Consider using `{` "
@@ -382,8 +382,8 @@ std::optional<std::shared_ptr<Expr>> Parser::loop() {
         else {
             Diagnostics::inst().emit_error(
                 Err::WhileLoopWithoutDoOrBlock,
-                peek()->location,
-                "While loop requires `do` keyword or a block."
+                "While loop requires `do` keyword or a block.",
+                peek()->location
             );
             return std::nullopt;
         }
@@ -410,8 +410,8 @@ std::optional<std::shared_ptr<Expr>> Parser::loop() {
         else if (peek()->tok_type == Tok::Colon) {
             Diagnostics::inst().emit_error(
                 Err::ColonInsteadOfIndent,
-                peek()->location,
-                "Unexpected `:` after `do` keyword."
+                "Unexpected `:` after `do` keyword.",
+                peek()->location
             );
             Diagnostics::inst().emit_note(
                 "Indentation is possibly ignored here. Consider using `{` "
@@ -431,8 +431,8 @@ std::optional<std::shared_ptr<Expr>> Parser::loop() {
         if (!match({Tok::KwWhile})) {
             Diagnostics::inst().emit_error(
                 Err::DoWhileLoopWithoutWhile,
-                peek()->location,
-                "`do` must be followed by `while`."
+                "`do` must be followed by `while`.",
+                peek()->location
             );
             return std::nullopt;
         }
@@ -497,8 +497,8 @@ std::optional<std::shared_ptr<Expr>> Parser::grouping_or_tuple() {
     if (!match({Tok::RParen})) {
         Diagnostics::inst().emit_error(
             Err::UnexpectedToken,
-            peek()->location,
-            "Expected `)` after expression grouping."
+            "Expected `)` after expression grouping.",
+            peek()->location
         );
         return std::nullopt;
     }
@@ -539,8 +539,8 @@ std::optional<std::shared_ptr<Expr>> Parser::array() {
     if (!match({Tok::RSquare})) {
         Diagnostics::inst().emit_error(
             Err::UnexpectedToken,
-            peek()->location,
-            "Expected `]` after array literal."
+            "Expected `]` after array literal.",
+            peek()->location
         );
         return std::nullopt;
     }
@@ -570,9 +570,9 @@ std::optional<std::shared_ptr<Expr>> Parser::object() {
         if (!match({Tok::Identifier})) {
             Diagnostics::inst().emit_error(
                 Err::NotAnIdentifier,
-                peek()->location,
                 "Expected an identifier for the field name in object "
-                "literal."
+                "literal.",
+                peek()->location
             );
             synchronize_elements();
             continue;
@@ -581,8 +581,8 @@ std::optional<std::shared_ptr<Expr>> Parser::object() {
         if (!match({Tok::Colon})) {
             Diagnostics::inst().emit_error(
                 Err::UnexpectedToken,
-                peek()->location,
-                "Expected a colon after the field name in object literal."
+                "Expected a colon after the field name in object literal.",
+                peek()->location
             );
             synchronize_elements();
             continue;
@@ -600,8 +600,8 @@ std::optional<std::shared_ptr<Expr>> Parser::object() {
     if (!match({Tok::RBrace})) {
         Diagnostics::inst().emit_error(
             Err::UnexpectedToken,
-            peek()->location,
-            "Expected `}` after object literal."
+            "Expected `}` after object literal.",
+            peek()->location
         );
         return std::nullopt;
     }
@@ -614,8 +614,8 @@ std::optional<std::shared_ptr<Expr>> Parser::new_instance() {
     if (!match({Tok::Identifier})) {
         Diagnostics::inst().emit_error(
             Err::NotANamedType,
-            peek()->location,
-            "Expected a named type after `new` keyword."
+            "Expected a named type after `new` keyword.",
+            peek()->location
         );
         return std::nullopt;
     }
@@ -627,8 +627,8 @@ std::optional<std::shared_ptr<Expr>> Parser::new_instance() {
     if (!match({Tok::LBrace})) {
         Diagnostics::inst().emit_error(
             Err::UnexpectedToken,
-            peek()->location,
-            "Expected `{` after type annotation in instance initializer."
+            "Expected `{` after type annotation in instance initializer.",
+            peek()->location
         );
         return std::nullopt;
     }
@@ -644,9 +644,9 @@ std::optional<std::shared_ptr<Expr>> Parser::new_instance() {
         if (!match({Tok::Identifier})) {
             Diagnostics::inst().emit_error(
                 Err::NotAnIdentifier,
-                peek()->location,
                 "Expected an identifier for the field name in object "
-                "literal."
+                "literal.",
+                peek()->location
             );
             synchronize_elements();
             continue;
@@ -655,8 +655,8 @@ std::optional<std::shared_ptr<Expr>> Parser::new_instance() {
         if (!match({Tok::Colon})) {
             Diagnostics::inst().emit_error(
                 Err::UnexpectedToken,
-                peek()->location,
-                "Expected a colon after the field name in object literal."
+                "Expected a colon after the field name in object literal.",
+                peek()->location
             );
             synchronize_elements();
             continue;
@@ -674,8 +674,8 @@ std::optional<std::shared_ptr<Expr>> Parser::new_instance() {
     if (!match({Tok::RBrace})) {
         Diagnostics::inst().emit_error(
             Err::UnexpectedToken,
-            peek()->location,
-            "Expected `}` after object literal."
+            "Expected `}` after object literal.",
+            peek()->location
         );
         return std::nullopt;
     }
@@ -702,10 +702,10 @@ std::optional<std::shared_ptr<Expr>> Parser::allocation() {
         if (!match({Tok::KwOf})) {
             Diagnostics::inst().emit_error(
                 Err::AllocForWithoutOf,
-                peek()->location,
                 "Expected `of` keyword after amount expression after "
                 "`alloc "
-                "for`."
+                "for`.",
+                peek()->location
             );
             return std::nullopt;
         }
@@ -755,8 +755,8 @@ std::optional<size_t> Parser::array_size() {
     if (peek()->tok_type != Tok::IntDefault) {
         Diagnostics::inst().emit_error(
             Err::NaturalNumberWithoutIntDefaultToken,
-            peek()->location,
-            "Expected a non-negative integer without a sign or type suffix."
+            "Expected a non-negative integer without a sign or type suffix.",
+            peek()->location
         );
         return std::nullopt;
     }
@@ -769,8 +769,8 @@ std::optional<size_t> Parser::array_size() {
         else if (!std::isdigit(lexeme[i])) {
             Diagnostics::inst().emit_error(
                 Err::AlphaCharInArraySize,
-                peek()->location,
-                "Array size contains non-digit characters."
+                "Array size contains non-digit characters.",
+                peek()->location
             );
             Diagnostics::inst().emit_note(
                 "Only base-10 digits (0-9) and underscores are allowed in "
@@ -788,8 +788,8 @@ std::optional<size_t> Parser::array_size() {
     if (ec == std::errc::result_out_of_range) {
         Diagnostics::inst().emit_error(
             Err::ArraySizeTooLarge,
-            previous()->location,
-            "Array size is too large."
+            "Array size is too large.",
+            previous()->location
         );
         return std::nullopt;
     }
@@ -816,8 +816,8 @@ std::optional<std::shared_ptr<Name>> Parser::name() {
         if (!match({Tok::Identifier})) {
             Diagnostics::inst().emit_error(
                 Err::NotAnIdentifier,
-                peek()->location,
-                "Expected an identifier after `::`."
+                "Expected an identifier after `::`.",
+                peek()->location
             );
             return std::nullopt;
         }
@@ -832,8 +832,8 @@ std::optional<std::shared_ptr<Expr>> Parser::number_literal() {
         if (tokens::is_unsigned_integer(peek()->tok_type)) {
             Diagnostics::inst().emit_error(
                 Err::NegativeOnUnsignedLiteral,
-                previous()->location,
-                "Cannot use unary `-` on unsigned integer literal."
+                "Cannot use unary `-` on unsigned integer literal.",
+                previous()->location
             );
             return std::nullopt;
         }
@@ -912,8 +912,8 @@ std::optional<std::shared_ptr<Expr>> Parser::number_literal() {
     if (ec == std::errc::result_out_of_range) {
         Diagnostics::inst().emit_error(
             Err::NumberOutOfRange,
-            previous()->location,
-            "Numeric literal is out of range for its type."
+            "Numeric literal is out of range for its type.",
+            previous()->location
         );
         return std::nullopt;
     }
@@ -976,8 +976,8 @@ std::optional<std::shared_ptr<Expr>> Parser::primary() {
     else {
         Diagnostics::inst().emit_error(
             Err::NotAnExpression,
-            advance()->location,
-            "Expected expression."
+            "Expected expression.",
+            advance()->location
         );
     }
     return std::nullopt;
@@ -996,8 +996,8 @@ std::optional<std::shared_ptr<Expr>> Parser::postfix() {
             else {
                 Diagnostics::inst().emit_error(
                     Err::UnexpectedTokenAfterDot,
-                    peek()->location,
-                    "Expected identifier or integer after `.`."
+                    "Expected identifier or integer after `.`.",
+                    peek()->location
                 );
                 return std::nullopt;
             }
@@ -1010,8 +1010,8 @@ std::optional<std::shared_ptr<Expr>> Parser::postfix() {
             if (!match({Tok::RSquare})) {
                 Diagnostics::inst().emit_error(
                     Err::UnexpectedToken,
-                    peek()->location,
-                    "Expected `]` after array subscript."
+                    "Expected `]` after array subscript.",
+                    peek()->location
                 );
                 return std::nullopt;
             }
@@ -1050,9 +1050,9 @@ std::optional<std::shared_ptr<Expr>> Parser::postfix() {
                     if (has_named_args) {
                         Diagnostics::inst().emit_error(
                             Err::PosArgumentAfterNamedArgument,
-                            expr->get()->location,
                             "Positional arguments cannot follow named "
-                            "arguments."
+                            "arguments.",
+                            expr->get()->location
                         );
                         return std::nullopt;
                     }
@@ -1061,8 +1061,8 @@ std::optional<std::shared_ptr<Expr>> Parser::postfix() {
             if (!match({Tok::RParen})) {
                 Diagnostics::inst().emit_error(
                     Err::UnexpectedToken,
-                    peek()->location,
-                    "Expected `)` after arguments in function call."
+                    "Expected `)` after arguments in function call.",
+                    peek()->location
                 );
                 return std::nullopt;
             }
@@ -1115,8 +1115,8 @@ std::optional<std::shared_ptr<Expr>> Parser::unary() {
     else if (has_var) {
         Diagnostics::inst().emit_error(
             Err::UnexpectedVarInExpression,
-            peek()->location,
-            "`var` must be followed by address-of operator `@` or `&`."
+            "`var` must be followed by address-of operator `@` or `&`.",
+            peek()->location
         );
         return std::nullopt;
     }
@@ -1273,8 +1273,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::variable_statement() {
     if (!match({Tok::Identifier})) {
         Diagnostics::inst().emit_error(
             Err::NotAnIdentifier,
-            previous()->location,
-            "Expected identifier in declaration."
+            "Expected identifier in declaration.",
+            previous()->location
         );
         return std::nullopt;
     }
@@ -1283,8 +1283,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::variable_statement() {
     if (match({Tok::ColonColon})) {
         Diagnostics::inst().emit_error(
             Err::DeclarationIdentWithColonColon,
-            previous()->location,
-            "Declaration identifier cannot contain `::`."
+            "Declaration identifier cannot contain `::`.",
+            previous()->location
         );
         return std::nullopt;
     }
@@ -1313,9 +1313,9 @@ std::optional<std::shared_ptr<Stmt>> Parser::variable_statement() {
 
             Diagnostics::inst().emit_error(
                 Err::NonCompileTimeExpr,
-                previous()->location,
                 "Static variable initializer is not a compile-time "
-                "constant."
+                "constant.",
+                previous()->location
             );
             Diagnostics::inst().emit_note(
                 "Static variables must be initialized with compile-time "
@@ -1330,8 +1330,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::variable_statement() {
     if (!expr && !anno) {
         Diagnostics::inst().emit_error(
             Err::VariableWithoutTypeOrValue,
-            peek()->location,
-            "Variable declaration must have a type annotation or value."
+            "Variable declaration must have a type annotation or value.",
+            peek()->location
         );
         return std::nullopt;
     }
@@ -1376,8 +1376,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::field_statement() {
     if (!match({Tok::Identifier})) {
         Diagnostics::inst().emit_error(
             Err::NotAnIdentifier,
-            previous()->location,
-            "Expected identifier in field declaration."
+            "Expected identifier in field declaration.",
+            previous()->location
         );
         return std::nullopt;
     }
@@ -1386,8 +1386,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::field_statement() {
     if (match({Tok::ColonColon})) {
         Diagnostics::inst().emit_error(
             Err::DeclarationIdentWithColonColon,
-            previous()->location,
-            "Declaration identifier cannot contain `::`."
+            "Declaration identifier cannot contain `::`.",
+            previous()->location
         );
         return std::nullopt;
     }
@@ -1404,8 +1404,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::field_statement() {
     else {
         Diagnostics::inst().emit_error(
             Err::FieldWithoutType,
-            peek()->location,
-            "Field declaration must have a type annotation."
+            "Field declaration must have a type annotation.",
+            peek()->location
         );
         return std::nullopt;
     }
@@ -1435,8 +1435,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
     if (!match({Tok::Identifier})) {
         Diagnostics::inst().emit_error(
             Err::NotAnIdentifier,
-            peek()->location,
-            "Expected identifier in declaration."
+            "Expected identifier in declaration.",
+            peek()->location
         );
         return std::nullopt;
     }
@@ -1445,8 +1445,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
     if (match({Tok::ColonColon})) {
         Diagnostics::inst().emit_error(
             Err::DeclarationIdentWithColonColon,
-            previous()->location,
-            "Declaration identifier cannot contain `::`."
+            "Declaration identifier cannot contain `::`.",
+            previous()->location
         );
         return std::nullopt;
     }
@@ -1455,8 +1455,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
     if (!match({Tok::LParen})) {
         Diagnostics::inst().emit_error(
             Err::FuncWithoutOpeningParen,
-            peek()->location,
-            "Expected `(` after function name."
+            "Expected `(` after function name.",
+            peek()->location
         );
         return std::nullopt;
     }
@@ -1476,8 +1476,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
             if (peek()->tok_type != Tok::RParen) {
                 Diagnostics::inst().emit_error(
                     Err::UnexpectedTokenAfterVariadicParam,
-                    peek()->location,
-                    "Expected closing `)` after variadic parameter."
+                    "Expected closing `)` after variadic parameter.",
+                    peek()->location
                 );
                 synchronize_elements();
                 continue;
@@ -1492,8 +1492,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
         if (!match({Tok::Identifier})) {
             Diagnostics::inst().emit_error(
                 Err::NotAnIdentifier,
-                peek()->location,
-                "Expected identifier in function parameter."
+                "Expected identifier in function parameter.",
+                peek()->location
             );
             synchronize_elements();
             continue;
@@ -1503,8 +1503,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
         if (!match({Tok::Colon})) {
             Diagnostics::inst().emit_error(
                 Err::NotAType,
-                peek()->location,
-                "Expected type annotation in function parameter."
+                "Expected type annotation in function parameter.",
+                peek()->location
             );
             synchronize_elements();
             continue;
@@ -1534,8 +1534,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
     if (!match({Tok::RParen})) {
         Diagnostics::inst().emit_error(
             Err::UnexpectedToken,
-            peek()->location,
-            "Expected `)` after parsing parameters."
+            "Expected `)` after parsing parameters.",
+            peek()->location
         );
         return std::nullopt;
     }
@@ -1582,8 +1582,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::func_statement() {
     else if (peek()->tok_type == Tok::Colon) {
         Diagnostics::inst().emit_error(
             Err::ColonInsteadOfIndent,
-            peek()->location,
-            "Unexpected `:` after `block` keyword."
+            "Unexpected `:` after `block` keyword.",
+            peek()->location
         );
         Diagnostics::inst().emit_note(
             "Indentation is possibly ignored here. Consider using `{` for "
@@ -1615,8 +1615,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::namespace_statement() {
     if (!match({Tok::Identifier})) {
         Diagnostics::inst().emit_error(
             Err::NotAnIdentifier,
-            peek()->location,
-            "Expected identifier in namespace declaration."
+            "Expected identifier in namespace declaration.",
+            peek()->location
         );
         return std::nullopt;
     }
@@ -1625,8 +1625,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::namespace_statement() {
     if (match({Tok::ColonColon})) {
         Diagnostics::inst().emit_error(
             Err::DeclarationIdentWithColonColon,
-            previous()->location,
-            "Declaration identifier cannot contain `::`."
+            "Declaration identifier cannot contain `::`.",
+            previous()->location
         );
         return std::nullopt;
     }
@@ -1642,8 +1642,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::namespace_statement() {
     else if (peek()->tok_type == Tok::Colon) {
         Diagnostics::inst().emit_error(
             Err::ColonInsteadOfIndent,
-            peek()->location,
-            "Unexpected `:` after namespace identifier."
+            "Unexpected `:` after namespace identifier.",
+            peek()->location
         );
         Diagnostics::inst().emit_note(
             "Indentation is possibly ignored here. Consider using `{` for "
@@ -1655,8 +1655,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::namespace_statement() {
     else {
         Diagnostics::inst().emit_error(
             Err::NamespaceWithoutBlock,
-            peek()->location,
-            "Expected indented block or `{` after namespace declaration."
+            "Expected indented block or `{` after namespace declaration.",
+            peek()->location
         );
         return std::nullopt;
     }
@@ -1674,8 +1674,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::namespace_statement() {
         if (!decl_allowed_stmt) {
             Diagnostics::inst().emit_error(
                 Err::NonDeclAllowedStmt,
-                stmt.value()->location,
-                "Namespace does not allow this kind of statement."
+                "Namespace does not allow this kind of statement.",
+                stmt.value()->location
             );
             Diagnostics::inst().emit_note(
                 "Only declaration-space statements are allowed directly "
@@ -1716,8 +1716,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::extern_block_statement() {
         else {
             Diagnostics::inst().emit_error(
                 Err::ExternBlockUnrecognizedABI,
-                previous()->location,
-                "Unknown ABI specified in extern block declaration."
+                "Unknown ABI specified in extern block declaration.",
+                previous()->location
             );
             Diagnostics::inst().emit_note("Supported ABIs are: \"C\".");
         }
@@ -1726,16 +1726,16 @@ std::optional<std::shared_ptr<Stmt>> Parser::extern_block_statement() {
     if (!match({Tok::Identifier})) {
         Diagnostics::inst().emit_error(
             Err::NotAnIdentifier,
-            peek()->location,
-            "Expected identifier after `extern`."
+            "Expected identifier after `extern`.",
+            peek()->location
         );
         return std::nullopt;
     }
     if (match({Tok::ColonColon})) {
         Diagnostics::inst().emit_error(
             Err::DeclarationIdentWithColonColon,
-            previous()->location,
-            "Declaration identifier cannot contain `::`."
+            "Declaration identifier cannot contain `::`.",
+            previous()->location
         );
         return std::nullopt;
     }
@@ -1751,8 +1751,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::extern_block_statement() {
     else if (peek()->tok_type == Tok::Colon) {
         Diagnostics::inst().emit_error(
             Err::ColonInsteadOfIndent,
-            peek()->location,
-            "Unexpected `:` after extern block identifier."
+            "Unexpected `:` after extern block identifier.",
+            peek()->location
         );
         Diagnostics::inst().emit_note(
             "Indentation is possibly ignored here. Consider using `{` for "
@@ -1764,8 +1764,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::extern_block_statement() {
     else {
         Diagnostics::inst().emit_error(
             Err::ExternBlockWithoutBlock,
-            peek()->location,
-            "Expected indented block or `{` after extern block declaration."
+            "Expected indented block or `{` after extern block declaration.",
+            peek()->location
         );
         return std::nullopt;
     }
@@ -1784,10 +1784,10 @@ std::optional<std::shared_ptr<Stmt>> Parser::extern_block_statement() {
             !PTR_INSTANCEOF(stmt, Stmt::Static)) {
             Diagnostics::inst().emit_error(
                 Err::ExternBlockStmtNotVarOrFunc,
-                stmt->location,
                 "Expected function declaration or static variable "
                 "declaration "
-                "in extern block."
+                "in extern block.",
+                stmt->location
             );
             if (PTR_INSTANCEOF(stmt, Stmt::Let)) {
                 Diagnostics::inst().emit_note(
@@ -1816,16 +1816,16 @@ std::optional<std::shared_ptr<Stmt>> Parser::typedef_statement() {
     if (!match({Tok::Identifier})) {
         Diagnostics::inst().emit_error(
             Err::NotAnIdentifier,
-            peek()->location,
-            "Expected identifier after `typedef`."
+            "Expected identifier after `typedef`.",
+            peek()->location
         );
         return std::nullopt;
     }
     if (match({Tok::ColonColon})) {
         Diagnostics::inst().emit_error(
             Err::DeclarationIdentWithColonColon,
-            previous()->location,
-            "Declaration identifier cannot contain `::`."
+            "Declaration identifier cannot contain `::`.",
+            previous()->location
         );
         return std::nullopt;
     }
@@ -1833,8 +1833,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::typedef_statement() {
     if (!match({Tok::Eq})) {
         Diagnostics::inst().emit_error(
             Err::UnexpectedToken,
-            peek()->location,
-            "Expected `=` after typedef identifier."
+            "Expected `=` after typedef identifier.",
+            peek()->location
         );
         return std::nullopt;
     }
@@ -1854,15 +1854,15 @@ std::optional<std::shared_ptr<Stmt>> Parser::struct_def_statement() {
     if (!match({Tok::Identifier})) {
         Diagnostics::inst().emit_error(
             Err::NotAnIdentifier,
-            peek()->location,
-            "Expected identifier after `struct`."
+            "Expected identifier after `struct`.",
+            peek()->location
         );
     }
     if (match({Tok::ColonColon})) {
         Diagnostics::inst().emit_error(
             Err::DeclarationIdentWithColonColon,
-            previous()->location,
-            "Declaration identifier cannot contain `::`."
+            "Declaration identifier cannot contain `::`.",
+            previous()->location
         );
         return std::nullopt;
     }
@@ -1878,8 +1878,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::struct_def_statement() {
     else if (peek()->tok_type == Tok::Colon) {
         Diagnostics::inst().emit_error(
             Err::ColonInsteadOfIndent,
-            peek()->location,
-            "Unexpected `:` after struct identifier."
+            "Unexpected `:` after struct identifier.",
+            peek()->location
         );
         Diagnostics::inst().emit_note(
             "Indentation is possibly ignored here. Consider using `{` for "
@@ -1891,8 +1891,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::struct_def_statement() {
     else {
         Diagnostics::inst().emit_error(
             Err::StructWithoutBlock,
-            peek()->location,
-            "Expected indented block or `{` after struct declaration."
+            "Expected indented block or `{` after struct declaration.",
+            peek()->location
         );
         return std::nullopt;
     }
@@ -1910,8 +1910,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::struct_def_statement() {
         if (!PTR_INSTANCEOF(stmt, Stmt::IStructAllowed)) {
             Diagnostics::inst().emit_error(
                 Err::NonStructAllowedStmt,
-                stmt->location,
-                "Struct does not allow this kind of statement."
+                "Struct does not allow this kind of statement.",
+                stmt->location
             );
             Diagnostics::inst().emit_note(
                 "Only struct member declarations and declaration-space "
@@ -2015,8 +2015,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::statement() {
         else {
             Diagnostics::inst().emit_error(
                 Err::UnexpectedTokenAfterHash,
-                previous()->location,
-                "Expected directive or modifier list after `#`."
+                "Expected directive or modifier list after `#`.",
+                previous()->location
             );
             return std::nullopt;
         }
@@ -2024,8 +2024,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::statement() {
         if (match({Tok::Semicolon})) {
             Diagnostics::inst().emit_error(
                 Err::ModifierWithoutStatement,
-                previous()->location,
-                "Modifiers must be attached to a statement."
+                "Modifiers must be attached to a statement.",
+                previous()->location
             );
             return std::nullopt;
         }
@@ -2056,8 +2056,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::statement() {
         if (modifiers.has_value()) {
             Diagnostics::inst().emit_error(
                 Err::ModifierWithoutStatement,
-                peek()->location,
-                "Modifiers must be attached to a statement."
+                "Modifiers must be attached to a statement.",
+                peek()->location
             );
         }
         stmt = std::make_shared<Stmt::Eof>(previous());
@@ -2090,8 +2090,8 @@ std::optional<std::shared_ptr<Stmt>> Parser::statement() {
             if (!result) {
                 Diagnostics::inst().emit_error(
                     Err::InvalidModifierForStatement,
-                    modifier.location,
-                    "This modifier cannot be applied to this statement."
+                    "This modifier cannot be applied to this statement.",
+                    modifier.location
                 );
             }
         }
@@ -2107,8 +2107,8 @@ std::optional<std::shared_ptr<Annotation>> Parser::type_of_annotation() {
     if (!match({Tok::LParen})) {
         Diagnostics::inst().emit_error(
             Err::TypeofWithoutOpeningParen,
-            peek()->location,
-            "Expected `(` after `typeof`."
+            "Expected `(` after `typeof`.",
+            peek()->location
         );
         return std::nullopt;
     }
@@ -2116,9 +2116,9 @@ std::optional<std::shared_ptr<Annotation>> Parser::type_of_annotation() {
     if (!match({Tok::RParen})) {
         Diagnostics::inst().emit_error(
             Err::UnexpectedToken,
-            peek()->location,
             "Expected `)` after expression in "
-            "typeof annotation."
+            "typeof annotation.",
+            peek()->location
         );
         return std::nullopt;
     }
@@ -2159,9 +2159,9 @@ std::optional<std::shared_ptr<Annotation::Tuple>> Parser::tuple_annotation() {
     if (!match({Tok::RParen})) {
         Diagnostics::inst().emit_error(
             Err::UnexpectedToken,
-            peek()->location,
             "Expected `)` after expression in "
-            "tuple annotation."
+            "tuple annotation.",
+            peek()->location
         );
         return std::nullopt;
     }
@@ -2184,8 +2184,8 @@ std::optional<std::shared_ptr<Annotation::Array>> Parser::array_annotation() {
     if (!match({Tok::Semicolon})) {
         Diagnostics::inst().emit_error(
             Err::UnexpectedToken,
-            peek()->location,
-            "Expected `;` after element type in array annotation."
+            "Expected `;` after element type in array annotation.",
+            peek()->location
         );
         return std::nullopt;
     }
@@ -2201,8 +2201,8 @@ std::optional<std::shared_ptr<Annotation::Array>> Parser::array_annotation() {
     if (!match({Tok::RSquare})) {
         Diagnostics::inst().emit_error(
             Err::UnexpectedToken,
-            peek()->location,
-            "Expected `]` after size in array annotation."
+            "Expected `]` after size in array annotation.",
+            peek()->location
         );
         return std::nullopt;
     }
@@ -2233,8 +2233,8 @@ std::optional<std::shared_ptr<Annotation::Object>> Parser::object_annotation() {
         if (!match({Tok::Identifier})) {
             Diagnostics::inst().emit_error(
                 Err::NotAnIdentifier,
-                peek()->location,
-                "Expected identifier in object annotation field."
+                "Expected identifier in object annotation field.",
+                peek()->location
             );
             synchronize_elements();
             continue;
@@ -2243,8 +2243,8 @@ std::optional<std::shared_ptr<Annotation::Object>> Parser::object_annotation() {
         if (!match({Tok::Colon})) {
             Diagnostics::inst().emit_error(
                 Err::UnexpectedToken,
-                peek()->location,
-                "Expected `:` after field name in object annotation."
+                "Expected `:` after field name in object annotation.",
+                peek()->location
             );
             synchronize_elements();
             continue;
@@ -2268,8 +2268,8 @@ std::optional<std::shared_ptr<Annotation::Object>> Parser::object_annotation() {
     if (!match({Tok::RBrace})) {
         Diagnostics::inst().emit_error(
             Err::UnexpectedToken,
-            peek()->location,
-            "Expected `}` after field in object annotation."
+            "Expected `}` after field in object annotation.",
+            peek()->location
         );
         return std::nullopt;
     }
@@ -2314,9 +2314,9 @@ std::optional<std::shared_ptr<Annotation>> Parser::annotation() {
     if (has_var) {
         Diagnostics::inst().emit_error(
             Err::UnexpectedVarInAnnotation,
-            previous()->location,
             "`var` is not allowed here. Use only with pointers or "
-            "references."
+            "references.",
+            previous()->location
         );
         return std::nullopt;
     }
@@ -2344,7 +2344,7 @@ std::optional<std::shared_ptr<Annotation>> Parser::annotation() {
         return object_annotation();
     }
     Diagnostics::inst()
-        .emit_error(Err::NotAType, peek()->location, "Not a valid type.");
+        .emit_error(Err::NotAType, "Not a valid type.", peek()->location);
     return std::nullopt;
 }
 
@@ -2362,8 +2362,8 @@ void Parser::run_parse(std::unique_ptr<FrontendContext>& context) {
         else if (!PTR_INSTANCEOF(stmt.value(), Stmt::ITopLevel)) {
             Diagnostics::inst().emit_error(
                 Err::NonTopLevelAllowedStmt,
-                stmt.value()->location,
-                "Top level does not allow this kind of statement."
+                "Top level does not allow this kind of statement.",
+                stmt.value()->location
             );
             continue;
         }

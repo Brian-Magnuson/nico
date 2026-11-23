@@ -31,8 +31,8 @@ std::any GlobalChecker::visit(Stmt::Static* stmt) {
     else {
         Diagnostics::inst().emit_error(
             Err::StaticMissingTypeAnnotation,
-            stmt->identifier->location,
-            "Static variable declaration must have a type annotation."
+            "Static variable declaration must have a type annotation.",
+            stmt->identifier->location
         );
         return std::any();
     }
@@ -41,17 +41,17 @@ std::any GlobalChecker::visit(Stmt::Static* stmt) {
         if (stmt->expression.has_value()) {
             Diagnostics::inst().emit_error(
                 Err::ExternStaticWithInitializer,
-                stmt->identifier->location,
                 "Static variable declared in extern block cannot have an "
-                "initializer."
+                "initializer.",
+                stmt->identifier->location
             );
         }
         if (stmt->linkage_opt == Linkage::Internal) {
             Diagnostics::inst().emit_error(
                 Err::ExternBindingWithInternalLinkage,
-                stmt->identifier->location,
                 "Static variable declared in extern block cannot have internal "
-                "linkage."
+                "linkage.",
+                stmt->identifier->location
             );
         }
 
@@ -60,8 +60,8 @@ std::any GlobalChecker::visit(Stmt::Static* stmt) {
     else if (!stmt->has_var && !stmt->expression.has_value()) {
         Diagnostics::inst().emit_error(
             Err::ImmutableWithoutInitializer,
-            stmt->identifier->location,
-            "Immutable variable declaration must have an initializer."
+            "Immutable variable declaration must have an initializer.",
+            stmt->identifier->location
         );
     }
 
@@ -117,12 +117,13 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
             it != param_bindings.end()) {
             Diagnostics::inst().emit_error(
                 Err::DuplicateFunctionParameterName,
-                param.identifier->location,
-                "Duplicate parameter name `" + param_string + "`."
+                "Duplicate parameter name `" + param_string + "`.",
+                param.identifier->location
             );
             Diagnostics::inst().emit_note(
-                it->second.location,
-                "Previous declaration of parameter `" + param_string + "` here."
+                "Previous declaration of parameter `" + param_string +
+                    "` here.",
+                it->second.location
             );
             return std::any();
         }
@@ -161,16 +162,16 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
         if (stmt->body.has_value()) {
             Diagnostics::inst().emit_error(
                 Err::ExternBlockFuncWithBody,
-                stmt->identifier->location,
-                "Function declared in extern block cannot have a body."
+                "Function declared in extern block cannot have a body.",
+                stmt->identifier->location
             );
         }
         if (stmt->linkage_opt == Linkage::Internal) {
             Diagnostics::inst().emit_error(
                 Err::ExternBindingWithInternalLinkage,
-                stmt->identifier->location,
                 "Function declared in extern block cannot have internal "
-                "linkage."
+                "linkage.",
+                stmt->identifier->location
             );
         }
 
@@ -183,8 +184,8 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
         if (!stmt->body.has_value()) {
             Diagnostics::inst().emit_error(
                 Err::FuncWithoutBody,
-                stmt->identifier->location,
-                "Function is missing a body."
+                "Function is missing a body.",
+                stmt->identifier->location
             );
             // Not the most dangerous error, so we can continue checking the
             // rest of the statement.
@@ -192,8 +193,9 @@ std::any GlobalChecker::visit(Stmt::Func* stmt) {
         if (stmt->is_variadic) {
             Diagnostics::inst().emit_error(
                 Err::NonExternVariadicFunc,
-                stmt->identifier->location,
-                "Non-extern function declaration is not allowed to be variadic."
+                "Non-extern function declaration is not allowed to be "
+                "variadic.",
+                stmt->identifier->location
             );
             return std::any();
         }
@@ -370,15 +372,15 @@ std::any GlobalChecker::visit(Stmt::StructDef* stmt) {
             if (auto existing_field = struct_fields.at(field_binding.name)) {
                 Diagnostics::inst().emit_error(
                     Err::DuplicateStructFieldName,
-                    field_binding.location,
                     "Duplicate field name `" + field_binding.name +
                         "` in "
-                        "struct definition."
+                        "struct definition.",
+                    field_binding.location
                 );
                 Diagnostics::inst().emit_note(
-                    existing_field->location,
                     "Previous declaration of field `" + field_binding.name +
-                        "` here."
+                        "` here.",
+                    existing_field->location
                 );
                 continue;
             }

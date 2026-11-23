@@ -87,7 +87,7 @@ void Diagnostics::reset() {
 }
 
 void Diagnostics::emit_error(
-    Err ec, std::optional<Location> location, std::string_view message
+    Err ec, std::string_view message, std::optional<Location> location
 ) {
     errors.push_back(ec);
     if (printing_enabled) {
@@ -103,11 +103,11 @@ void Diagnostics::emit_error(
 }
 
 void Diagnostics::emit_error(Err ec, std::string_view message) {
-    emit_error(ec, std::nullopt, message);
+    emit_error(ec, message, std::nullopt);
 }
 
 void Diagnostics::emit_note(
-    std::optional<Location> location, std::string_view message
+    std::string_view message, std::optional<Location> location
 ) {
     if (printing_enabled) {
         *out << colorize::cyan << "⤷ Note: " << colorize::reset;
@@ -119,7 +119,7 @@ void Diagnostics::emit_note(
 }
 
 void Diagnostics::emit_note(std::string_view message) {
-    emit_note(std::nullopt, message);
+    emit_note(message, std::nullopt);
 }
 
 } // namespace nico
