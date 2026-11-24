@@ -102,10 +102,6 @@ void Diagnostics::emit_error(
     }
 }
 
-void Diagnostics::emit_error(Err ec, std::string_view message) {
-    emit_error(ec, message, std::nullopt);
-}
-
 void Diagnostics::emit_note(
     std::string_view message, std::optional<Location> location
 ) {
@@ -116,10 +112,6 @@ void Diagnostics::emit_note(
             print_code_at_location(*location, colorize::cyan);
         }
     }
-}
-
-void Diagnostics::emit_note(std::string_view message) {
-    emit_note(message, std::nullopt);
 }
 
 } // namespace nico

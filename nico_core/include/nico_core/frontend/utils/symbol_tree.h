@@ -143,6 +143,9 @@ public:
         std::shared_ptr<Node::ILocatable> node,
         std::optional<std::string> symbol = std::nullopt
     );
+    // TODO: We should not require these nodes to be ILocatable. We should be
+    // able to register symbols for any node, even if it does not have a
+    // location.
 
     /**
      * @brief Checks if a name is reserved in the symbol tree.

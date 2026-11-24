@@ -99,24 +99,18 @@ public:
      * If printing is enabled, the error message will be printed to the output
      * stream. The error code will be added to the stored list of errors.
      *
+     * If a location is provided and printing is enabled, the code at the
+     * location will be printed.
+     *
      * @param ec The error code to report.
      * @param message The message to report with the error.
      * @param location (Optional) The location of the error in the source code.
      */
     void emit_error(
-        Err ec, std::string_view message, std::optional<Location> location
+        Err ec,
+        std::string_view message,
+        std::optional<Location> location = std::nullopt
     );
-
-    /**
-     * @brief Reports an error message without a location.
-     *
-     * If printing is enabled, the error message will be printed to the output
-     * stream. The error code will be added to the stored list of errors.
-     *
-     * @param ec The error code to report.
-     * @param message The message to report with the error.
-     */
-    void emit_error(Err ec, std::string_view message);
 
     /**
      * @brief Reports a note message for diagnostics.
@@ -124,22 +118,16 @@ public:
      * If printing is enabled, the note message will be printed to the output
      * stream. Otherwise, this function does nothing.
      *
+     * If a location is provided and printing is enabled, the code at the
+     * location will be printed.
+     *
      * @param message The message to report with the note.
      * @param location (Optional) The location of the note in the source code.
      */
     void emit_note(
-        std::string_view message, std::optional<Location> location
+        std::string_view message,
+        std::optional<Location> location = std::nullopt
     );
-
-    /**
-     * @brief Reports a note message without a location.
-     *
-     * If printing is enabled, the note message will be printed to the output
-     * stream. Otherwise, this function does nothing.
-     *
-     * @param message The message to report with the note.
-     */
-    void emit_note(std::string_view message);
 
     /**
      * @brief Gets the errors that have been reported.
