@@ -126,7 +126,7 @@ public:
      * @brief Registers a node's symbol in the symbol tree.
      *
      * The symbol and the node will be added to the symbol map.
-     * If the symbol already exists the function will log an error and return
+     * If the symbol already exists the function will emit an error and return
      * false.
      *
      * If no symbol is provided, one will be created based on the node's
@@ -140,12 +140,9 @@ public:
      * @return True if the symbol was registered successfully, false otherwise.
      */
     bool register_symbol(
-        std::shared_ptr<Node::ILocatable> node,
+        std::shared_ptr<Node> node,
         std::optional<std::string> symbol = std::nullopt
     );
-    // TODO: We should not require these nodes to be ILocatable. We should be
-    // able to register symbols for any node, even if it does not have a
-    // location.
 
     /**
      * @brief Checks if a name is reserved in the symbol tree.

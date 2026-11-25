@@ -109,6 +109,8 @@ protected:
 class Node::ILocatable : public virtual Node {
 public:
     // The location in the source code where this node is introduced.
+    // Some nodes do not have their location set upon creation, so this field
+    // may be empty.
     std::optional<Location> location;
 
     virtual ~ILocatable() = default;
@@ -119,6 +121,8 @@ protected:
 
     ILocatable(Private)
         : Node(Private()) {}
+    // TODO: See if we can remove the default constructor and require all
+    // locatable nodes to have a location set upon creation.
 };
 
 /**
