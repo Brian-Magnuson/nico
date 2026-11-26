@@ -196,7 +196,8 @@ bool SymbolTree::register_symbol(
         Diagnostics::inst().emit_error(
             Err::SymbolIsReserved,
             "Symbol `" + the_symbol + "` is reserved and cannot be used.",
-            locatable_node ? locatable_node->location : std::nullopt
+            locatable_node ? std::optional(locatable_node->location)
+                           : std::nullopt
         );
         return false;
     }
@@ -220,7 +221,8 @@ bool SymbolTree::register_symbol(
 
             node->symbol = the_symbol;
             symbol_map[the_symbol] =
-                locatable_node ? locatable_node->location : std::nullopt;
+                locatable_node ? std::optional(locatable_node->location)
+                               : std::nullopt;
             modified = true;
             return true;
         }
@@ -229,7 +231,8 @@ bool SymbolTree::register_symbol(
         Diagnostics::inst().emit_error(
             Err::SymbolAlreadyExists,
             "Symbol `" + the_symbol + "` already exists.",
-            locatable_node ? locatable_node->location : std::nullopt
+            locatable_node ? std::optional(locatable_node->location)
+                           : std::nullopt
         );
         if (it->second.has_value()) {
             Diagnostics::inst().emit_note(
@@ -246,7 +249,7 @@ bool SymbolTree::register_symbol(
     // Register the symbol.
     node->symbol = the_symbol;
     symbol_map[the_symbol] =
-        locatable_node ? locatable_node->location : std::nullopt;
+        locatable_node ? std::optional(locatable_node->location) : std::nullopt;
     modified = true;
     return true;
 }
@@ -420,7 +423,7 @@ SymbolTree::add_binding_entry(
                 std::dynamic_pointer_cast<Node::ILocatable>(node.value())) {
             Diagnostics::inst().emit_note(
                 "Previous declaration here.",
-                locatable->location.value()
+                locatable->location
             );
         }
         return std::nullopt;
@@ -473,7 +476,7 @@ SymbolTree::add_overloadable_func(const Binding& binding) {
                     std::dynamic_pointer_cast<Node::ILocatable>(node.value())) {
                 Diagnostics::inst().emit_note(
                     "Previous declaration here.",
-                    locatable->location.value()
+                    locatable->location
                 );
             }
             return std::nullopt;
@@ -531,7 +534,7 @@ SymbolTree::add_overloadable_func(const Binding& binding) {
                     std::dynamic_pointer_cast<Node::ILocatable>(conflict)) {
                 Diagnostics::inst().emit_note(
                     "Conflicting overload declared here.",
-                    locatable->location.value()
+                    locatable->location
                 );
             }
             Diagnostics::inst().emit_note(
@@ -622,7 +625,7 @@ bool SymbolTree::resolve_unresolved_types() {
                 Err::UnsizedNamedType,
                 "Unsized named type `" + type->to_string() +
                     "` is not allowed.",
-                locatable->location.value()
+                locatable->location
             );
             Diagnostics::inst().emit_note(
                 "A named type may be unsized if it is excessively deep due to "

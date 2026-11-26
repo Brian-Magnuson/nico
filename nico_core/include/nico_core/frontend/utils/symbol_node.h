@@ -109,18 +109,13 @@ protected:
 class Node::ILocatable : public virtual Node {
 public:
     // The location in the source code where this node is introduced.
-    // Some nodes do not have their location set upon creation, so this field
-    // may be empty.
-    std::optional<Location> location;
+    Location location;
 
     virtual ~ILocatable() = default;
 
 protected:
     ILocatable(Private, const Location& location)
         : Node(Private()), location(location) {}
-
-    ILocatable(Private)
-        : Node(Private()) {}
     // TODO: See if we can remove the default constructor and require all
     // locatable nodes to have a location set upon creation.
 };
@@ -202,11 +197,11 @@ class Node::Namespace : public virtual Node::IGlobalScope,
 public:
     virtual ~Namespace() = default;
 
-    Namespace(Private)
+    Namespace(Private, const Location& location)
         : Node(Private()),
           Node::IScope(Private()),
           Node::IGlobalScope(Private()),
-          Node::ILocatable(Private()) {}
+          Node::ILocatable(Private(), location) {}
 
     /**
      * @brief Creates a new namespace node and adds it to the parent scope.
@@ -237,12 +232,12 @@ class Node::ExternBlock : public virtual Node::Namespace {
 public:
     virtual ~ExternBlock() = default;
 
-    ExternBlock(Private)
+    ExternBlock(Private, const Location& location)
         : Node(Private()),
           Node::IScope(Private()),
           Node::IGlobalScope(Private()),
-          Node::ILocatable(Private()),
-          Node::Namespace(Private()) {}
+          Node::ILocatable(Private(), location),
+          Node::Namespace(Private(), location) {}
 
     static std::shared_ptr<ExternBlock>
     create(std::shared_ptr<Node::IScope> parent, std::shared_ptr<Token> token);
@@ -342,12 +337,12 @@ class Node::StructDef : public virtual Node::IGlobalScope,
 public:
     virtual ~StructDef() = default;
 
-    StructDef(Private)
+    StructDef(Private, const Location& location)
         : Node(Private()),
           Node::IScope(Private()),
           Node::IGlobalScope(Private()),
           Node::ITypeNode(Private()),
-          Node::ILocatable(Private()) {}
+          Node::ILocatable(Private(), location) {}
 
     /**
      * @brief Creates a new struct definition node and adds it to the parent
@@ -466,7 +461,7 @@ public:
 
     BindingEntry(Private, const Binding& binding, Linkage linkage)
         : Node(Private()),
-          Node::ILocatable(Private()),
+          Node::ILocatable(Private(), binding.location),
           binding(binding),
           linkage(linkage) {}
 
