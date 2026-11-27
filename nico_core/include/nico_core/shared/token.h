@@ -332,6 +332,8 @@ struct Location {
         std::shared_ptr<CodeFile> file, size_t start, size_t length, size_t line
     )
         : file(file), start(start), length(length), line(line) {}
+    // TODO: Consider a constructor for a file-only location, for code that is
+    // implicit within a file.
 
     /**
      * @brief Convert the location to a 3-tuple of (file path, line number,

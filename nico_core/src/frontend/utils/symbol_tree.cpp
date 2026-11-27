@@ -169,10 +169,6 @@ void SymbolTree::initialize(IRModuleContext& mod_ctx) {
     install_context_dependent_types(mod_ctx);
 }
 
-bool SymbolTree::is_name_reserved(const std::string& name) const {
-    return reserved_scope->children.contains(name);
-}
-
 bool SymbolTree::register_symbol(
     std::shared_ptr<Node> node, std::optional<std::string> symbol
 ) {
@@ -252,6 +248,22 @@ bool SymbolTree::register_symbol(
         locatable_node ? std::optional(locatable_node->location) : std::nullopt;
     modified = true;
     return true;
+}
+
+bool SymbolTree::is_name_reserved(const std::string& name) const {
+    return reserved_scope->children.contains(name);
+}
+
+std::optional<std::shared_ptr<Node::Module>>
+SymbolTree::add_module(std::string_view short_name) {
+    auto new_node = Node::Module::create(current_scope, short_name);
+    auto ok = current_scope->add_child(*this, new_node);
+    if (!ok) {
+        return std::nullopt;
+    }
+    current_scope = new_node;
+
+    return new_node;
 }
 
 std::optional<std::shared_ptr<Node::Namespace>>

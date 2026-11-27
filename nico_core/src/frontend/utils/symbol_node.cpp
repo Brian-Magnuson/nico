@@ -22,9 +22,11 @@ std::string Node::IScope::to_tree_string(size_t indent) const {
 
 bool Node::IScope::add_child(
     SymbolTree& symbol_tree,
-    std::shared_ptr<Node::ILocatable> child,
+    std::shared_ptr<Node> child,
     std::optional<std::string> custom_symbol
 ) {
+    auto locatable_child = std::dynamic_pointer_cast<Node::ILocatable>(child);
+
     // Step 1: Check if this node allows this child.
     // This is done by the implementing class.
 
@@ -33,7 +35,8 @@ bool Node::IScope::add_child(
         Diagnostics::inst().emit_error(
             Err::NameIsReserved,
             "Name `" + child->short_name + "` is reserved and cannot be used.",
-            child->location
+            locatable_child ? std::optional(locatable_child->location)
+                            : std::nullopt
         );
         return false;
     }
@@ -43,7 +46,8 @@ bool Node::IScope::add_child(
         Diagnostics::inst().emit_error(
             Err::NameAlreadyExists,
             "Name `" + child->short_name + "` already exists in this scope.",
-            child->location
+            locatable_child ? std::optional(locatable_child->location)
+                            : std::nullopt
         );
         if (auto existing_locatable =
                 std::dynamic_pointer_cast<Node::ILocatable>(existing.value())) {
@@ -95,16 +99,19 @@ std::shared_ptr<Node::ExternBlock> Node::ExternBlock::create(
 
 bool Node::ExternBlock::add_child(
     SymbolTree& symbol_tree,
-    std::shared_ptr<Node::ILocatable> child,
+    std::shared_ptr<Node> child,
     std::optional<std::string> custom_symbol
 ) {
+    auto locatable_child = std::dynamic_pointer_cast<Node::ILocatable>(child);
+
     // Extern blocks can only contain binding entries that represent functions.
     if (auto extern_child =
             std::dynamic_pointer_cast<Node::ExternBlock>(child)) {
         Diagnostics::inst().emit_error(
             Err::ExternBlockInExternBlock,
             "Extern block cannot contain another extern block.",
-            child->location
+            locatable_child ? std::optional(locatable_child->location)
+                            : std::nullopt
         );
         return false;
     }
@@ -112,7 +119,8 @@ bool Node::ExternBlock::add_child(
         Diagnostics::inst().emit_error(
             Err::NamespaceInExternBlock,
             "Namespace is not allowed in extern block.",
-            child->location
+            locatable_child ? std::optional(locatable_child->location)
+                            : std::nullopt
         );
         return false;
     }
@@ -122,7 +130,8 @@ bool Node::ExternBlock::add_child(
         Diagnostics::inst().emit_error(
             Err::StructDefInExternBlock,
             "Struct definition is not allowed in extern block.",
-            child->location
+            locatable_child ? std::optional(locatable_child->location)
+                            : std::nullopt
         );
         return false;
     }
@@ -179,14 +188,17 @@ std::shared_ptr<Node::StructDef> Node::StructDef::create(
 
 bool Node::StructDef::add_child(
     SymbolTree& symbol_tree,
-    std::shared_ptr<Node::ILocatable> child,
+    std::shared_ptr<Node> child,
     std::optional<std::string> custom_symbol
 ) {
+    auto locatable_child = std::dynamic_pointer_cast<Node::ILocatable>(child);
+
     if (auto ns = std::dynamic_pointer_cast<Node::Namespace>(child)) {
         Diagnostics::inst().emit_error(
             Err::NamespaceInStructDef,
             "Namespace is not allowed in struct definition.",
-            child->location
+            locatable_child ? std::optional(locatable_child->location)
+                            : std::nullopt
         );
         return false;
     }
@@ -196,7 +208,8 @@ bool Node::StructDef::add_child(
         Diagnostics::inst().emit_error(
             Err::StructDefInStructDef,
             "Struct definition is not allowed in struct definition.",
-            child->location
+            locatable_child ? std::optional(locatable_child->location)
+                            : std::nullopt
         );
         return false;
     }
@@ -213,7 +226,8 @@ bool Node::StructDef::add_child(
         Diagnostics::inst().emit_error(
             Err::ExternBlockInStructDef,
             "Extern block is not allowed in struct definition.",
-            child->location
+            locatable_child ? std::optional(locatable_child->location)
+                            : std::nullopt
         );
         return false;
     }
@@ -234,7 +248,7 @@ std::shared_ptr<Node::LocalScope> Node::LocalScope::create(
 
 bool Node::LocalScope::add_child(
     SymbolTree& symbol_tree,
-    std::shared_ptr<Node::ILocatable> child,
+    std::shared_ptr<Node> child,
     std::optional<std::string> custom_symbol
 ) {
     if (PTR_INSTANCEOF(child, Node::IGlobalScope)) {

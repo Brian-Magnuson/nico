@@ -162,6 +162,23 @@ public:
     bool is_name_reserved(const std::string& name) const;
 
     /**
+     * @brief Adds a new module to the symbol tree, then enters the module
+     * scope.
+     *
+     * If successful, this function returns the newly created module node.
+     *
+     * If the name already exists, this function does not add the module and
+     * returns nullopt.
+     *
+     * @param short_name The short name of the module.
+     * @return std::optional<std::shared_ptr<Node::Module>> The newly created
+     * module node if successful, or nullopt if not.
+     */
+    std::optional<std::shared_ptr<Node::Module>>
+    add_module(std::string_view short_name);
+    // TODO: See if we can allow modules to support locations.
+
+    /**
      * @brief Adds a new namespace to the symbol tree, then enters the namespace
      * scope.
      *

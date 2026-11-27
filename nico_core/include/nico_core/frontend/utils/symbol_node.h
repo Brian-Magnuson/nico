@@ -59,7 +59,7 @@ public:
      */
     virtual bool add_child(
         SymbolTree& symbol_tree,
-        std::shared_ptr<Node::ILocatable> child,
+        std::shared_ptr<Node> child,
         std::optional<std::string> custom_symbol = std::nullopt
     );
 };
@@ -154,6 +154,14 @@ public:
     }
 };
 
+/**
+ * @brief A module in the symbol tree.
+ *
+ * A module is a kind of global scope that wraps everything in a single
+ * compilation unit.
+ * A module name may consist of multiple name parts with each part having its
+ * own node in the symbol tree.
+ */
 class Node::Module : public virtual Node::IGlobalScope {
 public:
     virtual ~Module() = default;
@@ -248,7 +256,7 @@ public:
 
     virtual bool add_child(
         SymbolTree& symbol_tree,
-        std::shared_ptr<Node::ILocatable> child,
+        std::shared_ptr<Node> child,
         std::optional<std::string> custom_symbol = std::nullopt
     ) override;
 };
@@ -364,7 +372,7 @@ public:
 
     virtual bool add_child(
         SymbolTree& symbol_tree,
-        std::shared_ptr<Node::ILocatable> child,
+        std::shared_ptr<Node> child,
         std::optional<std::string> custom_symbol = std::nullopt
     ) override;
 
@@ -421,7 +429,7 @@ public:
 
     virtual bool add_child(
         SymbolTree& symbol_tree,
-        std::shared_ptr<Node::ILocatable> child,
+        std::shared_ptr<Node> child,
         std::optional<std::string> custom_symbol = std::nullopt
     ) override;
 
