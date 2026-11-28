@@ -318,7 +318,8 @@ struct Location {
     size_t start;
     // The length of the token.
     size_t length;
-    // The line number of the token.
+    // The line number of the token. If this is 0, this location is not
+    // associated with a specific line in the source code.
     size_t line;
 
     /**
@@ -332,8 +333,15 @@ struct Location {
         std::shared_ptr<CodeFile> file, size_t start, size_t length, size_t line
     )
         : file(file), start(start), length(length), line(line) {}
-    // TODO: Consider a constructor for a file-only location, for code that is
-    // implicit within a file.
+
+    /**
+     * @brief Constructs a new Location object for a file without a specific
+     * position in the source code.
+     *
+     * @param file A pointer to the code file.
+     */
+    Location(std::shared_ptr<CodeFile> file)
+        : file(file), start(0), length(0), line(0) {}
 
     /**
      * @brief Convert the location to a 3-tuple of (file path, line number,
@@ -342,6 +350,9 @@ struct Location {
      * number.
      */
     std::tuple<std::string, size_t, size_t> to_tuple() const {
+        if (line == 0) {
+            return {file->path_string, 0, 0};
+        }
         size_t line_start = file->src_code.rfind('\n', start);
         if (line_start == std::string::npos) {
             line_start = 0;
@@ -355,6 +366,9 @@ struct Location {
      * @return A string representation of the location.
      */
     std::string to_string() const {
+        if (line == 0) {
+            return file->path_string;
+        }
         auto [file_path, line_num, col_num] = to_tuple();
         return file_path + ":" + std::to_string(line_num) + ":" +
                std::to_string(col_num);

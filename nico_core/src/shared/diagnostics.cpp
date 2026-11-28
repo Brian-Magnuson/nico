@@ -9,6 +9,10 @@ namespace nico {
 void Diagnostics::print_code_at_location(
     const Location& location, std::ostream& (*color_manip)(std::ostream& o)
 ) {
+    if (location.line == 0) {
+        *out << "in " << location.to_string() << "\n";
+    }
+
     const std::string& src_code = location.file->src_code;
     size_t start = location.start;
     size_t length = location.length;
@@ -30,7 +34,7 @@ void Diagnostics::print_code_at_location(
 
     std::string line = src_code.substr(line_start, line_end - line_start);
 
-    *out << location.to_string() << "\n";
+    *out << "at " << location.to_string() << "\n";
 
     *out << std::setw(5) << location.line << " | " << line << "\n";
 
